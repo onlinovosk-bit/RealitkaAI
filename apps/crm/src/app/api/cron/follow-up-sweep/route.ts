@@ -13,6 +13,30 @@ import { FOLLOWUP_SWEEP_AGENT_ID } from "@/lib/inbound/draft-view";
 import { insertAgentDraft, recipientFor } from "@/lib/inbound/insert-agent-draft";
 import type { StaleLeadInput } from "@/lib/ai/open-followup-generator";
 import { scoreFollowUp } from "@/lib/cron/follow-up-scoring";
+import {
+  callerUserAgent,
+  cronHttpStatus,
+  deriveCronStatus,
+  recordCronRun,
+  recordUnauthorizedCronRun,
+  vercelCronSchedule,
+} from "@/lib/ops/cron-run";
+
+/**
+ * FOLLOWUP-CRON-OBSERVE-01 — prečo tento cron odteraz píše do `cron_runs`.
+ *
+ * Zmerané na PROD 2026-10-15: 522 z 523 leadov spĺňa VŠETKY podmienky
+ * spôsobilosti (otvorený stav, bez zmeny > 5 dní, pod limitom, bez cooldownu),
+ * a pritom `ai_followup_count > 0` má **nula** leadov a návrhov od tohto agenta
+ * je **nula**. Cron teda nemal „nič na práci" — mal 522 kandidátov a nespravil
+ * nič.
+ *
+ * Či vôbec bežal, sa nedalo zistiť: runtime logy Vercelu na Hobby pláne držia
+ * ~1 hodinu a tento cron beží o 22:00, takže ráno po ňom nie je stopa. Riadok
+ * v `cron_runs` je jediné, čo beh prežije — bez neho je „nebežalo to"
+ * nerozlíšiteľné od „bežalo a nič nenašlo".
+ */
+const JOB = "follow-up-sweep";
 
 const OPEN_STATUSES = ["Nový", "Teplý", "Horúci", "Obhliadka", "Ponuka"];
 
@@ -35,8 +59,19 @@ async function bumpFollowupMeta(admin: ReturnType<typeof createAdminClient>, lea
 export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret || request.headers.get("authorization") !== `Bearer ${cronSecret}`) {
+    // Odmietnutie požiadavky s cron hlavičkou musí po sebe nechať stopu, inak
+    // je prázdna `cron_runs` nerozlíšiteľná od „cron vôbec nebežal". Hlavička
+    // je len rozlišovač, nie dôkaz — poslať ju vie ktokoľvek.
+    const schedule = vercelCronSchedule(request.headers);
+    if (schedule) {
+      await recordUnauthorizedCronRun(
+        createAdminClient(), JOB, schedule, callerUserAgent(request.headers),
+      );
+    }
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const startedAt = new Date();
 
   const staleDays = Math.max(1, Number(process.env.FOLLOWUP_STALE_DAYS ?? "5"));
   const maxCandidates = Math.min(Number(process.env.FOLLOWUP_SWEEP_LIMIT ?? "24"), 60);
@@ -63,8 +98,14 @@ export async function GET(request: NextRequest) {
     .limit(maxCandidates * 2);
 
   if (error) {
+    await recordCronRun(admin, {
+      job: JOB, status: "failed", startedAt,
+      firstError: `leads: ${error.message}`,
+    });
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   }
+
+  const scanned = rows?.length ?? 0;
 
   const eligible = (rows ?? []).filter((r: { last_ai_followup_at?: string | null }) => {
     const last = r.last_ai_followup_at;
@@ -109,13 +150,19 @@ export async function GET(request: NextRequest) {
   const failures: string[] = [];
 
   if (!inputs.length) {
+    const logError = await recordCronRun(admin, {
+      job: JOB, status: "empty", startedAt, scanned, eligible: 0,
+      detail: { stale_days: staleDays, cooldown_days: cooldownMs / 86_400_000 },
+    });
     return NextResponse.json({
       ok: true,
       mode,
       requested_mode: requestedMode,
+      scanned,
       eligible: 0,
       drafted: 0,
       sent: 0,
+      run_log_error: logError,
     });
   }
 
@@ -159,13 +206,30 @@ export async function GET(request: NextRequest) {
     await bumpFollowupMeta(admin, plan.lead_id, now);
   }
 
+  const status = deriveCronStatus(inputs.length, drafted, failures.length);
+  const logError = await recordCronRun(admin, {
+    job: JOB, status, startedAt,
+    scanned, eligible: inputs.length, written: drafted, failed: failures.length,
+    firstError: failures[0] ?? null,
+    detail: {
+      stale_days: staleDays,
+      cooldown_days: cooldownMs / 86_400_000,
+      max_candidates: maxCandidates,
+      // `plans` môže byť kratšie než `inputs` — model povie „nekontaktovať".
+      planned: plans.length,
+    },
+  });
+
+  // Pravidlo aj s dôvodom žije v cronHttpStatus(); tu sa len použije.
   return NextResponse.json({
     ok: true,
     mode,
     requested_mode: requestedMode,
+    scanned,
     evaluated: inputs.length,
     drafted,
     sent: 0,
     failures,
-  });
+    run_log_error: logError,
+  }, { status: cronHttpStatus(status, logError) });
 }

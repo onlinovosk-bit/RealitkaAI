@@ -19,7 +19,7 @@ stav neposúva, ani keď „by to malo fungovať".
 |---|:-:|:-:|:-:|---|
 | Príjem leadov z e-mailu portálov | ✅ | ✅ | ✅ | 8 testov; PROD 9 nových leadov za 30 dní |
 | AI triage (priorita) | ✅ | ✅ | ✅ | cron `lead-ai-triage`; PROD 511/513 leadov |
-| Follow-up návrhy so schválením | ✅ | ✅ | ❌ | **Zmerané 2026-10-15** (`scripts/sql/followup-drafts-30d.sql`): za 30 dní **3 návrhy, 0 schválených, 0 odoslaných**. Všetky 3 sú z `REVOLIS-INBOUND-AUTOREPLY` a všetky z 1. 10.; nočný `follow-up-sweep` nevytvoril ani jeden návrh za celý čas. Zákazníkovi teda nedošlo nič. |
+| Follow-up návrhy so schválením | ✅ | ✅ | ❌ | **Zmerané 2026-10-15** (`scripts/sql/followup-drafts-30d.sql`): za 30 dní **3 návrhy, 0 schválených, 0 odoslaných**. Všetky 3 sú z `REVOLIS-INBOUND-AUTOREPLY` a všetky z 1. 10.; nočný `follow-up-sweep` nevytvoril ani jeden návrh za celý čas. Zákazníkovi teda nedošlo nič. **Bod 6 (2026-10-15):** na PROD je **522 z 523 leadov spôsobilých** na sweep (otvorený stav, bez zmeny > 5 dní, pod limitom, bez cooldownu), a pritom `ai_followup_count > 0` má **0** leadov — cron teda nemal prázdny vstup, mal 522 kandidátov. Či bežal, sa nedalo zistiť (runtime logy Vercelu na Hobby držia ~1 h, sweep beží o 22:00), preto odteraz zapisuje do `cron_runs` na každej ceste von. Ratchet „Cron denník": 2 → 3 cronov so stopou. Dôvod nulového výsledku povie prvý riadok po najbližšom behu. |
 | **Demand extraction (D1)** | ✅ | ✅ | ⏳ | #749: CI 1965 testov + RLS sonda; PROD vypnuté, čaká na backfill gate a privacy gate |
 | Ochrana PII pri volaniach LLM | ✅ | ✅ | ⏳ | #750: 3 živé úniky opravené, 19 miest MINIMIZE otvorených |
 | Scoring (heuristika v2) | ✅ | čiastočne | ❌ | len na tlačidlo; `lead_scores` = 0 |
