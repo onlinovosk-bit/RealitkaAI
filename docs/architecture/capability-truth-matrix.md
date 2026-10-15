@@ -21,7 +21,7 @@ stav neposúva, ani keď „by to malo fungovať".
 | AI triage (priorita) | ✅ | ✅ | ✅ | cron `lead-ai-triage`; PROD 511/513 leadov |
 | Follow-up návrhy so schválením | ✅ | ✅ | ❌ | **Zmerané 2026-10-15** (`scripts/sql/followup-drafts-30d.sql`): za 30 dní **3 návrhy, 0 schválených, 0 odoslaných**. Všetky 3 sú z `REVOLIS-INBOUND-AUTOREPLY` a všetky z 1. 10.; nočný `follow-up-sweep` nevytvoril ani jeden návrh za celý čas. Zákazníkovi teda nedošlo nič. |
 | **Demand extraction (D1)** | ✅ | ✅ | ⏳ | #749: CI 1965 testov + RLS sonda; PROD vypnuté, čaká na backfill gate a privacy gate |
-| Ochrana PII pri volaniach LLM | ✅ | ✅ | ⏳ | #750: 3 živé úniky opravené, 19 miest MINIMIZE otvorených |
+| Ochrana PII pri volaniach LLM | ✅ | ✅ | ✅ | #750: 3 živé úniky opravené. **Bod 9 (2026-10-15):** všetkých **12 živých miest MINIMIZE** opravených spoločným helperom `lib/privacy/minimize.ts` — krstné meno tam, kde text oslovuje človeka, mesto namiesto adresy, zástupný znak pri liste majiteľovi. `rescue-message` prešiel z priameho klienta na `callClaude`, takže už prechádza sanitizérom. 7 mŕtvych miest stráži pin na funkcie `generateAiReply` / `buildDossier`. Dôkaz: 15 jednotkových + 18 verifikačných testov, mutácia zabitá. |
 | Scoring (heuristika v2) | ✅ | čiastočne | ❌ | len na tlačidlo; `lead_scores` = 0 |
 | BRI | ✅ | ❌ | ❌ | cron neplánovaný, `events` = 0 |
 | Buyer prediction | ✅ | čiastočne | ❌ | beží len vo verejnom onboardingu; `buyer_intents` = 3 |

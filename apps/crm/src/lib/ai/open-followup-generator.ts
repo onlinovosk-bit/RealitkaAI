@@ -4,6 +4,7 @@
 import { callClaude, CLAUDE_HAIKU, extractJson } from "@/lib/ai/claude";
 import { cachedSystem } from "@/lib/ai/prompt-cache";
 import type { Channel } from "@/lib/multi-channel-sender";
+import { firstNameOnly } from "@/lib/privacy/minimize";
 
 export const OPEN_FOLLOWUP_BATCH = 8;
 
@@ -63,10 +64,11 @@ function safeChannel(raw: string): Channel {
 export async function generateOpenFollowUpsBatch(leads: StaleLeadInput[]): Promise<OpenFollowUpPlan[]> {
   if (!leads.length) return [];
 
+  // BOD 9 (PII): von ide iba krstné meno. Na oslovenie stačí, priezvisko nie.
   const compact = leads.map((l, i) => ({
     idx: i + 1,
     id: l.id,
-    name: l.name,
+    name: firstNameOnly(l.name),
     status: l.status,
     days_hint: String(l.last_contact ?? "").slice(0, 120),
     note: (l.note ?? "").slice(0, 800),
