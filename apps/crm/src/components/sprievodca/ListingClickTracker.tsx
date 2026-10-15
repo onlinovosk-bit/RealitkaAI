@@ -9,6 +9,8 @@ type Props = {
   agencySlug: string;
   listingPosition: number;
   href: string;
+  propertyId: string;
+  intentId?: string;
   className?: string;
   children: ReactNode;
 };
@@ -17,6 +19,8 @@ export function ListingClickTracker({
   agencySlug,
   listingPosition,
   href,
+  propertyId,
+  intentId,
   className,
   children,
 }: Props) {
@@ -30,6 +34,13 @@ export function ListingClickTracker({
           getOrCreateSprievodcaSessionId(),
           listingPosition,
         );
+        if (!intentId) return;
+        void fetch("/api/public/property-view", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ intentId, propertyId }),
+          keepalive: true,
+        }).catch(() => undefined);
       }}
     >
       {children}

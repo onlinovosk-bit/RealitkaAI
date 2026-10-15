@@ -27,6 +27,7 @@ import {
   FOLLOWUP_SWEEP_AGENT_ID,
   INBOUND_AUTOREPLY_AGENT_ID,
   OUTREACH_AGENT_ID,
+  RETURN_SIGNAL_AGENT_ID,
 } from './draft-view'
 
 export type ApprovalState = 'sending' | 'sent' | 'send_failed'
@@ -61,6 +62,7 @@ export const SEND_ACTIONS: Readonly<Record<string, Partial<Record<'email' | 'sms
   [FOLLOWUP_SWEEP_AGENT_ID]:    { email: 'followup.email.send', sms: 'followup.sms.send' },
   [DEAD_LEAD_AGENT_ID]:         { email: 'deadlead.email.send', sms: 'deadlead.sms.send' },
   [OUTREACH_AGENT_ID]:          { email: 'outreach.email.send' },
+  [RETURN_SIGNAL_AGENT_ID]:     { email: 'returnsignal.email.send' },
 }
 
 export function sendActionFor(agentId: unknown, channel: unknown): string | null {
