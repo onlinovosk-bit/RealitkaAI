@@ -7,6 +7,7 @@
  */
 
 import { callClaude, CLAUDE_HAIKU, extractJson } from "./claude";
+import { cachedSystem } from "./prompt-cache";
 import { withAiTimeout, callAnalysisFallback } from "./fallback";
 
 export type CallAnalysisResult = {
@@ -39,7 +40,7 @@ export async function analyzeCall(transcript: string): Promise<CallAnalysisResul
   const aiCall = callClaude({
     model: CLAUDE_HAIKU,
     max_tokens: 800,
-    system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
+    system: cachedSystem(SYSTEM, CLAUDE_HAIKU),
     messages: [
       {
         role: "user",

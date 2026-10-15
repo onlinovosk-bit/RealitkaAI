@@ -7,6 +7,7 @@
 import { callClaude, CLAUDE_SONNET, extractJson } from "./claude";
 import { estimateClaudeCostEur } from "./llm-usage-cost";
 import { SYSTEM_PROMPT } from "./listing-content-system-prompt";
+import { cachedSystem, extractClaudeCacheUsage } from "./prompt-cache";
 
 export { SYSTEM_PROMPT };
 
@@ -143,6 +144,10 @@ export type ListingContentAudit = {
   model: string;
   costEur: number;
   latencyMs: number;
+  inputTokens: number;
+  outputTokens: number;
+  cacheCreationInputTokens: number;
+  cacheReadInputTokens: number;
 };
 
 export async function generateListingContent(
@@ -155,17 +160,27 @@ export async function generateListingContent(
   const response = await callClaude({
     model: CLAUDE_SONNET,
     max_tokens: 4096,
-    system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
+    system: cachedSystem(SYSTEM_PROMPT, CLAUDE_SONNET),
     messages: [{ role: "user", content: userPrompt }],
   }, "listing-content");
 
   const raw = response.content[0].type === "text" ? response.content[0].text : "{}";
+  const cache = extractClaudeCacheUsage(response.usage);
   return {
     content: extractJson<ListingContent>(raw),
     audit: {
       model: CLAUDE_SONNET,
-      costEur: estimateClaudeCostEur(CLAUDE_SONNET, response.usage.input_tokens, response.usage.output_tokens),
+      costEur: estimateClaudeCostEur(
+        CLAUDE_SONNET,
+        response.usage.input_tokens,
+        response.usage.output_tokens,
+        { creationInputTokens: cache.cacheCreationInputTokens, readInputTokens: cache.cacheReadInputTokens },
+      ),
       latencyMs: Date.now() - t0,
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
+      cacheCreationInputTokens: cache.cacheCreationInputTokens,
+      cacheReadInputTokens: cache.cacheReadInputTokens,
     },
   };
 }
