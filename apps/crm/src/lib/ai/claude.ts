@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { applyCachedSystem, formatClaudeUsageLog } from "./prompt-cache";
 import { sanitizeMessages, sanitizeSystem, rehydrate, type Vault } from "./sanitize";
 
 let _client: Anthropic | null = null;
@@ -38,11 +39,11 @@ export async function callClaude(
     vault
   );
 
-  const sanitizedParams: Anthropic.MessageCreateParamsNonStreaming = {
+  const sanitizedParams: Anthropic.MessageCreateParamsNonStreaming = applyCachedSystem({
     ...params,
     messages: messages as Anthropic.MessageParam[],
     ...(system !== undefined ? { system: system as Anthropic.MessageCreateParamsNonStreaming['system'] } : {}),
-  };
+  });
 
   const resp = await client.messages.create(sanitizedParams);
   const ms   = Date.now() - t0;
@@ -55,7 +56,7 @@ export async function callClaude(
   }
 
   process.stderr.write(
-    `[ai:${tag ?? params.model}] ${ms}ms | in:${resp.usage.input_tokens} out:${resp.usage.output_tokens} | stop:${resp.stop_reason} | masked:${vaultSize}\n`
+    `[ai:${tag ?? params.model}] ${ms}ms | ${formatClaudeUsageLog(resp.usage)} | stop:${resp.stop_reason} | masked:${vaultSize}\n`
   );
   return resp;
 }
