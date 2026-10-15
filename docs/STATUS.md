@@ -47,9 +47,9 @@ Cieľ: 10 bodov zadania 2026-10-15 — body 1, 2, 6 a 10 do pondelka 19. 10.
 - [x] 10 — trial bez karty overený, ceny pripravené pre live (skript spúšťa founder)
 - [x] 3 — plánovač Gmail pull v repozitári (hodinovo + stopa pri vypnutí), PR #855
 - [x] 4 — plánovač Realvia fronty (hodinovo + denník), PR #856; export čaká na dodávateľa
-- [ ] 5 — rozsah importu
-- [ ] 7 — D1 extrakcia dopytu na PROD
-- [ ] 8 — D4 `DEMAND_MATCHING_ENABLED`
+- [x] 5 — rozsah importu zmapovaný, portálový import opravený, PR #858
+- [ ] 7 — D1 extrakcia dopytu na PROD (čaká na korpus, gold labels a LIA od foundera)
+- [ ] 8 — D4 `DEMAND_MATCHING_ENABLED` (v kóde netreba nič, čaká na bod 7)
 - [x] 9 — 12 živých miest MINIMIZE opravených, PR #857
 <!-- SESSION:END -->
 
