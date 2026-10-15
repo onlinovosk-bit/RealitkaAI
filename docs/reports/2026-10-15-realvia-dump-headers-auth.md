@@ -30,7 +30,7 @@ Lokálny dôkaz 2026-10-15 (cwd `apps/crm`):
 - `npm run typecheck` — 54 chýb, baseline 54 (exit 0).
 - `npm run lint` — exit 0.
 
-CI run `38744496009` (head `376c658e`): Realvia testy PASS vrátane `realvia-dump-headers-auth.verification.test.ts`. Jediný fail: `billing-page-w3.test.tsx` golden (`11318` vs `11623` B) — súbor mimo tohto PR, na `main` po #849 zelený, lokálne 8/8 PASS. Retrigger bez zmeny billing kódu.
+CI `38744496009` a `38745886421`: Realvia PASS. Padol `billing-page-w3.test.tsx` (najprv golden dĺžka, potom `— /mes`) — `waitFor` na `…` je no-op, lebo placeholder pri `loading` nie je v DOM. Test-only: čakať na `/mes`. Žiadna zmena billing UI.
 
 ## RISKS
 
