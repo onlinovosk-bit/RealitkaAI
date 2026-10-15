@@ -3,8 +3,9 @@
 //
 // Bod 3 zadania foundera 2026-10-15: Gmail pull nebol v `vercel.json`, takže
 // plánovač žil mimo repozitára a nikto nevedel, či beží. Po zaradení do
-// rozvrhu (20 * * * *) vzniká nová nejednoznačnosť: prázdna `cron_runs` môže
-// znamenať „Vercel to nespúšťa" aj „spúšťa a chýba konfigurácia".
+// rozvrhu (`20 8 * * *` — viac Hobby plán nedovolí) vzniká nová
+// nejednoznačnosť: prázdna `cron_runs` môže znamenať „Vercel to nespúšťa"
+// aj „spúšťa a chýba konfigurácia".
 //
 // Zmerané 2026-10-15: ani jedna z piatich premenných, ktoré pull potrebuje
 // (GMAIL_INBOUND_PULL_ENABLED, GOOGLE_GMAIL_INBOUND_CLIENT_ID / _SECRET /

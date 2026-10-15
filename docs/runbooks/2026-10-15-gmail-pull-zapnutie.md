@@ -8,12 +8,30 @@ pod jedným štítkom v schránke a pošle ich do `/api/acquire/email`.
 
 | Predtým | Teraz |
 |---|---|
-| Rozvrh nebol vo `vercel.json` — plánovač žil mimo repozitára (externý cron, neoverený) | `/api/inbound/gmail-pull` beží **každú hodinu** (`20 * * * *`) |
+| Rozvrh nebol vo `vercel.json` — plánovač žil mimo repozitára (externý cron, neoverený) | `/api/inbound/gmail-pull` beží **raz denne** (`20 8 * * *`) |
 | Preskočený beh (chýbajúca konfigurácia) nezapísal nič | Zapíše riadok do `cron_runs` s dôvodom, **najviac raz za 12 h** |
 
-Hodinový rozvrh, nie denný: dopyt doručený o 09:05 by inak čakal na zajtra.
-Nie je to sub-hodinový rozvrh — tie `apps/crm/src/app/api/cron/realvia-process/route.ts:5`
-označuje na tomto účte za zablokované.
+### Prečo len raz denne (a čo s tým)
+
+Prvá verzia mala hodinový rozvrh. Vercel build ju odmietol doslova takto:
+
+> Hobby accounts are limited to daily cron jobs. This cron expression
+> (20 * * * *) would run more than once per day. Upgrade to the Pro plan.
+
+Je to teda **zmeraná hranica účtu, nie voľba** — a padne na nej celý deployment,
+nie iba ten jeden cron. Denný pull je backstop; dopyty v reálnom čase chodia
+webhookom z portálu, nie týmto.
+
+Ak chceš pull častejšie, sú dve cesty a je to tvoje rozhodnutie:
+
+| Cesta | Čo stojí | Čo dá |
+|---|---|---|
+| **Vercel Pro** | ~20 USD/mes. | ľubovoľný rozvrh priamo vo `vercel.json`, nič nové sa nespravuje |
+| **Plánovač v GitHub Actions** | 0 € (v rámci voľných minút) | hodinovo; treba `CRON_SECRET` medzi tajomstvami repozitára a zmieriť sa s tým, že Actions rozvrhy sa pri záťaži oneskorujú o 5–20 min |
+
+Odporúčanie: kým kampaň nebeží naplno, stačí denný backstop + webhook.
+Keď začnú chodiť dopyty z portálu bez webhooku, Vercel Pro je čistejšie
+riešenie než udržiavať druhý plánovač.
 
 ## Prečo to zatiaľ nič nestiahne
 
