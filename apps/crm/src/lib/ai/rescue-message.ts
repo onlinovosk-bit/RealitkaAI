@@ -7,6 +7,7 @@
  */
 
 import { getClaudeClient, CLAUDE_HAIKU, extractJson } from "./claude";
+import { cachedSystem } from "./prompt-cache";
 import { withAiTimeout } from "./fallback";
 
 export type RescueChannel = "call" | "sms" | "email" | "whatsapp";
@@ -81,7 +82,7 @@ Vráť JSON:
   const aiCall = client.messages.create({
     model: CLAUDE_HAIKU,
     max_tokens: 400,
-    system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
+    system: cachedSystem(SYSTEM, CLAUDE_HAIKU),
     messages: [{ role: "user", content: userPrompt }],
   }).then((response) => {
     const raw = response.content[0].type === "text" ? response.content[0].text : "";

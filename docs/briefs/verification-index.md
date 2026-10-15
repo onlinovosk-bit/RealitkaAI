@@ -10,6 +10,7 @@ Pri písaní Build Orderu mapuj akceptačné kritériá na súbory nižšie.
 
 | Doména / feature | Verification súbor | Playwright (ak existuje) |
 |------------------|---------------------|--------------------------|
+| Anthropic prompt cache | `anthropic-prompt-cache.verification.test.ts` | — |
 | Decision flags / gating | `decision-flags.verification.test.ts` | — |
 | Forecast gating | `forecast-gating.verification.test.ts` | `smoke.spec.ts` (routes) |
 | Morning brief cron | `morning-brief.verification.test.ts` | `smoke.spec.ts` (cron) |

@@ -127,6 +127,7 @@ export async function sendTestMessage(leadId: string, to: string, body: string) 
 
 // === KF5 — AI odpoveď cez Claude (nahradenie broken OpenAI) ===
 import { getClaudeClient, CLAUDE_HAIKU } from "@/lib/ai/claude";
+import { cachedSystem } from "@/lib/ai/prompt-cache";
 
 const CHANNEL_STYLE: Record<Channel, { instruction: string; maxTokens: number }> = {
   email:    { instruction: "Formálna, profesionálna, 3-5 viet, bez emoji. Zakončiť menom a kontaktom.", maxTokens: 200 },
@@ -178,7 +179,10 @@ NIKDY nevymýšľaj informácie o nehnuteľnosti. Ak niečo nevieš, opýtaj sa 
     const response = await claude.messages.create({
       model: CLAUDE_HAIKU,
       max_tokens: style.maxTokens,
-      system: [{ type: "text", text: `${SYSTEM_REPLY} Štýl pre kanál ${channel}: ${style.instruction}`, cache_control: { type: "ephemeral" } }],
+      system: cachedSystem(
+        `${SYSTEM_REPLY} Štýl pre kanál ${channel}: ${style.instruction}`,
+        CLAUDE_HAIKU,
+      ),
       messages: [
         {
           role: "user",

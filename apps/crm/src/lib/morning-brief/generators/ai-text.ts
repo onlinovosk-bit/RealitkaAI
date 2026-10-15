@@ -2,6 +2,7 @@
 // Revolis.AI — Morning Brief AI Text Generator
 // ================================================================
 import { callClaude, CLAUDE_HAIKU } from '@/lib/ai/claude'
+import { cachedSystem } from '@/lib/ai/prompt-cache'
 import type { GatheredData }        from '../gather'
 import type {
   BriefContentSource,
@@ -63,7 +64,7 @@ export async function generateBriefText(
     callClaude({
       model:      CLAUDE_HAIKU,
       max_tokens: 300,
-      system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
+      system: cachedSystem(system, CLAUDE_HAIKU),
       messages: [{
         role:    'user',
         content: `Napíš ranný brief pre makléra ${data.ownerName}.\n\nDÁTA:\n${context}\n\nDÔLEŽITÉ: Použij konkrétne meno "${top?.full_name ?? 'kontakt'}" a číslo skóre ${top?.bri_score ?? 0}. Odporúčanú akciu zaciľ presne — volanie pred 10:00, správu večer, atď.`,
@@ -73,7 +74,7 @@ export async function generateBriefText(
     callClaude({
       model:      CLAUDE_HAIKU,
       max_tokens: 80,
-      system: [{ type: 'text', text: SYSTEM_SUBJECT, cache_control: { type: 'ephemeral' } }],
+      system: cachedSystem(SYSTEM_SUBJECT, CLAUDE_HAIKU),
       messages: [{
         role:    'user',
         content: `Meno: ${top?.full_name ?? 'Lead'}, BRI: ${top?.bri_score ?? 0}, Trajectory: ${(top as any)?.trajectory ?? 'stable'}`,
