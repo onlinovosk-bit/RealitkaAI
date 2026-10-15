@@ -32,7 +32,7 @@ stav neposúva, ani keď „by to malo fungovať".
 | Reaktivácia | čiastočne | ❌ | ❌ | `seller-rescue` tvorí úlohy; outbound ZAKÁZANÝ bez GDPR brány |
 | Forecast / pipeline € | ✅ | ❌ | ❌ | dosádza 180 000 € pri chýbajúcom rozpočte → nesmie sa zobrazovať ako fakt |
 | Gmail pull | ✅ | ✅ | ⏳ | **Bod 3 (2026-10-15):** plánovač je v repozitári — `/api/inbound/gmail-pull` beží hodinovo (`20 * * * *` vo `vercel.json`), route zapisuje do `cron_runs` a po novom aj preskočený beh s dôvodom (najviac raz za 12 h). Stiahne však zatiaľ nula: zmerané vo Verceli, **ani jedna** zo šiestich premenných (`GMAIL_INBOUND_PULL_ENABLED`, `GOOGLE_GMAIL_INBOUND_CLIENT_ID`/`_SECRET`/`_REFRESH_TOKEN`/`_LABEL_ID`/`_AGENCY_ID`) v projekte neexistuje. Postup: `docs/runbooks/2026-10-15-gmail-pull-zapnutie.md`. PROD proven až keď `cron_runs` ukáže `written > 0`. |
-| Realvia fronta (worker) | ✅ | ✅ | ❓ | chýba plánovač v repozitári; externý cron neoverený |
+| Realvia fronta (worker) | ✅ | ✅ | ⚠️ | **Bod 4 (2026-10-15):** plánovač je v repozitári — `/api/cron/realvia-process` beží hodinovo (`50 * * * *`) a zapisuje do `cron_runs` vrátane odmietnutia na autorizácii. Predtým mal podľa komentára bežať externe každých 5 minút; zmerané z `realvia_metrics`: za 21 dní beh prebehol iba v **7 dňoch** (24 behov), úloha vo fronte čakala v priemere **~2 dni**, najdlhšie **28 dní**. Otvorené: z 2 830 pokusov o spracovanie **1 287 zlyhalo** (45 %) — príčina nie je zistená a je to samostatná úloha. Export z Realvie (opakovaný test) čaká na dodávateľa. |
 | MCP server | kód (mock) | ❌ | ❌ | falošné dáta v pamäti |
 | Observability (healthz, alerty) | čiastočne | ❌ | ❌ | `healthz` vždy „ok“, bez Sentry |
 
