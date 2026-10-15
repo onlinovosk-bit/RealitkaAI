@@ -47,7 +47,7 @@ Cieľ: Anthropic prompt cache — jeden PR, bez merge/deploy
 - [x] Preskočené krátke Haiku / fetch personalize
 - [x] usage.cache_* v existujúcich logoch
 - [x] Testy + lint/build zelené
-- [ ] Report + jeden PR (nemergovať)
+- [x] Report + jeden PR (nemergovať)
 <!-- SESSION:END -->
 
 ## Čo potrebujem od teba (zoradené podľa dopadu)
