@@ -50,7 +50,7 @@ Cieľ: 10 bodov zadania 2026-10-15 — body 1, 2, 6 a 10 do pondelka 19. 10.
 - [ ] 5 — rozsah importu
 - [ ] 7 — D1 extrakcia dopytu na PROD
 - [ ] 8 — D4 `DEMAND_MATCHING_ENABLED`
-- [ ] 9 — zvyšných 19 miest PII (#750)
+- [x] 9 — 12 živých miest MINIMIZE opravených, PR #857
 <!-- SESSION:END -->
 
 ## Čo potrebujem od teba (zoradené podľa dopadu)
