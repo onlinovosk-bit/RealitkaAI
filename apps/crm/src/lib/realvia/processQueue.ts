@@ -85,7 +85,19 @@ export async function processRealviaQueue(): Promise<{
       const { payload_json: payload, agency_id } = webhookData;
       const probe = isOnboardingProbePayload(payload);
 
-      if (!agency_id && !probe) {
+      // Process based on payload type.
+      // Probe ide prvý: {test:true} nie je inzerát a agency_id môže chýbať.
+      // V ostatných vetvách je agency_id zúžené na string (ináč by tsc
+      // poslal null do processAdvertPayload / processDeletePayload).
+      let result: RealviaProcessingResult;
+
+      if (probe) {
+        result = {
+          success: false,
+          action: 'skipped',
+          error: REALVIA_PROBE_TERMINAL_ERROR,
+        };
+      } else if (!agency_id) {
         await updateQueueJobStatus(job.id, 'failed', REALVIA_PROCESSING_ERROR_AGENCY_RESOLUTION_FAILED);
         await markWebhookProcessed(job.webhook_log_id, REALVIA_PROCESSING_ERROR_AGENCY_RESOLUTION_FAILED);
         results.push({
@@ -95,12 +107,7 @@ export async function processRealviaQueue(): Promise<{
         });
         failed++;
         continue;
-      }
-
-      // Process based on payload type
-      let result: RealviaProcessingResult;
-
-      if (isAdvertPayload(payload)) {
+      } else if (isAdvertPayload(payload)) {
         result = await processAdvertPayload(payload, agency_id);
       } else if (isDeletePayload(payload)) {
         result = await processDeletePayload(
@@ -108,12 +115,6 @@ export async function processRealviaQueue(): Promise<{
           agency_id,
           payload.archiveType,
         );
-      } else if (isOnboardingProbePayload(payload)) {
-        result = {
-          success: false,
-          action: 'skipped',
-          error: REALVIA_PROBE_TERMINAL_ERROR,
-        };
       } else {
         result = {
           success: false,
