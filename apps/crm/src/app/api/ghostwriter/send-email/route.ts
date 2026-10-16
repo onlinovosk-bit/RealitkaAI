@@ -154,21 +154,23 @@ export async function POST(request: Request) {
     if (body.letterId && !body.letterId.startsWith("tmp_")) {
       const admin = createAdminClient();
 
-      // Verify ownership before updating — only update if the letter belongs to this profile
-      const { data: letter } = await admin
+      // Stamp only a letter we can prove belongs to this profile. A missing row,
+      // a failed select, or a null profile_id is not ownership: the table has no
+      // profile_id column, so this select errors and `!letter` used to take the
+      // allow branch — the service role then wrote email_sent_to onto any id.
+      const { data: letter, error: letterError } = await admin
         .from("ghostwriter_letters")
         .select("profile_id")
         .eq("id", body.letterId)
         .maybeSingle();
 
-      if (!letter || letter.profile_id === profile.id) {
-        // letter.profile_id is null (no ownership column yet) OR matches caller — safe to update
+      if (!letterError && letter?.profile_id && letter.profile_id === profile.id) {
         await admin
           .from("ghostwriter_letters")
           .update({ email_sent_to: body.recipientEmail, sent_at: new Date().toISOString() })
-          .eq("id", body.letterId);
+          .eq("id", body.letterId)
+          .eq("profile_id", profile.id);
       }
-      // else: letter belongs to a different profile — skip silently
     }
 
     return NextResponse.json({ ok: true, emailId: (data as { id?: string } | null)?.id });
