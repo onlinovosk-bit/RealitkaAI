@@ -21,3 +21,5 @@ Nové tabuľky: RLS zapnuté. `event_store` len `service_role`. `outreach_log` i
 ## Allowlist
 
 `config/public-schema-allowlist.json` sa nemení. Guard porovnáva allowlist s LIVE schémou; pridať mená pred aplikovaním by CI hlásilo missing.
+
+`apps/crm/scripts/schema-gap-allowlist.json` je iný zoznam: výnimka platí, kým migrácia v repe chýba. Táto migrácia tri tabuľky zakladá, preto sú `event_store`, `outreach_log` a `team_member_permissions` z výnimiek zmazané. Na PROD sa nič neaplikovalo.
