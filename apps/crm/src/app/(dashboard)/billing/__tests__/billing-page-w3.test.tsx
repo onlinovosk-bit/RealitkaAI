@@ -41,7 +41,12 @@ async function renderPlan(planKey: string, ctx?: Ctx): Promise<string> {
     <BillingPage />
   );
   const { container } = render(ui);
-  await waitFor(() => expect(container.textContent).not.toContain("…"));
+  // Čakaj na NAČÍTANÝ stav, nie na zmiznutie troch bodiek: tie sú vo vnútri
+  // bloku `{!loading && …}`, takže počas načítavania v DOM vôbec nie sú a
+  // podmienka `not.toContain("…")` je splnená hneď pri prvom renderi. Golden
+  // potom raz za čas zachytil kratší (načítavací) výstup — v CI 11318 vs 11623 B.
+  // Reťazec "/mes" je naopak v DOM iba po načítaní (legacy aj v2 vetva).
+  await waitFor(() => expect(container.textContent).toContain("/mes"));
   const html = container.innerHTML;
   cleanup();
   return html;
