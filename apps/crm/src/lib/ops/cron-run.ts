@@ -221,3 +221,67 @@ export async function recordUnauthorizedCronRun(
     return false
   }
 }
+
+
+// ================================================================
+// GMAIL-PULL-PLAN-01 — „beží, ale je vypnutý" nesmie vyzerať ako „nebeží"
+//
+// Cron, ktorý sa pre chýbajúcu konfiguráciu iba preskočí, doteraz nezapísal
+// nič. Pri dennom rozvrhu to bolo jedno; pri hodinovom je to rozdiel medzi
+// „Vercel to nespúšťa" a „spúšťa a chýba mu refresh token" — a to sú dve
+// úplne odlišné opravy. Zapisovať každý preskočený beh by ale `cron_runs`
+// zaplavilo (24 riadkov denne na jeden job), takže sa zapisuje najviac raz
+// za okno a riadok nesie dôvod.
+// ================================================================
+
+/** Ako často nanajvýš zapísať preskočený beh toho istého jobu s tým istým dôvodom. */
+export const SKIPPED_CRON_MIN_INTERVAL_MS = 12 * 60 * 60 * 1000
+
+/**
+ * Zapíše, že beh sa legitímne preskočil (napr. vlajka vypnutá, chýba
+ * konfigurácia). Vracia `true`, keď riadok vznikol, `false` keď sa preskočil
+ * kvôli stropu alebo sa zápis nepodaril.
+ *
+ * Fail-soft ako zvyšok tohto súboru: denník nesmie zhodiť cron.
+ */
+export async function recordSkippedCronRun(
+  client:   SupabaseClient,
+  job:      string,
+  reason:   string,
+  opts:     { minIntervalMs?: number; startedAt?: Date } = {},
+): Promise<boolean> {
+  const windowMs = opts.minIntervalMs ?? SKIPPED_CRON_MIN_INTERVAL_MS
+
+  try {
+    const sinceIso = new Date(Date.now() - windowMs).toISOString()
+    const { data: recent, error: lookupErr } = await client
+      .from('cron_runs')
+      .select('id')
+      .eq('job', job)
+      .eq('detail->>skipped', reason)
+      .gte('started_at', sinceIso)
+      .limit(1)
+      .maybeSingle()
+
+    // Nevedieť, či už riadok je, nie je dôvod zapísať druhý.
+    if (lookupErr) {
+      console.error(`[cron_runs] lookup preskočeného behu ${job} zlyhal:`, lookupErr.message)
+      return false
+    }
+    if (recent) return false
+
+    const error = await recordCronRun(client, {
+      job,
+      status:    'empty',
+      detail:    { skipped: reason },
+      startedAt: opts.startedAt,
+    })
+    return error === null
+  } catch (err) {
+    console.error(
+      `[cron_runs] zápis preskočeného behu ${job} vyhodil výnimku:`,
+      err instanceof Error ? err.message : String(err),
+    )
+    return false
+  }
+}
