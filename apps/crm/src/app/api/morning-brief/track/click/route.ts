@@ -1,7 +1,7 @@
 // GET /api/morning-brief/track/click?brief=[briefId]&lead=[leadId]
 // Records click, redirects to lead detail
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient }               from '@/lib/supabase/server'
+import { createAdminClient }          from '@/lib/supabase/server'
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.revolis.ai'
 
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   const leadId  = request.nextUrl.searchParams.get('lead') ?? ''
 
   if (UUID_RE.test(briefId) && UUID_RE.test(leadId)) {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     await supabase.rpc('record_brief_click', {
       p_brief_id: briefId,
       p_lead_id:  leadId,

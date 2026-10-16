@@ -3,6 +3,7 @@
 // Generates personalised first-touch reply via Claude Haiku
 // ================================================================
 import { callClaude, CLAUDE_HAIKU, extractJson } from '@/lib/ai/claude'
+import { cachedSystem } from '@/lib/ai/prompt-cache'
 import { withAiTimeout }                          from '@/lib/ai/fallback'
 import type { AiFailure }                         from '@/lib/ai/ai-failure'
 
@@ -53,7 +54,7 @@ export async function generateAutoReply(
   const aiCall = callClaude({
     model:      CLAUDE_HAIKU,
     max_tokens: 300,
-    system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
+    system: cachedSystem(SYSTEM, CLAUDE_HAIKU),
     messages: [{
       role:    'user',
       content: `Nový lead:

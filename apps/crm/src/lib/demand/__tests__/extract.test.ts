@@ -47,6 +47,8 @@ describe("extractDemand", () => {
     expect(sent).not.toContain("jan.novak@example.sk");
     expect(sent).not.toContain("Novák");
     expect(call.mock.calls[0][0].model).toBe("claude-haiku-4-5-20251001");
+    const system = call.mock.calls[0][0].system as Array<{ cache_control?: unknown }>;
+    expect(system[0]?.cache_control).toBeUndefined();
   });
 
   it("keeps proven values and turns guesses into unknowns", async () => {

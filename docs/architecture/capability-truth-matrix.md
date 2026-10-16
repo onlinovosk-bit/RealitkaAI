@@ -19,7 +19,7 @@ stav neposúva, ani keď „by to malo fungovať".
 |---|:-:|:-:|:-:|---|
 | Príjem leadov z e-mailu portálov | ✅ | ✅ | ✅ | 8 testov; PROD 9 nových leadov za 30 dní |
 | AI triage (priorita) | ✅ | ✅ | ✅ | cron `lead-ai-triage`; PROD 511/513 leadov |
-| Follow-up návrhy so schválením | ✅ | ✅ | čiastočne | cron beží; počet schválených a odoslaných návrhov za 30 dní nezmeraný |
+| Follow-up návrhy so schválením | ✅ | ✅ | ❌ | **Zmerané 2026-10-15** (`scripts/sql/followup-drafts-30d.sql`): za 30 dní **3 návrhy, 0 schválených, 0 odoslaných**. Všetky 3 sú z `REVOLIS-INBOUND-AUTOREPLY` a všetky z 1. 10.; nočný `follow-up-sweep` nevytvoril ani jeden návrh za celý čas. Zákazníkovi teda nedošlo nič. |
 | **Demand extraction (D1)** | ✅ | ✅ | ⏳ | #749: CI 1965 testov + RLS sonda; PROD vypnuté, čaká na backfill gate a privacy gate |
 | Ochrana PII pri volaniach LLM | ✅ | ✅ | ⏳ | #750: 3 živé úniky opravené, 19 miest MINIMIZE otvorených |
 | Scoring (heuristika v2) | ✅ | čiastočne | ❌ | len na tlačidlo; `lead_scores` = 0 |
@@ -31,7 +31,7 @@ stav neposúva, ani keď „by to malo fungovať".
 | Ranný brief | ✅ | ❌ | ❌ | cron beží, posiela 0 (nastavenia nie sú v UI) |
 | Reaktivácia | čiastočne | ❌ | ❌ | `seller-rescue` tvorí úlohy; outbound ZAKÁZANÝ bez GDPR brány |
 | Forecast / pipeline € | ✅ | ❌ | ❌ | dosádza 180 000 € pri chýbajúcom rozpočte → nesmie sa zobrazovať ako fakt |
-| Gmail pull | ✅ | ✅ | ❓ | chýba plánovač v repozitári; externý cron neoverený |
+| Gmail pull | ✅ | ✅ | ⏳ | **Bod 3 (2026-10-15):** plánovač je v repozitári — `/api/inbound/gmail-pull` beží denne (`20 8 * * *` vo `vercel.json`; hodinový rozvrh Vercel na Hobby pláne odmieta a zhodí celý deployment), route zapisuje do `cron_runs` a po novom aj preskočený beh s dôvodom (najviac raz za 12 h). Stiahne však zatiaľ nula: zmerané vo Verceli, **ani jedna** zo šiestich premenných (`GMAIL_INBOUND_PULL_ENABLED`, `GOOGLE_GMAIL_INBOUND_CLIENT_ID`/`_SECRET`/`_REFRESH_TOKEN`/`_LABEL_ID`/`_AGENCY_ID`) v projekte neexistuje. Postup: `docs/runbooks/2026-10-15-gmail-pull-zapnutie.md`. PROD proven až keď `cron_runs` ukáže `written > 0`. |
 | Realvia fronta (worker) | ✅ | ✅ | ❓ | chýba plánovač v repozitári; externý cron neoverený |
 | MCP server | kód (mock) | ❌ | ❌ | falošné dáta v pamäti |
 | Observability (healthz, alerty) | čiastočne | ❌ | ❌ | `healthz` vždy „ok“, bez Sentry |

@@ -23,6 +23,8 @@ export async function generatePersonalLine(prospect: ScoredProspect): Promise<st
     .filter(Boolean)
     .join("; ");
 
+  // Prompt caching skipped: no stable system prefix; user text is ~1 short
+  // sentence (≪ Haiku 3.5 min 2 048 tokens). Marker would be a no-op.
   const prompt = `Napíš jednu slovenskú vetu (max 25 slov) pre B2B cold email majiteľovi RK ${prospect.nazov}.
 Použi IBA tieto overiteľné fakty: ${facts || "žiadne extra fakty"}.
 Žiadne lichôtky, žiadne vymyslené čísla, žiadne "AI". Vráť len vetu.`;

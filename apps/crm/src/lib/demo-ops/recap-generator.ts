@@ -1,4 +1,5 @@
 import { callClaude, CLAUDE_HAIKU } from "@/lib/ai/claude";
+import { cachedSystem } from "@/lib/ai/prompt-cache";
 import type { ParsedDemoUtm } from "./utm-parse";
 
 export type RecapInput = {
@@ -36,7 +37,7 @@ export async function generateRecapDraft(input: RecapInput): Promise<string> {
     {
       model: CLAUDE_HAIKU,
       max_tokens: 400,
-      system,
+      system: cachedSystem(system, CLAUDE_HAIKU),
       messages: [{ role: "user", content: user }],
     },
     "demo-recap",

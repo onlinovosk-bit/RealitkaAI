@@ -13,6 +13,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getClaudeClient, CLAUDE_SONNET } from "@/lib/ai/claude";
 import { sanitizeText } from "@/lib/ai/sanitize";
+import { cachedSystem } from "@/lib/ai/prompt-cache";
 import { SYSTEM_PROMPT, buildListingUserPrompt, sanitizePropertyInput } from "@/lib/ai/listing-content";
 import type { PropertyInput, ListingPersona } from "@/lib/ai/listing-content";
 
@@ -41,7 +42,7 @@ export async function POST(req: Request) {
         const stream = getClaudeClient().messages.stream({
           model:      CLAUDE_SONNET,
           max_tokens: 2200,
-          system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
+          system: cachedSystem(SYSTEM_PROMPT, CLAUDE_SONNET),
           messages: [{ role: "user", content: userPrompt }],
         });
 
