@@ -1,3 +1,14 @@
+## Session 2026-10-16 (trial-gate send-route bypass audit)
+### Dokončené
+- Read-only audit na `main`@`80eb86b1`: WP-2 claim potvrdený — **CRITICAL**.
+- Report: `docs/reports/2026-10-16-trial-gate-send-route-bypass.md` (commit `5aef6903`, push na `cursor/recent-commit-bug-inspection-a6e4`).
+### Rozpracované / Pending
+- Fix NIE je v scope; ďalší krok = GO na `requireActiveAppAccess` v ghostwriter/send-email + playbook/confirm-viewing (+ draft approve / stealth send).
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-16-trial-gate-send-route-bypass.md`: verdikt + file:line dôkazy.
+### Ďalší krok
+GO na minimal fix: `requireActiveAppAccess` na oboch send routes (a draft-approve), alebo širšia write-gate coverage.
+
 ## Session 2026-10-16 (10 bodov zadania 2026-10-15)
 ### Dokončené
 - **Bod 1** — AI návrhy odpovedí za 30 dní zmerané na PROD (3 vytvorené / 0 schválených / 0 odoslaných), PR #851 zmergovaný (`515a8b5b`).
