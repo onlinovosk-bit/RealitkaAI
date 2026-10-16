@@ -118,7 +118,7 @@ function decodeHrefValue(value: string): string {
 function salvageHrefContacts(raw: string): string {
   const found: string[] = [];
   for (const m of raw.matchAll(/\bhref\s*=\s*["']mailto:([^"'?\s>]+)/gi)) found.push(decodeHrefValue(m[1]));
-  for (const m of raw.matchAll(/\bhref\s*=\s*["']tel:([^"'?\s>]+)/gi)) found.push(decodeHrefValue(m[1]));
+  for (const m of raw.matchAll(/\bhref\s*=\s*["']tel:([^"'?>]+)/gi)) found.push(decodeHrefValue(m[1]).trim());
   return found.length ? `${raw}\n${found.join("\n")}` : raw;
 }
 

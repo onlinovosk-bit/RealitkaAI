@@ -506,5 +506,16 @@ describe("portálový dopyt s kontaktom v uhlových zátvorkách alebo odkaze os
     expect(viaParen.source).toBe("Reality.sk");
     expect(viaParen.contactPhone).toBe("+421905123456");
     expect(notLeadReason(viaParen, false)).toBeNull();
+
+    const telSpaced = [
+      "Nehnutelnosti.sk - nova sprava",
+      `<html><body><a href="tel:+421 (905) 123 456">zavolat</a></body></html>`,
+    ].join("\n");
+    const viaTel = parseEmail(telSpaced, RECEIVED_AT, {
+      subject: "Nehnutelnosti.sk - nova sprava",
+      from: "noreply@nehnutelnosti.sk",
+    });
+    expect(viaTel.contactPhone).toBe("+421905123456");
+    expect(notLeadReason(viaTel, false)).toBeNull();
   });
 });
