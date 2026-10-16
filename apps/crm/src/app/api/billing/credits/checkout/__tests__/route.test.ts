@@ -69,6 +69,18 @@ describe("POST /api/billing/credits/checkout — PRICING_V2_ENABLED vypnuté (kr
     expect(h.createV2).not.toHaveBeenCalled();
   });
 
+  it("missing seat Price ID -> 503 with env NAMES only, Stripe is not called", async () => {
+    vi.stubEnv("STRIPE_PRICE_TEAM_SEAT", "");
+    const res = await call({ checkoutType: "seat", seatTier: "team", quantity: 1 });
+    expect(res.status).toBe(503);
+    const body = await res.json();
+    expect(body.error).toMatch(/chýbajú Stripe ceny/);
+    expect(body.missingPriceEnvKeys).toContain("STRIPE_PRICE_TEAM_SEAT");
+    expect(body.missingPriceEnvKeys.every((name: string) => /^STRIPE_PRICE_[A-Z0-9_]+$/.test(name))).toBe(true);
+    expect(JSON.stringify(body)).not.toMatch(/sk_live|rk_live|whsec_|price_/);
+    expect(h.createSeat).not.toHaveBeenCalled();
+  });
+
   it("legacy top-up checkout is unchanged", async () => {
     const res = await call({ checkoutType: "topup", topupPackage: "rast" });
     expect(res.status).toBe(200);

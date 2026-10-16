@@ -374,6 +374,28 @@ describe("Vypnutý prepínač — výstup nezmenený", () => {
     expect(html[0]).toContain("Top-up balíčky kreditov sú na stránke fakturácie");
   });
 
+  it("Upgrade: vypnuté v2 a chýbajúce Price ID ukáže názvy premenných, nie hodnoty", async () => {
+    mockFetch({
+      configBody: {
+        ...LEGACY_CONFIG,
+        seatCheckoutAvailable: false,
+        topupCheckoutAvailable: false,
+        checkoutAvailable: false,
+        missingPriceEnvKeys: {
+          seat: ["STRIPE_PRICE_SOLO_SEAT", "price_1ShouldNotRender"],
+          topup: ["STRIPE_PRICE_CREDITS_START"],
+        },
+      },
+    });
+    render(<UpgradePage />);
+    expect(await screen.findByText(/chýbajú Stripe Price ID/)).toBeTruthy();
+    const list = screen.getByTestId("missing-price-env");
+    expect(list.textContent).toContain("STRIPE_PRICE_SOLO_SEAT");
+    expect(list.textContent).toContain("STRIPE_PRICE_CREDITS_START");
+    expect(list.textContent).not.toContain("price_1ShouldNotRender");
+    expect(document.body.textContent).not.toMatch(/sk_live|rk_live|whsec_/);
+  });
+
   it("Upgrade: legacy seat checkout posiela pôvodné telo", async () => {
     const { checkoutCalls } = mockFetch({ checkout: jsonRes(400, { ok: false, error: "Test" }) });
     render(<UpgradePage />);
