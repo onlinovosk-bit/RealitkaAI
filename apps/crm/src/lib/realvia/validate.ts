@@ -46,8 +46,15 @@ export function collectRequestHeaders(request: NextRequest): Record<string, stri
     if (
       lower === 'x-revolis-secret' ||
       lower === 'authorization' ||
+      lower === 'forwarded' ||
+      lower === 'x-vercel-oidc-token' ||
+      lower === 'x-vercel-proxy-signature' ||
+      lower === 'x-vercel-proxy-signature-ts' ||
+      lower === 'x-vercel-sc-headers' ||
       lower.includes('password') ||
-      lower.includes('secret')
+      lower.includes('secret') ||
+      lower.includes('signature') ||
+      lower.includes('token')
     ) {
       headersMap[key] = '[REDACTED]';
     } else {
