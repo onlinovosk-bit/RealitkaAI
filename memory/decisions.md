@@ -1,5 +1,23 @@
 # Critical Decisions Log
 
+## 2026-10-16 — Vercel Hobby plán obmedzuje crony na raz denne (ZMERANÉ, nie odhad)
+**Ako sa to zistilo:** uvažoval som, že keďže na PROD preukázateľne beží ≥ 5 rôznych cronov, účet nemôže byť Hobby (Hobby má strop 2 crony), a naplánoval som oba nové crony hodinovo. Vercel odmietol **oba buildy**: „Hobby accounts are limited to daily cron jobs. This cron expression (20 * * * *) would run more than once per day."
+**Záver (merané z chyby buildu, nie z dokumentácie):** počet cronov sa NEvynucuje (v `vercel.json` ich je 19), vynucuje sa **frekvencia**. Sub-denný výraz zhodí **celé nasadenie**, nie len ten jeden cron.
+**Dôsledok:** Gmail pull `20 8 * * *`, Realvia `50 11 * * *`. Pribudol pin, že žiadny cron v `vercel.json` nemá `*` v poli hodiny.
+**Otvorené rozhodnutie pre foundera:** Hobby → Pro (≈ 20 USD/mes.). Súvisí aj s otázkou licencie na komerčné použitie Hobby plánu.
+
+## 2026-10-16 — `billing-page-w3.test.tsx` bol náhodne padajúci test na `main` (OPRAVENÉ)
+**Príznak:** CI padalo na #852 (`11318 vs 11623 B`) aj na #856 (`11324 vs 11623 B`) na golden porovnaní billing stránky, hoci ani jeden z tých PR sa billingu nedotýka.
+**Príčina (merané lokálne v tom istom turne):** `renderPlan()` čakal na `expect(container.textContent).not.toContain("…")`. Tri bodky sú vo `page.tsx` vnútri blokov `{!loading && …}`, takže počas načítavania v DOM VÔBEC nie sú — podmienka bola splnená už pri prvom renderi a test občas odfotil načítavací (kratší) výstup. Načítavací render 1337 B, načítaný 1636 B, rozdiel 299 B na jeden plán; v CI chýbalo 299–305 B, čiže presne jeden zo siedmich `planKey`-ov prehral preteky.
+**Oprava:** čaká sa na `"/mes"`, čo je v DOM iba po načítaní (legacy aj v2 vetva). Samostatným testom overené, že nová podmienka počas načítavania neplatí — teda naozaj čaká. Commit `f05cf405` (#852), portnutý ako `2b233adc` (#856).
+**Pravidlo, ktoré z toho plynie:** čakacia podmienka v teste musí byť POZITÍVNA značka načítaného stavu. Negatívna podmienka na reťazec, ktorý sa v tom stave vôbec nerenderuje, je splnená okamžite a test sa tvári, že počkal.
+**Čo sa NEurobilo:** test sa nevypol, nepreskočil ani sa neprepísal golden súbor.
+
+## 2026-10-16 — Bod 6 (pozorovateľnosť follow-up sweepu) zostáva otvorený — rozhodnutie foundera
+**Stav:** PR #853 founder zavrel bez mergu. Overené na `main` (`f7f53686`): `apps/crm/src/app/api/cron/follow-up-sweep/route.ts` má **0** výskytov `recordCronRun`, test `route.observe.test.ts` neexistuje.
+**Dôsledok, ktorý by inak zostal nepovedaný:** 522 z 523 leadov spĺňa podmienky na follow-up, vzniklo 0 návrhov, a **prečo sa to deje, sa nedá zistiť** — cron o sebe nenecháva žiadnu stopu. Absencia riadkov v `cron_runs` nie je dôkaz, že cron nebežal; do tej tabuľky píšu len inštrumentované crony.
+**Rozhodnutie:** neotváram znovu bez výslovnej požiadavky. Bod 6 je v zadaní s termínom pondelok 19. 10.
+
 ## 2026-10-15 — Anthropic prompt cache na existujúcich Claude volaniach (BUILD)
 **GO foundera:** inventúra všetkých Anthropic/Claude call sites + cache tam, kde to šetrí peniaze; jeden PR, bez merge/deploy. Overený fakt: na účte cache funguje (`claude-sonnet-5-5`, 2. volanie čítalo 18 031 tokenov z cache).
 **Brána Ústavy v2:** nie nová feature pre klienta — nákladová oprava existujúcej AI vrstvy (listing Sonnet). Strop nie je VALIDATE; kód na vetve, PROD/merge ostáva na GO.
