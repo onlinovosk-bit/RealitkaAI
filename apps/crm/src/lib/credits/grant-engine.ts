@@ -133,6 +133,55 @@ async function ledgerHasIdempotencyKey(
 }
 
 /**
+ * Dokončí čiastočne zlyhanú expiráciu: ledger už má expiry key, ale
+ * `grant_credits_balance` ešte nie je 0. Číta live balances a CAS-uje update,
+ * aby súbežný top-up neprepisoval `credits_balance` starým snapshotom.
+ */
+async function repairUnclearedGrantExpiry(
+  supabase: ServiceRoleClient,
+  agencyId: string,
+): Promise<ExpireGrantResult> {
+  const { data: live, error: readErr } = await supabase
+    .from("agencies")
+    .select("purchased_credits_balance, grant_credits_balance")
+    .eq("id", agencyId)
+    .maybeSingle();
+  if (readErr) {
+    console.warn("[grant-engine] expiry repair read:", readErr.message);
+    return { expired: 0, skipped: true, error: readErr.message };
+  }
+  if (!live || live.grant_credits_balance <= 0) {
+    return { expired: 0, skipped: true };
+  }
+
+  const purchased = live.purchased_credits_balance ?? 0;
+  const grantLeft = live.grant_credits_balance;
+  const { data: updated, error: agencyErr } = await supabase
+    .from("agencies")
+    .update({
+      grant_credits_balance: 0,
+      credits_balance: purchased,
+      billing_updated_at: new Date().toISOString(),
+    })
+    .eq("id", agencyId)
+    .eq("purchased_credits_balance", purchased)
+    .eq("grant_credits_balance", grantLeft)
+    .select("id");
+
+  if (agencyErr) {
+    console.warn("[grant-engine] expiry repair agency:", agencyErr.message);
+    return { expired: 0, skipped: true, error: agencyErr.message };
+  }
+  if (!updated || updated.length === 0) {
+    console.warn("[grant-engine] expiry repair CAS miss (concurrent mutation)", {
+      agencyId,
+    });
+    return { expired: 0, skipped: true, error: "concurrent_credit_mutation" };
+  }
+  return { expired: grantLeft, skipped: false };
+}
+
+/**
  * Sweep nevyčerpaných grant kreditov za `periodKey` (zvyčajne previousPeriodKey).
  *
  * Safety: ak už existuje mesačný grant pre *aktuálny* period a expirácia za
@@ -173,21 +222,15 @@ export async function expireGrantCreditsForAgency(
   if (existing.exists) {
     // Ledger už má expiry, ale balance ešte nie je 0 → dokonči clear len ak
     // aktuálny grant ešte nebol aplikovaný (inak by sme zmazali nový grant).
+    //
+    // NIKDY nepis `credits_balance` zo snapshotu `agency` načítaného na začiatku
+    // cyklu — medzi snapshotom a repairom môže prebehnúť `apply_credit_purchase`
+    // a absolútny zápis `credits_balance = snapshot.purchased` by zmazal zaplatené
+    // kredity (ledger by ich mal, agencies nie). Live re-read + CAS na purchased
+    // aj grant: pri súbehu 0 riadkov → fail-closed, ďalší cron retry.
     if (toExpire > 0 && !currentGrant.exists) {
-      const newTotal = agency.purchased_credits_balance;
-      const { error: agencyErr } = await supabase
-        .from("agencies")
-        .update({
-          grant_credits_balance: 0,
-          credits_balance: newTotal,
-          billing_updated_at: new Date().toISOString(),
-        })
-        .eq("id", agency.id);
-      if (agencyErr) {
-        console.warn("[grant-engine] expiry repair agency:", agencyErr.message);
-        return { expired: 0, skipped: true, error: agencyErr.message };
-      }
-      return { expired: toExpire, skipped: false };
+      const repaired = await repairUnclearedGrantExpiry(supabase, agency.id);
+      return repaired;
     }
     return { expired: 0, skipped: true };
   }
