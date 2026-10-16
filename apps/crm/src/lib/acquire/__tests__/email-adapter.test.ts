@@ -7,6 +7,7 @@ import {
   PARSER_VERSION,
   dedupKey,
   htmlToText,
+  notLeadReason,
   parseEmail,
   toLeadCandidate,
 } from "../email-adapter";
@@ -61,7 +62,7 @@ Sprava: od kedy je voľný byt?`;
 describe("email-adapter eval dataset", () => {
   it("eval 1: Nehnutelnosti portal inquiry", () => {
     const ev = parseEmail(EVAL_NEHNUTELNOSTI, RECEIVED_AT);
-    expect(PARSER_VERSION).toBe("1.4");
+    expect(PARSER_VERSION).toBe("1.5");
     expect(DATASET_VERSION).toBe("v1.1");
     expect(ev.sourceType).toBe("Portal");
     expect(ev.source).toBe("Nehnuteľnosti.sk");
@@ -82,7 +83,7 @@ describe("email-adapter eval dataset", () => {
     expect(dedupKey(ev)).toBe("672608c5e7a2ebcd");
     const lead = toLeadCandidate(ev, SMOLKO_AGENCY, false);
     expect(lead?.source).toBe("web_form");
-    expect(lead?._meta.parserVersion).toBe("1.4");
+    expect(lead?._meta.parserVersion).toBe("1.5");
   });
 
   it("eval 7: Bazos Palenčár availability inquiry (Smolko gold)", () => {
@@ -381,5 +382,69 @@ describe("W1 — agencyDomainsFrom", () => {
     expect(agencyDomainsFrom([`a@${RK_DOMAIN}`, `B@${RK_DOMAIN.toUpperCase()}`])).toEqual([
       RK_DOMAIN,
     ]);
+  });
+});
+
+// htmlToText bral `<adresa>` a `<https://…>` ako tag a `mailto:`/`tel:` zahodil
+// spolu s odkazom. Zdroj ostal (alebo zmizol len on) a dopyt s kontaktom
+// spadol na not_a_lead. Mená aj adresy sú syntetické.
+describe("portálový dopyt s kontaktom v uhlových zátvorkách alebo odkaze ostáva lead", () => {
+  const LEAD_EMAIL = "jana.vzorova@example.com";
+  const LEAD_PHONE = "+421912345678";
+  const portals: { marker: string; from: string; source: string }[] = [
+    { marker: "nehnutelnosti.sk", from: "noreply@nehnutelnosti.sk", source: "Nehnuteľnosti.sk" },
+    { marker: "bazos.sk", from: "noreply@bazos.sk", source: "Bazoš.sk" },
+    { marker: "byty.sk", from: "info@byty.sk", source: "Byty.sk" },
+    { marker: "topreality.sk", from: "noreply@topreality.sk", source: "TopReality.sk" },
+    { marker: "reality.sk", from: "noreply@reality.sk", source: "Reality.sk" },
+    { marker: "webovy formular", from: "formular@realitysmolko.sk", source: "realitysmolko.sk (web formulár)" },
+  ];
+
+  it("e-mail len ako <adresa> a telefón len ako tel: nie je not_a_lead", () => {
+    for (const portal of portals) {
+      const subject = `Nova sprava ${portal.marker}`;
+      const raw = [
+        subject,
+        "Meno: Jana Vzorova",
+        `E-mail: Jana Vzorova <${LEAD_EMAIL}>`,
+        "Sprava: Prosim o termin obhliadky.",
+        `<html><body><p>${portal.marker}</p><a href="tel:${LEAD_PHONE}">zavolat</a></body></html>`,
+      ].join("\n");
+      const ev = parseEmail(raw, RECEIVED_AT, { subject, from: portal.from });
+      expect(ev.source).toBe(portal.source);
+      expect(ev.contactEmail).toBe(LEAD_EMAIL);
+      expect(ev.contactPhone).toBe(LEAD_PHONE);
+      expect(notLeadReason(ev, false)).toBeNull();
+      expect(toLeadCandidate(ev, SMOLKO_AGENCY, false)?.email).toBe(LEAD_EMAIL);
+    }
+  });
+
+  it("plain-text autolink portálu a mailto bez viditeľnej adresy ostávajú lead", () => {
+    const plain = [
+      "E-mail: jana.vzorova@example.com",
+      "Telefon: +421 912 345 678",
+      "Inzerat: <https://www.nehnutelnosti.sk/inzerat/12345678>",
+    ].join("\n");
+    expect(htmlToText(plain)).toBe(plain);
+    const viaLink = parseEmail(plain, RECEIVED_AT, {
+      subject: "Fwd: dopyt",
+      from: "Makler <makler.osobny@gmail.com>",
+    });
+    expect(viaLink.source).toBe("Nehnuteľnosti.sk");
+    expect(viaLink.contactEmail).toBe(LEAD_EMAIL);
+    expect(notLeadReason(viaLink, false)).toBeNull();
+
+    const mailtoOnly = [
+      "bazos.sk - nova odpoved",
+      `<html><body><a href="mailto:${LEAD_EMAIL}?subject=inzerat">napisat zaujemcovi</a></body></html>`,
+    ].join("\n");
+    const ev = parseEmail(mailtoOnly, RECEIVED_AT, {
+      subject: "bazos.sk - nova odpoved",
+      from: "noreply@bazos.sk",
+    });
+    expect(ev.source).toBe("Bazoš.sk");
+    expect(ev.contactEmail).toBe(LEAD_EMAIL);
+    expect(notLeadReason(ev, false)).toBeNull();
+    expect(toLeadCandidate(ev, SMOLKO_AGENCY, false)).not.toBeNull();
   });
 });
