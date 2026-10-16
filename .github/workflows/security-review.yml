@@ -1,0 +1,55 @@
+name: Security Review
+
+# Checks on every PR:
+#   1. New middleware bypass prefixes without inline comment
+#   2. New SQL migrations with CREATE TABLE missing RLS + policy
+#   3. Hardcoded secret patterns in changed TS/JS/JSON files
+#
+# No secrets required. Posts result as PR comment (edits existing comment on re-run).
+# Does NOT duplicate schema-governance-guard (that checks schema drift vs live DB).
+
+on:
+  pull_request:
+    paths:
+      - "apps/crm/middleware.ts"
+      - "apps/crm/supabase/migrations/**"
+      - "apps/crm/src/**"
+      - "apps/crm/scripts/check-security.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  security:
+    name: Security review
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run security checks
+        id: check
+        run: node apps/crm/scripts/check-security.mjs
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+
+      - name: Post PR comment
+        if: always() && github.event_name == 'pull_request'
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --body-file /tmp/security-review-comment.md \
+            --edit-last 2>/dev/null || \
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --body-file /tmp/security-review-comment.md
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
