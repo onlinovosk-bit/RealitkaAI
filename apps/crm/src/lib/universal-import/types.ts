@@ -29,6 +29,37 @@ export const SOURCE_SYSTEM_LABELS: Record<ImportSourceSystem, string> = {
   xlsx:              'Excel (.xlsx)',
 };
 
+/**
+ * BOD 5 (2026-10-15): ktoré zdroje vie sprievodca naozaj prečítať.
+ *
+ * Parser je CSV-only (`csv-parse.ts`, Papaparse). `xlsx` a `vcf` boli v zozname
+ * ako štítky bez parsera — používateľ si vybral Excel, a potom mu formulár
+ * neprijal .xlsx súbor a nepovedal prečo. `realvia-json` podporovaný je, ale
+ * vlastnou cestou (`/api/universal-import/realvia-json`), nie týmto sprievodcom.
+ *
+ * Štítky zostávajú, aby bolo vidieť, čo chýba; výber je ale vypnutý a hovorí,
+ * čo má používateľ urobiť namiesto toho.
+ */
+export const CSV_IMPORT_SOURCES: readonly ImportSourceSystem[] = [
+  'realvia',
+  'realsoft',
+  'nehnutelnosti_sk',
+  'google_contacts',
+  'outlook_csv',
+  'flowii',
+  'generic_csv',
+];
+
+export const UNSUPPORTED_IMPORT_HINT: Partial<Record<ImportSourceSystem, string>> = {
+  xlsx: 'Excel zatiaľ nevieme prečítať — v Exceli zvoľte Uložiť ako → CSV UTF-8.',
+  vcf: 'vCard zatiaľ nevieme prečítať — vyexportujte kontakty do CSV.',
+  'realvia-json': 'Realvia JSON má vlastný import, nie tohto sprievodcu.',
+};
+
+export function isCsvImportSource(value: string): value is ImportSourceSystem {
+  return (CSV_IMPORT_SOURCES as readonly string[]).includes(value);
+}
+
 // ── Cieľové polia v Revolise ────────────────────────────────
 export type ImportTargetField =
   | 'contact_name'

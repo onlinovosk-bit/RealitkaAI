@@ -71,6 +71,10 @@
       "schedule": "20 8 * * *"
     },
     {
+      "path": "/api/cron/realvia-process",
+      "schedule": "50 11 * * *"
+    },
+    {
       "path": "/api/cron/credits-cycle",
       "schedule": "0 5 1 * *"
     }

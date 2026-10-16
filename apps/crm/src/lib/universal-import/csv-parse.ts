@@ -2,6 +2,14 @@ import Papa from "papaparse";
 
 export const MAX_IMPORT_ROWS = 2000;
 
+/**
+ * Strop na veľkosť nahraného súboru. 2000 riadkov kontaktov sa zmestí hlboko
+ * pod 10 MB; čokoľvek väčšie je omyl alebo útok. Kontroluje sa PRED
+ * `arrayBuffer()`, inak sa celý súbor načíta do pamäte serverless funkcie
+ * ešte predtým, než ho stihneme odmietnuť.
+ */
+export const MAX_IMPORT_FILE_BYTES = 10 * 1024 * 1024;
+
 export type ParsedCsv = {
   headers: string[];
   rows: Record<string, string>[];
