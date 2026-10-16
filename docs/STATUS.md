@@ -39,15 +39,18 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: Anthropic prompt cache — jeden PR, bez merge/deploy
+Cieľ: 10 bodov zadania 2026-10-15 — body 1, 2, 6 a 10 do pondelka 19. 10.
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] Inventúra všetkých Anthropic/Claude call sites
-- [x] Helper + min. dĺžka (Sonnet 1024, Haiku 4.5 4096)
-- [x] Cache na listing Sonnet (sync + stream)
-- [x] Preskočené krátke Haiku / fetch personalize
-- [x] usage.cache_* v existujúcich logoch
-- [x] Testy + lint/build zelené
-- [x] Report + jeden PR (nemergovať)
+- [x] 1 — AI návrhy odpovedí za 30 dní zmerané na PROD (3 / 0 / 0), PR #851 zmergovaný
+- [x] 2 — UI nastavení ranného briefu, PR #852 (doručovanie blokuje `RESEND_API_KEY`)
+- [ ] 6 — follow-up sweep: PR #853 founder 16. 10. zavrel bez mergu, na `main` nie je nič; sweep zostáva nepozorovateľný
+- [x] 10 — trial bez karty overený, ceny pripravené pre live (skript spúšťa founder)
+- [x] 3 — plánovač Gmail pull v repozitári (denne 08:20 UTC + stopa pri vypnutí), PR #855 zmergovaný
+- [x] 4 — plánovač Realvia fronty (denne 11:50 UTC + denník), PR #856; export čaká na dodávateľa
+- [x] 5 — rozsah importu zmapovaný, portálový import opravený, PR #858
+- [ ] 7 — D1 extrakcia dopytu na PROD (čaká na korpus, gold labels a LIA od foundera)
+- [ ] 8 — D4 `DEMAND_MATCHING_ENABLED` (v kóde netreba nič, čaká na bod 7)
+- [x] 9 — 12 živých miest MINIMIZE opravených, PR #857 zmergovaný
 <!-- SESSION:END -->
 
 ## Čo potrebujem od teba (zoradené podľa dopadu)
