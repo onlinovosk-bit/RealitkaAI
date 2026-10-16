@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { sanitizeText, rehydrate } from "@/lib/ai/sanitize";
+import { firstNameOnly } from "@/lib/privacy/minimize";
 
 type LeadLike = {
   id: string;
@@ -109,7 +110,7 @@ Napíš stručný profesionálny email v slovenčine pre realitného klienta.
 ${variantHint}
 
 Klient:
-- meno: ${lead.name}
+- meno: ${firstNameOnly(lead.name)}
 - lokalita: ${lead.location}
 - rozpočet: ${lead.budget}
 - typ: ${lead.propertyType}

@@ -5,6 +5,7 @@ import { callOpenAI } from "@/lib/ai/openai";
 import { checkAiRateLimit } from "@/lib/ai/rate-guard";
 import { checkCapabilityAccess } from "@/lib/license/access";
 import { updateStealthProspectStatus } from "@/lib/stealth-recruiter/store";
+import { ADDRESS_PLACEHOLDER, cityOnly, restoreName } from "@/lib/privacy/minimize";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -132,7 +133,7 @@ export async function POST(request: Request) {
     const prompt = `Si top realitný maklér na Slovensku. Napíš personalizovanú správu pre samopredajcu nehnuteľnosti.
 
 Situácia:
-- Adresa: ${body.address}
+- Adresa: ${ADDRESS_PLACEHOLDER} (lokalita ${cityOnly(body.address) || 'neuvedená'})
 - Inzeruje na: ${platformLabel[body.platform ?? "other"] ?? "portáli"}
 - Počet dní v inzeráte: ${body.daysListed ?? "neznámo"}
 - Pôvodná cena: ${body.originalPrice?.toLocaleString("sk-SK") ?? "neznáma"} €
@@ -146,9 +147,12 @@ Napíš krátku, priateľskú správu (SMS/email štýl, max 5 viet):
 4. Jednoduché CTA: odpísať alebo zavolať
 5. Podpis: ${agentName}
 
+Zástupný znak ${ADDRESS_PLACEHOLDER} opíš presne tak, ako je — doplníme ho my.
 Vráť IBA text správy (bez uvodzoviek). Tón: ľudský, nie korporátny.`;
 
-    const { content: outreachText } = await callOpenAI({
+    // BOD 9 (PII): presná adresa samopredajcu k poskytovateľovi LLM neodchádza;
+    // von ide iba mesto. Adresu dosadíme po odpovedi, lokálne.
+    const { content: outreachRaw } = await callOpenAI({
       model: "gpt-4o",
       max_tokens: 400,
       temperature: 0.75,
@@ -159,6 +163,8 @@ Vráť IBA text správy (bez uvodzoviek). Tón: ľudský, nie korporátny.`;
         { role: "user", content: prompt },
       ],
     });
+
+    const outreachText = restoreName(outreachRaw, body.address, ADDRESS_PLACEHOLDER);
 
     if (body.prospectId) {
       await updateStealthProspectStatus(
