@@ -62,7 +62,7 @@ Sprava: od kedy je voľný byt?`;
 describe("email-adapter eval dataset", () => {
   it("eval 1: Nehnutelnosti portal inquiry", () => {
     const ev = parseEmail(EVAL_NEHNUTELNOSTI, RECEIVED_AT);
-    expect(PARSER_VERSION).toBe("1.5");
+    expect(PARSER_VERSION).toBe("1.6");
     expect(DATASET_VERSION).toBe("v1.1");
     expect(ev.sourceType).toBe("Portal");
     expect(ev.source).toBe("Nehnuteľnosti.sk");
@@ -83,7 +83,7 @@ describe("email-adapter eval dataset", () => {
     expect(dedupKey(ev)).toBe("672608c5e7a2ebcd");
     const lead = toLeadCandidate(ev, SMOLKO_AGENCY, false);
     expect(lead?.source).toBe("web_form");
-    expect(lead?._meta.parserVersion).toBe("1.5");
+    expect(lead?._meta.parserVersion).toBe("1.6");
   });
 
   it("eval 7: Bazos Palenčár availability inquiry (Smolko gold)", () => {
@@ -446,5 +446,36 @@ describe("portálový dopyt s kontaktom v uhlových zátvorkách alebo odkaze os
     expect(ev.contactEmail).toBe(LEAD_EMAIL);
     expect(notLeadReason(ev, false)).toBeNull();
     expect(toLeadCandidate(ev, SMOLKO_AGENCY, false)).not.toBeNull();
+  });
+
+  it("portálový dopyt bez e-mailu s telefónom 0905/123456 ostáva lead", () => {
+    const raw = [
+      "Nehnutelnosti.sk - nova sprava",
+      "Meno: Ján Vzor",
+      "Telefón: 0905/123456",
+      "Sprava: je inzerát aktuálny?",
+    ].join("\n");
+    const ev = parseEmail(raw, RECEIVED_AT, {
+      subject: "Nehnutelnosti.sk - nova sprava",
+      from: "noreply@nehnutelnosti.sk",
+    });
+    expect(ev.source).toBe("Nehnuteľnosti.sk");
+    expect(ev.contactEmail).toBeNull();
+    expect(ev.contactPhone).toBe("0905123456");
+    expect(notLeadReason(ev, false)).toBeNull();
+    expect(toLeadCandidate(ev, SMOLKO_AGENCY, false)?.phone).toBe("0905123456");
+
+    const unlabeled = [
+      "Byty.sk dopyt",
+      "záujemca 0905-123-456",
+      "je byt voľný?",
+    ].join("\n");
+    const viaBody = parseEmail(unlabeled, RECEIVED_AT, {
+      subject: "Byty.sk dopyt",
+      from: "info@byty.sk",
+    });
+    expect(viaBody.source).toBe("Byty.sk");
+    expect(viaBody.contactPhone).toBe("0905123456");
+    expect(notLeadReason(viaBody, false)).toBeNull();
   });
 });
