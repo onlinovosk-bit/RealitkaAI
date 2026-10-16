@@ -68,3 +68,11 @@ Existenciu cien tento beh **nepreukázal**. Možnosť B (zakladať v2 ceny a zap
 Odporúčanie, kým nie je čerstvý live výpis: **A** — samoobslužný checkout nechať zatvorený a predaj riešiť faktúrou. A nie je zistenie, že na účte je 0 cien. Je to rozhodnutie, že bez dôkazu ceny nezapíname.
 
 Ak má restricted kľúč (`rk_live_`, Prices: Read, nič iné) byť k dispozícii tomuto prostrediu inak než vložením do chatu, ďalší beh je znova ten istý skript. Výsledok `N/24` a riadky podľa brán patria do nového reportu. Price ID môže report obsahovať. Secret key nie.
+
+## Druhý pokus 2026-10-16
+
+`git pull origin cursor/api-cost-governor-v1-0b41` skončil `Already up to date` na `760d5530`.
+
+Príkaz v zadaní nastavoval `STRIPE_SECRET_KEY` na text `rk_live_...`. To je placeholder z návodu, nie kľúč. Do prostredia som ho nezapísal a `python scripts/ops/stripe_verify_prices.py` som nespustil. Také volanie by išlo na Stripe s neplatným Bearerom a nič o cenách by nepovedalo.
+
+Po kontrole je `STRIPE_SECRET_KEY` v procese stále UNSET. Žiadna iná premenná s menom Stripe v procese nie je. HTTP na Stripe znova nešlo. Počty seat a v2 cien ostávajú neznáme. B sa neaktivuje. Kým nie je skutočný `rk_live_` kľúč v env mimo chatu, odporúčanie ostáva A.

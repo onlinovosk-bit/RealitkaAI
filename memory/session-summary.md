@@ -1,3 +1,14 @@
+## Session 2026-10-16 (Stripe verify — placeholder, bez API)
+### Dokončené
+- `git pull origin cursor/api-cost-governor-v1-0b41`: Already up to date, HEAD `760d5530`.
+- `STRIPE_SECRET_KEY` ostal UNSET. Placeholder `rk_live_...` sa do env nezapísal a verify skript sa nespustil.
+### Rozpracované / Pending
+- Live počty seat a v2 cien neznáme. B neaktivované. Odporúčanie: A, kým nie je skutočný restricted kľúč mimo chatu.
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-15-stripe-verify-prices-readonly.md`: druhý pokus bez HTTP.
+### Ďalší krok
+Restricted kľúč musí byť v prostredí inak než textom v chate. Potom `bash scripts/ops/stripe-verify-prices.sh` a hneď unset.
+
 ## Session 2026-10-15 (Stripe verify C — STOP, kľúč chýba)
 ### Dokončené
 - `docs/reports/2026-10-15-stripe-verify-prices-readonly.md`: `env -u STRIPE_SECRET_KEY bash scripts/ops/stripe-verify-prices.sh` exit 2. Žiadny GET na Stripe. Restricted `rk_live_` kľúč nie je v procese ani v env súboroch. `apps/crm/.env.local` má len triedu `sk_test` a nespúšťal sa. Stripe MCP needsAuth, nepoužitý.
