@@ -2,8 +2,10 @@
 ### Dokončené
 - PR #846 (draft): 7 SECURITY DEFINER RPC volané cez service role (price-trail, BRI v1/v2, brief tracking, 2 cron-y) + balík D `docs/ops/prod-packages/secdef-callers-close/` (SQL NEAPLIKOVANÝ). tsc 52→52 (žiadna v zmenených súboroch), vitest 200/200, ratchet 0 nových.
 - PROD (SELECT): stav pred = EXECUTE anon+authenticated na všetkých 7, bez search_path, bez DB-interných volajúcich; Vercel Production má SUPABASE_SERVICE_ROLE_KEY.
+- #846 zmergovaný (`ce2be49`), Vercel Production READY, balík D aplikovaný v PROD, verify-after 23/23.
+- LIVE-SMOKE (2026-10-16): pixel `/api/morning-brief/track/open` vrátil GIF; Supabase edge logy ukazujú `POST /rest/v1/rpc/record_brief_open` → 204 (06:14, 06:16 UTC) z `node`. Po REVOKE pre anon/authenticated to potvrdzuje volanie cez service role.
 ### Rozpracované / Pending
-- Poradie: merge #846 (zelené CI) → Vercel Ready → GO D-APPLY.
+- (vybavené: merge #846 a D-APPLY.)
 - search_path na už zatvorených funkciách (treba prejsť telá); arbitrage-scan číta arbitrage_config anon klientom (0 riadkov, existujúci stav).
 ### Kľúčové súbory zmenené
 - apps/crm/src/lib/{price-trail,bri,events}/…, 4 route: rpc cez createAdminClient.
