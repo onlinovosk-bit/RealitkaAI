@@ -1,6 +1,6 @@
 import { createHash } from "crypto";
 
-export const PARSER_VERSION = "1.4";
+export const PARSER_VERSION = "1.5";
 export const DATASET_VERSION = "v1.1";
 
 export interface AcquireEvent {
@@ -92,11 +92,44 @@ function decodeEntities(s: string): string {
     .replace(/&([a-z]+);/gi, (m, n: string) => HTML_ENTITIES[n.toLowerCase()] ?? m);
 }
 
+/**
+ * RFC 5322 angle-addr a plain-text autolink nie sú HTML. `<jana@example.com>`
+ * aj `<https://nehnutelnosti.sk/...>` spúšťajú detekciu tagu (`<` + písmeno) a
+ * `<[^>]+>` ich zmaže. Zdrojové pravidlo v texte ostane, kontakt zmizne →
+ * `no_contact`. Alebo zmizne jediná zmienka portálu a ostane `unknown_source`.
+ * V oboch prípadoch je to `not_a_lead`, hoci správa na SOURCE_RULES sedí a
+ * záujemca v nej e-mail alebo telefón má.
+ */
+function unwrapPlainAngles(raw: string): string {
+  return raw
+    .replace(/<([A-Za-z0-9_.+-]+@[A-Za-z0-9-]+\.[A-Za-z0-9-.]+)>/g, "$1")
+    .replace(/<(https?:\/\/[^>\s]+)>/gi, "$1");
+}
+
+function decodeHrefValue(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+/** Adresa z `mailto:` / `tel:` nie je viditeľný text odkazu. Doplní sa na koniec, nie pred ostatné adresy. */
+function salvageHrefContacts(raw: string): string {
+  const found: string[] = [];
+  for (const m of raw.matchAll(/\bhref\s*=\s*["']mailto:([^"'?\s>]+)/gi)) found.push(decodeHrefValue(m[1]));
+  for (const m of raw.matchAll(/\bhref\s*=\s*["']tel:([^"'?\s>]+)/gi)) found.push(decodeHrefValue(m[1]));
+  return found.length ? `${raw}\n${found.join("\n")}` : raw;
+}
+
 /** HTML → text. Na čistom texte je to no-op (vracia vstup nezmenený). */
 export function htmlToText(raw: string): string {
-  if (!/<[a-z!/]/i.test(raw)) return raw;
+  const unwrapped = unwrapPlainAngles(raw);
+  // Čistý text vráť pôvodný, aj keď obsahoval uhlové zátvorky. Regex e-mailu
+  // ich číta; zmena bajtov by rozbila no-op kontrakt.
+  if (!/<[a-z!/]/i.test(unwrapped)) return raw;
   return decodeEntities(
-    raw
+    salvageHrefContacts(unwrapped)
       .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, " ")
       .replace(/<!--[\s\S]*?-->/g, " ")
       .replace(/<\/?(?:br|p|div|tr|li|h[1-6]|table|thead|tbody)\b[^>]*>/gi, "\n")
