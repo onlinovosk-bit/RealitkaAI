@@ -1,6 +1,6 @@
 import { createHash } from "crypto";
 
-export const PARSER_VERSION = "1.5";
+export const PARSER_VERSION = "1.6";
 export const DATASET_VERSION = "v1.1";
 
 export interface AcquireEvent {
@@ -56,11 +56,11 @@ const SOURCE_RULES: SourceRule[] = [
 ];
 
 const EMAIL_RE = /[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+/;
-const PHONE_RE = /(?:\+421\s?|0)\d{3}\s?\d{3}\s?\d{3}/;
+const PHONE_RE = /(?:\+421\s?|0)\d{3}[\s/-]?\d{3}[\s/-]?\d{3}/;
 const INTERNAL_ID_RE = /\b([A-Z]{2}\d{2,}[A-Z]?)\b/;
 const L = {
   name: /(?:Meno(?:\s+a\s+priezvisko)?|Name)\s*:\s*(.+)/i,
-  phone: /(?:Telef[oó]n|Phone(?:\s+number)?|T\.?č\.?)\s*:?\s*((?:\+421\s?|0)[\d\s]{7,})/i,
+  phone: /(?:Telef[oó]n|Phone(?:\s+number)?|T\.?č\.?)\s*:?\s*((?:\+421\s?|0)[\d\s/-]{7,})/i,
   email: new RegExp(`(?:E-?mail)\\s*:\\s*(${EMAIL_RE.source})`, "i"),
   msg: /(?:Spr[aá]va(?:\s+od\s+z[aá]ujemcu[^:]*)?|Text\s+spr[aá]vy|Message|Reakcia na inzer[aá]t)\s*:\s*([\s\S]+)/i,
   portalId: /(?:V[aá]š inzer[aá]t(?:\s+č[ií]slo)?|Ad ID)\D{0,40}?\b([A-Za-z0-9]{8,})\b/,
@@ -357,8 +357,8 @@ export function parseEmail(
   const phoneM = text.match(L.phone);
   // Telefón sa musí poznať PRED výberom e-mailu — rozhoduje o poslednom fallbacku.
   const contactPhone = phoneM
-    ? phoneM[1].replace(/\s+/g, "")
-    : (text.match(PHONE_RE)?.[0]?.replace(/\s+/g, "") ?? null);
+    ? phoneM[1].replace(/[\s/-]+/g, "")
+    : (text.match(PHONE_RE)?.[0]?.replace(/[\s/-]+/g, "") ?? null);
   const contactEmail = pickContactEmail(
     text,
     {
