@@ -43,7 +43,7 @@ Cieľ: 10 bodov zadania 2026-10-15 — body 1, 2, 6 a 10 do pondelka 19. 10.
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
 - [x] 1 — AI návrhy odpovedí za 30 dní zmerané na PROD (3 / 0 / 0), PR #851
 - [x] 2 — UI nastavení ranného briefu, PR #852 (doručovanie blokuje `RESEND_API_KEY`)
-- [x] 6 — follow-up sweep zapisuje do `cron_runs` na každej ceste von, PR #853
+- [ ] 6 — follow-up sweep: PR #853 founder 16. 10. zavrel bez mergu, na `main` nie je nič; sweep zostáva nepozorovateľný
 - [x] 10 — trial bez karty overený, ceny pripravené pre live (skript spúšťa founder)
 - [x] 3 — plánovač Gmail pull v repozitári (hodinovo + stopa pri vypnutí), PR #855
 - [x] 4 — plánovač Realvia fronty (hodinovo + denník), PR #856; export čaká na dodávateľa
