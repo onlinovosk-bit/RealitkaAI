@@ -15,6 +15,7 @@ on:
       - "apps/crm/supabase/migrations/**"
       - "apps/crm/src/**"
       - "apps/crm/scripts/check-security.mjs"
+      - ".github/workflows/security-review.yml"
   workflow_dispatch:
 
 permissions:
