@@ -41,7 +41,24 @@ names sent: 19 miest (zoznam nižšie); maskuje ich iba lib/demand/extract
 | 4 | `lib/multi-channel-sender.ts:178` | nie (mŕtvy kód) | poznámka, posledná správa | ostáva, návrh: zmazať |
 | 5 | `lib/research-agent/build-dossier.ts:117` | nie (len testy) | celý záznam vrátane email/phone | ostáva, návrh: whitelist polí pred `JSON.stringify` |
 
-## MINIMIZE — meno, ktoré úloha nepotrebuje (návrh, nie je v tomto PR)
+## MINIMIZE — meno, ktoré úloha nepotrebuje
+
+> **Stav k 2026-10-15 (bod 9 zadania foundera):** všetkých **12 živých miest je
+> opravených**. Spoločný helper `apps/crm/src/lib/privacy/minimize.ts`
+> (`firstNameOnly`, `cityOnly`, `NAME_PLACEHOLDER` / `AGENT_PLACEHOLDER` /
+> `ADDRESS_PLACEHOLDER` + `restoreName`). Drží to
+> `apps/crm/tests/verification/pii-minimize.verification.test.ts` — pin na
+> vlastnosti, nie na text, 18 testov. Zvyšných 7 miest bez vstupného bodu
+> stráži pin na funkcie `generateAiReply` a `buildDossier`: keď ich niekto
+> zavolá, test spadne a minimalizácia sa musí doplniť v tom istom PR.
+>
+> Dve odchýlky od pôvodného návrhu, obe zdôvodnené:
+> * `dashboard-insights` a `morning-brief` — návrh bol posielať ID a mená
+>   dosadiť lokálne. Model však píše voľnú prózu a spätné mapovanie ID na meno
+>   je nespoľahlivé; posiela sa preto **krstné meno**. Priezvisko von nejde.
+> * `morning-brief` — adresy nehnuteľností (LV zmeny, arbitráž) zostávajú.
+>   Sú to inzerované objekty, nie bydliská, a bez nich brief stráca zmysel.
+>   Adresy **osôb** (ghostwriter, stealth recruiter) idú cez zástupný znak.
 
 | Miesto | Živé? | Čo sa posiela | Návrh |
 |---|---|---|---|
