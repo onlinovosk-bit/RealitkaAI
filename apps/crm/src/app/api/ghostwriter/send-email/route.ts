@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { checkAiRateLimit } from "@/lib/ai/rate-guard";
 import { Resend } from "resend";
 import { logAiAction } from "@/lib/ai-action-audit";
@@ -151,25 +151,10 @@ export async function POST(request: Request) {
       meta: { ...auditMeta, message_id: (data as { id?: string } | null)?.id ?? null },
     }).catch((e) => console.error("[ghostwriter/send-email] audit sent:", e));
 
-    if (body.letterId && !body.letterId.startsWith("tmp_")) {
-      const admin = createAdminClient();
-
-      // Verify ownership before updating — only update if the letter belongs to this profile
-      const { data: letter } = await admin
-        .from("ghostwriter_letters")
-        .select("profile_id")
-        .eq("id", body.letterId)
-        .maybeSingle();
-
-      if (!letter || letter.profile_id === profile.id) {
-        // letter.profile_id is null (no ownership column yet) OR matches caller — safe to update
-        await admin
-          .from("ghostwriter_letters")
-          .update({ email_sent_to: body.recipientEmail, sent_at: new Date().toISOString() })
-          .eq("id", body.letterId);
-      }
-      // else: letter belongs to a different profile — skip silently
-    }
+    // `ghostwriter_letters` has no tenant column (baseline: owner_address is the
+    // property, not the caller). Selecting `profile_id` errors, and the old
+    // `!letter` branch then stamped any id through the service role. This route
+    // does not write that table. The send above is unchanged.
 
     return NextResponse.json({ ok: true, emailId: (data as { id?: string } | null)?.id });
   } catch (err) {
