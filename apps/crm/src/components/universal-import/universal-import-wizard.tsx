@@ -10,7 +10,7 @@ import type {
   ImportSourceSystem,
   MappedContact,
 } from "@/lib/universal-import/types";
-import { SOURCE_SYSTEM_LABELS } from "@/lib/universal-import/types";
+import { SOURCE_SYSTEM_LABELS, UNSUPPORTED_IMPORT_HINT, isCsvImportSource } from "@/lib/universal-import/types";
 
 type Step = "upload" | "mapping" | "preview" | "done";
 
@@ -125,11 +125,16 @@ export default function UniversalImportWizard() {
             onChange={(e) => setSourceSystem(e.target.value as ImportSourceSystem)}
             className="w-full max-w-md rounded-lg border border-gray-300 px-3 py-2 text-sm"
           >
-            {SOURCE_OPTIONS.map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
+            {SOURCE_OPTIONS.map(([value, label]) => {
+              // Nepodporovaný zdroj sa dá vidieť, ale nie vybrať — inak by
+              // používateľ došiel až k nahrávaniu a tam narazil bez vysvetlenia.
+              const hint = UNSUPPORTED_IMPORT_HINT[value];
+              return (
+                <option key={value} value={value} disabled={!isCsvImportSource(value)}>
+                  {hint ? `${label} — ${hint}` : label}
+                </option>
+              );
+            })}
           </select>
         </div>
 

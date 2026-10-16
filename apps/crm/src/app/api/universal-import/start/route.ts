@@ -4,7 +4,7 @@ import { errorResponse, okResponse } from "@/lib/api-response";
 import { buildAutoColumnMapping, mappingConfidenceLevel } from "@/lib/universal-import/auto-mapping";
 import { detectColumnsFromHeaders } from "@/lib/universal-import/column-detector";
 import { applyLearnedMappings, loadLearnedMappings } from "@/lib/universal-import/learned-mappings";
-import { MAX_IMPORT_ROWS, parseCsvBuffer } from "@/lib/universal-import/csv-parse";
+import { MAX_IMPORT_FILE_BYTES, MAX_IMPORT_ROWS, parseCsvBuffer } from "@/lib/universal-import/csv-parse";
 import { resolveImportAuthContext } from "@/lib/universal-import/import-context";
 import {
   createImportJob,
@@ -13,7 +13,7 @@ import {
   updateImportJobStatus,
 } from "@/lib/universal-import/import-store";
 import type { ImportSourceSystem } from "@/lib/universal-import/types";
-import { SOURCE_SYSTEM_LABELS } from "@/lib/universal-import/types";
+import { SOURCE_SYSTEM_LABELS, UNSUPPORTED_IMPORT_HINT, isCsvImportSource } from "@/lib/universal-import/types";
 
 const VALID_SOURCES = new Set(Object.keys(SOURCE_SYSTEM_LABELS));
 
@@ -31,6 +31,21 @@ export async function POST(request: Request) {
     }
     if (!VALID_SOURCES.has(sourceSystem)) {
       return errorResponse("Neplatný zdrojový systém.", 400);
+    }
+    // BOD 5: zdroj bez parsera povie prečo a čo urobiť, nie „neplatný".
+    if (!isCsvImportSource(sourceSystem)) {
+      return errorResponse(
+        UNSUPPORTED_IMPORT_HINT[sourceSystem] ?? "Tento formát zatiaľ nevieme prečítať.",
+        400,
+      );
+    }
+    // BOD 5: strop na veľkosť súboru PRED načítaním do pamäte. Bez neho sa
+    // do serverless funkcie načíta čokoľvek, čo používateľ pretiahne myšou.
+    if (file.size > MAX_IMPORT_FILE_BYTES) {
+      return errorResponse(
+        `Súbor má ${(file.size / 1_048_576).toFixed(1)} MB, limit je ${MAX_IMPORT_FILE_BYTES / 1_048_576} MB.`,
+        413,
+      );
     }
 
     const buffer = await file.arrayBuffer();
