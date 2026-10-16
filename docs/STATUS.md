@@ -40,15 +40,14 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: Anthropic prompt cache — jeden PR, bez merge/deploy
+Cieľ: Wave 2A — A1–A4 (review #845/#859, Stripe verify runbook, balík E, memo portal/orphans), bez PROD zápisu
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] Inventúra všetkých Anthropic/Claude call sites
-- [x] Helper + min. dĺžka (Sonnet 1024, Haiku 4.5 4096)
-- [x] Cache na listing Sonnet (sync + stream)
-- [x] Preskočené krátke Haiku / fetch personalize
-- [x] usage.cache_* v existujúcich logoch
-- [x] Testy + lint/build zelené
-- [x] Report + jeden PR (nemergovať)
+- [x] A1 review #845/#859 (#845 CI červené na heade, #859 OK s drobnosťami)
+- [x] A2 docs/runbooks/stripe-verify-windows.md
+- [x] A3 balík E docs/ops/prod-packages/search-path-close/ (verify-before 36/36 v PROD, NEAPLIKOVANÝ)
+- [x] A4 docs/decisions/2026-10-16-portal-orphans.md
+- [x] Memory + jeden push
+- [ ] Founder: výstup stripe_verify_prices.py → GO STRIPE-VYHODNOTENIE
 <!-- SESSION:END -->
 
 ## Čo potrebujem od teba (zoradené podľa dopadu)

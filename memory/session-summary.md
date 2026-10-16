@@ -1,3 +1,18 @@
+## Session 2026-10-16 (GO VLNA-2A, A1–A4)
+### Dokončené
+- A1 (read-only review): #845 CI červené na heade `79a0e742` (Lint/test/build: `billing-store-pricing-v2.test.ts:109,117`, `tests/integration/pricing-v2-e2e.test.ts:533` — chýba mock `subscriptions.retrieve`), branch behind main; live `unpaid`/`incomplete_expired` → free je zmena správania na potvrdenie. #859 CI zelené, OK; doplniť asserty na `.eq` CAS predikáty a overiť NOT NULL `purchased_credits_balance`.
+- `docs/runbooks/stripe-verify-windows.md`: PowerShell/cmd postup; skript číta kľúč len z `STRIPE_SECRET_KEY`, nevypisuje ho; seat skupina 79/71/63 je pri `PRICING_V2_ENABLED=true` legacy (Vercel Production: true od 8. 10., podľa screenshotu foundera).
+- `docs/ops/prod-packages/search-path-close/` (balík E, NEAPLIKOVANÝ): 11 SECDEF funkcií bez `search_path`; ACL bez zmeny; match_* s `extensions`; `get_supply_demand_gap` ostáva pre authenticated; verify-before 36/36 PASS v PROD.
+- `docs/decisions/2026-10-16-portal-orphans.md`: odporúčanie `GO PORTAL-B` (portal tabuľky len authenticated + CHECK proti PII), `GO ORPHAN-ARCHIVE` (187 sirôt → archív).
+### Rozpracované / Pending
+- Známa chyba mimo E: `api/search/semantic` volá `match_leads/properties` session klientom (EXECUTE odobral balík C → ILIKE fallback).
+- Zdroj septembrových sirotských `activities` (2 riadky) neznámy; skontrolovať trigger pri DELETE pred ORPHAN-ARCHIVE.
+- Founder: výstup `stripe_verify_prices.py`, zoznam udalostí webhooku, Tax.
+### Kľúčové súbory zmenené
+- docs/runbooks/stripe-verify-windows.md, docs/ops/prod-packages/search-path-close/*, docs/decisions/2026-10-16-portal-orphans.md, docs/STATUS.md (blok SESSION)
+### Ďalší krok
+Founder: `GO E-APPLY` / `GO PORTAL-B` / `GO ORPHAN-ARCHIVE` alebo pošli výstup verify → `GO STRIPE-VYHODNOTENIE`.
+
 ## Session 2026-10-16 (GO STRIPE-C-PLAN)
 ### Dokončené
 - `docs/plans/2026-10-16-stripe-krok-c-plan.md`: read-only audit kroku C. Kód v2 zapojený (checkout → webhook → lifecycle), 116/116 testov; Vercel Production má 8 plánových `STRIPE_PRICE_V2_*` + secret + webhook secret (len prítomnosť); PROD: 7 agentúr, 0 Stripe subscription. STATUS „0 z 10 cien" je zastaraný.
