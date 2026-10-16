@@ -15,10 +15,10 @@ letter id was stamped with `email_sent_to` / `sent_at`.
 
 ## Oprava
 
-The update runs only when the select succeeds and `profile_id` equals the
-caller's profile id. The update itself is also filtered by `profile_id`.
-A missing row, a null `profile_id`, a failed select, or another profile skips
-the write. The email send path is unchanged.
+The route no longer selects or updates `ghostwriter_letters`. The table has
+no tenant key, so a `profile_id` filter cannot succeed on the current schema
+and a select of that column errors on every send. The email send path is
+unchanged. A real ownership stamp needs a migration, which this PR does not add.
 
 This does not read or write `profiles.is_active`. A null `is_active` still
 passes `?? true` and is not an access gate.

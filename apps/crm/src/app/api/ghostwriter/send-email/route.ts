@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { checkAiRateLimit } from "@/lib/ai/rate-guard";
 import { Resend } from "resend";
 import { logAiAction } from "@/lib/ai-action-audit";
@@ -151,27 +151,10 @@ export async function POST(request: Request) {
       meta: { ...auditMeta, message_id: (data as { id?: string } | null)?.id ?? null },
     }).catch((e) => console.error("[ghostwriter/send-email] audit sent:", e));
 
-    if (body.letterId && !body.letterId.startsWith("tmp_")) {
-      const admin = createAdminClient();
-
-      // Stamp only a letter we can prove belongs to this profile. A missing row,
-      // a failed select, or a null profile_id is not ownership: the table has no
-      // profile_id column, so this select errors and `!letter` used to take the
-      // allow branch — the service role then wrote email_sent_to onto any id.
-      const { data: letter, error: letterError } = await admin
-        .from("ghostwriter_letters")
-        .select("profile_id")
-        .eq("id", body.letterId)
-        .maybeSingle();
-
-      if (!letterError && letter?.profile_id && letter.profile_id === profile.id) {
-        await admin
-          .from("ghostwriter_letters")
-          .update({ email_sent_to: body.recipientEmail, sent_at: new Date().toISOString() })
-          .eq("id", body.letterId)
-          .eq("profile_id", profile.id);
-      }
-    }
+    // `ghostwriter_letters` has no tenant column (baseline: owner_address is the
+    // property, not the caller). Selecting `profile_id` errors, and the old
+    // `!letter` branch then stamped any id through the service role. This route
+    // does not write that table. The send above is unchanged.
 
     return NextResponse.json({ ok: true, emailId: (data as { id?: string } | null)?.id });
   } catch (err) {
