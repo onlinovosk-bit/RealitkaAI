@@ -2,9 +2,9 @@
 
 ## 2026-10-16 ~16:55 UTC
 
-### Hotové (PR, ešte nie na main)
+### Hotové
 
-- #865 `cursor/realvia-probe-retry-terminal-479b` — probe `{test:true}` je terminálny po `max_retries`. Report `docs/reports/2026-10-16-realvia-fail-rate-and-probe-retry.md`. Číslo 83,4 % je citát #864, v tomto behu **nezmerané** znova. Po prvom CI (typecheck 56 > 54) je oprava poradia vetiev v `83ab55d1`. Security review a Zmluva kódu boli zelené; Lint, test, build po oprave ešte bežal v čase tohto zápisu. **Nemergované.**
+- #865 `cursor/realvia-probe-retry-terminal-479b` — probe `{test:true}` je terminálny po `max_retries`. Report `docs/reports/2026-10-16-realvia-fail-rate-and-probe-retry.md`. Číslo 83,4 % je citát #864, v tomto behu **nezmerané** znova. **ZMERANÉ:** po `83ab55d1` boli Lint, test, build, Security review a Zmluva kódu SUCCESS. Squash merge 2026-10-16 16:59 UTC, merge commit `9a4c6d8d`.
 - #866 `cursor/missing-prod-tables-rls-479b` — migrácia `event_store`, `outreach_log`, `team_member_permissions` + RLS. Label `needs-founder`. Na PROD sa neaplikovala. Schema-gap výnimky zmazané v `ba69e37e`, lebo CI hlásilo STALE_CAUSE_RESOLVED. **Nemergované.**
 - #867 `cursor/stripe-go-checklist-479b` — `/upgrade` vypíše názvy chýbajúcich `STRIPE_PRICE_*`, seat/top-up 503 vracia tie názvy, checklist `docs/reports/STRIPE-GO.md`. Label `needs-founder`. Mení billing. **Nemergované.**
 - #868 `cursor/followup-sweep-observe-479b` — menší follow-up sweep, zápis `cron_runs`, HTTP kód bez zmeny. **Nemergované.**
@@ -13,7 +13,7 @@
 
 ### Beží
 
-- CI na #865 po typecheck oprave, #867, #868, #869, #870 a znova #866.
+- CI na #866 (po zmazaní schema-gap výnimiek), #867, #868, #869, #870, #871. #865 je zmergované.
 
 ### Blokované
 
