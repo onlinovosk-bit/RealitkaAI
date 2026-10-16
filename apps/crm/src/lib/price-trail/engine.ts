@@ -4,6 +4,7 @@
 // ================================================================
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { logEvent }      from '@/lib/events/log-event'
+import { recordPriceChangeSteps } from '@/lib/signals/write-return-step'
 import type {
   PricePoint, SellerMotivation, NegotiationBrief,
   AddPricePointResult, PriceAlert, ChartPoint, PriceSource,
@@ -64,6 +65,18 @@ export async function addPricePoint(opts: {
 
     // Check and dispatch price alerts
     await checkAndDispatchAlerts(opts.profileId, result, opts)
+  }
+
+  // Any real price change (up or down) writes the next step for matched leads.
+  // The draft is not sent here.
+  if (result?.prev_price != null && result.prev_price !== result.price) {
+    await recordPriceChangeSteps(supabase, {
+      propertyId: opts.propertyId,
+      listingId: opts.listingId,
+      leadId: opts.leadId,
+      prevPrice: result.prev_price,
+      nextPrice: result.price,
+    }).catch((err) => console.error('[price-trail] return step failed:', err))
   }
 
   return result

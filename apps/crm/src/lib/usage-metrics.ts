@@ -52,7 +52,8 @@ export type UsageMetricName =
   // MORNING-BRIEF-UI-01: maklér si uložil nastavenie ranného prehľadu. Počíta
   // sa preto, že do 2026-10-15 nebolo kde to nastaviť a tabuľka mala nula
   // riadkov — bez tohto čísla sa nedá povedať, či sa to po nasadení zmenilo.
-  | "morning_brief_settings_save";
+  | "morning_brief_settings_save"
+  | "public_property_view";
 
 /**
  * Inkrementuje denný počítadlo cez RPC (service role).

@@ -11,6 +11,7 @@ import { AUTO_REPLY_PROMPT_VERSION } from "@/lib/inbound/auto-reply";
 import { FOLLOWUP_PROMPT_VERSION } from "@/lib/ai/open-followup-generator";
 import { DEAD_LEAD_PROMPT_VERSION } from "@/lib/ai/dead-lead-campaign";
 import { OUTREACH_PROMPT_VERSION } from "@/lib/ai-outreach";
+import { RETURN_SIGNAL_PROMPT_VERSION } from "@/lib/signals/return-signal";
 
 /**
  * `customer_facing_send` agents draft text that a human approves and the Control Contract sends.
@@ -170,6 +171,27 @@ export const AGENT_SPECS: readonly AgentSpec[] = [
     ],
     owner: "founder",
     code: ["src/lib/outreach-store.ts", "src/lib/ai-outreach.ts", "src/app/api/outreach/preview/route.ts"],
+  },
+  {
+    agentId: "REVOLIS-RETURN-SIGNAL",
+    version: "1.0.0",
+    mission: "When a known contact returns to a listing, or its price or age changes, write the broker's next step and a draft message; send it only after the broker approves that exact text.",
+    trigger: "POST /api/events (property_viewed, second identified view), POST /api/public/property-view (buyer intent), price-trail addPricePoint (price change), morning-brief cron (listing age 14/30/60 days)",
+    inputs: ["a lead matched to the listing (buyer intent, lead_property_matches or event payload)", "listing title, price change or age bucket"],
+    outputs: ["open task for the assigned broker", "draft activity with the exact text", "e-mail via Resend after approval", "ai_action_audit ai_suggested → human_approved → sent | send_failed"],
+    allowedActions: ["returnsignal.email.send"],
+    forbiddenActions: NEVER,
+    promptVersion: RETURN_SIGNAL_PROMPT_VERSION,
+    model: "none (deterministic templates, lib/signals/return-signal.ts)",
+    approvalPolicy: "Writes a task and a draft only; the signal path has no send. The broker approves via the shared approve path (approve-draft.ts), which sends the stored text verbatim under the Control Contract.",
+    memoryPolicy: "No free-form memory; an open task with the same title per lead suppresses a duplicate step.",
+    failurePolicy: "A failed draft write leaves the task (it carries the text); closed leads and unknown leads are skipped; writes are capped per run.",
+    evaluationSuite: [
+      "src/lib/signals/__tests__/return-signal.test.ts",
+      "src/lib/inbound/__tests__/approve-draft.test.ts",
+    ],
+    owner: "founder",
+    code: ["src/lib/signals/return-signal.ts", "src/lib/signals/write-return-step.ts", "src/lib/signals/record-known-view.ts"],
   },
   {
     agentId: "ONL-REVENUE-OPPORTUNITY",
