@@ -10,7 +10,7 @@ import type {
   ImportSourceSystem,
   MappedContact,
 } from "@/lib/universal-import/types";
-import { SOURCE_SYSTEM_LABELS, UNSUPPORTED_IMPORT_HINT, isCsvImportSource } from "@/lib/universal-import/types";
+import { SOURCE_SYSTEM_LABELS, UNSUPPORTED_IMPORT_HINT, isSupportedImportSource } from "@/lib/universal-import/types";
 
 type Step = "upload" | "mapping" | "preview" | "done";
 
@@ -130,7 +130,7 @@ export default function UniversalImportWizard() {
               // používateľ došiel až k nahrávaniu a tam narazil bez vysvetlenia.
               const hint = UNSUPPORTED_IMPORT_HINT[value];
               return (
-                <option key={value} value={value} disabled={!isCsvImportSource(value)}>
+                <option key={value} value={value} disabled={!isSupportedImportSource(value)}>
                   {hint ? `${label} — ${hint}` : label}
                 </option>
               );
@@ -149,14 +149,14 @@ export default function UniversalImportWizard() {
           className="cursor-pointer rounded-3xl border-2 border-dashed border-gray-300 bg-white p-16 text-center hover:border-gray-400 transition-colors"
         >
           <div className="text-4xl mb-4">📂</div>
-          <p className="text-lg font-semibold text-gray-700">Potiahni CSV sem alebo klikni</p>
+          <p className="text-lg font-semibold text-gray-700">Potiahni CSV alebo .xlsx sem alebo klikni</p>
           <p className="mt-1 text-sm text-gray-400">
             Realvia, RealSoft, Google Kontakty, Excel exporty a ďalšie
           </p>
           <input
             ref={fileRef}
             type="file"
-            accept=".csv,text/csv"
+            accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0];
