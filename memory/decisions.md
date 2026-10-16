@@ -1,5 +1,11 @@
 # Critical Decisions Log
 
+## 2026-10-15 — Anthropic prompt cache na existujúcich Claude volaniach (BUILD)
+**GO foundera:** inventúra všetkých Anthropic/Claude call sites + cache tam, kde to šetrí peniaze; jeden PR, bez merge/deploy. Overený fakt: na účte cache funguje (`claude-sonnet-5-5`, 2. volanie čítalo 18 031 tokenov z cache).
+**Brána Ústavy v2:** nie nová feature pre klienta — nákladová oprava existujúcej AI vrstvy (listing Sonnet). Strop nie je VALIDATE; kód na vetve, PROD/merge ostáva na GO.
+**Rozhodnutie:** BUILD na vetve. Cache marker len keď prefix ≥ min modelu (Sonnet 4.6 = 1 024, Haiku 4.5 = 4 096). Jediný prefix nad čiarou: listing SYSTEM_PROMPT (~15 721 znakov ≈ 3 931 tokenov) na Sonnet. Haiku systémy 38–370 tokenov — marker by bol no-op, nepridávať. Význam promptov a výber modelu sa nemení.
+**Výstup:** `docs/reports/2026-10-15-anthropic-prompt-caching.md`.
+
 ## 2026-10-09 — P23 strana GA4: audit 10 objednávok prešiel, atribúcia (VALIDATE)
 **GO foundera:** „GA4 pripojené“ (vlastnosť `293665616`). **Brána Ústavy v2:** Q1 = NIE → strop VALIDATE.
 **Výstup:** `docs/onlinovo/2026-10-09-p23-ga4-audit.md`. Len čítanie.

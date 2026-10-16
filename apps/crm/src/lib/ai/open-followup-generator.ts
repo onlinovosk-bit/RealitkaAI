@@ -2,6 +2,7 @@
  * W2 — generovanie follow-upu pre otvorené stagnujúce leady (batch Haiku, SK).
  */
 import { callClaude, CLAUDE_HAIKU, extractJson } from "@/lib/ai/claude";
+import { cachedSystem } from "@/lib/ai/prompt-cache";
 import type { Channel } from "@/lib/multi-channel-sender";
 
 export const OPEN_FOLLOWUP_BATCH = 8;
@@ -78,7 +79,7 @@ export async function generateOpenFollowUpsBatch(leads: StaleLeadInput[]): Promi
   const response = await callClaude({
     model: CLAUDE_HAIKU,
     max_tokens: OPEN_FOLLOWUP_BATCH * 180,
-    system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
+    system: cachedSystem(SYSTEM, CLAUDE_HAIKU),
     messages: [
       {
         role: "user",

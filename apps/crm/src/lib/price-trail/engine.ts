@@ -19,7 +19,9 @@ export async function addPricePoint(opts: {
   leadId?:     string
   note?:       string
 }): Promise<AddPricePointResult | null> {
-  const supabase = await createClient()
+  // RPC je SECURITY DEFINER a berie p_profile_id od volajúceho — EXECUTE má iba
+  // service_role (balík D). Autorizáciu (profileId zo session) robí volajúca route.
+  const supabase = createAdminClient()
 
   const { data, error } = await supabase.rpc('add_price_point', {
     p_profile_id:  opts.profileId,

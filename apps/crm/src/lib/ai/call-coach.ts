@@ -7,6 +7,7 @@
  */
 
 import { callClaude, CLAUDE_HAIKU, extractJson } from "./claude";
+import { cachedSystem } from "./prompt-cache";
 import { withAiTimeout, callCoachFallback } from "./fallback";
 
 export type CoachFeedback = {
@@ -30,7 +31,7 @@ export async function generateCallCoachFeedback(transcript: string): Promise<Coa
   const aiCall = callClaude({
     model: CLAUDE_HAIKU,
     max_tokens: 500,
-    system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
+    system: cachedSystem(SYSTEM, CLAUDE_HAIKU),
     messages: [
       {
         role: "user",

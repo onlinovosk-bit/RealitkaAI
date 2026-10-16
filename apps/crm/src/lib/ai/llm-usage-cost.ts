@@ -1,4 +1,5 @@
 import { CLAUDE_HAIKU, CLAUDE_SONNET } from "./claude";
+import { CACHE_READ_MULTIPLIER, CACHE_WRITE_MULTIPLIER } from "./prompt-cache";
 
 export const RETAIL_EUR_PER_CREDIT = 0.86;
 
@@ -36,9 +37,17 @@ export function estimateClaudeCostEur(
   model: string,
   inputTokens: number,
   outputTokens: number,
+  cache?: { creationInputTokens?: number; readInputTokens?: number },
 ): number {
   const rates = claudeRates(model);
-  const usd = (inputTokens * rates.input + outputTokens * rates.output) / 1_000_000;
+  const write = cache?.creationInputTokens ?? 0;
+  const read = cache?.readInputTokens ?? 0;
+  const usd =
+    (inputTokens * rates.input +
+      write * rates.input * CACHE_WRITE_MULTIPLIER +
+      read * rates.input * CACHE_READ_MULTIPLIER +
+      outputTokens * rates.output) /
+    1_000_000;
   return toEur(usd);
 }
 

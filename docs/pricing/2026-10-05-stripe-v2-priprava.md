@@ -1,6 +1,8 @@
 # Revolis v2 — podklady pre Stripe podľa PR #822
 
-**Aktualizácia 6. 10. 2026:** zahrnuté kredity plánov sú **20 / 50 / 100 / 150** (rozhodnutie foundera, `docs/pricing/2026-10-06-pricing-v2-credits-20-50-100-150.md`); ceny, balíky a kredit sa nezmenili. Katalóg `scripts/ops/stripe-v2/revolis-stripe-v2-catalog.json` má `catalog_version` `revolis_v2_2026_10_06` a drift voči kódu stráži test `apps/crm/tests/verification/stripe-v2-catalog.verification.test.ts`. Súbory sú v repozitári v `scripts/ops/stripe-v2/` (testovací skript spúšťať odtiaľ).
+**Aktualizácia 13. 10. 2026:** zahrnuté kredity plánov sú **25 / 60 / 120 / 175** (rozhodnutie foundera, `docs/pricing/2026-10-13-pricing-v2-credits-25-60-120-175.md`); ceny, balíky a kredit sa nezmenili. `catalog_version` ostáva `revolis_v2_2026_10_06` (Price ID a lookup_key sa nemenia; v JSON sa aktualizovali len `credits_per_cycle` a popisy). Drift voči kódu stráži test `apps/crm/tests/verification/stripe-v2-catalog.verification.test.ts`.
+
+**Aktualizácia 6. 10. 2026:** (historická) kredity plánov boli **20 / 50 / 100 / 150** (`docs/pricing/2026-10-06-pricing-v2-credits-20-50-100-150.md`). Ceny, balíky a kredit sa nezmenili. Katalóg `scripts/ops/stripe-v2/revolis-stripe-v2-catalog.json` má `catalog_version` `revolis_v2_2026_10_06`. Súbory sú v repozitári v `scripts/ops/stripe-v2/` (testovací skript spúšťať odtiaľ).
 
 **Pôvodný referenčný stav:** 5. 10. 2026, PR #822 (zlúčený), commit `3bb4233fcccb317414aa9e1ddc7d7039f115e5cc`, W4 = **NOT READY**. Tento podklad je prípravou katalógu, nie potvrdením vytvorenia cien ani povolením predaja. Ak sa PR zmení, znovu porovnať manifest s HEAD. Zdroj pravdy: `apps/crm/src/lib/pricing-v2.ts`, `pricing-v2-contract.ts` a `scripts/ops/stripe-expected-prices.json` na uvedenom commite.
 
@@ -16,14 +18,14 @@ Všetky sumy sú **bez DPH**, mena `eur`, Stripe `unit_amount` v eurocentoch, `b
 
 | Produkt presne podľa manifestu | Env kľúč presne podľa kódu | Bez DPH | Príklad s 23 % | Centy | Kredity |
 |---|---|---:|---:|---:|---:|
-| Revolis Start | `STRIPE_PRICE_V2_START` | 25,00 € | 30,75 € | 2500 | 20/mesiac |
-| Revolis Team | `STRIPE_PRICE_V2_TEAM` | 60,00 € | 73,80 € | 6000 | 50/mesiac |
-| Revolis Kancelária | `STRIPE_PRICE_V2_OFFICE` | 149,00 € | 183,27 € | 14900 | 100/mesiac |
-| Revolis Sieť | `STRIPE_PRICE_V2_NETWORK` | **od** 349,00 € | **od** 429,27 € | 34900 | 150/mesiac v základe |
-| Revolis Start (ročná cena) | `STRIPE_PRICE_V2_START_YEARLY` | 300,00 € | 369,00 € | 30000 | 20/mesiac |
-| Revolis Team (ročná cena) | `STRIPE_PRICE_V2_TEAM_YEARLY` | 720,00 € | 885,60 € | 72000 | 50/mesiac |
-| Revolis Kancelária (ročná cena) | `STRIPE_PRICE_V2_OFFICE_YEARLY` | 1 788,00 € | 2 199,24 € | 178800 | 100/mesiac |
-| Revolis Sieť (ročná cena) | `STRIPE_PRICE_V2_NETWORK_YEARLY` | **od** 4 188,00 € | **od** 5 151,24 € | 418800 | 150/mesiac v základe |
+| Revolis Start | `STRIPE_PRICE_V2_START` | 25,00 € | 30,75 € | 2500 | 25/mesiac |
+| Revolis Team | `STRIPE_PRICE_V2_TEAM` | 60,00 € | 73,80 € | 6000 | 60/mesiac |
+| Revolis Kancelária | `STRIPE_PRICE_V2_OFFICE` | 149,00 € | 183,27 € | 14900 | 120/mesiac |
+| Revolis Sieť | `STRIPE_PRICE_V2_NETWORK` | **od** 349,00 € | **od** 429,27 € | 34900 | 175/mesiac v základe |
+| Revolis Start (ročná cena) | `STRIPE_PRICE_V2_START_YEARLY` | 300,00 € | 369,00 € | 30000 | 25/mesiac |
+| Revolis Team (ročná cena) | `STRIPE_PRICE_V2_TEAM_YEARLY` | 720,00 € | 885,60 € | 72000 | 60/mesiac |
+| Revolis Kancelária (ročná cena) | `STRIPE_PRICE_V2_OFFICE_YEARLY` | 1 788,00 € | 2 199,24 € | 178800 | 120/mesiac |
+| Revolis Sieť (ročná cena) | `STRIPE_PRICE_V2_NETWORK_YEARLY` | **od** 4 188,00 € | **od** 5 151,24 € | 418800 | 175/mesiac v základe |
 | Revolis Balík 60 kreditov | `STRIPE_PRICE_V2_PACK_60` | 34,00 € | 41,82 € | 3400 | 60/mesiac |
 | Revolis Balík 120 kreditov | `STRIPE_PRICE_V2_PACK_120` | 62,00 € | 76,26 € | 6200 | 120/mesiac |
 | Revolis Balík 180 kreditov | `STRIPE_PRICE_V2_PACK_180` | 86,00 € | 105,78 € | 8600 | 180/mesiac |

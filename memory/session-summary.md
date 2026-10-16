@@ -53,6 +53,23 @@ GO na read-only mapu + balík pre zostávajúce B nálezy.
 - Vlna 1 (už v `main`): viď PR #836–#841.
 ### Ďalší krok
 Stripe krok C zostáva blokátor č. 1. Z vĺn: rozhodnutie o WP5-FG-0 (merať, nestavať) a o `GO VERIFY-PROD` pre balíky WP-6.
+## Session 2026-10-15 (Anthropic prompt cache)
+### Dokončené
+- Inventúra všetkých Anthropic/Claude call sites (žiadny Vercel AI SDK anthropic provider).
+- Helper `apps/crm/src/lib/ai/prompt-cache.ts`: min Sonnet 1024 / Haiku 4.5 4096; marker len nad čiarou.
+- Cache ADDED: listing Sonnet sync + stream (`SYSTEM_PROMPT` ≈ 3931 tok.).
+- Cache SKIPPED: všetky Haiku sitami + prospecting fetch (prefix príliš krátky).
+- usage.cache_creation_input_tokens / cache_read_input_tokens v callClaude, dashboard, listing audit, call-coach stream.
+- Testy 204 passed (AI suite) + lint + typecheck baseline 54/54 + `next build` OK.
+- Report: `docs/reports/2026-10-15-anthropic-prompt-caching.md`.
+### Rozpracované / Pending
+- Jeden PR, **nemergovať / nenasadzovať** (zadanie).
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/ai/prompt-cache.ts`: eligibilita + cachedSystem + usage log.
+- `apps/crm/src/lib/ai/claude.ts`, `llm-usage-cost.ts`, listing + Haiku call sites.
+- `docs/reports/2026-10-15-anthropic-prompt-caching.md`.
+### Ďalší krok
+Founder review PR; merge len na výslovné GO.
 
 ## Session 2026-10-09 (P23 strana GA4)
 ### Dokončené

@@ -1,6 +1,7 @@
 import type { DashboardSummaryResponse } from '@/app/api/dashboard/summary/route'
 import { estimateClaudeCostEur } from './llm-usage-cost'
 import { callClaude, CLAUDE_HAIKU, extractJson } from './claude'
+import { cachedSystem, extractClaudeCacheUsage } from './prompt-cache'
 import { withAiTimeout } from './fallback'
 import type { AiFailure } from './ai-failure'
 
@@ -43,6 +44,8 @@ export type DashboardLlmUsage = {
   stopReason: string | null
   inputTokens: number | null
   outputTokens: number | null
+  cacheCreationInputTokens: number | null
+  cacheReadInputTokens: number | null
 }
 
 export type DashboardInsightsAudit = {
@@ -220,7 +223,7 @@ export async function generateDashboardInsights(
     // 700 vyšlo pri slovenčine tesne (tokeny na slovo sú vyššie) — beh 1. 10. 06:24 UTC dal
     // 1× llm, 1× bad_output po 6,4 s. Príčinu (orezanie vs. zlý JSON) ukáže `usage.stopReason`.
     max_tokens: DASHBOARD_LLM_MAX_TOKENS,
-    system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
+    system: cachedSystem(SYSTEM, CLAUDE_HAIKU),
     messages: [{
       role: 'user',
       content: `Maklér: ${input.userName}
@@ -247,10 +250,13 @@ Vráť JSON:
   }, 'dashboard-insights').then(resp => {
     const latencyMs = Date.now() - t0
     // Zapíše sa PRED parsovaním, aby `usage` prežilo aj `bad_output`.
+    const cache = extractClaudeCacheUsage(resp.usage)
     usage = {
       stopReason: resp.stop_reason ?? null,
       inputTokens: resp.usage?.input_tokens ?? null,
       outputTokens: resp.usage?.output_tokens ?? null,
+      cacheCreationInputTokens: cache.cacheCreationInputTokens,
+      cacheReadInputTokens: cache.cacheReadInputTokens,
     }
     const raw = resp.content[0].type === 'text' ? resp.content[0].text : ''
     const parsed = extractJson<LlmInsightsPayload>(raw)
@@ -264,7 +270,12 @@ Vráť JSON:
       audit: {
         source: 'llm' as const,
         model: CLAUDE_HAIKU,
-        costEur: estimateClaudeCostEur(CLAUDE_HAIKU, resp.usage.input_tokens, resp.usage.output_tokens),
+        costEur: estimateClaudeCostEur(
+          CLAUDE_HAIKU,
+          resp.usage.input_tokens,
+          resp.usage.output_tokens,
+          { creationInputTokens: cache.cacheCreationInputTokens, readInputTokens: cache.cacheReadInputTokens },
+        ),
         latencyMs: Date.now() - t0,
         usage,
       },

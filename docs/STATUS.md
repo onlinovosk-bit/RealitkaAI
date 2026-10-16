@@ -40,20 +40,15 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: Demand OS — D1 + D4 v PROD, merané
+Cieľ: Anthropic prompt cache — jeden PR, bez merge/deploy
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] D1 kód + Demand Contract v1 (#749)
-- [x] PII oprava LLM volaní (#750)
-- [x] Audit + kontrakt D1→D4 + Truth Matrix (#745)
-- [x] MEMORY-GUARD (#766)
-- [x] D4 matching kód (#769)
-- [x] Backfill vstup z historických e-mailov (#770)
-- [x] PROD migrácie D1 + D4 (overené 2026-10-02: tabuľky `lead_demands`, `demand_property_matches` existujú, 0 riadkov)
-- [ ] Anthropic v DPA + `/legal/sub-processors` (founder/právnik)
-- [ ] Backfill beh nad e-mailmi + gold labels + `score` (founder)
-- [ ] D1 verdikt PASS (z výstupu `score`)
-- [ ] `DEMAND_EXTRACTION_ENABLED` na PROD + zmerané
-- [ ] `DEMAND_MATCHING_ENABLED` + `demand-match-run --apply`
+- [x] Inventúra všetkých Anthropic/Claude call sites
+- [x] Helper + min. dĺžka (Sonnet 1024, Haiku 4.5 4096)
+- [x] Cache na listing Sonnet (sync + stream)
+- [x] Preskočené krátke Haiku / fetch personalize
+- [x] usage.cache_* v existujúcich logoch
+- [x] Testy + lint/build zelené
+- [x] Report + jeden PR (nemergovať)
 <!-- SESSION:END -->
 
 ## Čo potrebujem od teba (zoradené podľa dopadu)

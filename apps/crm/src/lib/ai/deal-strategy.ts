@@ -1,4 +1,5 @@
 import { callClaude, CLAUDE_HAIKU, extractJson } from './claude'
+import { cachedSystem } from './prompt-cache'
 import { withAiTimeout }                          from './fallback'
 
 export type DealStrategy = {
@@ -43,7 +44,7 @@ export async function generateDealStrategy(
   const aiCall = callClaude({
     model:      CLAUDE_HAIKU,
     max_tokens: 350,
-    system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
+    system: cachedSystem(SYSTEM, CLAUDE_HAIKU),
     messages: [{
       role:    'user',
       content: `Lead dáta: ${JSON.stringify(safeData, null, 2)}
