@@ -84,9 +84,10 @@ function lowFallback(leadId: string, reason: string): LeadTriageOutput {
 async function triageChunk(leads: TriageLeadInput[]): Promise<LeadTriageOutput[]> {
   if (leads.length === 0) return [];
 
+  // BOD 9 (PII): meno sa neposiela. Priorita sa počíta zo stavu, skóre,
+  // poznámky a zdroja; meno na ňu nemá vplyv a identifikuje človeka.
   const compact = leads.map((l) => ({
     id: l.id,
-    name: l.name,
     status: l.status,
     score: l.score,
     last_contact: (l.last_contact ?? "").slice(0, 120),
