@@ -1,3 +1,12 @@
+## Session 2026-10-16 (GO STRIPE-C-PLAN)
+### Dokončené
+- `docs/plans/2026-10-16-stripe-krok-c-plan.md`: read-only audit kroku C. Kód v2 zapojený (checkout → webhook → lifecycle), 116/116 testov; Vercel Production má 8 plánových `STRIPE_PRICE_V2_*` + secret + webhook secret (len prítomnosť); PROD: 7 agentúr, 0 Stripe subscription. STATUS „0 z 10 cien" je zastaraný.
+- LIVE-SMOKE balíka D potvrdený: `record_brief_open` → 204 z Vercel `node`.
+### Rozpracované / Pending
+- Od foundera: výstup `stripe-verify-prices.sh`, zoznam udalostí webhooku, Stripe Tax s účtovníčkou, hodnota `PRICING_V2_ENABLED`.
+### Ďalší krok
+Po vstupoch: vyhodnotiť 8 plánových cien a opraviť STATUS Stripe bloku.
+
 ## Session 2026-10-14 (GO BALIK-D)
 ### Dokončené
 - PR #846 (draft): 7 SECURITY DEFINER RPC volané cez service role (price-trail, BRI v1/v2, brief tracking, 2 cron-y) + balík D `docs/ops/prod-packages/secdef-callers-close/` (SQL NEAPLIKOVANÝ). tsc 52→52 (žiadna v zmenených súboroch), vitest 200/200, ratchet 0 nových.
