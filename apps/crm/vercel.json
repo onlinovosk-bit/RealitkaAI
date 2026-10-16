@@ -67,6 +67,10 @@
       "schedule": "15 7 * * *"
     },
     {
+      "path": "/api/inbound/gmail-pull",
+      "schedule": "20 8 * * *"
+    },
+    {
       "path": "/api/cron/credits-cycle",
       "schedule": "0 5 1 * *"
     }
