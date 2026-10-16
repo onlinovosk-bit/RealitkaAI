@@ -62,7 +62,7 @@ Sprava: od kedy je voľný byt?`;
 describe("email-adapter eval dataset", () => {
   it("eval 1: Nehnutelnosti portal inquiry", () => {
     const ev = parseEmail(EVAL_NEHNUTELNOSTI, RECEIVED_AT);
-    expect(PARSER_VERSION).toBe("1.6");
+    expect(PARSER_VERSION).toBe("1.7");
     expect(DATASET_VERSION).toBe("v1.1");
     expect(ev.sourceType).toBe("Portal");
     expect(ev.source).toBe("Nehnuteľnosti.sk");
@@ -83,7 +83,7 @@ describe("email-adapter eval dataset", () => {
     expect(dedupKey(ev)).toBe("672608c5e7a2ebcd");
     const lead = toLeadCandidate(ev, SMOLKO_AGENCY, false);
     expect(lead?.source).toBe("web_form");
-    expect(lead?._meta.parserVersion).toBe("1.6");
+    expect(lead?._meta.parserVersion).toBe("1.7");
   });
 
   it("eval 7: Bazos Palenčár availability inquiry (Smolko gold)", () => {
@@ -477,5 +477,34 @@ describe("portálový dopyt s kontaktom v uhlových zátvorkách alebo odkaze os
     expect(viaBody.source).toBe("Byty.sk");
     expect(viaBody.contactPhone).toBe("0905123456");
     expect(notLeadReason(viaBody, false)).toBeNull();
+  });
+
+  it("portálový dopyt bez e-mailu s bodkou alebo zátvorkou v telefóne ostáva lead", () => {
+    const dotted = [
+      "Nehnutelnosti.sk - nova sprava",
+      "Meno: Ján Vzor",
+      "Telefón: 0905.123.456",
+      "Sprava: je inzerát aktuálny?",
+    ].join("\n");
+    const ev = parseEmail(dotted, RECEIVED_AT, {
+      subject: "Nehnutelnosti.sk - nova sprava",
+      from: "noreply@nehnutelnosti.sk",
+    });
+    expect(ev.source).toBe("Nehnuteľnosti.sk");
+    expect(ev.contactPhone).toBe("0905123456");
+    expect(notLeadReason(ev, false)).toBeNull();
+
+    const paren = [
+      "reality.sk - nova reakcia",
+      "Telefón: +421 (905) 123 456",
+      "Sprava: prosim o termin",
+    ].join("\n");
+    const viaParen = parseEmail(paren, RECEIVED_AT, {
+      subject: "reality.sk - nova reakcia",
+      from: "noreply@reality.sk",
+    });
+    expect(viaParen.source).toBe("Reality.sk");
+    expect(viaParen.contactPhone).toBe("+421905123456");
+    expect(notLeadReason(viaParen, false)).toBeNull();
   });
 });
