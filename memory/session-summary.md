@@ -1,3 +1,60 @@
+## Session 2026-10-14 (GO BALIK-D)
+### Dokončené
+- PR #846 (draft): 7 SECURITY DEFINER RPC volané cez service role (price-trail, BRI v1/v2, brief tracking, 2 cron-y) + balík D `docs/ops/prod-packages/secdef-callers-close/` (SQL NEAPLIKOVANÝ). tsc 52→52 (žiadna v zmenených súboroch), vitest 200/200, ratchet 0 nových.
+- PROD (SELECT): stav pred = EXECUTE anon+authenticated na všetkých 7, bez search_path, bez DB-interných volajúcich; Vercel Production má SUPABASE_SERVICE_ROLE_KEY.
+- #846 zmergovaný (`ce2be49`), Vercel Production READY, balík D aplikovaný v PROD, verify-after 23/23.
+- LIVE-SMOKE (2026-10-16): pixel `/api/morning-brief/track/open` vrátil GIF; Supabase edge logy ukazujú `POST /rest/v1/rpc/record_brief_open` → 204 (06:14, 06:16 UTC) z `node`. Po REVOKE pre anon/authenticated to potvrdzuje volanie cez service role.
+### Rozpracované / Pending
+- (vybavené: merge #846 a D-APPLY.)
+- search_path na už zatvorených funkciách (treba prejsť telá); arbitrage-scan číta arbitrage_config anon klientom (0 riadkov, existujúci stav).
+### Kľúčové súbory zmenené
+- apps/crm/src/lib/{price-trail,bri,events}/…, 4 route: rpc cez createAdminClient.
+### Ďalší krok
+Merge #846 po zelenom CI, potom GO D-APPLY.
+
+## Session 2026-10-13 (GO MAP-B-REST)
+### Dokončené
+- `docs/ops/prod-packages/rls-rest-close/`: mapa ciest + balík C (verify-before/apply/verify-after/rollback), NEAPLIKOVANÝ; PROD čítaný iba SELECT-mi.
+- Nález: 33 SECURITY DEFINER funkcií; `match_leads/match_properties/rls_audit_snapshot` + 4 trigger funkcie bez volajúceho → REVOKE v C. `add_price_point`, `compute_bri_score(_v2)`, `record_brief_*`, cron RPC volá session/anon klient → balík D (kód + SQL spolu).
+- `activities`: 194 riadkov bez agency_id, 7 priraditeľných, 187 sirotských (nemažú sa).
+### Rozpracované / Pending
+- Balík C APLIKOVANÝ v PROD na `GO REST-CLOSE`, verify-after 19/19 ok (viď `DOKAZ-APPLY-2026-10-13.md`). Lokálny test skriptov nebol (zamietnutý); overené až PROD behom.
+- Balík D (kód+SQL), rozhodnutie o verejnosti `portal_listings` (`profile_id IS NULL`), osud 187 sirotských activities.
+### Kľúčové súbory zmenené
+- docs/ops/prod-packages/rls-rest-close/*: balík C.
+### Ďalší krok
+Balík D (kód + SQL: add_price_point, compute_bri_*, record_brief_*, cron RPC, search_path).
+
+## Session 2026-10-13 (GO VERIFY-PROD)
+### Dokončené
+- `docs/ops/prod-packages/VERIFY-PROD-2026-10-13.md`: PROD (iba SELECT) — balík A už aplikovaný, `verify-after.sql` 27/27 ok; cieľ balíka B (agency_id IS NULL politiky) už zatvorený.
+### Rozpracované / Pending
+- Zostávajúce B nálezy (rls_audit_snapshot, secdef search_path, match_* anon, activities NULL agency_id) — každý vlastné GO.
+### Kľúčové súbory zmenené
+- docs/ops/prod-packages/VERIFY-PROD-2026-10-13.md: dôkaz.
+### Ďalší krok
+GO na read-only mapu + balík pre zostávajúce B nálezy.
+
+## Session 2026-10-09 (AGENTIC-WAVES plán, Vlna 0 + Vlna 1 zmergovaná)
+### Dokončené
+- `docs/plans/2026-10-09-agentic-waves.md`: plán vĺn WP-1…WP-10 + výsledky Vlny 0 (4 audity P01, výskum trhu cez WebSearch).
+- Rozhodnutia foundera: platí **1 kancelária** (nie 3), cenník draft #822 len ako vstup, ceny/Stripe/billing mimo vĺn, všetky 4 oblasti.
+- **Vlna 1 zmergovaná do `main` (founder: „merguj blok 1"), každý PR squash, zelené CI, obsah overený na `origin/main`:** #836 WP-1 pravdivé čísla (bez 180 000 € a DEMO_SIGNALS), #837 WP-3 čítač `inbound_mail_outcomes`, #839 WP-4 inventár trás (`scripts/ops/route-gates.mjs`, `docs/audit/route-gates.md`), #838 WP-2 ghostwriter + confirm-viewing cez `authorizeSend`, #840 WP-5 návrh Strážcu follow-upu (verdikt BACKLOG), #841 WP-6 PROD balíky (`docs/ops/prod-packages/**`, neaplikované).
+- CI nachytalo dve moje chyby, obe opravené pred mergom: nový endpoint bez povinného `incrementUsageMetric` (zmluva API trás), a existujúci test confirm-viewing bez mocku `getCurrentProfile`.
+- Nič sa nenasadilo cez P18, PROD sa nemenil, nič sa neodoslalo, Stripe nedotknutý. (Merge do `main` spúšťa produkčný build Vercelu.)
+### Rozpracované / Pending
+- **WP-1b:** UI `ForecastRiskStrip.tsx` a `pipeline-forecast-panel.tsx` stále ukáže „0 EUR" / „~€0 v riziku" pri leade bez rozpočtu (mimo write-setu WP-1); `DEFAULT_TARGET_PIPELINE = 500_000` je tiež predvolená konštanta.
+- **WP-2:** ghostwriter a viewing používajú požičané action ID (`outreach.email.send`, `followup.*.send`); čisté riešenie = nové ID v `packages/control-contract/actions.ts`. Dvojklik nemá claim; vlastníctvo `letterHtml` neoverené.
+- **WP-4:** po merge #837 pribudla trasa (233), `docs/audit/route-gates.md` treba prepočítať; 6 trás UNGATED/UNKNOWN + 8 „len cez proxy" na manuálne P14.
+- **WP-5:** korekcia auditu: „prvá reakcia" existuje ako `lead_events.contact_attempted` (len tlačidlá Volať/E-mail, stav v PROD neznámy); `agent-specs.ts` má 7 agentov, nie 4. `lib/agents/followup/engine.ts` má natvrdo meno referenčného klienta (porušuje pravidlo 2 CLAUDE.md).
+- **WP-6:** `verify-before.sql` čaká na PROD (`GO VERIFY-PROD`); rozpor, či `lead_demands` už je v PROD (STATUS vs. zadanie).
+- Nesedí: MRR 597 € z 3 kancelárií (`DEC-20260925-001`) vs. 1 platiaca kancelária; 27 vs. 28 z 40 ciest; PR #822 sa medzi otvorenými PR nenašiel.
+- Starý Firecrawl API kľúč (`fc-7b89…1398`) sa objavil v screenshote v chate, treba ho zrušiť; Perplexity čaká na API kľúč; cloud blokuje `realvia.sk`, `mcp.firecrawl.dev`, `api.perplexity.ai`.
+### Kľúčové súbory zmenené
+- `docs/plans/2026-10-09-agentic-waves.md`, `memory/session-summary.md`, `memory/decisions.md`, `docs/STATUS.md` (len riadok hlavičky).
+- Vlna 1 (už v `main`): viď PR #836–#841.
+### Ďalší krok
+Stripe krok C zostáva blokátor č. 1. Z vĺn: rozhodnutie o WP5-FG-0 (merať, nestavať) a o `GO VERIFY-PROD` pre balíky WP-6.
 ## Session 2026-10-15 (Anthropic prompt cache)
 ### Dokončené
 - Inventúra všetkých Anthropic/Claude call sites (žiadny Vercel AI SDK anthropic provider).
