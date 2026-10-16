@@ -26,6 +26,7 @@ import type {
   RealviaDeletePayload,
   RealviaProcessingResult,
 } from './types';
+import { isOnboardingProbePayload, REALVIA_PROBE_TERMINAL_ERROR } from './queueRetry';
 import {
   isRealviaMappingUnknown,
   mapCategory,
@@ -82,8 +83,9 @@ export async function processRealviaQueue(): Promise<{
       }
 
       const { payload_json: payload, agency_id } = webhookData;
+      const probe = isOnboardingProbePayload(payload);
 
-      if (!agency_id) {
+      if (!agency_id && !probe) {
         await updateQueueJobStatus(job.id, 'failed', REALVIA_PROCESSING_ERROR_AGENCY_RESOLUTION_FAILED);
         await markWebhookProcessed(job.webhook_log_id, REALVIA_PROCESSING_ERROR_AGENCY_RESOLUTION_FAILED);
         results.push({
@@ -106,6 +108,12 @@ export async function processRealviaQueue(): Promise<{
           agency_id,
           payload.archiveType,
         );
+      } else if (isOnboardingProbePayload(payload)) {
+        result = {
+          success: false,
+          action: 'skipped',
+          error: REALVIA_PROBE_TERMINAL_ERROR,
+        };
       } else {
         result = {
           success: false,
@@ -120,7 +128,7 @@ export async function processRealviaQueue(): Promise<{
         await markWebhookProcessed(job.webhook_log_id);
         succeeded++;
       } else {
-        await updateQueueJobStatus(job.id, 'failed', result.error);
+        await updateQueueJobStatus(job.id, 'failed', result.error, { probe });
         await markWebhookProcessed(job.webhook_log_id, result.error);
         failed++;
       }
