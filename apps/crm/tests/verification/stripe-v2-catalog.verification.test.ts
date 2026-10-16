@@ -60,8 +60,8 @@ describe("scripts/ops/stripe-v2 katalóg vs kód", () => {
     }
   });
 
-  it("zahrnuté kredity plánov sú 20 / 50 / 100 / 150", () => {
-    expect(["start", "team", "office", "network"].map((id) => bySku(`${id}_month`).credits_per_cycle)).toEqual([20, 50, 100, 150]);
+  it("zahrnuté kredity plánov sú 25 / 60 / 120 / 175", () => {
+    expect(["start", "team", "office", "network"].map((id) => bySku(`${id}_month`).credits_per_cycle)).toEqual([25, 60, 120, 175]);
   });
 
   it("päť mesačných balíkov a jednorazový kredit", () => {
@@ -95,7 +95,7 @@ describe("scripts/ops/stripe-v2 katalóg vs kód", () => {
   it("testovací skript prejde vlastnou validáciou (bez siete)", () => {
     const res = spawnSync("python3", [join(DIR, "stripe_test_catalog.py")], { encoding: "utf8" });
     expect(res.status, res.stderr).toBe(0);
-    expect(res.stdout).toContain("start_month | 25.00 | 30.75 | 20 |");
+    expect(res.stdout).toContain("start_month | 25.00 | 30.75 | 25 |");
   });
 
   it("skript nevie vytvoriť live objekty: vyžaduje sk_test_", () => {

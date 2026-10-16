@@ -6,6 +6,7 @@
  */
 
 import { callClaude, CLAUDE_HAIKU, extractJson } from "./claude";
+import { cachedSystem } from "./prompt-cache";
 
 export interface DeadLeadInput {
   id:              string;
@@ -96,7 +97,7 @@ async function processBatch(
   const response = await callClaude({
     model:      CLAUDE_HAIKU,
     max_tokens: BATCH_SIZE * 160,
-    system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
+    system: cachedSystem(SYSTEM, CLAUDE_HAIKU),
     messages: [
       {
         role:    "user",

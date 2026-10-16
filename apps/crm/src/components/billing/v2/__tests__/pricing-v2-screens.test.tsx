@@ -255,6 +255,10 @@ describe("ročné platenie — UI", () => {
     render(<PricingV2Comparison config={v2Config()} />);
     expect(screen.getByTestId("compare-team-annual").textContent).toContain("720,00 €");
     expect(screen.getByTestId("compare-team-annual").textContent).toContain("885,60 €");
+    expect(screen.getByTestId("compare-start").textContent).toContain("25 kreditov mesačne pre celú kanceláriu");
+    expect(screen.getByTestId("compare-team").textContent).toContain("60 kreditov mesačne pre celú kanceláriu");
+    expect(screen.getByTestId("compare-office").textContent).toContain("120 kreditov mesačne pre celú kanceláriu");
+    expect(screen.getByTestId("compare-network").textContent).toContain("175 kreditov mesačne pre celú kanceláriu");
   });
 });
 

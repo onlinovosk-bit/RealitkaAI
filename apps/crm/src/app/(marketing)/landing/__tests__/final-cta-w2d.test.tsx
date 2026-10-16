@@ -42,7 +42,10 @@ describe("W2-D FinalCTA: zapnutý prepínač", () => {
       "26 a viac používateľov",
       "od 349 € mesačne bez DPH",
       "od 429,27 € s DPH 23 %",
-      "150 kreditov mesačne pre celú kanceláriu",
+      "175 kreditov mesačne pre celú kanceláriu",
+      "25 kreditov mesačne pre celú kanceláriu",
+      "60 kreditov mesačne pre celú kanceláriu",
+      "120 kreditov mesačne pre celú kanceláriu",
       "mesačné balíky od 34 € mesačne bez DPH",
       "0,70 € za kredit bez DPH (0,86 € s DPH 23 %)",
     ]) {
@@ -57,10 +60,11 @@ describe("W2-D FinalCTA: zapnutý prepínač", () => {
     expect(t).not.toMatch(/Seat|COUNTDOWN|SPOTS|záruk|zľav/i);
   });
 
-  it("CTA vedú do registrácie (pásma s pevnou cenou) a na podporu (Sieť), nie do Stripe", () => {
+  it("CTA vedú do registrácie (pásma s pevnou cenou) a na podporu (Sieť), nie do Stripe ani Lemon Squeezy", () => {
     expect(html).toContain('href="/register"');
     expect(html).toContain('href="/support"');
     expect(html).not.toMatch(/stripe/i);
+    expect(html).not.toMatch(/lemon|lemonsqueezy/i);
     expect((html.match(/href="\/register"/g) ?? []).length).toBe(3);
   });
 });

@@ -2,6 +2,7 @@
  * W1 — batch Haiku triage (10–20 leadov). Výstup uložený ako ai_priority + ai_reason (SK).
  */
 import { callClaude, CLAUDE_HAIKU, extractJson } from "@/lib/ai/claude";
+import { cachedSystem } from "@/lib/ai/prompt-cache";
 import { normalizeAiPriority, type AiPrioritySk } from "@/lib/workflows/lead-ai-priority";
 
 export const TRIAGE_BATCH_SIZE = 18;
@@ -96,7 +97,7 @@ async function triageChunk(leads: TriageLeadInput[]): Promise<LeadTriageOutput[]
   const response = await callClaude({
     model: CLAUDE_HAIKU,
     max_tokens: Math.min(1200, 80 * leads.length + 120),
-    system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
+    system: cachedSystem(SYSTEM, CLAUDE_HAIKU),
     messages: [
       {
         role: "user",

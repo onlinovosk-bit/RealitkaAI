@@ -5,7 +5,7 @@
 // ================================================================
 import { NextRequest, NextResponse } from 'next/server'
 import { err } from '@/lib/api-response'
-import { createClient }              from '@/lib/supabase/server'
+import { createAdminClient }         from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   // Idempotency: rotate_bri_snapshots RPC handles daily rotation atomically.
   // TODO: bri_snapshots per-agency table idempotency — not in schema; rely on RPC.
   try {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const { data, error } = await supabase.rpc('rotate_bri_snapshots')
 
     if (error) {
