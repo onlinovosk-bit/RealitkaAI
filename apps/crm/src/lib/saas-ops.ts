@@ -5,6 +5,7 @@ import {
   resolveBillingPlanFromManualPlan,
 } from "@/lib/billing/resolve-agency-manual-plan";
 import { getCurrentProfile, getCurrentUser } from "@/lib/auth";
+import { isPayingAgency } from "@/lib/customer-health/paid";
 import { createClient } from "@/lib/supabase/server";
 import { listProfiles, listTeams } from "@/lib/team-store";
 import { listLeads } from "@/lib/leads-store";
@@ -240,20 +241,60 @@ export function resolveTrialEndMs(input: {
   return createdAt + input.trialDays * 86400000;
 }
 
-async function loadAgencyTrialEndsAt(): Promise<string | null> {
+export type AgencyBillingRow = {
+  trial_ends_at?: string | null;
+  manual_plan?: string | null;
+  subscription_status?: string | null;
+  plan?: string | null;
+  account_tier?: string | null;
+};
+
+export type AgencyBillingFacts = {
+  trialEndsAt: string | null;
+  /**
+   * Agentúra platí mimo Stripe (faktúra / ručne pridelený plán), alebo jej stav
+   * predplatného už drží databáza. Bez tohto príznaku spadne každý fakturovaný
+   * klient do vetvy „bez predplatného" → po 14 dňoch od vzniku jeho auth účtu
+   * do `limited`, teda do režimu len na čítanie. Zmerané na PROD 2026-10-15:
+   * 7 z 7 agentúr nemá `stripe_subscription_id`, takže sa to týka všetkých.
+   */
+  paysOutsideStripe: boolean;
+};
+
+const NO_AGENCY_FACTS: AgencyBillingFacts = { trialEndsAt: null, paysOutsideStripe: false };
+
+/**
+ * Stavy, pri ktorých predplatné skončilo. `isPayingAgency()` by taký riadok
+ * ešte mohol vyhodnotiť ako platiaci (stačí mu `plan` iný než free, a ten sa
+ * pri zrušení nemusí prepísať), a účet by tak zostal otvorený po zrušení.
+ */
+const ENDED_SUBSCRIPTION_STATES = new Set(["canceled", "unpaid", "incomplete_expired"]);
+
+export function agencyPaysOutsideStripe(row: AgencyBillingRow): boolean {
+  if (ENDED_SUBSCRIPTION_STATES.has((row.subscription_status ?? "").trim().toLowerCase())) {
+    return false;
+  }
+  return isPayingAgency(row);
+}
+
+async function loadAgencyBillingFacts(): Promise<AgencyBillingFacts> {
   try {
     const profile = await getCurrentProfile();
-    if (!profile?.agency_id) return null;
+    if (!profile?.agency_id) return NO_AGENCY_FACTS;
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("agencies")
-      .select("trial_ends_at")
+      .select("trial_ends_at, manual_plan, subscription_status, plan, account_tier")
       .eq("id", profile.agency_id)
-      .maybeSingle();
-    if (error) return null; // stĺpec ešte nie je nasadený → historické správanie
-    return (data as { trial_ends_at?: string | null } | null)?.trial_ends_at ?? null;
+      .maybeSingle<AgencyBillingRow>();
+    if (error) return NO_AGENCY_FACTS; // stĺpec ešte nie je nasadený → historické správanie
+    if (!data) return NO_AGENCY_FACTS;
+    return {
+      trialEndsAt: data.trial_ends_at ?? null,
+      paysOutsideStripe: agencyPaysOutsideStripe(data),
+    };
   } catch {
-    return null;
+    return NO_AGENCY_FACTS;
   }
 }
 
@@ -268,12 +309,19 @@ function getFallbackBillingStatus(): BillingStatus {
     customer: null,
     subscription: null,
     invoices: [],
+    lookupFailed: true,
   };
 }
 
 async function getSafeBillingStatus(): Promise<BillingLookup> {
   try {
-    return { billing: await getCurrentBillingStatus(), lookupFailed: false };
+    const billing = await getCurrentBillingStatus();
+    // `getCurrentBillingStatus()` chybu Stripe NEVYHODÍ — prehltne ju a vráti
+    // prázdny stav. Preto sa nevedomosť musí čítať z príznaku; `catch` nižšie
+    // chytá už len zlyhania mimo Stripe. Do 2026-10-15 tu bolo natvrdo
+    // `lookupFailed: false`, takže stav `unknown` nenastal nikdy a výpadok
+    // Stripe by prepol do režimu len na čítanie každého platiaceho klienta.
+    return { billing, lookupFailed: billing.lookupFailed === true };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown billing error";
 
@@ -288,13 +336,28 @@ async function getSafeBillingStatus(): Promise<BillingLookup> {
   }
 }
 
-export async function getTrialGraceState(input: {
-  billing: Awaited<ReturnType<typeof getCurrentBillingStatus>>;
-  /** True, keď sa na Stripe nepodarilo spýtať. Nie je to to isté ako „bez predplatného". */
-  lookupFailed?: boolean;
-}): Promise<TrialGraceState> {
-  const billing = input.billing;
+export type TrialGraceInput = {
+  /** True = na Stripe sa nepodarilo spýtať. Nie je to zistenie „bez predplatného". */
+  lookupFailed: boolean;
+  hasSubscription: boolean;
+  /** Stav predplatného zo Stripe; prázdny reťazec, keď žiadne nie je. */
+  subscriptionStatus: string;
+  /** Koniec zúčtovacieho obdobia v ms, ak ho Stripe pozná. */
+  currentPeriodEndMs: number | null;
+  /** Koniec trialu v ms (z `agencies.trial_ends_at`, inak odvodený). */
+  trialEndMs: number;
+  /** Agentúra platí mimo Stripe (faktúra / ručne pridelený plán). */
+  paysOutsideStripe: boolean;
+  graceDays: number;
+  nowMs: number;
+};
 
+/**
+ * Celé rozhodnutie o stave účtu, bez siete, bez Supabase a bez `process.env`.
+ * Oddelené zámerne: toto je brána, ktorá po 14 dňoch vypne zápis, a musí sa dať
+ * dokázať testom, nie len prečítať.
+ */
+export function trialGraceFrom(input: TrialGraceInput): TrialGraceState {
   if (input.lookupFailed) {
     return {
       state: "unknown",
@@ -304,21 +367,22 @@ export async function getTrialGraceState(input: {
     };
   }
 
-  const user = await getCurrentUser();
+  const trialDaysLeft = diffInDays(input.trialEndMs, input.nowMs);
 
-  const now = Date.now();
-  const trialDays = getTrialDays();
-  const graceDays = getGraceDays();
+  if (!input.hasSubscription) {
+    // Fakturovaný klient nemá v Stripe nič, čo by sa dalo prečítať. Bez tejto
+    // vetvy by ho trial brána po 14 dňoch prepla do režimu len na čítanie —
+    // hoci platí. Stripe predplatné (vetvy nižšie) má prednosť, toto rieši
+    // výlučne stav „v Stripe nič nie je".
+    if (input.paysOutsideStripe) {
+      return {
+        state: "active",
+        trialDaysLeft: 0,
+        graceDaysLeft: 0,
+        message: "Plán je aktívny (fakturácia mimo Stripe).",
+      };
+    }
 
-  const trialEnd = resolveTrialEndMs({
-    agencyTrialEndsAt: await loadAgencyTrialEndsAt(),
-    userCreatedAt: user?.created_at,
-    trialDays,
-    nowMs: now,
-  });
-  const trialDaysLeft = diffInDays(trialEnd, now);
-
-  if (!billing.hasSubscription) {
     if (trialDaysLeft > 0) {
       return {
         state: "trial",
@@ -328,6 +392,8 @@ export async function getTrialGraceState(input: {
       };
     }
 
+    // Koniec trialu bez karty: žiadny zákazník v Stripe, žiadne predplatné,
+    // teda nie je čo zaúčtovať. Účet sa prepne na čítanie, nič sa nestrhne.
     return {
       state: "limited",
       trialDaysLeft: 0,
@@ -336,7 +402,7 @@ export async function getTrialGraceState(input: {
     };
   }
 
-  const status = String(billing.subscription?.status || "");
+  const status = input.subscriptionStatus;
 
   if (status === "active" || status === "trialing") {
     return {
@@ -351,12 +417,9 @@ export async function getTrialGraceState(input: {
   }
 
   if (status === "past_due" || status === "unpaid") {
-    const periodEnd = billing.subscription?.currentPeriodEnd
-      ? billing.subscription.currentPeriodEnd * 1000
-      : now;
-
-    const graceEnd = periodEnd + graceDays * 86400000;
-    const graceDaysLeft = diffInDays(graceEnd, now);
+    const periodEnd = input.currentPeriodEndMs ?? input.nowMs;
+    const graceEnd = periodEnd + input.graceDays * 86400000;
+    const graceDaysLeft = diffInDays(graceEnd, input.nowMs);
 
     if (graceDaysLeft > 0) {
       return {
@@ -392,15 +455,64 @@ export async function getTrialGraceState(input: {
   };
 }
 
+export async function getTrialGraceState(input: {
+  billing: Awaited<ReturnType<typeof getCurrentBillingStatus>>;
+  /** True, keď sa na Stripe nepodarilo spýtať. Nie je to to isté ako „bez predplatného". */
+  lookupFailed?: boolean;
+  /** Fakty o agentúre; keď sa nedodajú, načítajú sa (ponechané pre volajúcich mimo snapshotu). */
+  agency?: AgencyBillingFacts;
+}): Promise<TrialGraceState> {
+  const billing = input.billing;
+
+  if (input.lookupFailed) {
+    return trialGraceFrom({
+      lookupFailed: true,
+      hasSubscription: false,
+      subscriptionStatus: "",
+      currentPeriodEndMs: null,
+      trialEndMs: 0,
+      paysOutsideStripe: false,
+      graceDays: getGraceDays(),
+      nowMs: Date.now(),
+    });
+  }
+
+  const user = await getCurrentUser();
+  const agency = input.agency ?? (await loadAgencyBillingFacts());
+  const now = Date.now();
+
+  const trialEnd = resolveTrialEndMs({
+    agencyTrialEndsAt: agency.trialEndsAt,
+    userCreatedAt: user?.created_at,
+    trialDays: getTrialDays(),
+    nowMs: now,
+  });
+
+  return trialGraceFrom({
+    lookupFailed: false,
+    hasSubscription: billing.hasSubscription,
+    subscriptionStatus: String(billing.subscription?.status || ""),
+    currentPeriodEndMs: billing.subscription?.currentPeriodEnd
+      ? billing.subscription.currentPeriodEnd * 1000
+      : null,
+    trialEndMs: trialEnd,
+    paysOutsideStripe: agency.paysOutsideStripe,
+    graceDays: getGraceDays(),
+    nowMs: now,
+  });
+}
+
 export async function getSaasOpsSnapshot() {
-  const [billingLookup, profile, profiles, teams, leads, properties] = await Promise.all([
-    getSafeBillingStatus(),
-    getCurrentProfile(),
-    listProfiles(),
-    listTeams(),
-    listLeads(),
-    listProperties(),
-  ]);
+  const [billingLookup, profile, profiles, teams, leads, properties, agencyFacts] =
+    await Promise.all([
+      getSafeBillingStatus(),
+      getCurrentProfile(),
+      listProfiles(),
+      listTeams(),
+      listLeads(),
+      listProperties(),
+      loadAgencyBillingFacts(),
+    ]);
 
   const billing = billingLookup.billing;
   // V2 predplatné nesie pásmo aj voliteľný balík; plán určuje pásmo.
@@ -432,6 +544,7 @@ export async function getSaasOpsSnapshot() {
   const trialGrace = await getTrialGraceState({
     billing,
     lookupFailed: billingLookup.lookupFailed,
+    agency: agencyFacts,
   });
 
   // Tu bolo `const canUseFullApp = true;` s komentárom
