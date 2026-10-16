@@ -1,5 +1,26 @@
 # Critical Decisions Log
 
+## 2026-10-16 — OPRAVA: miera zlyhaní Realvia fronty je 83,4 %, nie 45 % (ZMERANÉ)
+**Čo bolo zle:** v `capability-truth-matrix.md` (bod 4, 2026-10-15) a v mojej správe foundrovi stálo
+„z 2 830 pokusov o spracovanie 1 287 zlyhalo (45 %)“. To číslo bolo nesprávne.
+**Príčina chyby:** dvojité započítanie. `realvia_metrics.jobs_processed` UŽ obsahuje zlyhania, takže
+sčítať `processed + failed` znamená započítať zlyhania dvakrát: 1543 + 1287 = 2830.
+**Skutočnosť, zmeraná znova priamo v PROD (`ypgajkhqtbriqqmyawyv`) 2026-10-16:**
+`SELECT sum(jobs_processed), sum(jobs_succeeded), sum(jobs_failed) FROM realvia_metrics;`
+→ 1 543 / 256 / 1 287. Identita 256 + 1287 = 1543 to potvrdzuje. **Miera zlyhania = 83,4 %.**
+Rozsah dát: 2026-05-21 08:05 až 2026-10-14 18:35, 1 077 riadkov metrík.
+**Druhá polovica obrazu (zmeraná v tom istom turne):** nejde o trvalý stav.
+Máj 2026: 982 dávok, processed 1 286, ok 97, fail 1 189 → **92,5 %**.
+Jún až dnes: 95 dávok, processed 257, ok 159, fail 98 → **38,1 %**.
+Čiže **92,4 % všetkých zlyhaní padá do rozbehového týždňa v máji.**
+**Pravidlo, ktoré z toho plynie:** pri agregáte najprv over, či „processed“ znamená „pokusy spolu“ alebo
+„úspešné pokusy“, skôr než sa z dvoch stĺpcov počíta tretí. Tu stačila identita ok + fail = processed
+a chyba by nevznikla. Číslo bolo označené ako „zmerané“, hoci bolo odvodené — to je horšie než odhad,
+lebo odvodené číslo sa tvári, že prešlo dôkazovou bránou.
+**Čo ešte NIE JE potvrdené:** príčina zlyhaní. Vlna A (2026-10-16) ukazuje na retry-slučku na dvoch
+testovacích payloadoch `{test, export_id}` z `docs/REALVIA_ONBOARDING.md` (Krok 3), ktoré sa zopakovali
+518× a 215× napriek `max_retries = 3`. **Čaká na adversariálne overenie, do matice to zatiaľ nejde.**
+
 ## 2026-10-16 — Vercel Hobby plán obmedzuje crony na raz denne (ZMERANÉ, nie odhad)
 **Ako sa to zistilo:** uvažoval som, že keďže na PROD preukázateľne beží ≥ 5 rôznych cronov, účet nemôže byť Hobby (Hobby má strop 2 crony), a naplánoval som oba nové crony hodinovo. Vercel odmietol **oba buildy**: „Hobby accounts are limited to daily cron jobs. This cron expression (20 * * * *) would run more than once per day."
 **Záver (merané z chyby buildu, nie z dokumentácie):** počet cronov sa NEvynucuje (v `vercel.json` ich je 19), vynucuje sa **frekvencia**. Sub-denný výraz zhodí **celé nasadenie**, nie len ten jeden cron.
