@@ -17,6 +17,8 @@ type Row = Record<string, unknown> & { id: string };
 const h = vi.hoisted(() => ({
   /** Skutočný stav predplatného zo Stripe pri plnení checkoutu (predvolene živé). */
   subStatus: "active",
+  /** Živé predplatné vo Stripe pre `customer.subscription.updated` (handler ho vždy dočítava cez retrieve). */
+  liveSub: null as Record<string, any> | null,
   created: [] as Array<Record<string, any>>,
   getCurrentUser: vi.fn(),
   getCurrentProfile: vi.fn(),
@@ -34,7 +36,8 @@ vi.mock("stripe", () => ({
       },
     };
     this.subscriptions = {
-      retrieve: async (id: string) => ({ id, status: h.subStatus, customer: "cus_test" }),
+      retrieve: async (id: string) =>
+        h.liveSub && h.liveSub.id === id ? h.liveSub : { id, status: h.subStatus, customer: "cus_test" },
     };
     // legacy syncAccountTier (neznáme price ID) by sa dostal sem cez customers.retrieve
     this.customers = {
@@ -248,19 +251,17 @@ function sessionEvent(metadata: Record<string, string>, over: Record<string, unk
 }
 
 function subEvent(type: string, over: Record<string, unknown> = {}, priceIds: string[] = [PRICE.STRIPE_PRICE_V2_TEAM]) {
-  return {
-    id: `evt_${++evtSeq}`,
-    type,
-    data: {
-      object: {
-        id: "sub_1",
-        customer: "cus_1",
-        status: "active",
-        items: { data: priceIds.map((p) => ({ price: { id: p } })) },
-        ...over,
-      },
-    },
-  } as any;
+  const object = {
+    id: "sub_1",
+    customer: "cus_1",
+    status: "active",
+    items: { data: priceIds.map((p) => ({ price: { id: p } })) },
+    ...over,
+  };
+  // `updated` handler stav a položky čerpá zo živého predplatného (stripe.subscriptions.retrieve), nie z payloadu.
+  // Živé predplatné = rovnaký obsah ako udalosť (testy popisujú stav, ktorý Stripe aktuálne hlási).
+  if (type === "customer.subscription.updated") h.liveSub = object;
+  return { id: `evt_${++evtSeq}`, type, data: { object } } as any;
 }
 
 function webhookReq(event: unknown) {
@@ -284,6 +285,7 @@ const grants = () => db.ledger.filter((l) => l.kind === "grant");
 beforeEach(() => {
   evtSeq = 0;
   h.subStatus = "active";
+  h.liveSub = null;
   h.created.length = 0;
   h.syncTierSpy.mockClear();
   db.agencies = [freshAgency()];
@@ -480,7 +482,12 @@ describe("(d) zlyhaná platba / stav != active -> žiadny grant", () => {
     await handlePricingCheckoutWebhook(sessionEvent(params.metadata));
     for (const status of ["past_due", "unpaid", "canceled", "incomplete_expired", "paused"]) {
       await handleStripeWebhookEvent(subEvent("customer.subscription.updated", { status }));
-      expect(agency().subscription_status).toBe(status);
+      if (["unpaid", "canceled", "incomplete_expired"].includes(status)) {
+        // Zrušené / unpaid / incomplete_expired: rovnaký downgrade ako pri `deleted` (stav "canceled", tier free).
+        expect(agency()).toMatchObject({ subscription_status: "canceled", account_tier: "free", pack_credits: 0 });
+      } else {
+        expect(agency().subscription_status).toBe(status);
+      }
     }
     vi.setSystemTime(new Date("2026-11-01T05:00:00Z"));
     await runMonthlyCreditCycle();
