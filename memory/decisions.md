@@ -1,5 +1,11 @@
 # Critical Decisions Log
 
+## 2026-10-17 — www.revolis.ai SEO (canonical, robots, sitemap) (BUILD, draft)
+**GO:** zadanie Cloud Agent — jeden draft PR, nemergovať. **RAU:** GO_REQUIRED kvôli slovu merge; merge nerobím.
+**Ústava v2:** oprava indexácie existujúceho webu (GSC), nie nová featura pre klienta. Timing OK. Q1 neplatí ako veto — bez www canonical Google indexuje apex.
+**Rozhodnutie:** BUILD na vetve. Apex 308 nehádzať do next.config — 307 ide z Vercel Domains (`server: Vercel`, 0 host redirectov v repe). Sitemap len overené 200 URL na www (`/`, `/demo`, `/balik`). `app.revolis.ai` nedotknuté.
+**Výstup:** `docs/reports/2026-10-17-marketing-www-seo.md`.
+
 ## 2026-10-16 — Vercel Hobby plán obmedzuje crony na raz denne (ZMERANÉ, nie odhad)
 **Ako sa to zistilo:** uvažoval som, že keďže na PROD preukázateľne beží ≥ 5 rôznych cronov, účet nemôže byť Hobby (Hobby má strop 2 crony), a naplánoval som oba nové crony hodinovo. Vercel odmietol **oba buildy**: „Hobby accounts are limited to daily cron jobs. This cron expression (20 * * * *) would run more than once per day."
 **Záver (merané z chyby buildu, nie z dokumentácie):** počet cronov sa NEvynucuje (v `vercel.json` ich je 19), vynucuje sa **frekvencia**. Sub-denný výraz zhodí **celé nasadenie**, nie len ten jeden cron.
