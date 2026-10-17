@@ -1,3 +1,15 @@
+## Session 2026-10-17 (critical bug hunt focus6)
+### Dokončené
+- Read-only audit 6 areas @ `626748f0`; report `docs/reports/2026-10-17-critical-bug-hunt-focus6.md` (commit `ae916537`).
+- CRITICAL: WP-2 send routes skip `requireActiveAppAccess`; balík D SQL still unapplied.
+### Rozpracované / Pending
+- Fix PR for WP-2 trial-gate on ghostwriter + confirm-viewing (GO).
+- Founder `GO D-APPLY` for secdef-callers-close.
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-17-critical-bug-hunt-focus6.md`: hunt evidence + triggers.
+### Ďalší krok
+GO: fix PR `requireActiveAppAccess` on both send routes (1 PR); separately founder GO D-APPLY.
+
 ## Session 2026-10-17 (www.revolis.ai SEO)
 ### Dokončené
 - RAU route: GO_REQUIRED BUILD revolis (slovo „merge“ v zadaní; merge nerobím).
