@@ -1,3 +1,14 @@
+## Session 2026-10-17 — XLSX import critical bug hunt
+### Dokončené
+- Critical bug hunt on XLSX import (`124c1468`): 3 critical parser bugs proven (title-row header, duplicate headers, first-visible sheet)
+- Report: `docs/reports/2026-10-17-xlsx-import-critical-bug-hunt.md`
+### Rozpracované / Pending
+- Fix not applied (hunt-only); next GO = header-row detection + duplicate header disambiguation + sheet selection
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-17-xlsx-import-critical-bug-hunt.md`: hunt findings with file:line + vitest repro evidence
+### Ďalší krok
+GO: fix `xlsx-parse.ts` bugs 1–2 (title row + duplicate headers) with regression tests in same PR
+
 ## Session 2026-10-17 (critical bug hunt focus6)
 ### Dokončené
 - Read-only audit 6 areas @ `626748f0`; report `docs/reports/2026-10-17-critical-bug-hunt-focus6.md` (commit `ae916537`).
