@@ -40,13 +40,15 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: Wave 2A — A1–A4 (review #845/#859, Stripe verify runbook, balík E, memo portal/orphans), bez PROD zápisu
+Cieľ: Wave 2A + 2B — review/runbook/balík E/memo (2A) a opravy #845 testov, semantic search, route gates (2B); bez PROD zápisu, bez merge
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] A1 review #845/#859 (#845 CI červené na heade, #859 OK s drobnosťami)
+- [x] A1 review #845/#859
 - [x] A2 docs/runbooks/stripe-verify-windows.md
-- [x] A3 balík E docs/ops/prod-packages/search-path-close/ (verify-before 36/36 v PROD, NEAPLIKOVANÝ)
-- [x] A4 docs/decisions/2026-10-16-portal-orphans.md
-- [x] Memory + jeden push
+- [x] A3 balík E search-path-close (verify-before 36/36 v PROD, NEAPLIKOVANÝ)
+- [x] A4 memo portal/orphans
+- [x] B1 oprava testov #845 → draft PR #879 (CI čaká)
+- [x] B2+B3 semantic search + route gates → draft PR #880 (CI čaká)
+- [ ] CI zelené na #879 a #880 (merge robí founder)
 - [ ] Founder: výstup stripe_verify_prices.py → GO STRIPE-VYHODNOTENIE
 <!-- SESSION:END -->
 

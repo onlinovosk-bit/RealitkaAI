@@ -1,3 +1,15 @@
+## Session 2026-10-17 (GO VLNA-2B)
+### Dokončené
+- B1: príčina červeného CI na #845 = testy bez mocku `subscriptions.retrieve` (6 failed → 66 passed, credits-billing-v2 68 passed). Produkčný kód OK. Draft PR #879 (base = vetva #845). `unpaid`/`incomplete_expired` → canceled/free je zámerná zmena #845 — čaká na potvrdenie foundera.
+- B2: `api/search/semantic` volá `match_*` cez `createAdminClient()` + post-filter `agency_id` (RPC je SECURITY DEFINER bez tenant filtra), 4 testy. B3: z 6 trás 4 už gated v POST, zatvorená diera v `starter-pack/download` (dev secret v produkcii, preskočená kontrola nákupu), `route-gates.md` prepočítaný. Draft PR #880.
+### Rozpracované / Pending
+- CI na #879 a #880; podpis/typ `id` výstupu `match_*` v PROD neoverený; DB zmena `p_agency_id` do `match_*`; GET health na uc/realsoft/realvia import (PUBLIC-BY-DESIGN?); overiť `STARTER_PACK_DOWNLOAD_SECRET` vo Verceli; #859 asserty CAS; `billing/checkout-config` nedotknuté.
+- tsc 54 vs baseline 52 — rozdiel mimo zmenených súborov, nevysvetlený.
+### Kľúčové súbory zmenené
+- (v #879/#880) pricing-v2 testy; api/search/semantic/route.ts; starter-pack/download-token.ts; scripts/ops/route-gates.mjs; docs/audit/route-gates.md
+### Ďalší krok
+Po zelenom CI: founder merguje #879 → #845; #880. Potom `GO E-APPLY` alebo výstup verify → `GO STRIPE-VYHODNOTENIE`.
+
 ## Session 2026-10-16 (GO VLNA-2A, A1–A4)
 ### Dokončené
 - A1 (read-only review): #845 CI červené na heade `79a0e742` (Lint/test/build: `billing-store-pricing-v2.test.ts:109,117`, `tests/integration/pricing-v2-e2e.test.ts:533` — chýba mock `subscriptions.retrieve`), branch behind main; live `unpaid`/`incomplete_expired` → free je zmena správania na potvrdenie. #859 CI zelené, OK; doplniť asserty na `.eq` CAS predikáty a overiť NOT NULL `purchased_credits_balance`.
