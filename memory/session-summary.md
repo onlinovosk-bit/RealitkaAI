@@ -1,3 +1,20 @@
+## Session 2026-10-17 (www.revolis.ai SEO)
+### Dokončené
+- RAU route: GO_REQUIRED BUILD revolis (slovo „merge“ v zadaní; merge nerobím).
+- Apex→www 307 overený naživo (`server: Vercel`); v repe host redirect nie je.
+- Canonical + og:url na `/`, `/demo`, `/balik`; `robots.ts` + `sitemap.ts` (len www `/` `/demo` `/balik`).
+- Testy 48/48, `next build` (15.5.15) zelený, lokálny smoke 200 na robots/sitemap + canonical tagy.
+- Report: `docs/reports/2026-10-17-marketing-www-seo.md`.
+### Rozpracované / Pending
+- Draft PR (bez merge). 308/301 na apexe ostáva manuálny krok vo Vercel Domains projektu `revolis-marketing`.
+- Preview deploy pre `cursor/*` je v `apps/marketing/vercel.json` vypnutý.
+### Kľúčové súbory zmenené
+- `apps/marketing/lib/site.ts`: kanonický origin www.
+- `apps/marketing/app/{layout,demo/page,balik/layout,robots,sitemap}.tsx?ts`: metadata + robots + sitemap.
+- `apps/marketing/__tests__/seo.test.ts`: unit testy.
+### Ďalší krok
+Founder: review draft PR; po merge zmeniť Vercel Domains 307→308. RAU route: GO_REQUIRED BUILD revolis.
+
 ## Session 2026-10-16 (10 bodov zadania 2026-10-15)
 ### Dokončené
 - **Bod 1** — AI návrhy odpovedí za 30 dní zmerané na PROD (3 vytvorené / 0 schválených / 0 odoslaných), PR #851 zmergovaný (`515a8b5b`).
