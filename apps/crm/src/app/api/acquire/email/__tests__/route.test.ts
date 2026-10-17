@@ -64,6 +64,7 @@ function makeRequest(body: unknown = INQUIRY_BODY): NextRequest {
 }
 
 describe("POST /api/acquire/email dedup claim", () => {
+  /** Composite claims: `${agency_id}:${key}` — mirrors PK (agency_id, key). */
   let claimedKeys: Set<string>;
   let deletedKeys: string[];
   let leadRows: Map<string, Record<string, unknown>>;
@@ -87,6 +88,34 @@ describe("POST /api/acquire/email dedup claim", () => {
   let agencyProfileEmails: Array<{ email: string | null }>;
   let agencyEmail: string | null;
   let agencyMailboxEmails: Array<{ email: string | null }>;
+
+  function claimId(agencyId: string, key: string): string {
+    return `${agencyId}:${key}`;
+  }
+
+  /** Thenable filter chain: .eq().eq()… then await → run(filters). */
+  function filterChain(
+    run: (filters: Record<string, string>) => Promise<{ data: unknown; error: unknown }>,
+  ) {
+    const filters: Record<string, string> = {};
+    const chain: {
+      eq: (col: string, val: string) => typeof chain;
+      maybeSingle: () => Promise<{ data: unknown; error: unknown }>;
+      then: PromiseLike<{ data: unknown; error: unknown }>["then"];
+    } = {
+      eq(col: string, val: string) {
+        filters[col] = val;
+        return chain;
+      },
+      maybeSingle() {
+        return run(filters);
+      },
+      then(onFulfilled, onRejected) {
+        return run(filters).then(onFulfilled, onRejected);
+      },
+    };
+    return chain;
+  }
 
   beforeEach(() => {
     mailboxRowMissing = false;
@@ -114,19 +143,18 @@ describe("POST /api/acquire/email dedup claim", () => {
     mockFrom.mockImplementation((table: string) => {
       if (table === "acquire_dedup_keys") {
         return {
-          select: () => ({
-            eq: () => ({
-              maybeSingle: async () => {
-                if (hideExistingOnSelect || claimedKeys.size === 0) {
-                  return { data: null, error: null };
-                }
-                const key = [...claimedKeys][0];
-                return { data: { key }, error: null };
-              },
+          select: () =>
+            filterChain(async (filters) => {
+              if (hideExistingOnSelect) return { data: null, error: null };
+              const id = claimId(filters.agency_id, filters.key);
+              if (!filters.agency_id || !filters.key || !claimedKeys.has(id)) {
+                return { data: null, error: null };
+              }
+              return { data: { key: filters.key }, error: null };
             }),
-          }),
-          insert: async (payload: { key: string }) => {
-            if (claimedKeys.has(payload.key)) {
+          insert: async (payload: { key: string; agency_id: string }) => {
+            const id = claimId(payload.agency_id, payload.key);
+            if (claimedKeys.has(id)) {
               return {
                 data: null,
                 error: {
@@ -135,16 +163,16 @@ describe("POST /api/acquire/email dedup claim", () => {
                 },
               };
             }
-            claimedKeys.add(payload.key);
+            claimedKeys.add(id);
             return { data: payload, error: null };
           },
-          delete: () => ({
-            eq: async (_col: string, key: string) => {
-              deletedKeys.push(key);
-              claimedKeys.delete(key);
+          delete: () =>
+            filterChain(async (filters) => {
+              const id = claimId(filters.agency_id, filters.key);
+              deletedKeys.push(id);
+              claimedKeys.delete(id);
               return { data: null, error: null };
-            },
-          }),
+            }),
         };
       }
 
@@ -191,14 +219,15 @@ describe("POST /api/acquire/email dedup claim", () => {
               },
             }),
           }),
-          select: () => ({
-            eq: (_col: string, id: string) => ({
-              maybeSingle: async () => ({
-                data: leadRows.get(id) ?? null,
-                error: null,
-              }),
+          select: () =>
+            filterChain(async (filters) => {
+              const row = leadRows.get(filters.id);
+              if (!row) return { data: null, error: null };
+              if (filters.agency_id && row.agency_id !== filters.agency_id) {
+                return { data: null, error: null };
+              }
+              return { data: row, error: null };
             }),
-          }),
           // backfillLeadOwner: .update().eq(id).eq(agency).is(assigned_profile_id, null).select()
           update: (payload: Record<string, unknown>) => ({
             eq: (_idCol: string, id: string) => ({
@@ -355,6 +384,36 @@ describe("POST /api/acquire/email dedup claim", () => {
     expect(body.lead_created).toBe(false);
     expect(body.reason).toBe("duplicate");
     expect(leadInserts).toBe(1);
+  });
+
+  it("does not suppress another agency's identical portal inquiry (tenant-scoped dedup)", async () => {
+    const otherAgency = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    const { POST } = await import("../route");
+
+    const first = await POST(makeRequest());
+    expect(first.status).toBe(200);
+    expect((await first.json()).lead_created).toBe(true);
+    const [leadA] = [...leadRows.keys()];
+
+    const second = await POST(
+      makeRequest({
+        ...INQUIRY_BODY,
+        mailbox: { agencyId: otherAgency },
+      }),
+    );
+    expect(second.status).toBe(200);
+    const body = await second.json();
+    expect(body.lead_created).toBe(true);
+    expect(leadInserts).toBe(2);
+    expect(leadRows.size).toBe(2);
+    expect(claimedKeys.size).toBe(2);
+    const leadIds = [...leadRows.keys()];
+    expect(leadIds).toContain(leadA);
+    expect(leadIds.find((id) => id !== leadA)).toBeTruthy();
+    expect(leadRows.get(leadA)?.agency_id).toBe(AGENCY_ID);
+    expect(
+      [...leadRows.values()].find((row) => row.agency_id === otherAgency),
+    ).toBeTruthy();
   });
 
   it("drafts an AI reply for the broker to approve when a lead is created (never sends)", async () => {
