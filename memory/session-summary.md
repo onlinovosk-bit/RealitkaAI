@@ -1,3 +1,12 @@
+## Session 2026-10-18 (GO E-APPLY + Stripe 60 min)
+### Dokončené
+- Balík E `search-path-close` APLIKOVANÝ v PROD (`ypgajkhqtbriqqmyawyv`): verify-before 36/36 PASS pred, jedna transakcia, verify-after 36/36 PASS po; 11 SECDEF funkcií má `search_path` (match_* s `extensions`), ACL nezmenené, 0 SECDEF funkcií v public bez `search_path`. Rollback: `docs/ops/prod-packages/search-path-close/rollback.sql` (`GO E-ROLLBACK`). Smoke `match_leads` (manuálny, service_role) nespustený.
+- `docs/runbooks/stripe-go-live-60min.md`: kritická cesta 60 min s linkami (kľúč → verify → webhook → ceny → Tax → nákup → overenie).
+### Rozpracované / Pending
+- GO STRIPE-VYHODNOTENIE čaká na výstup `stripe_verify_prices.py` a screenshot webhook udalostí; merge #879 → #845 a #880 (founder, zelené CI).
+### Ďalší krok
+Founder: kroky 1–3 z `docs/runbooks/stripe-go-live-60min.md`.
+
 ## Session 2026-10-17 (GO VLNA-2B)
 ### Dokončené
 - B1: príčina červeného CI na #845 = testy bez mocku `subscriptions.retrieve` (6 failed → 66 passed, credits-billing-v2 68 passed). Produkčný kód OK. Draft PR #879 (base = vetva #845). `unpaid`/`incomplete_expired` → canceled/free je zámerná zmena #845 — čaká na potvrdenie foundera.
