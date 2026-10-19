@@ -14,6 +14,15 @@ const nextConfig: NextConfig = {
     }
     return config
   },
+  // Root `/` servíruje statický `public/index.html` (kampaň cenník v3, 2026-10-19).
+  // Rollback: zmazať tento rewrite — `/` sa vráti na App Router landing (`app/page.tsx`).
+  async rewrites() {
+    return {
+      beforeFiles: [{ source: '/', destination: '/index.html' }],
+      afterFiles: [],
+      fallback: [],
+    }
+  },
   async redirects() {
     return [
       { source: '/demo/:path+', destination: ZAKULISIE_DEFAULT, permanent: true },
