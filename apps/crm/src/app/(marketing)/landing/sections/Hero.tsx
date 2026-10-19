@@ -238,7 +238,7 @@ export default function Hero() {
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <RadiantSpriteIcon icon="dashboard" sizeClassName="h-4 w-4" className="rounded-sm shadow-none" />
-                <strong className="text-white">30-dňová</strong> garancia vrátenia
+                <strong className="text-white">100 %</strong> vrátenie peňazí do 30 dní – bez otázok
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <RadiantSpriteIcon icon="pipeline" sizeClassName="h-4 w-4" className="rounded-sm shadow-none" />

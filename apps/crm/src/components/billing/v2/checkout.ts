@@ -3,8 +3,20 @@ import {
   PRICING_V2_CHECKOUT_TYPE_CREDITS,
   PRICING_V2_CHECKOUT_TYPE_PLAN,
   PRICING_V2_ERROR_CODES,
-  type PricingV2CheckoutRequest,
 } from "@/lib/pricing-v2-contract";
+
+/**
+ * Telo `POST /api/billing/credits/checkout` pre plán v3: počet maklérov ide ako `seats` (quantity v Stripe),
+ * pásmo sa NEPOSIELA (server ho odvodí z `seats`). Ostatné polia obálky (`checkoutType`, `packCredits`) ostávajú ako doteraz.
+ */
+export type PricingV2PlanCheckoutBody = {
+  checkoutType: typeof PRICING_V2_CHECKOUT_TYPE_PLAN;
+  seats: number;
+  packCredits: number | null;
+  interval: PricingV2Interval;
+};
+export type PricingV2CreditsCheckoutBody = { checkoutType: typeof PRICING_V2_CHECKOUT_TYPE_CREDITS; credits: number };
+export type PricingV2CheckoutBody = PricingV2PlanCheckoutBody | PricingV2CreditsCheckoutBody;
 
 export type PricingV2CheckoutOutcome =
   | { kind: "redirect"; url: string }
@@ -15,7 +27,7 @@ export const PRICING_V2_MESSAGES = {
   disabled: "Nový cenník zatiaľ nie je zapnutý.",
   legacySubscription: "Predplatné máte dohodnuté. Pre zmenu nás prosím kontaktujte.",
   subscriptionExists: "Vaša kancelária už má aktívne predplatné. Zmenu pásma urobíte v správe predplatného.",
-  invalid: "Objednávku sa nepodarilo vytvoriť. Skontrolujte počet používateľov a balík.",
+  invalid: "Objednávku sa nepodarilo vytvoriť. Skontrolujte počet maklérov a balík.",
   generic: "Nepodarilo sa spustiť objednávku. Skúste to znova.",
 } as const;
 
@@ -26,25 +38,25 @@ export const PRICING_V2_MESSAGES = {
 export const SUBSCRIPTION_EXISTS_CODE = "subscription_exists";
 
 export function buildPlanRequest(
-  users: number,
+  seats: number,
   packCredits: number | null,
   interval: PricingV2Interval = "month",
-): PricingV2CheckoutRequest {
+): PricingV2PlanCheckoutBody {
   // Ročný plán sa s mesačným balíkom kreditov nekombinuje (iný interval fakturácie).
   return {
     checkoutType: PRICING_V2_CHECKOUT_TYPE_PLAN,
-    users,
+    seats,
     packCredits: interval === "year" ? null : packCredits,
     interval,
   };
 }
 
-export function buildCreditsRequest(credits: number): PricingV2CheckoutRequest {
+export function buildCreditsRequest(credits: number): PricingV2CreditsCheckoutBody {
   return { checkoutType: PRICING_V2_CHECKOUT_TYPE_CREDITS, credits };
 }
 
 /** Zavolá checkout a premení odpoveď (aj chybovú) na výsledok, ktorý UI vie zobraziť. */
-export async function submitPricingV2Checkout(body: PricingV2CheckoutRequest): Promise<PricingV2CheckoutOutcome> {
+export async function submitPricingV2Checkout(body: PricingV2CheckoutBody): Promise<PricingV2CheckoutOutcome> {
   let res: Response;
   try {
     res = await fetch("/api/billing/credits/checkout", {
