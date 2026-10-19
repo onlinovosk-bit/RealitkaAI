@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const h = vi.hoisted(() => ({
   customersRetrieve: vi.fn(),
+  subscriptionsRetrieve: vi.fn(),
   listUsers: vi.fn(async (): Promise<{ data: { users: Array<{ id: string; email: string }> } }> => ({ data: { users: [] } })),
   profileUpdate: vi.fn(),
   agencyUpdates: [] as Array<Record<string, unknown>>,
@@ -14,6 +15,7 @@ const h = vi.hoisted(() => ({
 
 vi.mock("stripe", () => ({
   default: vi.fn(function StripePlaceholder(this: Record<string, unknown>) {
+    this.subscriptions = { retrieve: h.subscriptionsRetrieve };
     this.customers = { list: vi.fn(async () => ({ data: [] })), retrieve: h.customersRetrieve };
     return undefined;
   }),
@@ -68,19 +70,16 @@ const V3 = {
 const LEGACY_PRO = "price_1LegacyPro0001";
 
 function subEvent(type: string, priceIds: string[], extra: Record<string, unknown> = {}, quantity = 3) {
-  return {
-    id: "evt_1",
-    type,
-    data: {
-      object: {
-        id: "sub_1",
-        customer: "cus_1",
-        status: "active",
-        items: { data: priceIds.map((id) => ({ quantity, price: { id } })) },
-        ...extra,
-      },
-    },
-  } as never;
+  const object = {
+    id: "sub_1",
+    customer: "cus_1",
+    status: "active",
+    items: { data: priceIds.map((id) => ({ quantity, price: { id } })) },
+    ...extra,
+  };
+  // `updated` handler dočíta živé predplatné cez stripe.subscriptions.retrieve; mock vráti stav zhodný s udalosťou.
+  if (type === "customer.subscription.updated") h.subscriptionsRetrieve.mockResolvedValue(object);
+  return { id: "evt_1", type, data: { object } } as never;
 }
 
 beforeEach(() => {

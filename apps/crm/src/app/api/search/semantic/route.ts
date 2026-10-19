@@ -4,14 +4,17 @@
  *
  * Tok:
  *   1. Generuj embedding pre query (OpenAI)
- *   2. Zavolaj Supabase RPC match_leads / match_properties
- *   3. Načítaj detaily nájdených záznamov
+ *   2. Zavolaj Supabase RPC match_leads / match_properties cez service_role
+ *      (EXECUTE majú po balíku rls-rest-close iba service_role). Funkcie sú
+ *      SECURITY DEFINER a NEFILTRUJÚ podľa agentúry => id z RPC sú iba kandidáti.
+ *   3. Načítaj detaily iba session klientom (RLS) + explicitný filter agency_id;
+ *      cudzie id sa zahodia. Bez agency_id volajúceho sa RPC nevolá vôbec.
  *   4. Fallback na ILIKE ak embeddingy nie sú dostupné
  */
 
 import { okResponse, errorResponse } from "@/lib/api-response";
 import { getCurrentProfile, getCurrentUser } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { generateEmbedding } from "@/lib/embeddings";
 import { incrementUsageMetric, SYSTEM_USAGE_AGENCY_ID } from "@/lib/usage-metrics";
 
@@ -21,6 +24,10 @@ type EntityType = (typeof ENTITY_TYPES)[number];
 const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 50;
 const SIMILARITY_THRESHOLD = 0.3;
+// RPC nemá parameter agentúry: top-N je globálne, preto si vypýtame viac kandidátov,
+// aby po odfiltrovaní cudzích agentúr zostalo dosť vlastných výsledkov.
+const CANDIDATE_MULTIPLIER = 5;
+const MAX_CANDIDATES = 200;
 
 // ─── Typy výsledkov ───────────────────────────────────────────
 
@@ -91,9 +98,10 @@ export async function POST(req: Request) {
       limit
     );
     return okResponse({ results, mode: "semantic", query });
-  } catch (embeddingError) {
+  } catch (semanticError) {
     // ── Fallback: ILIKE textové vyhľadávanie ─────────────────
-    console.warn("[semantic-search] Embedding zlyhalo, fallback na ILIKE:", embeddingError);
+    // Dôvod fallbacku musí byť viditeľný (napr. RPC permission denied po REVOKE).
+    console.warn("[semantic-search] Semantic search zlyhal (embedding/RPC/izolácia), fallback na ILIKE:", semanticError);
     try {
       const results = await ilikeFallback(supabase, query.trim(), type as EntityType, limit);
       return okResponse({ results, mode: "fallback", query });
@@ -123,11 +131,17 @@ async function semanticSearch(
     delta: Math.max(1, totalTokens || 1),
   });
 
+  // Fail-closed: bez agentúry volajúceho nie je čo izolovať -> ILIKE fallback (RLS).
+  const callerAgencyId = profile?.agency_id ?? null;
+  if (!callerAgencyId) {
+    throw new Error("semantic search: volajúci nemá agency_id");
+  }
+
   const rpcName = type === "leads" ? "match_leads" : "match_properties";
-  const { data: matches, error: rpcError } = await supabase.rpc(rpcName, {
+  const { data: matches, error: rpcError } = await createAdminClient().rpc(rpcName, {
     query_embedding: queryEmbedding,
     match_threshold: SIMILARITY_THRESHOLD,
-    match_count: limit,
+    match_count: Math.min(limit * CANDIDATE_MULTIPLIER, MAX_CANDIDATES),
   }) as { data: Array<{ id: string; similarity: number }> | null; error: unknown };
 
   if (rpcError) throw rpcError;
@@ -136,9 +150,11 @@ async function semanticSearch(
   const ids = matches.map((m) => m.id);
   const similarityMap = new Map(matches.map((m) => [m.id, m.similarity]));
 
-  return type === "leads"
-    ? fetchLeadDetails(supabase, ids, similarityMap)
-    : fetchPropertyDetails(supabase, ids, similarityMap);
+  const details =
+    type === "leads"
+      ? await fetchLeadDetails(supabase, ids, similarityMap, callerAgencyId)
+      : await fetchPropertyDetails(supabase, ids, similarityMap, callerAgencyId);
+  return details.slice(0, limit);
 }
 
 // ─── ILIKE fallback ───────────────────────────────────────────
@@ -177,11 +193,13 @@ async function ilikeFallback(
 async function fetchLeadDetails(
   supabase: Awaited<ReturnType<typeof createClient>>,
   ids: string[],
-  similarityMap: Map<string, number>
+  similarityMap: Map<string, number>,
+  agencyId: string
 ): Promise<LeadSearchResult[]> {
   const { data, error } = await supabase
     .from("leads")
     .select("id, name, location, status, score, budget")
+    .eq("agency_id", agencyId)
     .in("id", ids);
 
   if (error) throw error;
@@ -202,11 +220,13 @@ async function fetchLeadDetails(
 async function fetchPropertyDetails(
   supabase: Awaited<ReturnType<typeof createClient>>,
   ids: string[],
-  similarityMap: Map<string, number>
+  similarityMap: Map<string, number>,
+  agencyId: string
 ): Promise<PropertySearchResult[]> {
   const { data, error } = await supabase
     .from("properties")
     .select("id, title, location, type, rooms, price, status")
+    .eq("agency_id", agencyId)
     .in("id", ids);
 
   if (error) throw error;

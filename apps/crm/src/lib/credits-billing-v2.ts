@@ -647,20 +647,82 @@ export function clampLicensedUsers(current: number | null | undefined, fallback 
 }
 
 /**
- * Spracuje subscription udalosť s v2 cenou. Vráti false LEN pri zlyhanom zápise do DB (Stripe zopakuje).
+ * Skutočné predplatné zo Stripe. Udalosti `customer.subscription.*` môžu prísť mimo poradia
+ * alebo sa opakovať; payload udalosti NESMIE prepisovať aktuálny stav (rovnaký princíp ako
+ * `syncAgencyBillingLifecycle` a `fulfillPricingV2PlanCheckout`).
+ *
+ * `resource_missing` → shell so statusom `canceled` (predplatné už neexistuje).
+ */
+async function loadLiveSubscriptionForEvent(
+  subscriptionId: string,
+  reader?: StripeSubscriptionReader | null,
+): Promise<SubscriptionLike | null> {
+  const stripe = reader ?? getStripe();
+  if (!stripe) {
+    console.error("[pricing-v2] subscription event: STRIPE_SECRET_KEY chýba, stav sa nedá overiť", {
+      subscriptionId,
+    });
+    return null;
+  }
+  try {
+    return (await stripe.subscriptions.retrieve(subscriptionId)) as unknown as SubscriptionLike;
+  } catch (err) {
+    const code = (err as { code?: unknown } | null)?.code;
+    if (code === "resource_missing") {
+      return { id: subscriptionId, status: "canceled", items: { data: [] } };
+    }
+    console.error("[pricing-v2] subscription event: retrieve failed", {
+      subscriptionId,
+      code: code ?? null,
+    });
+    return null;
+  }
+}
+
+async function revokePricingV2Agency(
+  supabase: NonNullable<ReturnType<typeof createServiceRoleClient>>,
+  agencyId: string,
+  now: string,
+): Promise<boolean> {
+  const { error } = await supabase
+    .from("agencies")
+    .update({ subscription_status: "canceled", account_tier: "free", pack_credits: 0, billing_updated_at: now })
+    .eq("id", agencyId);
+  if (error) {
+    console.warn("[pricing-v2] cancel update failed:", error.message);
+    return false;
+  }
+  const { error: profileErr } = await supabase
+    .from("profiles")
+    .update({ account_tier: "free", ui_role: "agent", protocol_active: false })
+    .eq("agency_id", agencyId);
+  if (profileErr) console.warn("[pricing-v2] cancel profile downgrade:", profileErr.message);
+  return true;
+}
+
+/**
+ * Spracuje subscription udalosť s v2 cenou. Vráti false LEN pri zlyhanom zápise do DB alebo
+ * keď sa stav zo Stripe nedá overiť (Stripe zopakuje).
  * Neznáma kancelária = ack (true): `created`/`updated` často predbehnú checkout.session.completed,
  * ktorý je vlastníkom prvotného zápisu.
+ *
+ * Stav a položky berieme zo Stripe retrieve — nie z payloadu udalosti. Inak oneskorený
+ * `subscription.updated` so statusom `past_due`/`active` prepíše správny stav, ktorý práve
+ * zapísal `syncAgencyBillingLifecycle`, a môže znova aktivovať zrušený plán alebo zastaviť granty.
  */
-export async function applyPricingV2SubscriptionEvent(event: Stripe.Event): Promise<boolean> {
-  const subscription = event.data.object as unknown as SubscriptionLike;
-  if (!subscription?.id) return false;
+export async function applyPricingV2SubscriptionEvent(
+  event: Stripe.Event,
+  deps: { stripe?: StripeSubscriptionReader } = {},
+): Promise<boolean> {
+  const eventSubscription = event.data.object as unknown as SubscriptionLike;
+  if (!eventSubscription?.id) return false;
   const supabase = createServiceRoleClient();
   if (!supabase) return false;
 
   const { data: agency, error: readErr } = await supabase
     .from("agencies")
     .select("id, pricing_model, licensed_users")
-    .eq("stripe_subscription_id", subscription.id)
+    .eq("stripe_subscription_id", eventSubscription.id)
     .maybeSingle();
   if (readErr) {
     console.warn("[pricing-v2] subscription event: agency lookup failed:", readErr.message);
@@ -669,7 +731,7 @@ export async function applyPricingV2SubscriptionEvent(event: Stripe.Event): Prom
   if (!agency || agency.pricing_model !== PRICING_V2_AGENCY_MODEL) {
     console.info("[pricing-v2] subscription event for unknown/non-v2 agency; fulfillment owns first write", {
       type: event.type,
-      subscriptionId: subscription.id,
+      subscriptionId: eventSubscription.id,
     });
     return true;
   }
@@ -679,30 +741,28 @@ export async function applyPricingV2SubscriptionEvent(event: Stripe.Event): Prom
 
   if (event.type === "customer.subscription.deleted") {
     // Zrušenie: stav canceled (cron ani fulfillment už negrantuje) a návrat na free, ako legacy forceFree.
-    const { error } = await supabase
-      .from("agencies")
-      .update({ subscription_status: "canceled", account_tier: "free", pack_credits: 0, billing_updated_at: now })
-      .eq("id", agency.id);
-    if (error) {
-      console.warn("[pricing-v2] cancel update failed:", error.message);
-      return false;
-    }
-    const { error: profileErr } = await supabase
-      .from("profiles")
-      .update({ account_tier: "free", ui_role: "agent", protocol_active: false })
-      .eq("agency_id", agency.id);
-    if (profileErr) console.warn("[pricing-v2] cancel profile downgrade:", profileErr.message);
-    return true;
+    // Typ udalosti je zdroj pravdy — retrieve môže ešte chvíľu vrátiť starší stav.
+    return revokePricingV2Agency(supabase, agency.id as string, now);
   }
 
   if (event.type !== "customer.subscription.updated") return true;
 
-  // updated: stav predplatného sa prenáša vždy (past_due/unpaid/canceled = žiadne ďalšie granty).
+  const subscription = await loadLiveSubscriptionForEvent(eventSubscription.id, deps.stripe);
+  if (!subscription) return false;
+
   const status = typeof subscription.status === "string" && subscription.status ? subscription.status : null;
   if (!status) {
-    console.warn("[pricing-v2] subscription.updated without status", { subscriptionId: subscription.id });
+    console.warn("[pricing-v2] subscription.updated without live status", { subscriptionId: eventSubscription.id });
     return false;
   }
+
+  // Zrušené / unpaid / incomplete_expired: rovnaký downgrade ako pri `deleted`.
+  // Stale `updated` so statusom `active` NESMIE znova aktivovať platený plán.
+  if (REVOKED_SUBSCRIPTION_STATUSES.has(status)) {
+    return revokePricingV2Agency(supabase, agency.id as string, now);
+  }
+
+  // updated: stav predplatného sa prenáša vždy (past_due = žiadne ďalšie granty).
   const update: Record<string, unknown> = { subscription_status: status, billing_updated_at: now };
   const { band, seatQuantity, packCredits } = readPricingV2SubscriptionItems(subscription);
   if (band && seatQuantity !== null) {
@@ -715,7 +775,7 @@ export async function applyPricingV2SubscriptionEvent(event: Stripe.Event): Prom
     update.pack_credits = packCredits;
   } else {
     console.warn("[pricing-v2] subscription.updated without a single v2 seat item; only status synced", {
-      subscriptionId: subscription.id,
+      subscriptionId: eventSubscription.id,
     });
   }
   const { error } = await supabase.from("agencies").update(update).eq("id", agency.id);

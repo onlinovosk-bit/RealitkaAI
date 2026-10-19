@@ -19,6 +19,8 @@ const h = vi.hoisted(() => ({
   subStatus: "active",
   /** Ak je nastavené, Stripe vráti tieto položky predplatného; inak sa odvodia z poslednej vytvorenej Checkout Session. */
   subItems: null as null | Array<{ quantity: number; price: { id: string } }>,
+  /** Živé predplatné vo Stripe pre `customer.subscription.updated` (handler ho vždy dočítava cez retrieve). */
+  liveSub: null as Record<string, any> | null,
   created: [] as Array<Record<string, any>>,
   getCurrentUser: vi.fn(),
   getCurrentProfile: vi.fn(),
@@ -37,6 +39,7 @@ vi.mock("stripe", () => ({
     };
     this.subscriptions = {
       retrieve: async (id: string) => {
+        if (h.liveSub && h.liveSub.id === id) return h.liveSub;
         const last = h.created[h.created.length - 1];
         const derived = ((last?.line_items ?? []) as Array<{ price: string; quantity: number }>).map((li) => ({
           quantity: li.quantity,
@@ -256,24 +259,22 @@ function sessionEvent(metadata: Record<string, string>, over: Record<string, unk
 
 type SubItem = string | [string, number];
 function subEvent(type: string, over: Record<string, unknown> = {}, items: SubItem[] = [[SEAT_M, 3]]) {
-  return {
-    id: `evt_${++evtSeq}`,
-    type,
-    data: {
-      object: {
-        id: "sub_1",
-        customer: "cus_1",
-        status: "active",
-        items: {
-          data: items.map((it) => {
-            const [id, quantity] = typeof it === "string" ? [it, 1] : it;
-            return { quantity, price: { id } };
-          }),
-        },
-        ...over,
-      },
+  const object = {
+    id: "sub_1",
+    customer: "cus_1",
+    status: "active",
+    items: {
+      data: items.map((it) => {
+        const [id, quantity] = typeof it === "string" ? [it, 1] : it;
+        return { quantity, price: { id } };
+      }),
     },
-  } as any;
+    ...over,
+  };
+  // `updated` handler stav a položky čerpá zo živého predplatného (stripe.subscriptions.retrieve), nie z payloadu.
+  // Živé predplatné = rovnaký obsah ako udalosť (testy popisujú stav, ktorý Stripe aktuálne hlási).
+  if (type === "customer.subscription.updated") h.liveSub = object;
+  return { id: `evt_${++evtSeq}`, type, data: { object } } as any;
 }
 
 function webhookReq(event: unknown) {
@@ -298,6 +299,7 @@ beforeEach(() => {
   evtSeq = 0;
   h.subStatus = "active";
   h.subItems = null;
+  h.liveSub = null;
   h.created.length = 0;
   h.syncTierSpy.mockClear();
   db.agencies = [freshAgency()];
@@ -521,7 +523,12 @@ describe("(d) zlyhaná platba / stav != active -> žiadny grant", () => {
     await handlePricingCheckoutWebhook(sessionEvent(params.metadata));
     for (const status of ["past_due", "unpaid", "canceled", "incomplete_expired", "paused"]) {
       await handleStripeWebhookEvent(subEvent("customer.subscription.updated", { status }));
-      expect(agency().subscription_status).toBe(status);
+      if (["unpaid", "canceled", "incomplete_expired"].includes(status)) {
+        // Zrušené / unpaid / incomplete_expired: rovnaký downgrade ako pri `deleted` (stav "canceled", tier free).
+        expect(agency()).toMatchObject({ subscription_status: "canceled", account_tier: "free", pack_credits: 0 });
+      } else {
+        expect(agency().subscription_status).toBe(status);
+      }
     }
     vi.setSystemTime(new Date("2026-11-01T05:00:00Z"));
     await runMonthlyCreditCycle();
