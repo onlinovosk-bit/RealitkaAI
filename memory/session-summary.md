@@ -1,3 +1,43 @@
+## Session 2026-10-17 (www.revolis.ai SEO)
+### Dokončené
+- RAU route: GO_REQUIRED BUILD revolis (slovo „merge“ v zadaní; merge nerobím).
+- Apex→www 307 overený naživo (`server: Vercel`); v repe host redirect nie je.
+- Canonical + og:url na `/`, `/demo`, `/balik`; `robots.ts` + `sitemap.ts` (len www `/` `/demo` `/balik`).
+- Testy 48/48, `next build` (15.5.15) zelený, lokálny smoke 200 na robots/sitemap + canonical tagy.
+- Report: `docs/reports/2026-10-17-marketing-www-seo.md`.
+### Rozpracované / Pending
+- Draft PR (bez merge). 308/301 na apexe ostáva manuálny krok vo Vercel Domains projektu `revolis-marketing`.
+- Preview deploy pre `cursor/*` je v `apps/marketing/vercel.json` vypnutý.
+### Kľúčové súbory zmenené
+- `apps/marketing/lib/site.ts`: kanonický origin www.
+- `apps/marketing/app/{layout,demo/page,balik/layout,robots,sitemap}.tsx?ts`: metadata + robots + sitemap.
+- `apps/marketing/__tests__/seo.test.ts`: unit testy.
+### Ďalší krok
+Founder: review draft PR; po merge zmeniť Vercel Domains 307→308. RAU route: GO_REQUIRED BUILD revolis.
+
+## Session 2026-10-16 (10 bodov zadania 2026-10-15)
+### Dokončené
+- **Bod 1** — AI návrhy odpovedí za 30 dní zmerané na PROD (3 vytvorené / 0 schválených / 0 odoslaných), PR #851 zmergovaný (`515a8b5b`).
+- **Bod 3** — plánovač Gmail pull v `apps/crm/vercel.json` (`20 8 * * *`) + stopa pri vypnutí (`recordSkippedCronRun`), PR #855 zmergovaný (`4094e12e`), nasadenie zelené.
+- **Bod 2** — UI nastavení ranného prehľadu (stránka + API + panel), PR #852, ready for review.
+- **Bod 4** — plánovač Realvia fronty (`50 11 * * *`) + denník behov, PR #856 (draft).
+- **Bod 5** — rozsah importu zmapovaný; `importPortalLeadsFromCsv` prepísaný (chýbal `agency_id` → RLS odmietala KAŽDÝ riadok a volajúci to hlásil ako `{imported: 0}`), PR #858 (draft).
+- **Bod 9** — 12 živých LLM call sites minimalizovaných (`lib/privacy/minimize.ts` + 18 testov), PR #857.
+- **Bod 10** — trial bez karty overený end-to-end (pri samoobslužnej registrácii nevzniká žiadny objekt v Stripe, takže niet čo strhnúť); `trialGraceFrom()` vyčlenená ako čistá funkcia a opravené dve chyby prístupovej brány; skript pre live katalóg cien pripravený, PR #854 (draft).
+### Rozpracované / Pending
+- **Bod 6** — PR #853 founder 16. 10. zavrel bez mergu. Overené na `main` (`f7f53686`) v tomto turne: `apps/crm/src/app/api/cron/follow-up-sweep/route.ts` obsahuje **0** výskytov `recordCronRun`. Nočný sweep teda zostáva nepozorovateľný a záhada „522 z 523 leadov spĺňa podmienky, 0 návrhov vzniklo" sa nedá zodpovedať.
+- **Body 7 a 8** — blokované na founderovi: korpus e-mailov, gold labels vyrobené človekom, LIA, Anthropic v `/legal/sub-processors`, env vlajky. V kóde netreba nič.
+- Founder musí urobiť: `RESEND_API_KEY` do Vercelu; šesť `GOOGLE_GMAIL_INBOUND_*`; spustiť live Stripe skript; nastaviť `STRIPE_PRICE_V2_*` a potom `PRICING_V2_ENABLED`.
+- Otvorené PR: #852, #854, #856, #857, #858.
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/saas-ops.ts`, `billing-store.ts`: `trialGraceFrom()` ako čistá funkcia; `lookupFailed` sa číta z objektu, nie z `catch`, ktorý nikdy nenastal.
+- `apps/crm/src/lib/ops/cron-run.ts`: `recordSkippedCronRun()` s `SKIPPED_CRON_MIN_INTERVAL_MS` (strop na dvojicu job+dôvod, aby častý plán nezaplavil denník).
+- `apps/crm/src/lib/privacy/minimize.ts` + 12 call sites: meno von, `firstNameOnly` / `cityOnly` / placeholdery + `restoreName`.
+- `apps/crm/src/lib/integrations-store.ts`: `PortalImportResult` s chybami po riadkoch, `agency_id` doplnené.
+- `apps/crm/src/app/(dashboard)/billing/__tests__/billing-page-w3.test.tsx`: oprava náhodne padajúceho golden testu.
+### Ďalší krok
+Zmergovať #852 (nesie opravu flaky testu, ktorá na `main` odblokuje ostatné PR), potom zvyšné podľa GO foundera.
+
 ## Session 2026-10-15 (Anthropic prompt cache)
 ### Dokončené
 - Inventúra všetkých Anthropic/Claude call sites (žiadny Vercel AI SDK anthropic provider).

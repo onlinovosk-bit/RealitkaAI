@@ -41,9 +41,10 @@ curl.exe -s -i -X POST "https://app.revolis.ai/api/webhooks/realvia" `
   --data-binary "@$env:TEMP\realvia-test.json"
 ```
 
-**Debug incoming headers (po deployi):**
+**Debug incoming headers (po deployi, vyžaduje cron auth):**
 ```powershell
-curl.exe -s "https://app.revolis.ai/api/webhooks/realvia?dump=headers"
+curl.exe -s "https://app.revolis.ai/api/webhooks/realvia?dump=headers" `
+  -H "Authorization: Bearer <CRON_SECRET>"
 ```
 
 ### Krok 4 – Očakávaná odpoveď

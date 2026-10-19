@@ -18,6 +18,8 @@ import {
 import {
   areSeatCheckoutPricesConfigured,
   areTopupCheckoutPricesConfigured,
+  missingSeatPriceEnvKeys,
+  missingTopupPriceEnvKeys,
 } from "@/lib/program-tier-pricing";
 
 export async function POST(request: Request) {
@@ -85,7 +87,9 @@ export async function POST(request: Request) {
 
     if (parsed.type === "topup" && parsed.topupPackage) {
       if (!areTopupCheckoutPricesConfigured()) {
-        return errorResponse("Top-up checkout nie je dostupný — chýbajú Stripe ceny.", 503);
+        return errorResponse("Top-up checkout nie je dostupný — chýbajú Stripe ceny.", 503, {
+          missingPriceEnvKeys: missingTopupPriceEnvKeys(),
+        });
       }
       const result = await createTopupCheckoutSession(parsed.topupPackage);
       if (!result?.url) {
@@ -96,7 +100,9 @@ export async function POST(request: Request) {
 
     if (parsed.type === "seat" && parsed.seatTier) {
       if (!areSeatCheckoutPricesConfigured()) {
-        return errorResponse("Seat checkout nie je dostupný — chýbajú Stripe ceny.", 503);
+        return errorResponse("Seat checkout nie je dostupný — chýbajú Stripe ceny.", 503, {
+          missingPriceEnvKeys: missingSeatPriceEnvKeys(),
+        });
       }
       const result = await createSeatCheckoutSession({
         seatTier: parsed.seatTier,

@@ -33,6 +33,7 @@ vi.mock("@/lib/supabase/server", () => {
     const c: Record<string, unknown> = {};
     for (const m of ["select", "in", "lt", "order", "eq", "update"]) c[m] = () => c;
     c.limit = async () => result;
+    c.insert = async () => ({ error: null });
     c.maybeSingle = async () => ({ data: { ai_followup_count: 0 }, error: null });
     c.then = (r: (v: unknown) => unknown) => Promise.resolve({ error: null }).then(r);
     return c;

@@ -30,8 +30,9 @@ export async function getAssistantAnswer(
     return { ok: false, error: "Príležitosť neexistuje.", status: 404 };
   }
 
+  // BOD 9 (PII): meno sa neposiela. Maklér sa pýta na dopyt, nie na meno —
+  // a to má pred sebou v CRM.
   const context = [
-    `Meno: ${lead.name}`,
     `Status: ${lead.status}`,
     `Rozpočet: ${lead.budget}`,
     `Lokalita: ${lead.location}`,
