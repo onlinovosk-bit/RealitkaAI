@@ -1,21 +1,27 @@
 #!/usr/bin/env python3
-"""Zaloz katalog Revolis v2 v Stripe LIVE rezime. Spusta ho VYLUCNE founder.
+"""Zaloz katalog Revolis v3 (cennik v3) v Stripe LIVE rezime. Spusta ho VYLUCNE founder (Andrej),
+az PO merge PR "Cennik v3" - nikdy agent, nikdy skor.
 
-Bod 10 zadania 2026-10-15: kampan stoji na 14-dnovom triale bez karty a na
-cennikoch Start 25 / Team 60 / Kancelaria 149 / Siet od 349 EUR bez DPH.
-Ceny musia v Stripe existovat skor, nez sa prvy klient dostane na /upgrade.
+Cennik v3 (GO foundera 2026-10-19): jeden produkt "Revolis licencia" s dvoma tiered (graduated)
+cenami (mesacna a rocna, quantity = pocet maklerov), kupon akcie 9/12 (percent_off 25,
+duration once, redeem_by 2026-12-31T22:59:59Z, len na produkt licencie), 6 balikov kreditov
+na samostatnom produkte a jednorazovy kredit 0,75 EUR. Vsetko bez DPH, tax_behavior exclusive.
 
-Co skript robi:
+Predvolene je skript DRY-RUN:
   * bez argumentov        -- iba vypise plan (ziadna siet, ziadny kluc),
-  * --inspect-account     -- precita ID uctu a ci je v live rezime,
-  * --apply               -- ZALOZI chybajuce produkty a ceny v LIVE rezime.
+  * --inspect-account     -- precita ID uctu a ci je v live rezime (iba cita),
+  * --apply               -- ZALOZI chybajuce produkty, ceny a kupon v LIVE rezime;
+                             vyzaduje vsetky vedome potvrdenia naraz:
+                             --yes-live --expect-account acct_... --plan-tax-code txcd_...
+                             --credit-tax-code txcd_... --i-am-the-founder
 
-Co skript nerobi nikdy: nemeni ani nedeaktivuje existujuce produkty, ceny,
-zakaznikov ani predplatne; nenastavuje danove registracie; nezapisuje do
-Vercelu ani do repozitara. Vytvara len to, co chyba.
+Co skript nerobi nikdy: nemeni ani nedeaktivuje existujuce produkty, ceny, kupony,
+zakaznikov ani predplatne; nenastavuje danove registracie; nezapisuje do Vercelu ani do
+repozitara. Vytvara len to, co chyba.
 
-Idempotencia: kazda cena ma `lookup_key`. Ked uz existuje a sedi s katalogom,
-skript ju preskoci; ked existuje a NESEDI, zastavi sa a nic nemeni.
+Idempotencia: kazda cena ma `lookup_key`, kupon metadata `revolis_sku` + `pricing_version`.
+Ked uz existuje a sedi s katalogom (vratane tiers a kuponu), skript ho preskoci; ked
+existuje a NESEDI, zastavi sa a nic nemeni.
 
 Kluc sa necita z repozitara ani z argumentu (bol by v historii shellu):
 berie sa z premennej STRIPE_LIVE_SECRET_KEY, inak sa pyta skryto.
@@ -94,24 +100,41 @@ class StripeLive:
     def prices_for(self, lookup_key):
         return self.request("GET", "/prices", {"lookup_keys[]": lookup_key, "limit": 100})["data"]
 
+    def coupons(self):
+        result = []
+        params = {"limit": 100}
+        while True:
+            page = self.request("GET", "/coupons", params)
+            result.extend(page["data"])
+            if not page.get("has_more"):
+                return result
+            params["starting_after"] = page["data"][-1]["id"]
+
 
 def get_live_key():
     return os.environ.get("STRIPE_LIVE_SECRET_KEY") or getpass.getpass("Stripe live kluc: ")
 
 
 def plan(catalog):
-    """Offline vypis: co by skript v LIVE rezime zalozil. Nepotrebuje kluc."""
+    """Offline vypis (DRY-RUN): co by skript v LIVE rezime zalozil. Nepotrebuje kluc, nic nezapisuje."""
     items = catalog["items"]
-    produkty = [x for x in items if "product_sku" not in x]
-    print(f"Katalog {catalog['catalog_version']}: {len(produkty)} produktov, {len(items)} cien, mena "
-          f"{catalog['currency'].upper()}, tax_behavior {catalog['tax_behavior']}.")
-    print("SKU | produkt | bez DPH EUR | vzor s 23 % DPH EUR | interval | lookup_key | env")
+    produkty = {x.get("product_sku", x["sku"]) for x in items}
+    print(f"Katalog {catalog['catalog_version']}: {len(produkty)} produkty, {len(items)} cien, "
+          f"{len(catalog['coupons'])} kupon, mena {catalog['currency'].upper()}, "
+          f"tax_behavior {catalog['tax_behavior']}.")
+    print("SKU | produkt | bez DPH EUR / tiers | vzor s 23 % DPH EUR | interval | lookup_key | env")
     for x in items:
         interval = x["recurring_interval"] or "jednorazovo"
-        print(f"{x['sku']} | {x['name']} | {shared.eur(x['unit_amount_cents'])} | "
-              f"{shared.eur(x['gross_example_cents'])} | {interval} | {x['lookup_key']} | {x['env_key']}")
-    print("\nToto je iba plan. Nic sa neposlalo do Stripe. Zalozenie: --apply "
-          "s --expect-account, --plan-tax-code, --credit-tax-code a --yes-live.")
+        if x.get("billing_scheme") == "tiered":
+            amount, gross = f"tiered graduated ({shared.tier_summary(x)})", "-"
+        else:
+            amount, gross = shared.eur(x["unit_amount_cents"]), shared.eur(x["gross_example_cents"])
+        print(f"{x['sku']} | {x['name']} | {amount} | {gross} | {interval} | {x['lookup_key']} | {x['env_key']}")
+    for c in catalog["coupons"]:
+        print(f"{c['sku']} | kupon | -{c['percent_off']} % duration={c['duration']} "
+              f"redeem_by={c['redeem_by_iso']} ({c['redeem_by']}) | len produkt {shared.LICENCE_PRODUCT_NAME} | {c['env_key']}")
+    print("\nDRY-RUN: toto je iba plan. Nic sa neposlalo do Stripe. Zalozenie robi iba founder po merge: "
+          "--apply s --yes-live, --expect-account, --plan-tax-code, --credit-tax-code a --i-am-the-founder.")
 
 
 def apply_live(catalog, args):
@@ -132,7 +155,7 @@ def apply_live(catalog, args):
         if meta.get("pricing_version") == catalog["catalog_version"]:
             sku = meta.get("revolis_sku")
             if sku in known:
-                raise ValueError(f"Dva v2 produkty s rovnakym SKU: {sku}")
+                raise ValueError(f"Dva v3 produkty s rovnakym SKU: {sku}")
             known[sku] = product
 
     ids = {}
@@ -148,7 +171,7 @@ def apply_live(catalog, args):
             raise ValueError(f"Nejednoznacny lookup_key: {item['lookup_key']}")
         price = prices[0] if prices else None
         if price and not product:
-            raise ValueError(f"Price pre {sku} existuje bez ocakavaneho v2 produktu.")
+            raise ValueError(f"Price pre {sku} existuje bez ocakavaneho v3 produktu.")
         if not product and product_sku != sku:
             raise ValueError(f"Produkt {product_sku} pre rocnu cenu {sku} este neexistuje.")
 
@@ -173,17 +196,24 @@ def apply_live(catalog, args):
         ids[item["env_key"]] = price["id"]
         print(f"{sku}: {product['id']} / {price['id']} ({stav})")
 
-    print(f"\nHotovo. Novych objektov: {zalozene}.")
+    def require_live(obj, what):
+        if obj.get("livemode") is not True:
+            raise ValueError(f"Stripe vytvoril {what} mimo live rezimu; zastavene.")
+
+    ids.update(shared.ensure_coupons(stripe, catalog, known, "live:", require_live))
+
+    print(f"\nHotovo. Novych objektov: {zalozene} (produkty a ceny; kupon sa hlasi riadkom vyssie).")
     if args.output:
         Path(args.output).write_text(json.dumps({
             "stripe_account": account["id"], "catalog_version": catalog["catalog_version"],
             "mode": "live", "price_ids": ids,
         }, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         print(f"Zoznam live Price ID: {args.output}")
-    print("\nPremenne do Vercelu (Production). Price ID nie je tajomstvo, ale kluc ano:")
-    for env_key, price_id in ids.items():
-        print(f"  {env_key}={price_id}")
-    print("Az ked su vsetky nastavene, zapni PRICING_V2_ENABLED. Predtym cennik v2 necakaj v UI.")
+    print("\nPremenne do Vercelu (Production). Price/kupon ID nie je tajomstvo, ale kluc ano:")
+    for env_key, obj_id in ids.items():
+        print(f"  {env_key}={obj_id}")
+    print("Dalsi krok: bash scripts/ops/stripe-verify-prices.sh (live verify). Az ked su vsetky env nastavene "
+          "vo Verceli, zapni PRICING_V2_ENABLED; PRICING_PUBLIC_ENABLED az neskor.")
 
 
 def main():
@@ -193,12 +223,14 @@ def main():
     group.add_argument("--inspect-account", action="store_true",
                        help="iba precitat ID a rezim live uctu")
     group.add_argument("--apply", action="store_true",
-                       help="zalozit chybajuce produkty a ceny v LIVE rezime")
+                       help="zalozit chybajuce produkty, ceny a kupon v LIVE rezime (inak je skript DRY-RUN)")
     parser.add_argument("--expect-account", help="pozadovane Stripe acct_...; povinne pri --apply")
     parser.add_argument("--plan-tax-code", help="potvrdeny Stripe Tax kod produktu pre plany")
     parser.add_argument("--credit-tax-code", help="potvrdeny Stripe Tax kod produktu pre kredity")
     parser.add_argument("--yes-live", action="store_true",
                         help="vedome potvrdenie, ze sa zapisuje do LIVE rezimu")
+    parser.add_argument("--i-am-the-founder", action="store_true", dest="founder",
+                        help="vedome potvrdenie, ze --apply spusta founder (Andrej) po merge PR")
     parser.add_argument("--output", help="volitelny JSON subor s vyslednymi live Price ID")
     args = parser.parse_args()
     try:
@@ -215,6 +247,8 @@ def main():
             for field in ("plan_tax_code", "credit_tax_code"):
                 if not re.fullmatch(r"txcd_[0-9]{8}", getattr(args, field) or ""):
                     parser.error(f"--{field.replace('_', '-')} txcd_XXXXXXXX je povinny")
+            if not args.founder:
+                parser.error("--i-am-the-founder je povinne: live katalog zaklada iba founder po merge")
             apply_live(catalog, args)
         else:
             plan(catalog)
