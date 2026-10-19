@@ -1,3 +1,13 @@
+## Session 2026-10-19 (GO PR1 Cenník v3)
+### Dokončené
+- Draft PR #884 `feat/pricing-v3` (needs-founder, NEMERGOVAŤ): licencia podľa počtu maklérov (start 25 €, team 65 €, office 65 € + 9 € × (n−5), network 110 €/170 € vzorec), mesačne ×1,2, ročne 12×, akcia 9/12 do 2026-12-31T22:59:59Z cez kupón, balíky 50–300 a kredit 0,75 €, `PRICING_PUBLIC_ENABLED` (predvolene vypnuté), garancia „100 % do 30 dní", Stripe katalóg/skripty/verify s tiers + kupónom, `docs/reports/STRIPE-GO.md`. Lokálne: vitest 3530 passed (padá len 9 súborov vyžadujúcich lokálnu DB), tsc 54 = baseline, ratchet 0 nových. Metóda: základ + 3 paralelné vetvy (billing / skripty / UI), spojené do jednej.
+- Balík E (search_path) aplikovaný v PROD 2026-10-18 (36/36 PASS pred aj po).
+### Rozpracované / Pending
+- CI na #884 nebehol; konflikt s #845/#879 v `credits-billing-v2.ts` (odporúčanie: #845/#879 mergnúť skôr); medzery mimo PR: `saas-ops.ts` planKey bez quantity, cron `credits-grant/expire` select, `apps/marketing` staré ceny, garancia `reason` povinný.
+- Stripe live skript spúšťa iba founder po merge; poradie test → verify → live → verify → Vercel env → flagy.
+### Ďalší krok
+Founder: merge #845/#879 → #884 po zelenom CI; potom test mode → verify → live podľa `docs/reports/STRIPE-GO.md`.
+
 ## Session 2026-10-18 (GO E-APPLY + Stripe 60 min)
 ### Dokončené
 - Balík E `search-path-close` APLIKOVANÝ v PROD (`ypgajkhqtbriqqmyawyv`): verify-before 36/36 PASS pred, jedna transakcia, verify-after 36/36 PASS po; 11 SECDEF funkcií má `search_path` (match_* s `extensions`), ACL nezmenené, 0 SECDEF funkcií v public bez `search_path`. Rollback: `docs/ops/prod-packages/search-path-close/rollback.sql` (`GO E-ROLLBACK`). Smoke `match_leads` (manuálny, service_role) nespustený.
