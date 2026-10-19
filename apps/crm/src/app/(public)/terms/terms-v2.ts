@@ -1,20 +1,24 @@
 /**
- * VOP / Terms — cenník v2 (W2-D). NÁVRH NA REVÍZIU foundera/právnika, NIE schválený text.
+ * VOP / Terms — cenník v3 (PR1, nadväzuje na W2-D). NÁVRH NA REVÍZIU foundera/právnika, NIE schválený text.
  *
- * Používa sa výhradne pri zapnutom `PRICING_V2_ENABLED` (page.tsx). Ceny idú len z katalógu
+ * Používa sa pri zapnutom `PRICING_V2_ENABLED` (page.tsx). Sumy sa ukážu len pri zapnutom `PRICING_PUBLIC_ENABLED`
+ * (katalóg z `getPublicPricingCatalog`); inak `buildTermsProgramsOnRequest` bez jedinej sumy. Ceny idú len z katalógu
  * `buildPricingV2Catalog`; čo nie je rozhodnuté, je označené „DOPLNIŤ — rozhodnutie foundera“
  * a zámerne ostáva viditeľné, aby sa text nedal nechtiac zverejniť ako hotový.
  * Zoznam zmien a otvorené právne otázky: docs/pricing/w2d-copy-and-legal-review.md
  */
 import type { PricingV2Catalog } from "@/lib/pricing-v2";
 import {
+  annualPromoLines,
   creditUnitLine,
   grossPriceLine,
+  monthlyBillingLine,
   monthlyCreditsLine,
   netPriceLine,
   packPriceLine,
   usersRangeLabel,
 } from "@/components/marketing/pricing-v2-copy";
+import { GUARANTEE_TEXT, PRICE_ON_REQUEST_TEXT } from "@/components/marketing/guarantee-copy";
 
 export type TermsProgram = { name: string; note: string; features: string[] };
 
@@ -34,16 +38,23 @@ export function buildTermsProgramsV2(catalog: PricingV2Catalog): TermsProgram[] 
   const bandPrograms: TermsProgram[] = catalog.bands.map((band) => ({
     name: `${band.label} — ${usersRangeLabel(band)} (${netPriceLine(band)}; ${grossPriceLine(band, catalog.vatPercent)})`,
     note: band.isFromPrice
-      ? "Paušál za celú kanceláriu, nie za jednotlivého používateľa. Cena sa dohodne podľa objemu."
-      : "Paušál za celú kanceláriu, nie za jednotlivého používateľa.",
+      ? "Cena rastie s počtom maklérov v kancelárii; uvedená je cena na začiatku pásma."
+      : "Cena za pásmo podľa počtu maklérov v kancelárii.",
     features: [
+      monthlyBillingLine(band),
       monthlyCreditsLine(band),
-      "Plán sa určuje podľa počtu povolených používateľov v kancelárii",
+      "Pásmo sa určuje podľa počtu maklérov (platených používateľov) v kancelárii",
     ],
   }));
 
+  const promo = annualPromoLines(catalog);
+  const promoProgram: TermsProgram[] = promo.length
+    ? [{ name: "Akcia pri ročnej platbe", note: promo[1], features: [promo[0]] }]
+    : [];
+
   return [
     ...bandPrograms,
+    ...promoProgram,
     {
       name: "Kredity navyše (voliteľné)",
       note: "Kredity patria kancelárii. Mesačné balíky sa pripočítavajú k plánu, jednorazové kredity sa dokupujú podľa potreby.",
@@ -66,9 +77,38 @@ export function buildTermsProgramsV2(catalog: PricingV2Catalog): TermsProgram[] 
   ];
 }
 
-/** Doplnková kapitola o platbách; všetko, čo nie je rozhodnuté, je označené placeholderom. */
-export function buildTermsPaymentsClausesV2(catalog: PricingV2Catalog): { title: string; text: string }[] {
-  const vat = `${String(catalog.vatPercent).replace(".", ",")} %`;
+/**
+ * Prehľad plánov BEZ jedinej sumy (kým je `PRICING_PUBLIC_ENABLED` vypnuté): pásma podľa počtu maklérov a text
+ * „Cenu vám pošleme na vyžiadanie“.
+ */
+export function buildTermsProgramsOnRequest(): TermsProgram[] {
+  return [
+    {
+      name: "Licencia Revolis.AI podľa počtu maklérov",
+      note: `Pásmo sa určuje podľa počtu maklérov (1 / 2–5 / 6–10 / 11 a viac). ${PRICE_ON_REQUEST_TEXT}.`,
+      features: [
+        "Platba ročne alebo mesačne",
+        "Kredity na AI akcie patria kancelárii a prideľujú sa mesačne",
+        `Garancia: ${GUARANTEE_TEXT}`,
+      ],
+    },
+    {
+      name: "Add-on moduly (tenant pricing)",
+      note: "Modulárny stack aktivovaný nad plánom kancelárie. Moduly označené „Čoskoro“ nie sú v self-serve predaji.",
+      features: [
+        `Ceny add-on modulov (CRM Sync, White Label): ${PRICE_ON_REQUEST_TEXT}`,
+        "Leads Engine — roadmap / čoskoro (nie je v self-serve checkout)",
+        "Market Intelligence — roadmap / čoskoro",
+        "Protocol AI modul — roadmap / čoskoro",
+        "Active Force Calls — roadmap / čoskoro",
+      ],
+    },
+  ];
+}
+
+/** Doplnková kapitola o platbách; všetko, čo nie je rozhodnuté, je označené placeholderom. Sadzba DPH nie je cena. */
+export function buildTermsPaymentsClausesV2(vatPercent: number): { title: string; text: string }[] {
+  const vat = `${String(vatPercent).replace(".", ",")} %`;
   return [
     {
       title: "DPH",
@@ -76,7 +116,7 @@ export function buildTermsPaymentsClausesV2(catalog: PricingV2Catalog): { title:
     },
     {
       title: "Mesačné opakované platby a zrušenie",
-      text: `Plán a mesačný balík kreditov sa účtujú mesačne opakovane. Zrušenie, výpovedná doba a následky nezaplatenia: ${TERMS_V2_PLACEHOLDER}.`,
+      text: `Plán a mesačný balík kreditov sa účtujú mesačne opakovane; mesačná platba bez ročného záväzku je o 20 % vyššia ako pri ročnej platbe. Ročný plán sa účtuje raz ročne. Zrušenie, výpovedná doba a následky nezaplatenia: ${TERMS_V2_PLACEHOLDER}.`,
     },
     {
       title: "Kredity a ich platnosť",
@@ -88,7 +128,7 @@ export function buildTermsPaymentsClausesV2(catalog: PricingV2Catalog): { title:
     },
     {
       title: "Jednorazový onboarding a vrátenie platby",
-      text: `Poplatok za onboarding (výška alebo bez poplatku) a podmienky vrátenia platby: ${TERMS_V2_PLACEHOLDER}.`,
+      text: `Poplatok za onboarding (výška alebo bez poplatku) a podmienky vrátenia platby: ${TERMS_V2_PLACEHOLDER}. Garancia: ${GUARANTEE_TEXT}; postup uplatnenia: ${TERMS_V2_PLACEHOLDER}.`,
     },
   ];
 }

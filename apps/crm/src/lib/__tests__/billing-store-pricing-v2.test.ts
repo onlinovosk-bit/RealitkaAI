@@ -63,20 +63,18 @@ vi.mock("@/lib/auto-error-capture", () => ({ autoErrorCapture: vi.fn() }));
 vi.mock("@/lib/activities-store", () => ({ createActivity: vi.fn().mockResolvedValue({}) }));
 vi.mock("@/lib/logger", () => ({ logInfo: vi.fn() }));
 
-const V2 = {
-  STRIPE_PRICE_V2_START: "price_1Abcdefgh12341",
-  STRIPE_PRICE_V2_TEAM: "price_1Abcdefgh12342",
-  STRIPE_PRICE_V2_OFFICE: "price_1Abcdefgh12343",
-  STRIPE_PRICE_V2_PACK_120: "price_1Abcdefgh12346",
+const V3 = {
+  STRIPE_PRICE_V3_SEAT_MONTHLY: "price_1Abcdefgh12341",
+  STRIPE_PRICE_V3_PACK_100: "price_1Abcdefgh12346",
 };
 const LEGACY_PRO = "price_1LegacyPro0001";
 
-function subEvent(type: string, priceIds: string[], extra: Record<string, unknown> = {}) {
+function subEvent(type: string, priceIds: string[], extra: Record<string, unknown> = {}, quantity = 3) {
   const object = {
     id: "sub_1",
     customer: "cus_1",
     status: "active",
-    items: { data: priceIds.map((id) => ({ price: { id } })) },
+    items: { data: priceIds.map((id) => ({ quantity, price: { id } })) },
     ...extra,
   };
   // `updated` handler dočíta živé predplatné cez stripe.subscriptions.retrieve; mock vráti stav zhodný s udalosťou.
@@ -95,7 +93,7 @@ beforeEach(() => {
   ];
   vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_synthetic");
   vi.stubEnv("STRIPE_PRICE_PRO", LEGACY_PRO);
-  for (const [k, v] of Object.entries(V2)) vi.stubEnv(k, v);
+  for (const [k, v] of Object.entries(V3)) vi.stubEnv(k, v);
   h.customersRetrieve.mockResolvedValue({ id: "cus_1", email: "broker@example.test", deleted: false });
   h.listUsers.mockResolvedValue({ data: { users: [{ id: "user-1", email: "broker@example.test" }] } });
 });
@@ -105,22 +103,28 @@ describe("billing-store: v2 subscription events bypass syncAccountTier (kritéri
     "%s with a v2 price never touches profiles or looks the customer up",
     async (type) => {
       const { handleStripeWebhookEvent } = await import("@/lib/billing-store");
-      await handleStripeWebhookEvent(subEvent(type, [V2.STRIPE_PRICE_V2_PACK_120, V2.STRIPE_PRICE_V2_TEAM]));
+      await handleStripeWebhookEvent(subEvent(type, [V3.STRIPE_PRICE_V3_PACK_100, V3.STRIPE_PRICE_V3_SEAT_MONTHLY]));
       expect(h.customersRetrieve).not.toHaveBeenCalled();
       expect(h.listUsers).not.toHaveBeenCalled();
     },
   );
 
-  it("updated with a v2 price changes the band through the v2 handler", async () => {
+  it("updated with a v3 seat price rewrites licensed_users, seats and band from the Stripe quantity", async () => {
     const { handleStripeWebhookEvent } = await import("@/lib/billing-store");
-    await handleStripeWebhookEvent(subEvent("customer.subscription.updated", [V2.STRIPE_PRICE_V2_OFFICE]));
+    await handleStripeWebhookEvent(subEvent("customer.subscription.updated", [V3.STRIPE_PRICE_V3_SEAT_MONTHLY], {}, 7));
     expect(h.agencyUpdates).toHaveLength(1);
-    expect(h.agencyUpdates[0]).toMatchObject({ pricing_band: "office", subscription_status: "active", licensed_users: 7 });
+    expect(h.agencyUpdates[0]).toMatchObject({
+      pricing_band: "office",
+      subscription_status: "active",
+      licensed_users: 7,
+      seats: 7,
+      account_tier: "enterprise",
+    });
   });
 
   it("deleted with a v2 price marks the agency canceled", async () => {
     const { handleStripeWebhookEvent } = await import("@/lib/billing-store");
-    await handleStripeWebhookEvent(subEvent("customer.subscription.deleted", [V2.STRIPE_PRICE_V2_TEAM], { status: "canceled" }));
+    await handleStripeWebhookEvent(subEvent("customer.subscription.deleted", [V3.STRIPE_PRICE_V3_SEAT_MONTHLY], { status: "canceled" }));
     expect(h.agencyUpdates[0]).toMatchObject({ subscription_status: "canceled", account_tier: "free" });
   });
 
@@ -128,7 +132,7 @@ describe("billing-store: v2 subscription events bypass syncAccountTier (kritéri
     h.updateError = { message: "boom" };
     const { handleStripeWebhookEvent } = await import("@/lib/billing-store");
     await expect(
-      handleStripeWebhookEvent(subEvent("customer.subscription.updated", [V2.STRIPE_PRICE_V2_TEAM])),
+      handleStripeWebhookEvent(subEvent("customer.subscription.updated", [V3.STRIPE_PRICE_V3_SEAT_MONTHLY])),
     ).rejects.toThrow(/Pricing v2/);
   });
 

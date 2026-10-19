@@ -4,13 +4,16 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import type { PricingV2Catalog } from '@/lib/pricing-v2';
 import {
+  annualPromoLines,
   creditUnitLine,
   formatEurFromCents,
+  GUARANTEE_TEXT,
   grossPriceLine,
+  monthlyBillingLine,
   monthlyCreditsLine,
-  netPriceLine,
   usersRangeLabel,
 } from '@/components/marketing/pricing-v2-copy';
+import { RadiantSpriteIcon } from '@/components/shared/radiant-sprite-icon';
 import { SLATE_HORIZON, WORKDESK_CARD } from '@/lib/slate-horizon-theme';
 
 const cardStyle = {
@@ -20,14 +23,14 @@ const cardStyle = {
 };
 
 /**
- * Cenník v2 (W2-D) pre záver landing stránky. Ceny výhradne z katalógu `buildPricingV2Catalog`;
- * komponent sa renderuje len keď server pošle katalóg (prepínač PRICING_V2_ENABLED zapnutý).
+ * Cenník v3 pre záver landing stránky. Ceny výhradne z katalógu `buildPricingV2Catalog`;
+ * komponent sa renderuje len keď server pošle katalóg (PRICING_V2_ENABLED aj PRICING_PUBLIC_ENABLED zapnuté).
  * Text vedie VÝSLEDKOM pre kanceláriu (clay-positioning-reframe), nie zoznamom funkcií.
- * Owner Cockpit sa v v2 ponuke neukazuje. Záruka vrátenia peňazí sa tu neuvádza, kým founder nepotvrdí,
- * že platí aj pre v2 (viď docs/pricing/w2d-copy-and-legal-review.md).
+ * Pásmo sa nevyberá ručne, vyplýva z počtu maklérov; presnú cenu pre konkrétny počet ráta stránka objednávky.
  */
 export default function FinalCTAV2({ catalog }: { catalog: PricingV2Catalog }) {
   const cheapestPack = [...catalog.packs].sort((a, b) => a.netCents - b.netCents)[0];
+  const promo = annualPromoLines(catalog);
 
   return (
     <section className="relative overflow-hidden py-24 sm:py-32" style={{ background: SLATE_HORIZON.bg }}>
@@ -55,9 +58,24 @@ export default function FinalCTAV2({ catalog }: { catalog: PricingV2Catalog }) {
           </h2>
 
           <p className="max-w-2xl text-base" style={{ color: SLATE_HORIZON.deep }}>
-            Ráno otvoríte Revolis.AI a viete, komu volať a prečo. Platíte jeden mesačný paušál za celú kanceláriu podľa
-            počtu ľudí v tíme.
+            Ráno otvoríte Revolis.AI a viete, komu volať a prečo. Platíte podľa počtu maklérov v kancelárii; pásmo sa
+            nastaví samo.
           </p>
+
+          {promo.length > 0 && (
+            <div
+              data-testid="annual-promo"
+              className="max-w-2xl rounded-2xl border px-6 py-4 text-center"
+              style={{ background: SLATE_HORIZON.soft, borderColor: SLATE_HORIZON.softBorder }}
+            >
+              <p className="text-lg font-extrabold" style={{ color: SLATE_HORIZON.brandDeep }}>
+                {promo[0]}
+              </p>
+              <p className="mt-1 text-xs" style={{ color: SLATE_HORIZON.muted }}>
+                {promo[1]}
+              </p>
+            </div>
+          )}
 
           <div className="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 lg:items-stretch">
             {catalog.bands.map((band) => (
@@ -69,16 +87,24 @@ export default function FinalCTAV2({ catalog }: { catalog: PricingV2Catalog }) {
                   {usersRangeLabel(band)}
                 </p>
                 <p className="text-2xl font-extrabold" style={{ color: SLATE_HORIZON.ink }}>
-                  {netPriceLine(band)}
+                  {band.isFromPrice ? 'od ' : ''}
+                  {formatEurFromCents(band.netCents)}
+                  <span className="text-sm font-normal" style={{ color: SLATE_HORIZON.muted }}>
+                    {' '}
+                    mesačne bez DPH pri ročnej platbe
+                  </span>
                 </p>
-                <p className="mb-5 mt-1 text-sm" style={{ color: SLATE_HORIZON.muted }}>
+                <p className="mt-1 text-sm" style={{ color: SLATE_HORIZON.muted }}>
                   {grossPriceLine(band, catalog.vatPercent)}
+                </p>
+                <p className="mb-5 mt-1 text-xs" style={{ color: SLATE_HORIZON.muted }}>
+                  {monthlyBillingLine(band)}
                 </p>
                 <p className="mb-6 flex-1 text-sm" style={{ color: SLATE_HORIZON.deep }}>
                   {monthlyCreditsLine(band)}
                 </p>
                 <Link
-                  href={band.isFromPrice ? '/support' : '/register'}
+                  href="/register"
                   className={`mt-auto block w-full cursor-pointer rounded-full border py-3.5 text-center text-sm font-bold transition-all duration-200 hover:opacity-90 ${SLATE_HORIZON.focusRing}`}
                   style={{
                     borderColor: SLATE_HORIZON.softBorder,
@@ -86,18 +112,33 @@ export default function FinalCTAV2({ catalog }: { catalog: PricingV2Catalog }) {
                     background: SLATE_HORIZON.soft,
                   }}
                 >
-                  {band.isFromPrice ? 'Dohodnúť cenu pre sieť' : `Začať s plánom ${band.label}`}
+                  {`Začať s plánom ${band.label}`}
                 </Link>
               </div>
             ))}
           </div>
 
           <div className="max-w-2xl text-sm" style={{ color: SLATE_HORIZON.muted }}>
-            <p>
-              Kredity navyše: mesačné balíky od {cheapestPack ? formatEurFromCents(cheapestPack.netCents) : ''} mesačne bez DPH,
-              alebo jednorazovo {creditUnitLine(catalog)}.
+            {cheapestPack && (
+              <p>
+                Kredity navyše: mesačné balíky od {formatEurFromCents(cheapestPack.netCents)} mesačne bez DPH, alebo
+                jednorazovo {creditUnitLine(catalog)}.
+              </p>
+            )}
+            <p className="mt-2">
+              Ceny sú uvedené mesačne bez DPH; konečná cena je vždy uvedená aj s DPH. Pri mesačnej platbe bez ročného
+              záväzku je cena o 20 % vyššia.
             </p>
-            <p className="mt-2">Ceny sú uvedené mesačne bez DPH; konečná cena je vždy uvedená aj s DPH.</p>
+          </div>
+
+          <div
+            className="flex w-full max-w-md items-center gap-3 rounded-2xl border px-6 py-4"
+            style={{ background: '#ECFDF5', borderColor: '#A7F3D0' }}
+          >
+            <RadiantSpriteIcon icon="billing" sizeClassName="h-8 w-8" className="rounded-lg shadow-none" />
+            <p data-testid="guarantee" className="text-left text-sm font-semibold" style={{ color: SLATE_HORIZON.greenDark }}>
+              {GUARANTEE_TEXT}
+            </p>
           </div>
 
           <div
