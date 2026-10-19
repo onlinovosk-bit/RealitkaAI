@@ -3,28 +3,30 @@ import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { requireCheckoutAgencyId } from "@/lib/credits-billing";
 import type { StripeSubscriptionReader } from "@/lib/billing-lifecycle";
 import {
-  PRICING_V2_BANDS,
-  PRICING_V2_BAND_IDS,
   PRICING_V2_MONTHLY_PACKS,
   resolvePricingV2Band,
-  type PricingV2BandId,
+    type PricingV2BandId,
   type PricingV2Interval,
 } from "@/lib/pricing-v2";
 import {
   PRICING_V2_AGENCY_MODEL,
   PRICING_V2_BAND_ACCOUNT_TIER,
-  PRICING_V2_BAND_PRICE_ENV,
-  PRICING_V2_BAND_YEARLY_PRICE_ENV,
+  PRICING_V3_ANNUAL_PROMO_COUPON_ENV,
+  PRICING_V3_SEAT_PRICE_ENV,
   PRICING_V2_CHECKOUT_TYPE_CREDITS,
   PRICING_V2_CHECKOUT_TYPE_PLAN,
   PRICING_V2_CREDIT_PRICE_ENV,
   PRICING_V2_PACK_PRICE_ENV,
   buildPricingV2PlanMetadata,
+  parsePricingV2CheckoutRequest,
   readPricingV2CreditsMetadata,
   readPricingV2PlanMetadata,
+  resolveAnnualPromoCouponId,
+  type PricingV2CheckoutParseResult,
   type PricingV2CheckoutRequest,
 } from "@/lib/pricing-v2-contract";
 import { isValidStripePriceId } from "@/lib/program-tier-pricing";
+import { isAnnualPromoActive } from "@/lib/pricing-v2";
 import {
   currentPeriodKey,
   monthlyGrantAmountForAgency,
@@ -56,12 +58,13 @@ function getAppUrl(): string {
 // ---------------------------------------------------------------------------
 
 export type PricingV2PriceRole =
-  | { kind: "band"; bandId: PricingV2BandId; interval: PricingV2Interval }
+  /** Licencia (v3): jedna cena na interval, pásmo vyplýva z množstva (quantity = počet maklérov). */
+  | { kind: "seat"; interval: PricingV2Interval }
   | { kind: "pack"; credits: number }
   | { kind: "credit" };
 
 /**
- * Ktorú v2 cenu predstavuje Stripe price ID. Nenastavená alebo neplatná env premenná nikdy
+ * Ktorú v3 cenu predstavuje Stripe price ID. Nenastavená alebo neplatná env premenná nikdy
  * nezhodí („undefined === undefined“ je presne chyba, ktorá už raz zhodila legacy tier).
  */
 export function resolvePricingV2PriceRole(
@@ -74,11 +77,9 @@ export function resolvePricingV2PriceRole(
     const configured = env[envName];
     return isValidStripePriceId(configured) && configured!.trim() === id;
   };
-  for (const bandId of PRICING_V2_BAND_IDS) {
-    if (is(PRICING_V2_BAND_PRICE_ENV[bandId])) return { kind: "band", bandId, interval: "month" };
-    // Ročná cena je to isté pásmo (rovnaký plán a grant), len iný interval fakturácie.
-    if (is(PRICING_V2_BAND_YEARLY_PRICE_ENV[bandId])) return { kind: "band", bandId, interval: "year" };
-  }
+  if (is(PRICING_V3_SEAT_PRICE_ENV.month)) return { kind: "seat", interval: "month" };
+  // Ročná cena je tá istá licencia (rovnaký plán a grant), len iný interval fakturácie.
+  if (is(PRICING_V3_SEAT_PRICE_ENV.year)) return { kind: "seat", interval: "year" };
   for (const pack of PRICING_V2_MONTHLY_PACKS) {
     if (is(PRICING_V2_PACK_PRICE_ENV[pack.credits])) return { kind: "pack", credits: pack.credits };
   }
@@ -99,22 +100,61 @@ export function subscriptionHasPricingV2Price(
 // Checkout: čisté buildery (testovateľné bez Stripe)
 // ---------------------------------------------------------------------------
 
-/** Názvy env premenných cien, ktoré konkrétna požiadavka potrebuje a ktoré chýbajú. */
+/** Najvyšší počet maklérov, ktorý checkout prijme (poistka proti chybnému vstupu). */
+export const PRICING_V3_MAX_SEATS = 500;
+
+/**
+ * Telo `POST /api/billing/credits/checkout` pre plán: `{ checkoutType: "pricing_v2", seats, interval }`
+ * (+ voliteľne `packCredits`). `seats` = celé číslo 1..500; starší názov `users` sa ešte prijíma.
+ * Parsovanie a overenie balíka/intervalu robí `parsePricingV2CheckoutRequest`.
+ */
+export function parsePricingV3CheckoutBody(body: unknown): PricingV2CheckoutParseResult {
+  if (typeof body === "object" && body !== null) {
+    const b = body as Record<string, unknown>;
+    const type = b.checkoutType ?? b.type;
+    if (type === PRICING_V2_CHECKOUT_TYPE_PLAN) {
+      const seats = b.seats ?? b.users;
+      if (
+        typeof seats !== "number" ||
+        !Number.isSafeInteger(seats) ||
+        seats < 1 ||
+        seats > PRICING_V3_MAX_SEATS
+      ) {
+        return { ok: false, reason: "invalid_user_count" };
+      }
+      return parsePricingV2CheckoutRequest({ ...b, users: seats });
+    }
+  }
+  return parsePricingV2CheckoutRequest(body);
+}
+
+/**
+ * Názvy env premenných cien, ktoré konkrétna požiadavka potrebuje a ktoré chýbajú.
+ * Ročný plán pred koncom akcie vyžaduje aj ID kupónu: bez neho by zákazník platil 12 z 12 mesiacov,
+ * zatiaľ čo sa ponúka 9 z 12 (fail-closed).
+ */
 export function missingPricingV2PriceEnvKeysForRequest(
   request: PricingV2CheckoutRequest,
   env: Env = process.env,
+  now: Date = new Date(),
 ): string[] {
   const needed: string[] = [];
   if (request.checkoutType === PRICING_V2_CHECKOUT_TYPE_PLAN) {
-    const band = resolvePricingV2Band(request.users);
-    const bandEnv = request.interval === "year" ? PRICING_V2_BAND_YEARLY_PRICE_ENV : PRICING_V2_BAND_PRICE_ENV;
-    if (band.ok) needed.push(bandEnv[band.band.id]);
-    else needed.push(...PRICING_V2_BAND_IDS.map((id) => bandEnv[id]));
+    needed.push(PRICING_V3_SEAT_PRICE_ENV[request.interval ?? "month"]);
     if (request.packCredits) needed.push(PRICING_V2_PACK_PRICE_ENV[request.packCredits] ?? `pack:${request.packCredits}`);
   } else {
     needed.push(PRICING_V2_CREDIT_PRICE_ENV);
   }
-  return needed.filter((name) => !isValidStripePriceId(env[name]));
+  const missing = needed.filter((name) => !isValidStripePriceId(env[name]));
+  if (
+    request.checkoutType === PRICING_V2_CHECKOUT_TYPE_PLAN &&
+    request.interval === "year" &&
+    isAnnualPromoActive(now) &&
+    resolveAnnualPromoCouponId("year", now, env) === null
+  ) {
+    missing.push(PRICING_V3_ANNUAL_PROMO_COUPON_ENV);
+  }
+  return missing;
 }
 
 export type PricingV2CheckoutActor = {
@@ -126,6 +166,8 @@ export type PricingV2CheckoutActor = {
 export type PricingV2PlanCheckoutParams = {
   mode: "subscription";
   lineItems: Stripe.Checkout.SessionCreateParams.LineItem[];
+  /** Kupón akcie 9/12 — len pri ročnom pláne pred termínom; inak chýba (nikdy `allow_promotion_codes`). */
+  discounts?: Array<{ coupon: string }>;
   metadata: Record<string, string>;
   automaticTax: boolean;
 };
@@ -135,28 +177,40 @@ export function isPricingV2StripeTaxOn(env: Env = process.env): boolean {
   return (env.PRICING_V2_STRIPE_TAX ?? "").trim().toLowerCase() === "on";
 }
 
-/** Riadok pásma (qty 1) + voliteľný riadok balíka (qty 1) + metadáta. Chýbajúca cena = výnimka (fail-closed). */
+/**
+ * Riadok licencie (`quantity` = počet maklérov) + voliteľný riadok balíka (qty 1) + metadáta.
+ * Ročný plán pred `PRICING_V3_PROMO_UNTIL` pridá kupón 9/12 (ak je nastavený). Chýbajúca cena = výnimka (fail-closed).
+ */
 export function buildPricingV2PlanCheckoutParams(
   input: PricingV2CheckoutActor & { users: number; packCredits: number | null; interval?: PricingV2Interval },
   env: Env = process.env,
+  now: Date = new Date(),
 ): PricingV2PlanCheckoutParams {
   // Hádže RangeError pri neplatnom počte používateľov alebo prázdnom agencyId.
   const metadata = buildPricingV2PlanMetadata(input);
   if (metadata.interval === "year" && input.packCredits) {
     throw new RangeError("Mesačný balík kreditov sa s ročným plánom nedá kombinovať.");
   }
-  const bandEnv = metadata.interval === "year" ? PRICING_V2_BAND_YEARLY_PRICE_ENV : PRICING_V2_BAND_PRICE_ENV;
-  const bandPriceId = env[bandEnv[metadata.bandId]]?.trim();
-  if (!isValidStripePriceId(bandPriceId)) throw new Error("Stripe cena pásma v2 nie je nakonfigurovaná.");
+  const seatPriceId = env[PRICING_V3_SEAT_PRICE_ENV[metadata.interval]]?.trim();
+  if (!isValidStripePriceId(seatPriceId)) throw new Error("Stripe cena licencie v3 nie je nakonfigurovaná.");
 
-  const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [{ price: bandPriceId, quantity: 1 }];
+  const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
+    { price: seatPriceId, quantity: input.users },
+  ];
   if (input.packCredits) {
     const packPriceId = env[PRICING_V2_PACK_PRICE_ENV[input.packCredits] ?? ""]?.trim();
-    if (!isValidStripePriceId(packPriceId)) throw new Error("Stripe cena balíka v2 nie je nakonfigurovaná.");
+    if (!isValidStripePriceId(packPriceId)) throw new Error("Stripe cena balíka v3 nie je nakonfigurovaná.");
     lineItems.push({ price: packPriceId, quantity: 1 });
   }
 
-  return { mode: "subscription", lineItems, metadata: { ...metadata }, automaticTax: isPricingV2StripeTaxOn(env) };
+  const coupon = resolveAnnualPromoCouponId(metadata.interval, now, env);
+  return {
+    mode: "subscription",
+    lineItems,
+    ...(coupon ? { discounts: [{ coupon }] } : {}),
+    metadata: { ...metadata },
+    automaticTax: isPricingV2StripeTaxOn(env),
+  };
 }
 
 export type PricingV2CreditsCheckoutParams = {
@@ -166,7 +220,7 @@ export type PricingV2CreditsCheckoutParams = {
   automaticTax: boolean;
 };
 
-/** Jednorazové kredity: cena STRIPE_PRICE_V2_CREDIT, množstvo = počet kreditov. */
+/** Jednorazové kredity: cena STRIPE_PRICE_V3_CREDIT, množstvo = počet kreditov. */
 export function buildPricingV2CreditsCheckoutParams(
   input: PricingV2CheckoutActor & { credits: number },
   env: Env = process.env,
@@ -290,6 +344,7 @@ export async function createPricingV2CheckoutSession(
     const session = await stripe.checkout.sessions.create({
       mode: params.mode,
       line_items: params.lineItems,
+      ...(params.discounts ? { discounts: params.discounts } : {}),
       success_url: `${appUrl}/billing?checkout=success&type=pricing_v2`,
       cancel_url: `${appUrl}/upgrade?checkout=cancel`,
       customer_email: user.email,
@@ -372,7 +427,7 @@ const REVOKED_SUBSCRIPTION_STATUSES = new Set(["canceled", "unpaid", "incomplete
 async function loadLiveSubscriptionStatus(
   subscriptionId: string,
   reader?: StripeSubscriptionReader | null,
-): Promise<{ ok: true; status: string } | { ok: false }> {
+): Promise<{ ok: true; status: string; seatQuantity: number | null } | { ok: false }> {
   const stripe = reader ?? getStripe();
   if (!stripe) {
     console.error("[pricing-v2] plan checkout: STRIPE_SECRET_KEY chýba, stav predplatného sa nedá overiť");
@@ -380,7 +435,12 @@ async function loadLiveSubscriptionStatus(
   }
   try {
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-    return { ok: true, status: subscription.status };
+    return {
+      ok: true,
+      status: subscription.status,
+      // Pravdu o počte maklérov nesie Stripe (quantity položky licencie), nie metadáta relácie.
+      seatQuantity: readPricingV2SubscriptionItems(subscription as unknown as SubscriptionLike).seatQuantity,
+    };
   } catch (err) {
     console.error("[pricing-v2] plan checkout: stav predplatného sa nepodarilo načítať", {
       subscriptionId,
@@ -441,13 +501,24 @@ export async function fulfillPricingV2PlanCheckout(
     return true; // nič na plnenie, opakovanie by nič nezmenilo
   }
 
+  // licensed_users = seats = quantity položky licencie v predplatnom; pásmo vyplýva z nej.
+  // Metadáta sú len záloha, keď Stripe položku licencie nevrátil (napr. env cien nie je nastavené).
+  const users = live.seatQuantity ?? meta.users;
+  const bandId = resolvePricingV2Band(users);
+  const accountTier = PRICING_V2_BAND_ACCOUNT_TIER[bandId];
+  if (users !== meta.users) {
+    console.warn("[pricing-v2] plan checkout: Stripe quantity differs from metadata; using Stripe", {
+      sessionId: session.id,
+    });
+  }
+
   const customerId = sessionCustomerId(session);
   const update: Record<string, unknown> = {
-    seats: meta.users,
-    account_tier: PRICING_V2_BAND_ACCOUNT_TIER[meta.bandId],
+    seats: users,
+    account_tier: accountTier,
     pricing_model: PRICING_V2_AGENCY_MODEL,
-    pricing_band: meta.bandId,
-    licensed_users: meta.users,
+    pricing_band: bandId,
+    licensed_users: users,
     pack_credits: meta.packCredits,
     subscription_status: live.status,
     billing_source: "stripe",
@@ -468,7 +539,6 @@ export async function fulfillPricingV2PlanCheckout(
   }
 
   if (meta.authUserId) {
-    const accountTier = PRICING_V2_BAND_ACCOUNT_TIER[meta.bandId];
     const { error: profileErr } = await supabase
       .from("profiles")
       .update({
@@ -492,14 +562,15 @@ export async function fulfillPricingV2PlanCheckout(
 
   return applyFirstPricingV2Grant({
     id: meta.agencyId,
-    seats: meta.users,
-    account_tier: PRICING_V2_BAND_ACCOUNT_TIER[meta.bandId],
+    seats: users,
+    account_tier: accountTier,
     grant_credits_balance: 0,
     purchased_credits_balance: 0,
     owner_cockpit_active: false,
     credits_balance: 0,
     pricing_model: PRICING_V2_AGENCY_MODEL,
-    pricing_band: meta.bandId,
+    pricing_band: bandId,
+    licensed_users: users,
     pack_credits: meta.packCredits,
     subscription_status: live.status,
   });
@@ -537,30 +608,42 @@ export async function fulfillPricingV2CreditsCheckout(session: Stripe.Checkout.S
 type SubscriptionLike = {
   id?: string;
   status?: string;
-  items?: { data?: Array<{ price?: { id?: string | null } | null }> };
+  items?: { data?: Array<{ quantity?: number | null; price?: { id?: string | null } | null }> };
 };
 
-/** Pásmo a balík z položiek predplatného. `band: null` = žiadne alebo nejednoznačné pásmo. */
+/**
+ * Počet maklérov (quantity položky licencie), z neho odvodené pásmo a balík z položiek predplatného.
+ * `seatQuantity: null` = žiadna, nejednoznačná (viac položiek licencie) alebo neplatná quantity.
+ */
 export function readPricingV2SubscriptionItems(
   subscription: SubscriptionLike,
   env: Env = process.env,
-): { band: PricingV2BandId | null; packCredits: number } {
-  const bands = new Set<PricingV2BandId>();
+): { band: PricingV2BandId | null; seatQuantity: number | null; packCredits: number } {
+  const quantities: Array<number | null> = [];
   let packCredits = 0;
   for (const item of subscription.items?.data ?? []) {
     const role = resolvePricingV2PriceRole(item?.price?.id, env);
-    if (role?.kind === "band") bands.add(role.bandId);
+    if (role?.kind === "seat") {
+      const q = item.quantity;
+      quantities.push(typeof q === "number" && Number.isSafeInteger(q) && q >= 1 ? q : null);
+    }
     if (role?.kind === "pack") packCredits = role.credits;
   }
-  return { band: bands.size === 1 ? [...bands][0] : null, packCredits };
+  const seatQuantity = quantities.length === 1 ? quantities[0] : null;
+  return {
+    band: seatQuantity === null ? null : resolvePricingV2Band(seatQuantity),
+    seatQuantity,
+    packCredits,
+  };
 }
 
-/** Ponechá počet používateľov, ak patrí do pásma; inak ho zovrie do pásma (Stripe počet používateľov nenesie). */
-export function clampLicensedUsers(current: number | null | undefined, bandId: PricingV2BandId): number {
-  const band = PRICING_V2_BANDS.find((b) => b.id === bandId)!;
-  const base = Number.isSafeInteger(current) && (current as number) >= 1 ? (current as number) : band.minUsers;
-  const lower = Math.max(base, band.minUsers);
-  return band.maxUsers === null ? lower : Math.min(lower, band.maxUsers);
+/**
+ * Počet licencovaných maklérov z predplatného. Pásmo už počet neorezáva: pásmo vyplýva z quantity,
+ * nie naopak. Neplatná alebo chýbajúca hodnota sa nahradí `fallback` (najmenej 1).
+ */
+export function clampLicensedUsers(current: number | null | undefined, fallback = 1): number {
+  if (typeof current === "number" && Number.isSafeInteger(current) && current >= 1) return current;
+  return Number.isSafeInteger(fallback) && fallback >= 1 ? fallback : 1;
 }
 
 /**
@@ -621,16 +704,17 @@ export async function applyPricingV2SubscriptionEvent(event: Stripe.Event): Prom
     return false;
   }
   const update: Record<string, unknown> = { subscription_status: status, billing_updated_at: now };
-  const { band, packCredits } = readPricingV2SubscriptionItems(subscription);
-  if (band) {
-    const users = clampLicensedUsers(agency.licensed_users as number | null, band);
+  const { band, seatQuantity, packCredits } = readPricingV2SubscriptionItems(subscription);
+  if (band && seatQuantity !== null) {
+    // Zmena quantity v Stripe (dokúpenie/zrušenie miesta) prepíše počet maklérov aj pásmo.
+    const users = clampLicensedUsers(seatQuantity, (agency.licensed_users as number | null) ?? 1);
     update.pricing_band = band;
     update.account_tier = PRICING_V2_BAND_ACCOUNT_TIER[band];
     update.licensed_users = users;
     update.seats = users;
     update.pack_credits = packCredits;
   } else {
-    console.warn("[pricing-v2] subscription.updated without a single v2 band item; only status synced", {
+    console.warn("[pricing-v2] subscription.updated without a single v2 seat item; only status synced", {
       subscriptionId: subscription.id,
     });
   }
