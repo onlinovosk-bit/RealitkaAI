@@ -15,6 +15,7 @@ import {
   markWebhookProcessed,
 } from './webhookStore';
 import { recordRealviaBatchMetrics } from './metrics';
+import { tallyRealviaFailures } from './failureKinds';
 import {
   isAdvertPayload,
   isDeletePayload,
@@ -170,6 +171,9 @@ export async function processRealviaQueue(): Promise<{
       jobs_succeeded: succeeded,
       jobs_failed: failed,
       duration_ms: durationMs,
+      // Bez tohto bola príčina zlyhania nedohľadateľná: `meta` ostávalo `{}`
+      // vo všetkých riadkoch metrík a text chyby mala len hŕstka riadkov fronty.
+      failures: tallyRealviaFailures(results),
     });
   }
 
