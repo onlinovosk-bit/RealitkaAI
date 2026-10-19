@@ -854,21 +854,21 @@ describe("ŠVY A -> B: reálne handlery trás A -> reálny klientský parser B",
 
   it("200 -> redirect na url", async () => {
     stubFetchToRoute();
-    const out = await submitPricingV2Checkout({ checkoutType: "pricing_v2", users: 3, packCredits: null });
+    const out = await submitPricingV2Checkout({ checkoutType: "pricing_v2", seats: 3, packCredits: null, interval: "month" });
     expect(out).toEqual({ kind: "redirect", url: "https://checkout.example/cs_1" });
   });
 
   it("404 vypnuté -> pricing_v2_disabled", async () => {
     vi.stubEnv("PRICING_V2_ENABLED", "");
     stubFetchToRoute();
-    const out = await submitPricingV2Checkout({ checkoutType: "pricing_v2", users: 3, packCredits: null });
+    const out = await submitPricingV2Checkout({ checkoutType: "pricing_v2", seats: 3, packCredits: null, interval: "month" });
     expect(out).toMatchObject({ kind: "error", code: "pricing_v2_disabled" });
   });
 
   it("409 legacy -> legacy_subscription", async () => {
     db.agencies = [freshAgency({ subscription_status: "active", stripe_subscription_id: "sub_old" })];
     stubFetchToRoute();
-    const out = await submitPricingV2Checkout({ checkoutType: "pricing_v2", users: 3, packCredits: null });
+    const out = await submitPricingV2Checkout({ checkoutType: "pricing_v2", seats: 3, packCredits: null, interval: "month" });
     expect(out).toMatchObject({ kind: "error", code: "legacy_subscription" });
   });
 
@@ -876,7 +876,7 @@ describe("ŠVY A -> B: reálne handlery trás A -> reálny klientský parser B",
     const { params } = await doCheckout({ checkoutType: "pricing_v2", seats: 3, interval: "month", packCredits: null });
     await handlePricingCheckoutWebhook(sessionEvent(params.metadata));
     stubFetchToRoute();
-    const out = await submitPricingV2Checkout({ checkoutType: "pricing_v2", users: 3, packCredits: null });
+    const out = await submitPricingV2Checkout({ checkoutType: "pricing_v2", seats: 3, packCredits: null, interval: "month" });
     expect(out).toMatchObject({ kind: "error", code: "subscription_exists" });
     expect((out as { message?: string }).message ?? "").not.toContain("Predplatné máte dohodnuté");
   });
@@ -884,7 +884,7 @@ describe("ŠVY A -> B: reálne handlery trás A -> reálny klientský parser B",
   it("503 prices_not_configured -> 'nie je dostupné'", async () => {
     vi.stubEnv("STRIPE_PRICE_V3_SEAT_MONTHLY", "");
     stubFetchToRoute();
-    const out = await submitPricingV2Checkout({ checkoutType: "pricing_v2", users: 3, packCredits: null });
+    const out = await submitPricingV2Checkout({ checkoutType: "pricing_v2", seats: 3, packCredits: null, interval: "month" });
     expect(out).toMatchObject({ kind: "error", code: "prices_not_configured" });
   });
 
@@ -905,7 +905,7 @@ describe("ŠVY A -> B: reálne handlery trás A -> reálny klientský parser B",
     vi.spyOn(console, "error").mockImplementation(() => {});
     h.getCurrentProfile.mockResolvedValue({ id: "p", agency_id: "" });
     stubFetchToRoute();
-    const out = await submitPricingV2Checkout({ checkoutType: "pricing_v2", users: 3, packCredits: null });
+    const out = await submitPricingV2Checkout({ checkoutType: "pricing_v2", seats: 3, packCredits: null, interval: "month" });
     expect(out).toMatchObject({ kind: "error" });
     expect((out as { code?: string }).code).not.toBe("invalid_request");
   });
