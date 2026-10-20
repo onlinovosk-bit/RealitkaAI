@@ -1,3 +1,27 @@
+## Session 2026-10-20 (critical bug hunt Realvia/permissions/auth)
+### Dokončené
+- Audit #816/#895/#866/#880/#892/#885 → `docs/reports/2026-10-20-critical-bug-hunt-realvia-permissions-auth.md` (push `cursor/critical-bug-detection-267c`).
+- 1 CRITICAL: #895 capture-lead fail-closed + browser callers bez `x-api-key` → hero/AI Odhadca vždy 503/401.
+- Ostatných 5: bez CRITICAL (redakcia neruší auth; permissions fail-closed; semantic tenant filter; flag OFF pred spend; failureKinds len metriky).
+### Rozpracované / Pending
+- `GO CAPTURE-LEAD-CALLER` — trusted-server proxy pre marketing formuláre.
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-20-critical-bug-hunt-realvia-permissions-auth.md`: nález + dôkaz file:line.
+### Ďalší krok
+`GO CAPTURE-LEAD-CALLER` alebo `GO STRIPE-C` (váha 30) — founder volí.
+
+## Session 2026-10-20 (CRITICAL billing/credits/auth bug hunt)
+### Dokončené
+- Read-only hunt na `5c6956cb`: 4 CRITICAL stále živé (seat grant swallow, legacy unpaid fulfill, NO_AGENCY_FACTS, ghostwriter access-gate bypass).
+- #887 monthly hard-fail overené ako opravené; tracked #843/#859/#877/#881/#883 skipped.
+- Report: `docs/reports/2026-10-20-critical-billing-credits-auth-bug-hunt.md` + push vetvy.
+### Rozpracované / Pending
+- Fix PR-y na GO (seat webhook + isSessionPaid; NO_AGENCY fail-open; requireActiveAppAccess na send routes).
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-20-critical-billing-credits-auth-bug-hunt.md`: nálezy + trigger scenáre.
+### Ďalší krok
+`GO FIX-SEAT-WEBHOOK-GRANT` — fail-closed seat grant + isSessionPaid pre legacy (1 PR).
+
 ## Session 2026-10-20 (GO PROD-MIGRACIE — uzavreté)
 ### Dokončené
 - Obe migrácie sú v PROD a obe sú v ledgeri: `20261020050000` (BRI) a `20260617120000` (`uc_export_mapper`).
