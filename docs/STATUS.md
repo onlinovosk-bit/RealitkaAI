@@ -41,15 +41,16 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: VLNY-AB — reporty vlny A (Realvia zlyhania) a vlny B (mŕtvy kód / fantómy) z vlastného overenia v PROD + oprava čísla v matici (draft PR)
+Cieľ: BRI-ONCONFLICT — obe skórovacie funkcie prestanú padať na neexistujúci constraint (draft PR, migrácia čaká na GO)
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] 1 — Agregát zlyhaní premeraný v PROD v tomto turne: 1 543 / 256 / 1 287 = 83,41 %, identita `ok+fail = processed`
-- [x] 2 — Mesačný aj denný rozpad premeraný; nájdená a opravená MOJA chyba, že agregát „jún – dnes 38,1 %" zakrýval september (89 zlyhaní, 58,9 %)
-- [x] 3 — Príčina: `meta` prázdne v 0 z 1 077 riadkov, 5 textov chyby na 253 riadkov fronty → per-attempt príčina nie je uložená nikde
-- [x] 4 — Retry-slučka ako príčina VYVRÁTENÁ počtami aj časmi (733 ≠ 1 287; 322 zlyhaní po zavretí oboch poison riadkov)
-- [x] 5 — Vlna B overená: `event_store`/`LeadService` reálny mŕtvy kód · `outreach_messages` fantóm (0 výskytov) · nav oprávnenia už opravené 2026-10-05 (`d03cc47`)
-- [x] 6 — Riadok Realvia v `capability-truth-matrix.md` opravený + PREPEND do `memory/decisions.md`
+- [x] 1 — Pre-flight: constrainty `lead_scores`, 0 riadkov v tabuľke, obe RPC cielia na neexistujúci kľúč
+- [x] 2 — Pôvod chyby zmeraný: dve `CREATE TABLE IF NOT EXISTS` migrácie, prvá vyhrala s iným kľúčom
+- [x] 3 — Zmapovaní VŠETCI traja zapisovatelia; doložené, že pridať ani zahodiť constraint sa nedá bez rozbitia
+- [x] 4 — Migrácia patchuje živú definíciu (nie kópia z repa, kvôli 78/138 drift), s RAISE a overením v BEGIN/COMMIT
+- [x] 5 — Read-only dry run proti PROD: +32 znakov v oboch, práve jeden `DO UPDATE SET`, zlý cieľ preč
+- [x] 6 — 6 verifikačných pinov zelených; strážny regex overený oproti historickým previnilcom
 - [ ] 7 — Draft PR (bez merge)
+- [ ] 8 — Aplikovať migráciu na PROD (čaká na GO) + dôkaz, že `recompute-bri` už nepadá
 <!-- SESSION:END -->
 
 ## Čo potrebujem od teba (zoradené podľa dopadu)
