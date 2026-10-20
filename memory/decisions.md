@@ -1,3 +1,9 @@
+## 2026-10-20 — GO COACH-LOOP-FIX: schválený prompt od coacha sa vykoná, neaudituje sa znova (BUILD)
+**GO:** founder „GO COACH-LOOP-FIX". Problém: Grok sa zacyklil — vložený prompt od Coacha bral ako nové zadanie a vytvoril ďalší vylepšený prompt.
+**Príčina:** pravidlo „pri každom novom zadaní pridaj Prompt-coach" nerozlišovalo prompt, ktorý coach sám vytvoril. Zdroj: vložený prepis a súbor od foundera (správanie Groka som nevidel).
+**Oprava:** značka `[COACH-PROMPT-OK]` na prvom riadku každého promptu od coacha; správa s ňou (alebo hotový prompt so sekciami ROLA…HOTOVO) = vykonať bez bloku Prompt-coach; blok najviac raz na pôvodné zadanie; „BEZ COACHA" ho vypne. Hook `working-agreement.sh` pri tejto značke COACH nevloží. Platí pre blok COACH v repe; texty pre ChatGPT/Gemini/Grok a štyri inštalačné prompty (Onlinovo, UPTM, AI Influencerka, COZY Tatras) dostal founder v chate.
+**Rollback:** revert commitu.
+
 ## 2026-10-20 — GO COACH-FIX: Prompt Coach posudzuje len formu; hodnotu úlohy určuje founder (BUILD)
 **GO:** founder „GO COACH-FIX" po výhrade: AI nesmie rozhodovať, či prompt zvyšuje šancu na platiaceho klienta alebo retenciu; rozhoduje o tom iba founder. Poradie obrátené: zadanie sa najprv vykoná, coach je až na konci.
 **Čo:** blok COACH v `memory/working-agreement.md` — vyhodený bod „cieľ = čo sa zmení pre platiaceho klienta" a veta o „najkratšej ceste do produkcie"; rubrika má 5 bodov formy (vstupy, hranice, formát, dôkaz, hotovo); doplnené výslovné pravidlo, že coach nehodnotí hodnotu, nepriorizuje a neodmieta úlohu z obchodných dôvodov. Tabuľka v dokumente upravená. Skript hooku sa nemenil (číta blok).
