@@ -1,3 +1,9 @@
+## 2026-10-20 — GO COACH-FIX: Prompt Coach posudzuje len formu; hodnotu úlohy určuje founder (BUILD)
+**GO:** founder „GO COACH-FIX" po výhrade: AI nesmie rozhodovať, či prompt zvyšuje šancu na platiaceho klienta alebo retenciu; rozhoduje o tom iba founder. Poradie obrátené: zadanie sa najprv vykoná, coach je až na konci.
+**Čo:** blok COACH v `memory/working-agreement.md` — vyhodený bod „cieľ = čo sa zmení pre platiaceho klienta" a veta o „najkratšej ceste do produkcie"; rubrika má 5 bodov formy (vstupy, hranice, formát, dôkaz, hotovo); doplnené výslovné pravidlo, že coach nehodnotí hodnotu, nepriorizuje a neodmieta úlohu z obchodných dôvodov. Tabuľka v dokumente upravená. Skript hooku sa nemenil (číta blok).
+**Mimo rozsahu:** pravidlo 7 v `.claude/WALL-RULES.md` („Prime Directive") je foundera vlastné pravidlo pre prácu; nedotknuté. Prompty pre ChatGPT/Gemini/Grok boli odoslané v chate, nie v repe.
+**Rollback:** revert commitu (jeden blok).
+
 ## 2026-10-20 — GO RUTINA: dve podmienené rutiny v hooku (MIGRACIA, COACH) — BUILD
 **GO:** founder „GO RUTINA podľa tvojho návrhu" + „rutina, ktorá ma bude učiť písať prompty 10/10, ktoré posúvajú projekt do produkcie". Rozhodnutie: **BUILD** (rýchlejšie, presnejšie zadania = menej slučiek do platiaceho klienta; cena = jeden skript a dva textové bloky).
 **Čo:** `.claude/hooks/working-agreement.sh` číta z `UserPromptSubmit` stdin (`.prompt`) a podľa neho k DIGEST pridá (a) **MIGRACIA** — len ak správa obsahuje migrácia/DROP/DDL/ledger/schema_migrations/db push: read-only preflight, izolovaný test na lokálnom Postgrese (nie PROD), zápis len na GO; (b) **COACH** — len pri novom zadaní (≥60 znakov, nie GO/merguj/merge, nie automatická notifikácia): na konci odpovede blok „Prompt-coach" (odhad kvality podľa 6 bodov, čo chýbalo, prepísaná verzia). Zdroj textu: bloky `MIGRACIA` a `COACH` v `memory/working-agreement.md`. `settings.json` nezmenený (žiadny druhý hook, viď poučenie #800).

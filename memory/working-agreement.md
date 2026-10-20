@@ -60,7 +60,7 @@ ju vráti **do posledných správ** vtedy, keď je rozhodnutie:
 | `PostToolUse` na `ReadNotifications` (každé prebudenie z webhooku) | WEBHOOK | šum z webhookov, presne v momente, keď vzniká |
 | `SessionStart` + `UserPromptSubmit` | POSTUP (počíta hook z `docs/STATUS.md`) | zabudnuté % a vymyslené % — číslo nepíšem, len ho prevezmem |
 | `UserPromptSubmit`, len ak správa obsahuje migrácia / DROP / DDL / ledger / schema_migrations / PROD zápis | MIGRACIA | preskočený preflight a izolovaný test pred zápisom do PROD |
-| `UserPromptSubmit`, len pri novom zadaní (nie GO / merguj / automatická notifikácia) | COACH | prompty, ktoré nevedú najkratšou cestou do produkcie |
+| `UserPromptSubmit`, len pri novom zadaní (nie GO / merguj / automatická notifikácia) | COACH | nejasné alebo neúplné zadania (kontrola formy, nie hodnoty) |
 
 Skript: `.claude/hooks/working-agreement.sh`. Registrácia: `hooks` v
 `.claude/settings.json`. Text sa číta z blokov nižšie — **upraviť ich tu = zmeniť
@@ -98,5 +98,5 @@ RUTINA MIGRACIA (founder GO RUTINA): správa sa týka migrácie/DDL/PROD zápisu
 <!-- MIGRACIA:END -->
 
 <!-- COACH:START -->
-RUTINA COACH (founder GO RUTINA): táto správa je nové zadanie. Po dokončení práce pridaj na koniec blok „Prompt-coach", max 4 riadky, bez zdržania úlohy: (a) kvalita zadania v % (ODHAD podľa 6 bodov: 1 cieľ = čo sa zmení pre platiaceho klienta, 2 hranice = čo smiem/nesmiem, PROD len na GO, 3 vstupy = odkazy/súbory/ID, 4 dôkaz = čo musí správa obsahovať, 5 hotovo = merge/deploy/test a kto ho robí, 6 jedna celá stena na jedno GO), (b) ktoré body chýbali, (c) prepísaná verzia v jednej-dvoch vetách s najkratšou cestou do produkcie (jeden PR, jedno GO, čo je ďalšia brána). Ak je zadanie na 9/10 a viac, napíš „bez pripomienok". Rubriku nemeň na tvrdé číslo — je to odhad.
+RUTINA COACH (founder GO RUTINA + GO COACH-FIX): táto správa je nové zadanie. Zadanie najprv VYKONAJ (bez čakania na ďalšie GO, v rámci hraníc zo zadania a pravidiel stien). Až potom pridaj na koniec blok „Prompt-coach", max 4 riadky, bez zdržania úlohy: (a) kvalita FORMY zadania v % (ODHAD podľa 5 bodov: 1 vstupy = odkazy/súbory/ID/čísla, 2 hranice = čo smiem/nesmiem, PROD a platby len na výslovné GO, 3 formát výstupu, 4 dôkaz = čo musí správa obsahovať, 5 hotovo = merge/deploy/test a kto ho robí), (b) ktoré body chýbali, (c) prepísaná verzia zadania v jednej-dvoch vetách. Ak je zadanie na 9/10 a viac, napíš „bez pripomienok". PRAVIDLO: o hodnote, priorite a obchodnom prínose úlohy (platiaci klient, retencia, poradie) rozhoduje VÝLUČNE founder. Coach to nehodnotí, neprioritizuje, neodmieta úlohu z obchodných dôvodov ani nehovorí, čo „má zmysel"; posudzuje iba formu. Ak chýba cieľ, jedna otázka, nehádaj. Percentá sú odhad, nie meranie.
 <!-- COACH:END -->
