@@ -33,20 +33,28 @@ vi.mock("@/lib/matching", () => ({
 
 import { recalculateAllMatches, recalculateMatchesForProperty } from "../matching-store";
 
-/** Records deletes/inserts on lead_property_matches. */
+/** Records upsert/orphan-delete ops on lead_property_matches. */
 function scopedClient() {
   const ops: { op: string; rows?: unknown[] }[] = [];
-  const done = Promise.resolve({ error: null });
+  const done = Promise.resolve({ data: [], error: null });
   const client = {
     from: () => ({
-      delete: () => {
-        ops.push({ op: "delete" });
-        const chain = { eq: () => done, not: () => done };
-        return chain;
+      upsert: (rows: unknown[]) => {
+        ops.push({ op: "upsert", rows });
+        return done;
       },
       insert: (rows: unknown[]) => {
         ops.push({ op: "insert", rows });
         return done;
+      },
+      select: () => {
+        ops.push({ op: "select" });
+        return { eq: () => done, then: done.then.bind(done) };
+      },
+      delete: () => {
+        ops.push({ op: "delete" });
+        const chain = { eq: () => done, not: () => done, in: () => done };
+        return chain;
       },
     }),
   };
@@ -97,7 +105,8 @@ describe("recalculateMatchesForProperty", () => {
 
     expect(getPropertyMock).toHaveBeenCalledWith("prop-1", client);
     expect(listLeadsMock).toHaveBeenCalledWith(undefined, client);
-    expect(ops.map((o) => o.op)).toEqual(["delete", "insert"]);
+    expect(ops.map((o) => o.op)[0]).toBe("upsert");
+    expect(ops.map((o) => o.op)).not.toContain("insert");
     expect(res.inserted).toBe(1);
   });
 

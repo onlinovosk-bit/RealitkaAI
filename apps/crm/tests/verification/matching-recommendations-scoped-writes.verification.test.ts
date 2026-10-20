@@ -41,4 +41,16 @@ describe("[verification] Matching + recommendations scoped writes (R3 remediatio
     expect(salesFunnelStore).toMatch(/export async function createSaasLead\([\s\S]*scoped\?:/);
     expect(salesFunnelStore).toContain("resolveTenantSupabase(scoped)");
   });
+
+  it("matching recalculate upserts before orphan delete (no wipe window)", () => {
+    const matchingStore = readFileSync(join(CRM_ROOT, "src/lib/matching-store.ts"), "utf8");
+
+    expect(matchingStore).toContain("persistRecalculatedMatches");
+    expect(matchingStore).toContain('upsert(rows, { onConflict: "lead_id,property_id" })');
+    expect(matchingStore).toContain("keeping existing matches");
+    // Must not reintroduce delete-then-insert on the lead path.
+    expect(matchingStore).not.toMatch(
+      /recalculateLead:delete[\s\S]*recalculateLead:insert/,
+    );
+  });
 });
