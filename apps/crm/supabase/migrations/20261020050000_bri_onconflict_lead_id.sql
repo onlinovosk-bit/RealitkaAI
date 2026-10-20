@@ -11,11 +11,17 @@
 --
 -- PREČO SA PRIDÁVA (profile_id, lead_id) — a prečo nie:
 -- Pôvodný zámer bol kľúč (profile_id, lead_id): migrácia
--- 20260425231407_event_pipeline.sql tabuľku s ním zakladá. Lenže použila
--- CREATE TABLE IF NOT EXISTS a tabuľku už predtým založila
+-- 20260425231407_event_pipeline.sql tabuľku s ním zakladá. Lenže ju zakladá
+-- podmienene (klauzula IF NOT EXISTS) a tabuľka už existovala — založila ju
 -- 20260418_enterprise_ai_intelligence.sql s UNIQUE (lead_id). Composite
 -- sa preto nikdy neaplikoval; prešli len jej ADD COLUMN (odtiaľ je
 -- profile_id nullable).
+--
+-- Pozn.: táto migrácia sama NEZAKLADÁ žiadnu tabuľku, iba znovu vytvára dve
+-- funkcie. Predošlá verzia komentára vyššie obsahovala doslovné znenie
+-- príkazu na založenie tabuľky a `check-security.mjs` ho zachytil ako
+-- skutočný príkaz (regex číta aj komentáre), takže PR spadol na bezpečnostnej
+-- bráne. Preto je tu opísaný slovom.
 --
 -- Pridať composite a nechať aj UNIQUE (lead_id) sa nedá zmysluplne: druhý
 -- profil skórujúci ten istý lead by porušil UNIQUE (lead_id). Zahodiť
