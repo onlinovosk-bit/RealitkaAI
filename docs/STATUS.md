@@ -41,16 +41,13 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: BRI-ONCONFLICT — obe skórovacie funkcie prestanú padať na neexistujúci constraint (draft PR, migrácia čaká na GO)
+Cieľ: Recolor www.revolis.ai (apps/marketing) na navy + gold paletu — draft PR, bez merge
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] 1 — Pre-flight: constrainty `lead_scores`, 0 riadkov v tabuľke, obe RPC cielia na neexistujúci kľúč
-- [x] 2 — Pôvod chyby zmeraný: dve `CREATE TABLE IF NOT EXISTS` migrácie, prvá vyhrala s iným kľúčom
-- [x] 3 — Zmapovaní VŠETCI traja zapisovatelia; doložené, že pridať ani zahodiť constraint sa nedá bez rozbitia
-- [x] 4 — Migrácia patchuje živú definíciu (nie kópia z repa, kvôli 78/138 drift), s RAISE a overením v BEGIN/COMMIT
-- [x] 5 — Read-only dry run proti PROD: +32 znakov v oboch, práve jeden `DO UPDATE SET`, zlý cieľ preč
-- [x] 6 — 6 verifikačných pinov zelených; strážny regex overený oproti historickým previnilcom
-- [ ] 7 — Draft PR (bez merge)
-- [ ] 8 — Aplikovať migráciu na PROD (čaká na GO) + dôkaz, že `recompute-bri` už nepadá
+- [x] 1 — Tokeny v `public/palette.css` + WCAG AA namerané (headline 16.58, muted 9.27, gold CTA 9.50)
+- [x] 2 — Paleta aplikovaná na `/` (`public/index.html`), `/demo`, `/balik` a landing-v2; copy/ceny/CTA/SEO nedotknuté
+- [x] 3 — `npx vitest run` 60/60 + `next build --webpack` zelený v tomto turne
+- [x] 4 — Before/after screenshoty desktop+mobile pre `/`, `/demo`, `/balik`
+- [x] 5 — Draft PR (bez merge)
 <!-- SESSION:END -->
 
 ## Čo potrebujem od teba (zoradené podľa dopadu)

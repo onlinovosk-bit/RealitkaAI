@@ -1,5 +1,11 @@
 # Critical Decisions Log
 
+## 2026-10-20 — www.revolis.ai navy + gold paleta (BUILD, draft)
+**GO:** zadanie Cloud Agent — recolor len `apps/marketing`, draft PR, nemergovať. **RAU:** AUTO-SAFE CONTENT.
+**Ústava v2:** vizuál existujúceho webu, nie nová featura. Timing OK (kampaň `/` beží). Q1 neplatí ako veto — nálada predajnej stránky.
+**Rozhodnutie:** paleta centralizovaná v `public/palette.css` (CSS premenné; Tailwind v marketingu nie je). `app.revolis.ai` a SEO súbory (#878) netknuté. Slovo pilot nezavádzať.
+**Výstup:** `docs/reports/2026-10-20-marketing-gohouse-palette.md`.
+
 ## 2026-10-20 — BRI-ONCONFLICT: obe skórovacie funkcie padali na neexistujúci constraint (BUILD, draft, čaká na GO na PROD)
 **GO:** founder „GO BRI-ONCONFLIC".
 **Chyba (ZMERANÉ):** `compute_bri_score` aj `compute_bri_score_v2` upsertujú do `lead_scores` s `ON CONFLICT (profile_id, lead_id)`. Tabuľka má len `PRIMARY KEY (id)` a `UNIQUE (lead_id)` → obe funkcie padajú pri KAŽDOM volaní. Cron `recompute-bri` 3 z 3 `failed`, `lead_scores` **0 riadkov** — BRI skóre nikdy nevzniklo.

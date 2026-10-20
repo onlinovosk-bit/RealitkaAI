@@ -1,3 +1,21 @@
+## Session 2026-10-20 (marketing navy + gold paleta)
+### Dokončené
+- RAU route: AUTO-SAFE CONTENT revolis. PR #878 už merged — SEO súbory netknuté.
+- Tokeny `apps/marketing/public/palette.css`; aplikované na `/`, `/demo`, `/balik`, landing-v2.
+- Contrast AA nameraný (headline 16.58, CTA 9.50). Vitest 60/60, `next build --webpack` zelený.
+- Before/after screenshoty desktop+mobile v `/opt/cursor/artifacts/{before,after}/`.
+- Report: `docs/reports/2026-10-20-marketing-gohouse-palette.md`. Draft PR, bez merge.
+### Rozpracované / Pending
+- Merge len na founder GO. Preview pre `cursor/*` je vypnutý.
+### Kľúčové súbory zmenené
+- `apps/marketing/public/palette.css`: zdroj tokenov.
+- `apps/marketing/public/index.html`: kampaň `/` remapovaná na tokeny (copy/ceny/CTA/SEO bez zmeny).
+- `apps/marketing/app/{globals,landing-v2,demo/demo,balik/balik}.css`: spotreba tokenov.
+- `apps/marketing/__tests__/palette.test.ts`: AA + no-pilot + CTA guard.
+### Ďalší krok
+Founder review draft PR; merge len na GO.
+RAU route: AUTO-SAFE CONTENT revolis.
+
 ## Session 2026-10-20 (BRI-ONCONFLICT)
 ### Dokončené
 - **Zmeraná príčina:** `compute_bri_score` aj `compute_bri_score_v2` cielia `ON CONFLICT (profile_id, lead_id)`, ale `lead_scores` má len `PRIMARY KEY (id)` + `UNIQUE (lead_id)`. Obe padajú pri každom volaní; `lead_scores` má 0 riadkov.
