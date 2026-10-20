@@ -58,6 +58,25 @@ Rozhodnutie foundera: aplikovať `20260617120000` na PROD (odblokuje import tej 
 ### Ďalší krok
 Rozhodnutie foundera o dvoch migráciách (`source_id` index, `compute_bri_score`); obe sú zmerané P1 a obe čakajú len na GO.
 
+## Session 2026-10-20 (BRI-ONCONFLICT)
+### Dokončené
+- **Zmeraná príčina:** `compute_bri_score` aj `compute_bri_score_v2` cielia `ON CONFLICT (profile_id, lead_id)`, ale `lead_scores` má len `PRIMARY KEY (id)` + `UNIQUE (lead_id)`. Obe padajú pri každom volaní; `lead_scores` má 0 riadkov.
+- **Pôvod:** dve `CREATE TABLE IF NOT EXISTS` migrácie na tú istú tabuľku; `20260418` (UNIQUE lead_id) bola prvá a vyhrala, z `20260425231407` (UNIQUE profile_id,lead_id) prešli len ADD COLUMN.
+- **Zmapovaní traja zapisovatelia:** obe BRI funkcie chcú composite, `enterprise-intelligence-store.ts` chce `lead_id`. Doložené, že pridať aj zahodiť constraint rozbije jednu z ciest → ani jedno.
+- **Oprava:** `ON CONFLICT (lead_id)` + `profile_id = EXCLUDED.profile_id`. Správny kľúč podľa modelu (`leads.assigned_profile_id` = jeden lead, jeden profil). Bez `ALTER TABLE`, bez `DROP`.
+- **Migrácia patchuje živú definíciu** cez `pg_get_functiondef` + `replace`, nie kópiou z repa — pri 78/138 aplikovaných migráciách by kópia potichu vrátila neznáme zmeny. `RAISE EXCEPTION` pri nenájdení, `BEGIN/COMMIT`, overenie na konci.
+- **Dôkaz:** read-only dry run proti PROD — v1 3133→3165, v2 9383→9415 (oba +32), zlý cieľ preč, práve jeden `DO UPDATE SET` v každej. 6 pinov zelených, strážny regex overený oproti `20260425231407` aj `20260425231426`.
+### Rozpracované / Pending
+- Draft PR BRI-ONCONFLICT — čaká na „merguj N".
+- **Aplikovanie migrácie na PROD čaká na GO**; dovtedy je jej správanie NEZMERANÉ (bez Dockera `prepush-gate` hlási migrácie NEOVERENÉ).
+- Otvorené aj: #885, #888, `GO SOURCE-ID-INDEX`, povolenie zmazať mŕtvy kód, Stripe krok C, `RESEND_API_KEY`, 6× `GOOGLE_GMAIL_INBOUND_*`.
+### Kľúčové súbory zmenené
+- `apps/crm/supabase/migrations/20261020050000_bri_onconflict_lead_id.sql`: nová — patch oboch funkcií so strážami.
+- `apps/crm/tests/verification/bri-onconflict.verification.test.ts`: nová — 6 pinov vrátane „žiadna novšia migrácia nevráti composite".
+- `docs/reports/2026-10-20-bri-onconflict.md`: nový — celý pre-flight, tri cesty zapisovateľov a dry run.
+### Ďalší krok
+GO na aplikovanie migrácie. Poctivo: odstráni pád, ale skóre neprinesie, kým `events` má 1 riadok.
+
 ## Session 2026-10-18 (VLNY-AB — reporty z overených nálezov)
 ### Dokončené
 - Vlna A premeraná mnou v PROD v tomto turne: `realvia_metrics` 1 077 riadkov, processed 1 543, ok 256, fail 1 287, `ok+fail = 1543`, **83,41 %**.

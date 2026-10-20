@@ -28,6 +28,17 @@
 **Pravidlo, ktoré z toho platí:** merge nie je koniec. Zelené CI, zmergovaný PR a nasadený build sú tri rôzne veci a ani jedna z nich nie je dôkaz, že to u zákazníka funguje. Jediný dôkaz je riadok v PROD.
 **Otvorené s GO bránou:** `merguj 885` · `GO SOURCE-ID-INDEX` · oprava `compute_bri_score` (migrácia) · povolenie zmazať mŕtvy kód · Stripe krok C, `RESEND_API_KEY`, 6× `GOOGLE_GMAIL_INBOUND_*`.
 
+## 2026-10-20 — BRI-ONCONFLICT: obe skórovacie funkcie padali na neexistujúci constraint (BUILD, draft, čaká na GO na PROD)
+**GO:** founder „GO BRI-ONCONFLIC".
+**Chyba (ZMERANÉ):** `compute_bri_score` aj `compute_bri_score_v2` upsertujú do `lead_scores` s `ON CONFLICT (profile_id, lead_id)`. Tabuľka má len `PRIMARY KEY (id)` a `UNIQUE (lead_id)` → obe funkcie padajú pri KAŽDOM volaní. Cron `recompute-bri` 3 z 3 `failed`, `lead_scores` **0 riadkov** — BRI skóre nikdy nevzniklo.
+**Pôvod:** tabuľku zakladajú DVE migrácie, obe `CREATE TABLE IF NOT EXISTS`. `20260418_enterprise_ai_intelligence.sql` (`UNIQUE (lead_id)`) bola prvá a vyhrala; z `20260425231407_event_pipeline.sql` (`UNIQUE (profile_id, lead_id)`) prešli len `ADD COLUMN` — preto je `profile_id` nullable a composite nikdy nevznikol.
+**Čo som NEurobil a prečo:** nepridal ani nezmenil constraint. Na tabuľke sedia traja zapisovatelia s dvoma nezlučiteľnými kľúčmi — obe BRI funkcie chcú `(profile_id, lead_id)`, `enterprise-intelligence-store.ts` (`/api/ai/process-lead`) chce `lead_id`. Pridať composite rozbije tretieho pri druhom profile na tom istom leade; zahodiť `UNIQUE (lead_id)` ho rozbije rovno. **Oba smery vymenia jednu rozbitú cestu za inú.**
+**Oprava:** cieliť konflikt na kľúč, ktorý EXISTUJE — `ON CONFLICT (lead_id)` + `profile_id = EXCLUDED.profile_id` v `DO UPDATE`. Je to aj správny kľúč podľa modelu: `leads.assigned_profile_id` priraďuje lead jednému profilu a `batchRecomputeBRI` skóruje len leady toho profilu. Prepis `profile_id` rieši prepis leadu na iného makléra. Žiadny `ALTER TABLE`, žiadny `DROP`.
+**Prečo migrácia PATCHUJE živú definíciu (`pg_get_functiondef` + `replace`) a neprepisuje ju kópiou z repa:** v PROD je 78 zo 138 migrácií, takže živé telo sa môže líšiť od ktoréhokoľvek súboru v repe a kópia by potichu vrátila späť neznáme zmeny. Migrácia `RAISE EXCEPTION`, keď podreťazec nenájde; celé v `BEGIN/COMMIT` s overením na konci.
+**Dôkaz (read-only dry run proti PROD):** tá istá dvojica `replace()` ako `SELECT`. v1 3133→3165, v2 9383→9415, oba **+32**, zlý cieľ preč, správny cieľ aj prepis vlastníka prítomné, a **práve jeden `DO UPDATE SET`** v každej funkcii → druhý `replace` nemal čo iné zasiahnuť. 6 verifikačných pinov zelených; strážny regex overený oproti skutočným historickým previnilcom (`20260425231407`, `20260425231426`) a neoznačí túto opravu.
+**NEZMERANÉ:** správanie migrácie po aplikovaní (bez Dockera `prepush-gate` hlási migrácie NEOVERENÉ). **Poctivo:** oprava odstráni pád, neprinesie skóre — `events` má 1 riadok, takže BRI by aj tak dalo takmer všetkým rovnakú hodnotu.
+**Opravujem svoj vlastný návrh:** pri GO som písal, že si budem pýtať rozhodnutie „pridať vedľa vs nahradiť constraint". Pre-flight ukázal, že ani jedno nie je potrebné ani bezpečné — rozhodnutie teda nepotrebujem a nepýtam si ho.
+
 ## 2026-10-18 — VLNY-AB: reporty z overených nálezov, nie z výstupu swarmu (BUILD, draft)
 **GO:** founder zvolil variant **A** — „zastaviť vlny a reporty napíšem z toho, čo mám; nosné tvrdenia si overím sám priamo v PROD".
 **Čo som premeral sám v tom istom turne** (PROD `ypgajkhqtbriqqmyawyv`, iba čítanie):
