@@ -48,7 +48,7 @@ Cieľ: Speed / time-saving VP — roadmap + Phase 1 (listing z fotiek, flag OFF)
 - [x] 3 — UI `/inzerat-generator` + unit/integration/verification testy
 - [x] 4 — Landing copy (SK) okolo rýchlosti; ceny v3 a paleta navy+gold nedotknuté; žiadny klaim Phase 1
 - [x] 5 — Testy + build zelené v tomto turne (CRM 3591 passed bez RLS/DB; marketing 61/61; oba `next build` zelené)
-- [ ] 6 — Draft PR (bez merge)
+- [x] 6 — Draft PR #892 (bez merge)
 <!-- SESSION:END -->
 
 ## Čo potrebujem od teba (zoradené podľa dopadu)
