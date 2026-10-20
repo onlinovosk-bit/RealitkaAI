@@ -38,6 +38,26 @@ RAU route: AUTO-SAFE CONTENT revolis.
 ### Ďalší krok
 Rozhodnutie foundera: aplikovať `20260617120000` na PROD (odblokuje import tej istej inzerátovej id pre druhú agentúru), alebo len samotný index ako minimálna migrácia.
 
+## Session 2026-10-20 (PREFLIGHT AUDIT + CRON-TRUTH-01)
+### Dokončené
+- Phase Zero read-only preflight podľa META-PROMPT v2.0; pracovný strom nedotknutý.
+- **Hypotéza „PR sa hromadia" VYVRÁTENÁ:** 800 PR / 728 zmergovaných / 24 otvorených (3 %) za 5 mesiacov.
+- **Skutočné hrdlo zmerané:** medzera merge→účinok. 51 behov cronov za 14 dní, 1 `ok`. PROD: 0 Stripe predplatných, 0 trialov, 0 self-serve, 0 `outbound_messages`, 1 `events`, 1 lead za 14 dní. Migrácie 138 vs 78.
+- **Nový P1:** `compute_bri_score` → `ON CONFLICT (profile_id, lead_id)` bez zodpovedajúceho constraintu (`lead_scores` má len `UNIQUE (lead_id)`), padá 3 z 3.
+- **Bezpečnosť: 3 zo 4 „nálezov" vyvrátené** — 36× `rls_enabled_no_policy` je fail-closed INFO; `profile_agencies_for_auth()` filtruje cez `auth.uid()`; `get_valuation_tenant()` je zámerne verejná. Reálny WARN: vypnutá ochrana proti uniknutým heslám.
+- **CRON-TRUTH-01:** `deriveCronStatus` už nehlási `failed`, keď beh kandidátov zvážil a legitímne nemal čo robiť. 25/25 testov, regresia dokázaná v oboch smeroch.
+### Rozpracované / Pending
+- Draft PR CRON-TRUTH-01 — čaká na „merguj N".
+- #885 otvorený, zelený, `behind` — čaká na „merguj 885".
+- `GO SOURCE-ID-INDEX`; oprava `compute_bri_score` migráciou; povolenie zmazať mŕtvy kód.
+- Stripe krok C, `RESEND_API_KEY`, 6× `GOOGLE_GMAIL_INBOUND_*` — bez nich sa „0 platieb / 0 správ" nepohne.
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/ops/cron-run.ts`: `failed` vyžaduje `failed > 0`; dôvod voľby `empty` namiesto nového stavu je v komentári.
+- `apps/crm/src/lib/ops/__tests__/derive-cron-status.test.ts`: nový, 6 testov vrátane pinu na povolené hodnoty CHECK.
+- `docs/reports/2026-10-20-preflight-audit-dodavky.md`: nový — celý audit s číslami a s tým, čo nálezom NIE JE.
+### Ďalší krok
+Rozhodnutie foundera o dvoch migráciách (`source_id` index, `compute_bri_score`); obe sú zmerané P1 a obe čakajú len na GO.
+
 ## Session 2026-10-20 (BRI-ONCONFLICT)
 ### Dokončené
 - **Zmeraná príčina:** `compute_bri_score` aj `compute_bri_score_v2` cielia `ON CONFLICT (profile_id, lead_id)`, ale `lead_scores` má len `PRIMARY KEY (id)` + `UNIQUE (lead_id)`. Obe padajú pri každom volaní; `lead_scores` má 0 riadkov.
