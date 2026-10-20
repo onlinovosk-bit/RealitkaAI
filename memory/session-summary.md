@@ -1,3 +1,21 @@
+## Session 2026-10-20 (speed / time-saving VP)
+### Dokončené
+- RAU route: GO_REQUIRED BUILD revolis (merge/PROD/secrets/pricing v zadaní; tie kroky som neurobil).
+- Roadmap: `docs/strategy/2026-10-20-speed-time-saving-roadmap.md` — audit vs AIRAmax (exists / partial / missing).
+- Phase 1: `POST /api/ai/listing-from-photos` za `LISTING_FROM_PHOTOS_V0` (default OFF), auth + tenant + `listingDescription` kredit, mock adapter.
+- UI `/inzerat-generator` ukáže fotky len pri zapnutom flagu.
+- Landing copy (SK) okolo rýchlosti; ceny v3 a navy+gold paleta nedotknuté; žiadny klaim Phase 1 / Studio.
+- Testy: CRM 3591 passed (bez RLS/DB), marketing 61/61; oba next build zelené.
+### Rozpracované / Pending
+- Draft PR (bez merge). Zapnutie `LISTING_FROM_PHOTOS_V0=1` na PROD len na GO foundera.
+### Kľúčové súbory zmenené
+- `docs/strategy/2026-10-20-speed-time-saving-roadmap.md`: audit + fázy.
+- `apps/crm/src/app/api/ai/listing-from-photos/route.ts`: flag + auth + tenant + kredity.
+- `apps/marketing/public/index.html`: hero/benefity na rýchlosť.
+### Ďalší krok
+Founder review draft PR; merge a PROD flag len na výslovné GO.
+RAU route: GO_REQUIRED BUILD revolis
+
 ## Session 2026-10-20 (marketing navy + gold paleta)
 ### Dokončené
 - RAU route: AUTO-SAFE CONTENT revolis. PR #878 už merged — SEO súbory netknuté.

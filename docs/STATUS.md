@@ -41,13 +41,14 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: Recolor www.revolis.ai (apps/marketing) na navy + gold paletu — draft PR, bez merge
+Cieľ: Speed / time-saving VP — roadmap + Phase 1 (listing z fotiek, flag OFF) + www copy — jeden draft PR, bez merge
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] 1 — Tokeny v `public/palette.css` + WCAG AA namerané (headline 16.58, muted 9.27, gold CTA 9.50)
-- [x] 2 — Paleta aplikovaná na `/` (`public/index.html`), `/demo`, `/balik` a landing-v2; copy/ceny/CTA/SEO nedotknuté
-- [x] 3 — `npx vitest run` 60/60 + `next build --webpack` zelený v tomto turne
-- [x] 4 — Before/after screenshoty desktop+mobile pre `/`, `/demo`, `/balik`
-- [x] 5 — Draft PR (bez merge)
+- [x] 1 — Roadmap `docs/strategy/2026-10-20-speed-time-saving-roadmap.md` (audit exists/partial/missing vs AIRAmax)
+- [x] 2 — Phase 1: `POST /api/ai/listing-from-photos` za `LISTING_FROM_PHOTOS_V0` (default OFF), auth + tenant + kredity
+- [x] 3 — UI `/inzerat-generator` + unit/integration/verification testy
+- [x] 4 — Landing copy (SK) okolo rýchlosti; ceny v3 a paleta navy+gold nedotknuté; žiadny klaim Phase 1
+- [x] 5 — Testy + build zelené v tomto turne (CRM 3591 passed bez RLS/DB; marketing 61/61; oba `next build` zelené)
+- [ ] 6 — Draft PR (bez merge)
 <!-- SESSION:END -->
 
 ## Čo potrebujem od teba (zoradené podľa dopadu)

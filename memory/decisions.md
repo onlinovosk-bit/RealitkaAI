@@ -1,3 +1,10 @@
+## 2026-10-20 — Speed / time-saving VP + listing z fotiek (BUILD, draft)
+**GO:** founder (Andrej) — zmena value proposition na rýchlosť a úsporu času; jeden draft PR, **nikdy merge**; ceny v3 nemením.
+**RAU:** GO_REQUIRED BUILD revolis (merge / production / secrets / pricing v texte). Merge, PROD env a ceny som neurobil.
+**Ústava v2:** BUILD. Q1 = founder povedal, že AIRAmax vyhráva týmito funkciami. Q8 = teraz. Phase 1 = EXTEND existujúceho listing generatora (Claude vision), nie nové Studio.
+**Rozhodnutie:** roadmap + `LISTING_FROM_PHOTOS_V0` (default OFF) + www copy len o LIVE funkciách. Staging / reel / pôdorys označené missing / not feasible.
+**Výstup:** `docs/strategy/2026-10-20-speed-time-saving-roadmap.md`, `docs/reports/2026-10-20-speed-time-saving.md`.
+
 # Critical Decisions Log
 
 ## 2026-10-20 — www.revolis.ai navy + gold paleta (BUILD, draft)
