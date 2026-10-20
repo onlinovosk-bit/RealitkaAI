@@ -69,8 +69,9 @@ Merané v tomto turne:
 | `apps/crm` `npm run build` | zelený; route `/api/ai/listing-from-photos` v zozname |
 | `node apps/crm/scripts/check-api-contract.mjs --ci` | **0 nových porušení** (523 = baseline; route má `incrementUsageMetric`) |
 | listing-from-photos unit + route + verification | **17/17 passed** |
-| CI required `Lint, test, build` na `91d02da7` | SUCCESS (GitHub check) |
-| CI `Zmluva kódu` na `91d02da7` | FAIL → opravené v tomto commite (`incrementUsageMetric`) |
+| CI required `Lint, test, build` na `4e4db514` | SUCCESS (run 39388101855) |
+| CI `Zmluva kódu` na `4e4db514` | SUCCESS (run 39388101846) — predchádzajúci FAIL na `91d02da7` opravený `incrementUsageMetric` |
+| CI PR #892 head `4e4db514` | 10 successful, 0 failed, 1 skipped (Preview Playwright — `cursor/*`) |
 
 RLS súbory padli lokálne na chýbajúce `TEST_SUPABASE_*` (rovnaké ako pred touto zmenou). CI ich spúšťa po `supabase db reset`.
 
