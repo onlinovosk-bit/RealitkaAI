@@ -43,12 +43,19 @@ const EMPTY: PropertyInput = {
   features: [],
 };
 
-export default function ListingGeneratorClient() {
+type PhotoDraft = { name: string; dataUrl: string };
+
+type Props = {
+  photosEnabled?: boolean;
+};
+
+export default function ListingGeneratorClient({ photosEnabled = false }: Props) {
   const [property, setProperty] = useState<PropertyInput>(EMPTY);
   const [featuresRaw, setFeaturesRaw] = useState("");
   const [persona, setPersona] = useState<ListingPersona>("GENERAL");
   const [charakterKind, setCharakterKind] = useState<CharakterLokalityKind | "">("");
   const [charakterText, setCharakterText] = useState("");
+  const [photos, setPhotos] = useState<PhotoDraft[]>([]);
 
   const [content, setContent] = useState<ListingContent | null>(null);
   const [generationId, setGenerationId] = useState<string | null>(null);
@@ -83,17 +90,45 @@ export default function ListingGeneratorClient() {
     });
   }
 
+  async function onPhotosSelected(files: FileList | null) {
+    if (!files?.length) return;
+    const next = [...photos];
+    for (const file of Array.from(files)) {
+      if (next.length >= 6) break;
+      if (!/^image\/(jpeg|png|webp|gif)$/.test(file.type)) {
+        setError("Fotografia musí byť JPEG, PNG, WebP alebo GIF.");
+        continue;
+      }
+      if (file.size > 4 * 1024 * 1024) {
+        setError("Jedna fotografia môže mať najviac 4 MB.");
+        continue;
+      }
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(new Error("read"));
+        reader.readAsDataURL(file);
+      });
+      next.push({ name: file.name, dataUrl });
+    }
+    setPhotos(next);
+  }
+
   async function generate() {
     setLoading(true);
     setError(null);
     setSavedAt(null);
     try {
-      const res = await fetch("/api/ai/listing-content", {
+      const usePhotos = photosEnabled && photos.length > 0;
+      const res = await fetch(usePhotos ? "/api/ai/listing-from-photos" : "/api/ai/listing-content", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           property: buildPayload(),
           persona,
+          ...(usePhotos
+            ? { photos: photos.map((p) => ({ type: "data_url", dataUrl: p.dataUrl })) }
+            : {}),
         }),
       });
       const data = await res.json();
@@ -339,6 +374,51 @@ export default function ListingGeneratorClient() {
           ))}
         </div>
 
+        {photosEnabled && (
+          <div className="mt-6">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-slate-400">
+              Fotografie (voliteľné)
+            </h2>
+            <p className="mb-3 text-xs text-slate-500">
+              Najviac 6 fotiek. Bez fotiek ide text len z parametrov. AI nesmie vymýšľať to, čo na
+              fotke nie je.
+            </p>
+            <input
+              id="lg-photos"
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              multiple
+              className="block w-full text-sm text-slate-300 file:mr-3 file:rounded-md file:border-0
+                         file:bg-violet-600 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white"
+              onChange={(e) => {
+                void onPhotosSelected(e.target.files);
+                e.target.value = "";
+              }}
+            />
+            {photos.length > 0 && (
+              <ul className="mt-3 grid grid-cols-3 gap-2">
+                {photos.map((p, idx) => (
+                  <li key={`${p.name}-${idx}`} className="relative">
+                    <div
+                      role="img"
+                      aria-label={p.name}
+                      className="h-20 w-full rounded-md bg-cover bg-center"
+                      style={{ backgroundImage: `url(${p.dataUrl})` }}
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-1 top-1 rounded bg-slate-950/80 px-1.5 text-[10px] text-white"
+                      onClick={() => setPhotos((cur) => cur.filter((_, i) => i !== idx))}
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
         <button
           type="button"
           onClick={generate}
@@ -346,7 +426,11 @@ export default function ListingGeneratorClient() {
           className="mt-5 w-full rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white
                      transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {loading ? "Generujem…" : "Vygenerovať texty"}
+          {loading
+            ? "Generujem…"
+            : photosEnabled && photos.length > 0
+              ? "Vygenerovať texty z parametrov a fotiek"
+              : "Vygenerovať texty"}
         </button>
 
         {error && (

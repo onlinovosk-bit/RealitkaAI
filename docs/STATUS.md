@@ -41,6 +41,14 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
+Cieľ: Speed / time-saving VP — roadmap + Phase 1 (listing z fotiek, flag OFF) + www copy — jeden draft PR, bez merge
+> % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
+- [x] 1 — Roadmap `docs/strategy/2026-10-20-speed-time-saving-roadmap.md` (audit exists/partial/missing vs AIRAmax)
+- [x] 2 — Phase 1: `POST /api/ai/listing-from-photos` za `LISTING_FROM_PHOTOS_V0` (default OFF), auth + tenant + kredity
+- [x] 3 — UI `/inzerat-generator` + unit/integration/verification testy
+- [x] 4 — Landing copy (SK) okolo rýchlosti; ceny v3 a paleta navy+gold nedotknuté; žiadny klaim Phase 1
+- [x] 5 — Testy + build zelené v tomto turne (CRM 3591 passed bez RLS/DB; marketing 61/61; oba `next build` zelené)
+- [x] 6 — Draft PR #892 (bez merge)
 Cieľ: Preflight audit dodávky + tri opravy na PROD-ceste (Realvia príčiny, pravda v cron_runs, BRI ON CONFLICT)
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
 - [x] 1 — Vlny A/B: reporty z meraných dát, nie z agentov (#882 zmergovaný)
@@ -50,6 +58,20 @@ Cieľ: Preflight audit dodávky + tri opravy na PROD-ceste (Realvia príčiny, p
 - [x] 5 — BRI-ONCONFLICT: obe skórovacie funkcie cielia na existujúci kľúč (#889 → `5ab3da4`; migrácia NEAPLIKOVANÁ na PROD, čaká na GO)
 - [x] 6 — Zápis do memory (PREPEND, `+9 −0` a `+19 −0`) + tento blok SESSION
 <!-- SESSION:END -->
+
+## Hotové 2026-10-07 — s dôkazom (REALVIA-SEC-01)
+- **Realviine prihlasovacie údaje už nekončia v logoch ani v DB.** `collectRequestHeaders` redagovala
+  `authorization` a `*secret*`, ale **nie `identifikator`/`identifikator2`** — a tie sú primárna produkčná
+  autentifikácia Realvie. Tá istá mapa šla do logu pri každom doručení aj do `realvia_webhook_logs.headers_json`.
+  Diera bola pritom **zamknutá testom**, ktorý výpis credentialu priamo prikazoval (`toBe('id1')`).
+- **Diagnostika nie je verejná.** `?dump=headers` bol bez autentifikácie (vypisoval Vercel metadáta nasadenia);
+  teraz za `CRON_SECRET`, rovnako ako `diag=config`. Verejný health check bez parametra zostáva zámerne.
+- **Heartbeat vidí aj spracovanie, nie len prítok.** Dovtedy merel iba to, či webhooky prichádzajú. Doplnené
+  pending/failed front, posledný beh workera a properties za 24 h + signály `realvia_queue_failed_jobs`
+  a `realvia_worker_stale_2h` (oba len keď tenant Realviu naozaj používa).
+- **Dôkaz:** 3205 testov prešlo (8 zlyhaní = nemenná množina RLS/integračných testov vyžadujúcich lokálnu
+  Supabase, CI ich nespúšťa), typecheck 49 proti baseline 54 (žiadna pridaná chyba), lint exit 0.
+- **Bez vplyvu na tabuľku nižšie** — Realvia prítok nie je ani jeden z piatich vážených blokov, takže % sa nemení.
 
 ## Čo potrebujem od teba (zoradené podľa dopadu)
 1. **Stripe krok C + webhook** — vytvoriť ceny (a vo Vercel nastaviť `STRIPE_WEBHOOK_SECRET`; v Stripe overiť endpoint `/api/billing/webhook` s udalosťami `checkout.session.completed`, `customer.subscription.created/updated/deleted`, `invoice.paid`, `invoice.payment_failed`): `bash scripts/ops/stripe-verify-prices.sh --spec` → potom pošli výstup `…verify-prices.sh`; overenie spravím ja. *(+30 bodov, jediný krok, ktorý odblokuje platiaceho klienta)*

@@ -171,6 +171,17 @@ A `getFeatureFlagsForPlan(plan)` musí vracať reálne limity podľa `PlanKey`, 
 
 ---
 
+## `LISTING_FROM_PHOTOS_V0` (2026-10-20)
+
+Predvolene **OFF**. Zapnúť len v Production po GO foundera:
+
+```
+LISTING_FROM_PHOTOS_V0=1
+ANTHROPIC_API_KEY=<existujúci kľúč>
+```
+
+Bez flagu `POST /api/ai/listing-from-photos` vracia 404. Kredity idú cez existujúce `listingDescription` + `CREDITS_ENFORCEMENT` (stále predvolene off).
+
 ## TRACK-F uzavretie
 
 - [x] Checklist vytvorený

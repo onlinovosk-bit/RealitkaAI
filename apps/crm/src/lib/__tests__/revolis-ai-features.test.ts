@@ -144,6 +144,17 @@ export const REVOLIS_AI_FEATURE_REGISTRY: AiFeatureSpec[] = [
     apiRoute: "/api/ai/listing-content/generations/[id]",
   },
   {
+    id: "listing-from-photos",
+    label: "AI listing content from photos (flag OFF)",
+    category: "content",
+    paths: [
+      "src/lib/ai/listing-from-photos.ts",
+      "src/app/api/ai/listing-from-photos/route.ts",
+    ],
+    uiRoute: "/inzerat-generator",
+    apiRoute: "/api/ai/listing-from-photos",
+  },
+  {
     id: "property-launch-pack",
     label: "Property Launch Pack V0",
     category: "content",
