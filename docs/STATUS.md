@@ -3,6 +3,7 @@
 > Aktualizuje sa **po každom uzavretom bloku** (jeden riadok zmeny hore + tabuľka). Čísla sú merané, kde je uvedený dôkaz;
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-05, 07:55 UTC** (FAIL-OPEN-SWEEP + TRIAL-GATE-CLOSED variant A: po vypršaní trialu je účet read-only, nie otvorený; hlavička prepočítaná z tabuľky 53 % → 51 %).
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 08:30 UTC** (EVENTS-WIRE + CRON-ALIVE, zatiaľ nezmergované).
+> **2026-10-09 AGENTIC-WAVES:** Vlna 1 (WP-1…WP-6) zmergovaná do `main` (#836–#841): bez 180 000 € fallbackov, čítač `inbound_mail_outcomes`, send-gate, inventár trás, návrh Strážcu follow-upu (BACKLOG), PROD balíky **neaplikované**. Tabuľka nižšie sa NEMENÍ (nič z toho nie je PROD dôkaz). Plán: `docs/plans/2026-10-09-agentic-waves.md`.
 
 > **2026-10-16 (víkend, bez prepočtu tabuľky):** vážené **≈ 51 %** ostáva meranie z **2026-10-05**. **ZMERANÉ** `git rev-list --count origin/main --since=2026-10-05` na `9168d583` = **34** commitov. SESSION blok nižšie už má body 1, 2, 3, 4, 5, 9 a 10 odškrtnuté s PR na main (#851, #852, #855, #856, #858, #857, #854). Predaj / platby ostáva **0 %**, lebo live Stripe katalóg je v tomto behu **NEZMERANÉ** (žiaden live kľúč, `scripts/ops/stripe-verify-prices.sh` sa nespúšťal). Tabuľka sa neprepočítava, kým nie je živý nákup.
 >
@@ -50,7 +51,7 @@ Cieľ: Preflight audit dodávky + tri opravy na PROD-ceste + aplikácia oboch mi
 - [x] 5 — BRI-ONCONFLICT: obe skórovacie funkcie cielia na existujúci kľúč (#889 → `5ab3da4`)
 - [x] 6 — Zápis do memory (PREPEND) + blok SESSION (#891 → `97325bc`)
 - [x] 7 — Migrácia `20261020050000` APLIKOVANÁ na PROD; `compute_bri_score` vrátil 12 a `_v2` 16 namiesto pádu, `lead_scores` 0 → 2 riadky
-- [ ] 8 — Migrácia `20260617120000`: všetky DDL v PROD potvrdené (starý index preč, `idx_properties_tenant_source_unique` existuje); ostáva `supabase migration repair 20260617120000 --status applied --linked` — CLI tu nie je, spúšťa founder lokálne
+- [x] 8 — Migrácia `20260617120000` UZAVRETÁ: starý index preč (founder), tenantový existuje, ledger doplnený priamym zápisom (CLI netreba — `migration repair` píše do tej istej tabuľky); dve agentúry s tou istou `source_id` dokázané v PROD transakciou s ROLLBACK
 <!-- SESSION:END -->
 
 ## Hotové 2026-10-07 — s dôkazom (REALVIA-SEC-01)

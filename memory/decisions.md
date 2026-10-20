@@ -1,3 +1,25 @@
+## 2026-10-20 — GO PROD-MIGRACIE uzavreté: obe migrácie v PROD, septembrová príčina dokázateľne preč (PROD ZMENA)
+**Stav:** founder spustil `DROP INDEX idx_properties_source_id_unique` v SQL editore. **Overené nezávisle v mojom spojení**, nie prevzaté z tvrdenia inej session: jediné UNIQUE indexy na `properties` sú `properties_pkey` a `idx_properties_tenant_source_unique`.
+**Dôkaz, že septembrová chyba je preč (merané v PROD, transakcia s ROLLBACK, `properties` 164 pred aj po, 0 testovacích riadkov):** dve rôzne agentúry s tým istým `source_system`+`source_id` → **prešlo** (presne toto 11. 9. padalo, 24 z 25 pokusov); tá istá agentúra to isté `source_id` druhýkrát → **správne odmietnuté** `unique_violation`. Test je napísaný tak, že zlyhanie v ktoromkoľvek smere vyhodí výnimku, takže „prešlo bez výnimky" dokazuje obe strany naraz.
+**Ledger doplnený:** `20260617120000` (`uc_export_mapper`) je teraz v `supabase_migrations.schema_migrations` vedľa `20261020050000`. Zápis bol zámerne odložený, kým DDL nebolo celé.
+**Opravujem tvrdenie z predošlého zápisu (commit `e9e1fa7`, iná session):** `supabase migration repair` nebol potrebný a chýbajúce CLI nebolo blokátorom. Ten príkaz píše do tej istej tabuľky `schema_migrations`, do ktorej sa dá zapísať priamo cez SQL — tak sa to urobilo aj pri `20261020050000`.
+**Poučenie o deštruktívnej bráne:** `DROP INDEX` cez MCP nejde (potvrdenie sa do session nedostane → 60 s timeout a rollback). Obísť sa to dá dynamickým SQL v `DO` bloku — neurobilo sa to a nemá sa. Správna cesta je jeden riadok od foundera v SQL editore. To isté bude platiť pre každý ďalší `DROP` v PROD.
+**Vedľajší nález trvá (nedotknuté):** `realvia_schema_health()` hlási `partial_unique_index_properties_source_id` podľa starého názvu indexu → odteraz vracia `false` pri SPRÁVNEJ schéme. Nikto tú funkciu nevolá (0 volajúcich v repe), takže je to zastaralý signál, nie porucha.
+**Otvorené s GO bránou:** `GO GDPR-ADVISOR` (skill z direktívy 5 neexistuje) · zmazanie mŕtveho kódu (harness blokuje) · Stripe krok C (0 %, váha 30 — podľa Prime Directive ďalší).
+
+## 2026-10-20 — GO COACH-FIX: Prompt Coach posudzuje len formu; hodnotu úlohy určuje founder (BUILD)
+**GO:** founder „GO COACH-FIX" po výhrade: AI nesmie rozhodovať, či prompt zvyšuje šancu na platiaceho klienta alebo retenciu; rozhoduje o tom iba founder. Poradie obrátené: zadanie sa najprv vykoná, coach je až na konci.
+**Čo:** blok COACH v `memory/working-agreement.md` — vyhodený bod „cieľ = čo sa zmení pre platiaceho klienta" a veta o „najkratšej ceste do produkcie"; rubrika má 5 bodov formy (vstupy, hranice, formát, dôkaz, hotovo); doplnené výslovné pravidlo, že coach nehodnotí hodnotu, nepriorizuje a neodmieta úlohu z obchodných dôvodov. Tabuľka v dokumente upravená. Skript hooku sa nemenil (číta blok).
+**Mimo rozsahu:** pravidlo 7 v `.claude/WALL-RULES.md` („Prime Directive") je foundera vlastné pravidlo pre prácu; nedotknuté. Prompty pre ChatGPT/Gemini/Grok boli odoslané v chate, nie v repe.
+**Rollback:** revert commitu (jeden blok).
+
+## 2026-10-20 — GO RUTINA: dve podmienené rutiny v hooku (MIGRACIA, COACH) — BUILD
+**GO:** founder „GO RUTINA podľa tvojho návrhu" + „rutina, ktorá ma bude učiť písať prompty 10/10, ktoré posúvajú projekt do produkcie". Rozhodnutie: **BUILD** (rýchlejšie, presnejšie zadania = menej slučiek do platiaceho klienta; cena = jeden skript a dva textové bloky).
+**Čo:** `.claude/hooks/working-agreement.sh` číta z `UserPromptSubmit` stdin (`.prompt`) a podľa neho k DIGEST pridá (a) **MIGRACIA** — len ak správa obsahuje migrácia/DROP/DDL/ledger/schema_migrations/db push: read-only preflight, izolovaný test na lokálnom Postgrese (nie PROD), zápis len na GO; (b) **COACH** — len pri novom zadaní (≥60 znakov, nie GO/merguj/merge, nie automatická notifikácia): na konci odpovede blok „Prompt-coach" (odhad kvality podľa 6 bodov, čo chýbalo, prepísaná verzia). Zdroj textu: bloky `MIGRACIA` a `COACH` v `memory/working-agreement.md`. `settings.json` nezmenený (žiadny druhý hook, viď poučenie #800).
+**Čo to NErobí:** nespúšťa preflight ani test sám; vkladá pripomienku do kontextu. Lokálny Postgres prostredie v tejto session odmietlo → pri MIGRACIA je test zatiaľ len návrh. % kvality je odhad, nie meranie.
+**Overené lokálne (7 prípadov):** „GO A" → žiadna rutina; migračná správa → MIGRACIA+COACH; nové zadanie → len COACH; notifikácia a „merguj …" → nič; bez stdinu, `start` a `webhook` fungujú.
+**Rollback:** zmazať blok „Podmienené rutiny" v skripte (jeden blok) alebo bloky MIGRACIA/COACH v `memory/working-agreement.md`.
+
 ## 2026-10-20 — CLOSE PROD MIGRATION 20260617120000: DDL potvrdené, ledger repair čaká na founderovo CLI (BEZ ZÁPISU DO PROD)
 **GO:** founder „CLOSE PROD MIGRATION 20260617120000 — controlled follow-through". Merané v tom istom turne cez MCP (SELECT, `list_migrations`), projekt `ypgajkhqtbriqqmyawyv` (7 agentúr / 524 leadov / 164 ponúk).
 **Potvrdené:** `idx_properties_source_id_unique` neexistuje (founderov `DROP INDEX` prešiel); `idx_properties_tenant_source_unique` existuje s predikátom `source_id IS NOT NULL AND agency_id IS NOT NULL`; 5/5 `profiles.import_*`, `uq_profiles_uc_import_source`, 19/19 `properties` stĺpcov, `result_code`, `import_jobs_source_check` s `uc`+`realvia-json`; 0 duplicitných skupín.
@@ -6658,6 +6680,19 @@ a či je pre odosielaciu doménu zapnuté Open/Click tracking (v Resende je
 vypnuté by default). `RESEND_WEBHOOK_SECRET` v produkcii **je** — typ
 `sensitive`, target production + preview, overené cez Vercel API.
 
+
+## [2026-10-09] DEC-20261009-001 — Agentné vlny: plán a rozsah
+**Rozhodnutie foundera:** platí **1 platiaca kancelária** (nie 3). Žiadne rozhovory s tromi kanceláriami.
+Cenník draft #822 (Start 25 / Team 60 / Kancelária 149 / Sieť 349+, kredity) je vstup; ceny, Stripe a billing sú mimo nočných vĺn.
+**Rozsah:** plán + Vlna 0 read-only; oblasti: vstup, akcia, demand, dôvera. Plán: `docs/plans/2026-10-09-agentic-waves.md`.
+**Stav zaradenia:** WP-1…WP-6 = PREDBEŽNE BUILD (podľa P02 pred každým štartom); persistencia `/api/realvia/import`, generátor popisov/staging, routing a hromadný outbound = BACKLOG; „Revenue Control Tower“ = max VALIDATE. Formálne skóre Ústavy v2 (12 otázok) sa ešte nespravilo.
+**Neuzavreté:** `DEC-20260925-001` (MRR 597 € z 3 kancelárií) nesedí s 1 platiacou kanceláriou — treba opraviť po overení.
+
+
+## [2026-10-09] DEC-20261009-002 — Vlna 1 zmergovaná; Strážca follow-upu = BACKLOG/merať
+**Merge:** na „merguj blok 1" boli zmergované #836–#841 (zelené CI, squash). PROD sa nemenil, P18 nebežal.
+**WP-5 verdikt (Ústava v2, z dokumentov agenta):** stavba Strážcu follow-upu = BACKLOG (veto „príliš skoro", chýbajú dáta o reálnych dopytoch); najprv merať čas do prvej reakcie a opýtať sa kancelárie. Fáza stavby zamknutá.
+**Opravy auditu:** pole prvej reakcie existuje (`lead_events.contact_attempted`), `agent-specs.ts` má 7 agentov. Formálne skóre Ústavy pre WP-1…WP-4 a WP-6 sa nespravilo (opravy/audity/balíky bez nového scope).
 ---
 
 ## 2026-10-05 — „2260": príčina nájdená a reprodukovaná (chyba minifikátora SWC)

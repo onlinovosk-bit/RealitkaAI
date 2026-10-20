@@ -59,6 +59,8 @@ ju vráti **do posledných správ** vtedy, keď je rozhodnutie:
 | `UserPromptSubmit` (každá správa foundera) | DIGEST | zabudnutie po 20 správach |
 | `PostToolUse` na `ReadNotifications` (každé prebudenie z webhooku) | WEBHOOK | šum z webhookov, presne v momente, keď vzniká |
 | `SessionStart` + `UserPromptSubmit` | POSTUP (počíta hook z `docs/STATUS.md`) | zabudnuté % a vymyslené % — číslo nepíšem, len ho prevezmem |
+| `UserPromptSubmit`, len ak správa obsahuje migrácia / DROP / DDL / ledger / schema_migrations / PROD zápis | MIGRACIA | preskočený preflight a izolovaný test pred zápisom do PROD |
+| `UserPromptSubmit`, len pri novom zadaní (nie GO / merguj / automatická notifikácia) | COACH | nejasné alebo neúplné zadania (kontrola formy, nie hodnoty) |
 
 Skript: `.claude/hooks/working-agreement.sh`. Registrácia: `hooks` v
 `.claude/settings.json`. Text sa číta z blokov nižšie — **upraviť ich tu = zmeniť
@@ -90,3 +92,11 @@ PRACOVNÁ DOHODA s founderom (memory/working-agreement.md): STENY, NIE SKRUTKY.
 <!-- WEBHOOK:START -->
 WEBHOOK (pracovná dohoda): toto prebudenie je šum, kým sa nezmení stav. Odpíš LEN ak: červené CI na mojom PR, konflikt, review komentár, alebo je blok hotový (vtedy jedna správa s dôkazom). Inak NEOPISUJ udalosť (žiadne „Vercel Ready", „check suite prešiel", „echo zmergovaného PR"): najviac jedna veta, alebo nič.
 <!-- WEBHOOK:END -->
+
+<!-- MIGRACIA:START -->
+RUTINA MIGRACIA (founder GO RUTINA): správa sa týka migrácie/DDL/PROD zápisu. Pred akýmkoľvek zápisom: (1) READ-ONLY PREFLIGHT cez Supabase MCP — identita projektu (agentúry/leady/ponuky), stav indexov a constraintov (`pg_indexes`, `pg_constraint`), `list_migrations`, 0 duplicít pre nový unique; žiadny INSERT/UPDATE/DDL. (2) IZOLOVANÝ TEST na lokálnom Postgrese, nikdy nie PROD; ak prostredie lokálny Postgres nepovolí, len návrh testu v reporte, nič si nevymýšľaj. (3) Zápis do PROD, `db push`, repair a merge iba na výslovné GO. Výsledok: jedna správa s dôkazom.
+<!-- MIGRACIA:END -->
+
+<!-- COACH:START -->
+RUTINA COACH (founder GO RUTINA + GO COACH-FIX): táto správa je nové zadanie. Zadanie najprv VYKONAJ (bez čakania na ďalšie GO, v rámci hraníc zo zadania a pravidiel stien). Až potom pridaj na koniec blok „Prompt-coach", max 4 riadky, bez zdržania úlohy: (a) kvalita FORMY zadania v % (ODHAD podľa 5 bodov: 1 vstupy = odkazy/súbory/ID/čísla, 2 hranice = čo smiem/nesmiem, PROD a platby len na výslovné GO, 3 formát výstupu, 4 dôkaz = čo musí správa obsahovať, 5 hotovo = merge/deploy/test a kto ho robí), (b) ktoré body chýbali, (c) prepísaná verzia zadania v jednej-dvoch vetách. Ak je zadanie na 9/10 a viac, napíš „bez pripomienok". PRAVIDLO: o hodnote, priorite a obchodnom prínose úlohy (platiaci klient, retencia, poradie) rozhoduje VÝLUČNE founder. Coach to nehodnotí, neprioritizuje, neodmieta úlohu z obchodných dôvodov ani nehovorí, čo „má zmysel"; posudzuje iba formu. Ak chýba cieľ, jedna otázka, nehádaj. Percentá sú odhad, nie meranie.
+<!-- COACH:END -->

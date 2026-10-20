@@ -194,3 +194,37 @@ Návrh (nič v PROD nezapisuje, beží na prázdnej dočasnej DB):
 4. Očakávané výsledky sú odvodené z definície indexu, nie z merania. Test overí index, nie celú migráciu.
 
 Bežať má v CI alebo lokálne na docker Postgrese; samotný súbor testu som nepridal.
+
+---
+
+## 8. Uzavretie (dopísané 2026-10-20, po founderovom `DROP INDEX`)
+
+Founder spustil `DROP INDEX` v SQL editore. **Overené nezávisle v tomto spojení**, nie prevzaté
+z tvrdenia: jediné UNIQUE indexy na `properties` sú teraz `properties_pkey` a
+`idx_properties_tenant_source_unique` — globálny `idx_properties_source_id_unique` **neexistuje**.
+
+### Dôkaz, že to, čo v septembri padalo, teraz prejde
+
+Spustené priamo v PROD **v transakcii s `ROLLBACK`**, takže nepribudol ani jeden riadok
+(`properties` 164 pred aj po, 0 riadkov `TEST-ROLLBACK%`):
+
+| prípad | výsledok |
+|---|---|
+| agentúra A a B, rovnaký `source_system` + `source_id` | **prešlo** — presne toto 11. 9. padalo na `duplicate key … idx_properties_source_id_unique` |
+| tá istá agentúra, to isté `source_id` druhýkrát | **správne odmietnuté** (`unique_violation`) |
+
+Test je napísaný tak, že zlyhanie v ktoromkoľvek smere vyhodí výnimku: keby cross-tenant insert
+padol, prebublal by von; keby duplicita v rámci jednej agentúry prešla, blok by sám vyhodil
+`RAISE EXCEPTION`. Prešiel bez výnimky, takže platia obe strany. Pokrýva prípady (a) a (b)
+z návrhu v §7 — meraním v PROD, nie odvodením z definície indexu.
+
+### Ledger doplnený
+
+`20260617120000` je teraz v `supabase_migrations.schema_migrations` (`uc_export_mapper`), vedľa
+`20261020050000`. Zápis bol zámerne odložený, kým DDL nebolo celé — teraz už hovorí pravdu.
+
+Poznámka k §7: `supabase migration repair` na to **nebolo potrebné**. Ten príkaz píše do tej istej
+tabuľky `supabase_migrations.schema_migrations`, do ktorej sa dá zapísať priamo cez SQL — čo je
+presne to, čo sa urobilo aj pri `20261020050000`. Chýbajúce CLI teda nebolo blokátor.
+
+**Migrácia B je tým uzavretá. Oba kroky `GO PROD-MIGRACIE` sú hotové.**
