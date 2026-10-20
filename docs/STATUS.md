@@ -50,7 +50,7 @@ Cieľ: Preflight audit dodávky + tri opravy na PROD-ceste + aplikácia oboch mi
 - [x] 5 — BRI-ONCONFLICT: obe skórovacie funkcie cielia na existujúci kľúč (#889 → `5ab3da4`)
 - [x] 6 — Zápis do memory (PREPEND) + blok SESSION (#891 → `97325bc`)
 - [x] 7 — Migrácia `20261020050000` APLIKOVANÁ na PROD; `compute_bri_score` vrátil 12 a `_v2` 16 namiesto pádu, `lead_scores` 0 → 2 riadky
-- [ ] 8 — Migrácia `20260617120000`: všetko okrem `DROP INDEX idx_properties_source_id_unique` (blokuje bezpečnostná brána MCP) — čaká na founder krok v SQL editore
+- [ ] 8 — Migrácia `20260617120000`: všetky DDL v PROD potvrdené (starý index preč, `idx_properties_tenant_source_unique` existuje); ostáva `supabase migration repair 20260617120000 --status applied --linked` — CLI tu nie je, spúšťa founder lokálne
 <!-- SESSION:END -->
 
 ## Hotové 2026-10-07 — s dôkazom (REALVIA-SEC-01)

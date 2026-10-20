@@ -1,3 +1,10 @@
+## 2026-10-20 — CLOSE PROD MIGRATION 20260617120000: DDL potvrdené, ledger repair čaká na founderovo CLI (BEZ ZÁPISU DO PROD)
+**GO:** founder „CLOSE PROD MIGRATION 20260617120000 — controlled follow-through". Merané v tom istom turne cez MCP (SELECT, `list_migrations`), projekt `ypgajkhqtbriqqmyawyv` (7 agentúr / 524 leadov / 164 ponúk).
+**Potvrdené:** `idx_properties_source_id_unique` neexistuje (founderov `DROP INDEX` prešiel); `idx_properties_tenant_source_unique` existuje s predikátom `source_id IS NOT NULL AND agency_id IS NOT NULL`; 5/5 `profiles.import_*`, `uq_profiles_uc_import_source`, 19/19 `properties` stĺpcov, `result_code`, `import_jobs_source_check` s `uc`+`realvia-json`; 0 duplicitných skupín.
+**NEurobené:** `supabase migration repair` (CLI v prostredí nie je, projekt nenaviazaný, bez tokenu/hesla); `db push`, INSERT do histórie, worker, ďalší DDL, merge, deploy. Remote história: `20261020050000` je, `20260617120000` nie je.
+**Integračný test:** nespustený (v repe nie je DB harness, lokálny Postgres prostredie odmietlo); návrh 5 prípadov je v reporte §7.
+**Otvorené:** founder lokálne `supabase link` + `migration repair 20260617120000 --status applied --linked` + `migration list --linked` → vložiť výstup. Postup produktu sa nemení (nemerané).
+
 ## 2026-10-20 — GO PROD-MIGRACIE: BRI beží v PROD; jeden DROP INDEX ostáva founderovi (PROD ZMENA)
 **GO:** founder „GO PROD-MIGRACIE". Projekt `ypgajkhqtbriqqmyawyv` (identita overená v tom istom spojení: 7 agentúr, 524 leadov, 164 ponúk). Plný rozpis: `docs/reports/2026-10-20-prod-migracie-bri-a-source-id.md`.
 **Migrácia A `20261020050000` — CELÁ, a dokázane funguje.** Nie „text sa zmenil", ale skutočné volania v PROD: `compute_bri_score` → 12 (a 12 aj na druhé volanie, teda vetva `ON CONFLICT`, ktorá predtým padala), `compute_bri_score_v2` → new 16 / old 0 / delta 16, druhé volanie new 16 / old 16 / delta 0. **`lead_scores` 0 → 2 riadky, `bri_score_history` 2 záznamy** — dovtedy nevzniklo ani jedno BRI skóre. Zachované `secdef=true`, `owner=postgres`, `service_role=X`, signatúry.

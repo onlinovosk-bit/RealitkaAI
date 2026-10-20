@@ -137,3 +137,60 @@ prehnať znova bez vedľajších účinkov a až potom zapísať.
 `false`, hoci schéma bude správna. Funkciu **nikto nevolá** — v celom repozitári nie je
 ani jeden TS/MJS volajúci ani test. Je to teda zastaralý signál, nie porucha; oprava je
 mimo rozsah tohto GO.
+
+---
+
+## 7. Dohrávka 2026-10-20 (po founderovom `DROP INDEX`) — preflight pred zápisom do ledgera
+
+**GO:** „CLOSE PROD MIGRATION 20260617120000 — controlled follow-through". Merané v tomto turne
+cez Supabase MCP (iba `SELECT` a `list_migrations`), projekt `ypgajkhqtbriqqmyawyv`.
+
+| Kontrola | Výsledok |
+|---|---|
+| Identita projektu | 7 agentúr, 524 leadov, 164 ponúk (zhoduje sa s §2) |
+| Starý `idx_properties_source_id_unique` | **neexistuje** (`pg_indexes`: 0 riadkov) → founderov `DROP INDEX` je potvrdený |
+| `idx_properties_tenant_source_unique` | **existuje**: `CREATE UNIQUE INDEX … USING btree (agency_id, source_system, source_id) WHERE ((source_id IS NOT NULL) AND (agency_id IS NOT NULL))` |
+| `profiles.import_*` | 5 z 5 stĺpcov |
+| `uq_profiles_uc_import_source` | existuje |
+| `properties` import stĺpce | 19 z 19 názvov z migrácie (v §2 uvedené „18× ADD COLUMN" + `source_id`; nič nechýba) |
+| `realsoft_import_logs.result_code` | existuje |
+| `import_jobs_source_check` | obsahuje `uc` aj `realvia-json` |
+| Duplicitné skupiny `(agency_id, source_system, source_id)` | 0 |
+| `supabase_migrations` (cez `list_migrations`) | `20261020050000` **je**, `20260617120000` **nie je** |
+
+Všetky DDL príkazy migrácie `20260617120000` sú teda v PROD potvrdené. **Jediný zostávajúci rozdiel je chýbajúci
+záznam v histórii migrácií.**
+
+### Migration repair — NEVYKONANÝ (zastavené pri preflight)
+
+Požadovaný postup: `supabase migration list --linked` → `supabase migration repair 20260617120000 --status applied --linked`
+→ znova `migration list --linked`. **V tomto prostredí sa nedá spustiť**, nie z dôvodu stavu PROD:
+
+- `supabase` CLI tu nie je nainštalované (`supabase: command not found`);
+- neexistuje `apps/crm/supabase/.temp` (projekt nie je naviazaný, `--linked` nemá na čo ukazovať);
+- nie sú nastavené `SUPABASE_ACCESS_TOKEN` ani `SUPABASE_DB_PASSWORD`.
+
+Zápis do `supabase_migrations.schema_migrations` cez SQL (INSERT) je podľa GO zakázaný, takže som ho neurobil.
+`supabase db push` som nespúšťal. Zostáva founderov príkaz u neho lokálne (po `supabase link --project-ref ypgajkhqtbriqqmyawyv`):
+
+```bash
+supabase migration list --linked          # očakávanie: 20260617120000 je Local, Remote prázdne
+supabase migration repair 20260617120000 --status applied --linked
+supabase migration list --linked          # očakávanie: 20260617120000 je v oboch stĺpcoch
+```
+
+Kým nebeží, ledger o `20260617120000` mlčí (správne, nie je v ňom nepravda).
+
+### Izolovaný integračný test — NESPUSTENÝ, iba návrh
+
+Repo nemá harness pre DB test (žiadny pglite/testcontainers/pg-mem; existujúce testy čítajú SQL ako text,
+napr. `realvia-failure-cause.verification.test.ts`). Lokálny Postgres som sa pokúsil spustiť ako dočasnú inštanciu mimo
+produkcie; spustenie príkazu prostredie odmietlo, takže test **nebežal** a výsledok žiadny nemám.
+Návrh (nič v PROD nezapisuje, beží na prázdnej dočasnej DB):
+
+1. Dočasné tabuľky `agencies(id)` a `properties(agency_id, source_system, source_id, title)`.
+2. Aplikovať presný text indexu z migrácie (`DROP INDEX IF EXISTS … ; CREATE UNIQUE INDEX IF NOT EXISTS idx_properties_tenant_source_unique … WHERE source_id IS NOT NULL AND agency_id IS NOT NULL`).
+3. Prípady: (a) agentúra A a B, rovnaký `source_system` a `source_id` → oba riadky prejdú; (b) rovnaká agentúra + zdroj + id druhýkrát → `23505`; (c) `INSERT … ON CONFLICT (agency_id, source_system, source_id) WHERE source_id IS NOT NULL AND agency_id IS NOT NULL DO UPDATE` → jeden riadok, nový `title`; (d) rovnaké id, iný `source_system` → prejde; (e) `source_id IS NULL` viackrát → prejde (čiastočný index).
+4. Očakávané výsledky sú odvodené z definície indexu, nie z merania. Test overí index, nie celú migráciu.
+
+Bežať má v CI alebo lokálne na docker Postgrese; samotný súbor testu som nepridal.

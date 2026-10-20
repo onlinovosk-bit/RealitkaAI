@@ -1,3 +1,16 @@
+## Session 2026-10-20 (CLOSE PROD MIGRATION 20260617120000 — preflight)
+### Dokončené
+- Read-only preflight v PROD: starý index preč, tenantový unique existuje, všetky DDL migrácie `20260617120000` potvrdené; remote história obsahuje `20261020050000`, nie `20260617120000` (`docs/reports/2026-10-20-prod-migracie-bri-a-source-id.md` §7).
+- Návrh izolovaného testu tenantového indexu (5 prípadov), zatiaľ nespustený.
+### Rozpracované / Pending
+- `supabase migration repair 20260617120000 --status applied --linked` — nevykonané: CLI/link/token tu nie sú. Spúšťa founder lokálne.
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-20-prod-migracie-bri-a-source-id.md`: §7 dohrávka.
+- `docs/STATUS.md`: míľnik 8 upresnený (zostáva otvorený).
+- `memory/decisions.md`, `memory/session-summary.md`: PREPEND.
+### Ďalší krok
+Founder: `supabase link --project-ref ypgajkhqtbriqqmyawyv`, potom `migration list --linked`, `migration repair 20260617120000 --status applied --linked`, `migration list --linked`; výstup poslať.
+
 ## Session 2026-10-20 (GO PROD-MIGRACIE — zápis na PROD)
 ### Dokončené
 - Migrácia `20261020050000` aplikovaná na PROD. Dôkaz nie je text funkcie, ale volanie: `compute_bri_score` → 12 aj na druhé volanie (vetva `ON CONFLICT`, ktorá predtým padala), `compute_bri_score_v2` → 16. `lead_scores` 0 → 2 riadky, `bri_score_history` 2 záznamy.
