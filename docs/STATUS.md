@@ -24,11 +24,8 @@
 
 | blok | váha | stav | skóre | čo blokuje |
 |---|---|---|---|---|
-| **Predaj / platby (Stripe)** | 30 | **0 z 10 cien** na live účte | **0 %** | **founder: krok C v Stripe** |
+| **Predaj / platby (Stripe)** | 30 | **Blokátor zmeraný 2026-10-20:** vo Vercel Production chýba `STRIPE_PRICE_V3_SEAT_MONTHLY` → checkout vracia **503**. Osem `STRIPE_PRICE_V2_*`, ktoré tam sú, **kód už nečíta** (cenník prešiel na v3). `STRIPE_SECRET_KEY` aj `STRIPE_WEBHOOK_SECRET` v produkcii **sú**. PROD: 7 agentúr, **0 so `stripe_subscription_id`** (jediné `active` je ručné `manual_plan`). Kód zelený: 69/69 testov. Rozpis: `docs/reports/2026-10-20-stripe-krok-c-blokator.md` | **0 %** | **founder: vytvoriť v LIVE Stripe `revolis_v3_licence_month` + pridať `STRIPE_PRICE_V3_SEAT_MONTHLY` do Vercelu + redeploy** |
 | Príjem e-mailov → lead | 30 | parser ✅ · diagnostika (#743) ✅ · log schránok + trvalá stopa (#774) ✅ **nasadené a funguje** (23 riadkov od 1. 10. 19:41) · `unknown_source` → BACKLOG (dáta nepodporujú) · **Gmail connect** (GMAIL-CONNECT): kód + šifrovaný token + karta Integrácie hotové, **neaktivované** — čaká na Google client, súhlas majiteľa a kľúče | 80 % | nič — čaká na reálne portálové maily |
-| **Predaj / platby (Stripe)** | 30 | **0 z 10 cien** na live účte · kód: zrušenie / zmena miest / zlyhaná platba sa premieta do `agencies` (**TESTED**, 15 testov + mutation proof 9/9, PLATBY-E2E; PROD neoverené) · chýbajúci `STRIPE_WEBHOOK_SECRET` sa hlási | **0 %** | **founder: krok C v Stripe + `STRIPE_WEBHOOK_SECRET` + endpoint v Stripe** |
-| **Predaj / platby (Stripe)** | 30 | **0 z 10 cien** na live účte · kód: zrušenie / zmena miest / zlyhaná platba sa premieta do `agencies` (**TESTED**, 15 testov + mutation proof 9/9, PLATBY-E2E; PROD neoverené) · chýbajúci `STRIPE_WEBHOOK_SECRET` sa hlási · **brána po vypršaní už vynucuje** (read-only režim, #817; predtým `canUseFullApp = true` natvrdo) | **0 %** | **founder: krok C v Stripe + `STRIPE_WEBHOOK_SECRET` + endpoint v Stripe** |
-| Príjem e-mailov → lead | 30 | parser ✅ · diagnostika (#743) ✅ · log schránok + trvalá stopa (#774) ✅ **nasadené a funguje** (23 riadkov od 1. 10. 19:41) · `unknown_source` → BACKLOG (dáta nepodporujú) | 80 % | nič — čaká na reálne portálové maily |
 | AI návrh + odoslanie | 15 | triage ✅ · návrh ✅ · odoslanie ❌ · **opt-in tesní**: migrácia `auto_response_enabled DEFAULT false` aplikovaná na PROD 2026-10-02 (overené `information_schema`, 7 agentúr nedotknutých, rollback v `supabase_migrations`) + fail-closed v kóde (#811, čaká na merge) | 67 % | founder: Resend DNS + reply-to + súhlas referenčného klienta |
 | **AI vrstva (BRI, skóre, briefy)** | *(v „Schéma + nasadenie")* | **crony BEŽIA** (meraná stopa v `cron_runs`) · zapisovateľ eventov zapojený (#786) · `events` stále 0 do nasadenia · **`leads.last_contact_at` konečne niekto zapisuje** (#800, bolo 0 z 520 riadkov) · ranný brief už nevydáva počet riadkov za meranie (#804: `pendingContact`/`hotPending` → `number \| null`) | 45 % | merge #786 + nasadenie; prvý reálny kontakt rozbehne stopu |
 | Tenantová izolácia | 15 | 28 z 40 ciest zavretých | 70 % | nič naliehavé (zoznam nižšie) |
@@ -47,16 +44,16 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: Preflight audit dodávky + tri opravy na PROD-ceste + aplikácia oboch migrácií na PROD
+Cieľ: Stripe krok C — nájsť a odstrániť zmeraný blokátor platieb
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] 1 — Vlny A/B: reporty z meraných dát, nie z agentov (#882 zmergovaný)
-- [x] 2 — Realvia: druh zlyhania ide do `realvia_metrics.meta` bez migrácie (#885 → `26eafd9`)
-- [x] 3 — Preflight audit dodávky A–J, read-only, merané v PROD (`docs/reports/2026-10-20-preflight-audit-dodavky.md`)
-- [x] 4 — CRON-TRUTH-01: `cron_runs` už nehlási `failed` pri legitímnom „nič na výstupe" (#888 → `d25c101`)
-- [x] 5 — BRI-ONCONFLICT: obe skórovacie funkcie cielia na existujúci kľúč (#889 → `5ab3da4`)
-- [x] 6 — Zápis do memory (PREPEND) + blok SESSION (#891 → `97325bc`)
-- [x] 7 — Migrácia `20261020050000` APLIKOVANÁ na PROD; `compute_bri_score` vrátil 12 a `_v2` 16 namiesto pádu, `lead_scores` 0 → 2 riadky
-- [x] 8 — Migrácia `20260617120000` UZAVRETÁ: starý index preč (founder), tenantový existuje, ledger doplnený priamym zápisom (CLI netreba — `migration repair` píše do tej istej tabuľky); dve agentúry s tou istou `source_id` dokázané v PROD transakciou s ROLLBACK
+- [x] 1 — Prečítaná celá cesta kódu checkout → webhook; zistené, ktoré env premenné kód SKUTOČNE číta
+- [x] 2 — Zmeraný stav Vercel Production (17 Stripe/pricing premenných, len názvy a ciele; hodnoty nečítané)
+- [x] 3 — Blokátor pomenovaný: chýba `STRIPE_PRICE_V3_SEAT_MONTHLY`; osem `STRIPE_PRICE_V2_*` je mŕtvych
+- [x] 4 — Zmeraný stav platieb v PROD: 7 agentúr, 0 so `stripe_subscription_id`; spor „1 vs 3 platiace" uzavretý na 0 cez Stripe
+- [x] 5 — Kód overený zelený (69/69) → blokátor je konfigurácia, nie kód
+- [x] 6 — Opravené zastarané dokumenty: riadok Stripe v STATUS.md a plán z 2026-10-16
+- [ ] 7 — Founder vytvorí cenu v LIVE Stripe + pridá `STRIPE_PRICE_V3_SEAT_MONTHLY` + redeploy → `checkoutAvailable: true`
+- [ ] 8 — Testovací nákup end-to-end: platba → webhook → `agencies.subscription_status`
 <!-- SESSION:END -->
 
 ## Hotové 2026-10-07 — s dôkazom (REALVIA-SEC-01)
@@ -74,7 +71,7 @@ Cieľ: Preflight audit dodávky + tri opravy na PROD-ceste + aplikácia oboch mi
 - **Bez vplyvu na tabuľku nižšie** — Realvia prítok nie je ani jeden z piatich vážených blokov, takže % sa nemení.
 
 ## Čo potrebujem od teba (zoradené podľa dopadu)
-1. **Stripe krok C + webhook** — vytvoriť ceny (a vo Vercel nastaviť `STRIPE_WEBHOOK_SECRET`; v Stripe overiť endpoint `/api/billing/webhook` s udalosťami `checkout.session.completed`, `customer.subscription.created/updated/deleted`, `invoice.paid`, `invoice.payment_failed`): `bash scripts/ops/stripe-verify-prices.sh --spec` → potom pošli výstup `…verify-prices.sh`; overenie spravím ja. *(+30 bodov, jediný krok, ktorý odblokuje platiaceho klienta)*
+1. **Stripe krok C** — v LIVE Stripe vytvoriť cenu `revolis_v3_licence_month` (tiered graduated, `tax_behavior=exclusive`) podľa `scripts/ops/stripe-v2/revolis-stripe-v2-catalog.json`, pridať jej `price_…` do Vercel Production ako **`STRIPE_PRICE_V3_SEAT_MONTHLY`** a spraviť redeploy. Potom poslať výstup `GET /api/billing/checkout-config` (len booleany a názvy premenných) — čakám `pricingV2.checkoutAvailable: true`. *(+30 bodov, jediný krok, ktorý odblokuje platiaceho klienta)*
 2. ~~Merge #774~~ ✅ hotovo (`3dc3119`) a **nasadené v produkcii** (overené: deployment READY, 23 riadkov v `inbound_mail_outcomes`, nové `to_agency_mailbox` v logoch, 0× `mail_outcome_write_failed`).
 3. **Vercel**: Pro **netreba kvôli cronom** — tie bežia, dokázané dvoma riadkami v `cron_runs`
    (`recompute-bri` 03:36:49, `morning-brief` 06:30:30, obe 2026-10-02, každý vo svojom okne s posunom 30–57 min).

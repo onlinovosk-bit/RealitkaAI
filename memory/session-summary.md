@@ -43,6 +43,23 @@ Founder: `supabase link --project-ref ypgajkhqtbriqqmyawyv`, potom `migration li
 ### Ďalší krok
 Founder spustí `DROP INDEX IF EXISTS public.idx_properties_source_id_unique;` v SQL editore; potom zapísať `20260617120000` do ledgera.
 
+## Session 2026-10-20 (GO STRIPE-C — blokátor nájdený)
+### Dokončené
+- Zmeraný blokátor platieb: vo Vercel Production chýba `STRIPE_PRICE_V3_SEAT_MONTHLY` → checkout 503. Osem `STRIPE_PRICE_V2_*` v produkcii je mŕtvych (kód ich nečíta, cenník prešiel na v3).
+- Zmeraný stav platieb: 7 agentúr, 0 so `stripe_subscription_id`. Jediné `active` je ručný `manual_plan`. Spor `DEC-20260925-001` uzavretý: cez Stripe platí 0.
+- Overené, že kód je zelený (69/69) → blokátor je konfigurácia, nie kód.
+- Opravené zastarané dokumenty: riadok Stripe v `docs/STATUS.md` („0 z 10 cien", „chýba webhook secret" — oboje neplatí) a plán `docs/plans/2026-10-16-stripe-krok-c-plan.md`.
+### Rozpracované / Pending
+- Founder: vytvoriť `revolis_v3_licence_month` v LIVE Stripe, pridať `STRIPE_PRICE_V3_SEAT_MONTHLY` do Vercelu, redeploy, poslať `GET /api/billing/checkout-config`.
+- Nezmerané: hodnota `PRICING_V2_ENABLED` (nebola potrebná, nečítal som ju), aktívnosť legacy cien v Stripe, registrácia webhook endpointu a jeho 7 udalostí.
+- `GO GDPR-ADVISOR`; mŕtvy kód (harness blokuje).
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-20-stripe-krok-c-blokator.md`: nový, celý rozpis s dôkazmi.
+- `docs/STATUS.md`: riadok Stripe prepísaný na zmeraný blokátor, krok 1 konkretizovaný.
+- `docs/plans/2026-10-16-stripe-krok-c-plan.md`: hlavička s opravou zoznamu premenných.
+### Ďalší krok
+Founder vytvorí cenu a pridá `STRIPE_PRICE_V3_SEAT_MONTHLY`; potom testovací nákup end-to-end.
+
 ## Session 2026-10-20 (speed / time-saving VP — CI ratchet)
 ### Dokončené
 - `POST /api/ai/listing-from-photos` volá `incrementUsageMetric({ metric: "ai_openai_tokens", delta: input+output })` — Code Contract Guard na `91d02da7` padol (1 nové porušenie vs baseline 523).

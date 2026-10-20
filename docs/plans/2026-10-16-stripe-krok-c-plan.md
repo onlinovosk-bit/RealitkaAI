@@ -1,5 +1,12 @@
 # Stripe krok C — plán (read-only audit, 2026-10-16)
 
+> **OPRAVA 2026-10-20 (merané):** zoznam „8 plánových cien `STRIPE_PRICE_V2_*`" nižšie
+> **už neplatí**. Kód odvtedy prešiel z pásiem v2 na tiered per-seat v3 a
+> `STRIPE_PRICE_V2_*` v `apps/crm/src/` **nie je ani raz**. Povinná je jediná premenná
+> **`STRIPE_PRICE_V3_SEAT_MONTHLY`** a tá vo Vercel Production **chýba** → checkout vracia 503.
+> Zároveň: `STRIPE_WEBHOOK_SECRET` v produkcii **je** (bod nižšie tvrdil, že chýba).
+> Aktuálny rozpis: `docs/reports/2026-10-20-stripe-krok-c-blokator.md`.
+
 Nič sa nezapísalo do Stripe ani do PROD. Zdroje: repo `main` + vetva, Vercel (zoznam premenných z 2026-10-14, len názvy a ciele), Supabase PROD (SELECT), lokálny `vitest`.
 
 ## Čo je overené
