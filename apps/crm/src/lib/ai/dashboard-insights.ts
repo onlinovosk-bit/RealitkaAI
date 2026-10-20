@@ -4,6 +4,7 @@ import { callClaude, CLAUDE_HAIKU, extractJson } from './claude'
 import { cachedSystem, extractClaudeCacheUsage } from './prompt-cache'
 import { withAiTimeout } from './fallback'
 import type { AiFailure } from './ai-failure'
+import { firstNameOnly } from "@/lib/privacy/minimize";
 
 export type PropertySnapshot = {
   id: string
@@ -114,7 +115,11 @@ function buildContext(input: DashboardInsightsInput): string {
     lines.push('\nTOP LEADY:')
     for (const lead of summary.topHotLeads) {
       lines.push(
-        `- id=${lead.id} | ${lead.name} | segment=${lead.segment} | readiness=${lead.readinessScore} | posledná aktivita=${lead.lastActivityAt}${lead.propertyInterestSummary ? ` | záujem=${lead.propertyInterestSummary}` : ''}`,
+        // BOD 9 (PII): von ide iba krstné meno. Audit navrhoval poslať samotné
+        // ID a mená dosadiť lokálne, lenže model píše voľný text a spätné
+        // mapovanie ID na meno v próze je nespoľahlivé. Krstné meno je
+        // minimalizácia, ktorá funkciu nerozbije; priezvisko von nejde.
+        `- id=${lead.id} | ${firstNameOnly(lead.name)} | segment=${lead.segment} | readiness=${lead.readinessScore} | posledná aktivita=${lead.lastActivityAt}${lead.propertyInterestSummary ? ` | záujem=${lead.propertyInterestSummary}` : ''}`,
       )
     }
   }

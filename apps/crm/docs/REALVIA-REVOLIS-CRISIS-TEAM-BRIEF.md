@@ -15,8 +15,12 @@
    Authorization: Bearer <CRON_SECRET>
    ```  
    Odpoveď obsahuje booleans + počet allowlist IP + **hints** (čo je najčastejší root cause). Ten istý `CRON_SECRET` ako pre `/api/cron/realvia-process`.  
-3. **Dump hlavičiek (verejné — neposielaj verejne ak obsahuje interné veci):**  
-   `GET /api/webhooks/realvia?dump=headers` — over `x-forwarded-for` / IP.  
+3. **Autorizovaný dump hlavičiek:**  
+   ```http
+   GET /api/webhooks/realvia?dump=headers
+   Authorization: Bearer <CRON_SECRET>
+   ```
+   Použi iba na overenie `x-forwarded-for` / IP; endpoint nesmie byť verejný.
 4. **Supabase:** existuje riadok v `realvia_webhook_logs`? v `realvia_processing_queue`?  
 5. **Špecialisti (Ruflo):** `guidance_recommend` + oblasť **security** (`security_validate` / `security_audit`) na konfig/kód; **hooks_route** na fix checklist; pre ťažké prípady **swarm** alebo **managed_agent** s read-only prístupom k logom.
 
@@ -27,7 +31,7 @@
 | Rola | Zodpovednosť | Prvé kroky |
 |------|----------------|------------|
 | **Incident Commander** | časová os, komunikácia s Realvia, go/no-go rollback | začať Incident doc; zbierať `request_id` / čas dopadu |
-| **Edge & IP** (`validateSourceIP`) | `REALVIA_ALLOWED_IP`, Vercel `x-forwarded-for` vs viditeľná IP | porovnať IP v logu s env; `GET …/dump=headers` |
+| **Edge & IP** (`validateSourceIP`) | `REALVIA_ALLOWED_IP`, Vercel `x-forwarded-for` vs viditeľná IP | porovnať IP v logu s env; autorizovaný `GET …/dump=headers` |
 | **Auth** (`validateSecret`) | `REALVIA_IDENTIFIER`, `REALVIA_IDENTIFIER_2`, timing-safe párovanie | 403 bez logu webhooku alebo „Invalid authentication“ šablóna |
 | **Payload** | JSON shape, veľkosť &lt; 5 MB | 400 Invalid JSON / unknown `payload_type` v logoch |
 | **Supabase ingest** (`storeWebhookLog`) | tabuľa `realvia_webhook_logs`, service role key | 500 Internal storage — žiadny riadok v DB |
@@ -72,7 +76,7 @@ Kód vstupného bodu: `apps/crm/src/app/api/webhooks/realvia/route.ts`.
   → fronta alebo cron worker; riadky v realvia_processing_queue status; dokumentácia cronu
 ```
 
-GET diagnostika hlavičiek: `GET /api/webhooks/realvia?dump=headers` (pozri `route.ts`).
+GET diagnostika hlavičiek: `GET /api/webhooks/realvia?dump=headers` s `Authorization: Bearer <CRON_SECRET>` (pozri `route.ts`).
 
 ---
 
