@@ -29,19 +29,36 @@ export interface CronRunRecord {
 /**
  * Odvodí stav behu z čísel, aby ho každý cron nepomenúvaval po svojom.
  *
- *   nič na vstupe            → empty
- *   nič sa nezapísalo        → failed
- *   zapísalo sa, ale nie všetko → partial
- *   inak                     → ok
+ *   nič na vstupe                  → empty
+ *   bolo čo zvážiť, nič netreba    → empty   (NIE failed — viď nižšie)
+ *   skúsilo sa a všetko padlo      → failed
+ *   zapísalo sa, ale nie všetko    → partial
+ *   inak                           → ok
+ *
+ * CRON-TRUTH-01. Pôvodné pravidlo znelo „written === 0 → failed" a tým hlásilo
+ * zlyhanie aj behu, ktorý kandidátov zvážil a legitímne nemal čo robiť.
+ * Zmerané 2026-10-19 v PROD: `follow-up-sweep` mal 3 z 3 behov `failed`
+ * s detailom `{"planned": 0, "stale_days": 5, "cooldown_days": 7}` — teda
+ * cooldown vyradil všetkých kandidátov, čo je správanie podľa zadania, nie porucha.
+ *
+ * Falošná červená nie je neškodná: v tých istých 14 dňoch mal `recompute-bri`
+ * 3 skutočné pády na `compute_bri_score` a utopili sa v nej. Preto `failed`
+ * odteraz vyžaduje, aby sa niečo naozaj pokazilo (`failed > 0`).
+ *
+ * Prečo `empty` a nie nový stav `noop`: `cron_runs.status` má v PROD CHECK
+ * `IN ('ok','empty','partial','failed')`, takže nový stav = migrácia = founder GO.
+ * `empty` znamená „nič na výstupe", čo tento prípad vystihuje; dôvod nesie
+ * `detail` (napr. `planned: 0` a prahy), takže rozlíšiť sa to dá.
  */
 export function deriveCronStatus(
   eligible: number,
   written:  number,
   failed:   number,
 ): CronRunStatus {
-  if (eligible === 0)            return 'empty'
-  if (written  === 0)            return 'failed'
-  if (failed   >  0)             return 'partial'
+  if (eligible === 0)                      return 'empty'
+  if (written  === 0 && failed === 0)      return 'empty'
+  if (written  === 0)                      return 'failed'
+  if (failed   >  0)                       return 'partial'
   return 'ok'
 }
 
