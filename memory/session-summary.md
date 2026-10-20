@@ -1,3 +1,22 @@
+## Session 2026-10-20 (preflight audit dodávky + tri opravy na PROD-ceste)
+### Dokončené
+- `docs/reports/2026-10-18-vlna-a-realvia-zlyhania.md`, `…-vlna-b-mrtvy-kod-a-fantomy.md` — vlny A/B prepísané z meraných dát (#882).
+- `apps/crm/src/lib/realvia/failureKinds.ts` + `metrics.ts` + `processQueue.ts` — druh zlyhania do `realvia_metrics.meta`, bez migrácie (#885 → `26eafd9`).
+- `docs/reports/2026-10-20-preflight-audit-dodavky.md` — read-only audit A–J; hypotéza „PR sa hromadia" vyvrátená (800/728/24), skutočné hrdlo je medzera merge→účinok.
+- `apps/crm/src/lib/ops/cron-run.ts` + `__tests__/derive-cron-status.test.ts` — `cron_runs` už nehlási `failed` pri legitímnom „nič na výstupe" (#888 → `d25c101`).
+- `apps/crm/supabase/migrations/20261020050000_bri_onconflict_lead_id.sql` + `tests/verification/bri-onconflict.verification.test.ts` — obe skórovacie funkcie cielia na `ON CONFLICT (lead_id)` (#889 → `5ab3da4`).
+### Rozpracované / Pending
+- Migrácia `20261020050000` je na `main`, NEAPLIKOVANÁ na PROD — čaká na `GO PROD-MIGRACIE`. Kým sa neaplikuje, BRI v PROD stále padá.
+- `20260617120000` (globálny → tenantový unique na `properties.source_id`) rovnako neaplikovaná.
+- Skill `gdpr-advisor` z direktívy 5 neexistuje — brána `GO GDPR-ADVISOR`.
+- Mŕtvy kód (`LeadService.ts`, `EventStore.ts`, `002_event_store.sql`, `LeadsRepository.ts`, `SupabaseLeadsRepository.ts`) — mazanie blokuje harness.
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/ops/cron-run.ts`: `written === 0 && failed === 0` → `empty`, nie `failed`.
+- `apps/crm/supabase/migrations/20261020050000_bri_onconflict_lead_id.sql`: patch živej definície cez `pg_get_functiondef`, v `BEGIN/COMMIT`, s `RAISE EXCEPTION` a post-checkom.
+- `docs/STATUS.md`: blok SESSION prepísaný na cieľ tejto session (predtým hlásil 100 % k marketingovému recoloru).
+### Ďalší krok
+`GO PROD-MIGRACIE` — aplikovať `20261020050000` na PROD s mapovaním ciest a dôkazom pred/po; bez toho zostáva BRI rozbité napriek zmergovanej oprave.
+
 ## Session 2026-10-20 (marketing navy + gold paleta)
 ### Dokončené
 - RAU route: AUTO-SAFE CONTENT revolis. PR #878 už merged — SEO súbory netknuté.
