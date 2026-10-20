@@ -72,4 +72,9 @@ describe('public/index.html — kampaň cenník v3', () => {
     const cfg = readFileSync(resolve(__dirname, '../next.config.ts'), 'utf-8')
     expect(cfg).toContain("source: '/', destination: '/index.html'")
   })
+
+  it('počet miest: bez sľubu "zadarmo" pre role, ktoré CRM zatiaľ nevynucuje (SEAT-AUDIT)', () => {
+    expect(html).toContain('Cena sa riadi počtom maklérov v tíme')
+    expect(html).not.toMatch(/asistentka a back office sú zadarmo/)
+  })
 })
