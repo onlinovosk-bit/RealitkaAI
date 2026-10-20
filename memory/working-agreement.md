@@ -59,6 +59,8 @@ ju vráti **do posledných správ** vtedy, keď je rozhodnutie:
 | `UserPromptSubmit` (každá správa foundera) | DIGEST | zabudnutie po 20 správach |
 | `PostToolUse` na `ReadNotifications` (každé prebudenie z webhooku) | WEBHOOK | šum z webhookov, presne v momente, keď vzniká |
 | `SessionStart` + `UserPromptSubmit` | POSTUP (počíta hook z `docs/STATUS.md`) | zabudnuté % a vymyslené % — číslo nepíšem, len ho prevezmem |
+| `UserPromptSubmit`, len ak správa obsahuje migrácia / DROP / DDL / ledger / schema_migrations / PROD zápis | MIGRACIA | preskočený preflight a izolovaný test pred zápisom do PROD |
+| `UserPromptSubmit`, len pri novom zadaní (nie GO / merguj / automatická notifikácia) | COACH | prompty, ktoré nevedú najkratšou cestou do produkcie |
 
 Skript: `.claude/hooks/working-agreement.sh`. Registrácia: `hooks` v
 `.claude/settings.json`. Text sa číta z blokov nižšie — **upraviť ich tu = zmeniť
@@ -90,3 +92,11 @@ PRACOVNÁ DOHODA s founderom (memory/working-agreement.md): STENY, NIE SKRUTKY.
 <!-- WEBHOOK:START -->
 WEBHOOK (pracovná dohoda): toto prebudenie je šum, kým sa nezmení stav. Odpíš LEN ak: červené CI na mojom PR, konflikt, review komentár, alebo je blok hotový (vtedy jedna správa s dôkazom). Inak NEOPISUJ udalosť (žiadne „Vercel Ready", „check suite prešiel", „echo zmergovaného PR"): najviac jedna veta, alebo nič.
 <!-- WEBHOOK:END -->
+
+<!-- MIGRACIA:START -->
+RUTINA MIGRACIA (founder GO RUTINA): správa sa týka migrácie/DDL/PROD zápisu. Pred akýmkoľvek zápisom: (1) READ-ONLY PREFLIGHT cez Supabase MCP — identita projektu (agentúry/leady/ponuky), stav indexov a constraintov (`pg_indexes`, `pg_constraint`), `list_migrations`, 0 duplicít pre nový unique; žiadny INSERT/UPDATE/DDL. (2) IZOLOVANÝ TEST na lokálnom Postgrese, nikdy nie PROD; ak prostredie lokálny Postgres nepovolí, len návrh testu v reporte, nič si nevymýšľaj. (3) Zápis do PROD, `db push`, repair a merge iba na výslovné GO. Výsledok: jedna správa s dôkazom.
+<!-- MIGRACIA:END -->
+
+<!-- COACH:START -->
+RUTINA COACH (founder GO RUTINA): táto správa je nové zadanie. Po dokončení práce pridaj na koniec blok „Prompt-coach", max 4 riadky, bez zdržania úlohy: (a) kvalita zadania v % (ODHAD podľa 6 bodov: 1 cieľ = čo sa zmení pre platiaceho klienta, 2 hranice = čo smiem/nesmiem, PROD len na GO, 3 vstupy = odkazy/súbory/ID, 4 dôkaz = čo musí správa obsahovať, 5 hotovo = merge/deploy/test a kto ho robí, 6 jedna celá stena na jedno GO), (b) ktoré body chýbali, (c) prepísaná verzia v jednej-dvoch vetách s najkratšou cestou do produkcie (jeden PR, jedno GO, čo je ďalšia brána). Ak je zadanie na 9/10 a viac, napíš „bez pripomienok". Rubriku nemeň na tvrdé číslo — je to odhad.
+<!-- COACH:END -->

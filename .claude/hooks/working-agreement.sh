@@ -72,5 +72,23 @@ fi
 
 [ "$event" = "webhook" ] || text="$text"$'\n'"$(progress)"
 
+# Podmienené rutiny (len UserPromptSubmit): MIGRACIA a COACH. Hook nič nespúšťa,
+# len vloží text. Text sa číta z memory/working-agreement.md (bloky MIGRACIA, COACH).
+if [ "$event" = "prompt" ]; then
+  user_prompt=""
+  if [ ! -t 0 ]; then user_prompt="$(cat 2>/dev/null | jq -r '.prompt // empty' 2>/dev/null)"; fi
+  case "$user_prompt" in
+    *"SYSTEM NOTIFICATION"*|"<system-reminder>"*|"") ;; # automatické prebudenie alebo prázdne: žiadna rutina
+    *)
+      if printf '%s' "$user_prompt" | grep -qiE 'migr[aá]ci|migration|drop (index|table|constraint)|\bddl\b|ledger|schema_migrations|prod z[aá]pis|db push'; then
+        m="$(block MIGRACIA)"; [ -n "$m" ] && text="$text"$'\n'"$m"
+      fi
+      if [ "${#user_prompt}" -ge 60 ] && ! printf '%s' "$user_prompt" | grep -qiE '^[[:space:]]*(go\b|merguj|merge)'; then
+        c="$(block COACH)"; [ -n "$c" ] && text="$text"$'\n'"$c"
+      fi
+      ;;
+  esac
+fi
+
 jq -cn --arg h "$hook" --arg c "$text" '{hookSpecificOutput:{hookEventName:$h,additionalContext:$c}}'
 exit 0

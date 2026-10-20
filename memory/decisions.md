@@ -1,3 +1,10 @@
+## 2026-10-20 — GO RUTINA: dve podmienené rutiny v hooku (MIGRACIA, COACH) — BUILD
+**GO:** founder „GO RUTINA podľa tvojho návrhu" + „rutina, ktorá ma bude učiť písať prompty 10/10, ktoré posúvajú projekt do produkcie". Rozhodnutie: **BUILD** (rýchlejšie, presnejšie zadania = menej slučiek do platiaceho klienta; cena = jeden skript a dva textové bloky).
+**Čo:** `.claude/hooks/working-agreement.sh` číta z `UserPromptSubmit` stdin (`.prompt`) a podľa neho k DIGEST pridá (a) **MIGRACIA** — len ak správa obsahuje migrácia/DROP/DDL/ledger/schema_migrations/db push: read-only preflight, izolovaný test na lokálnom Postgrese (nie PROD), zápis len na GO; (b) **COACH** — len pri novom zadaní (≥60 znakov, nie GO/merguj/merge, nie automatická notifikácia): na konci odpovede blok „Prompt-coach" (odhad kvality podľa 6 bodov, čo chýbalo, prepísaná verzia). Zdroj textu: bloky `MIGRACIA` a `COACH` v `memory/working-agreement.md`. `settings.json` nezmenený (žiadny druhý hook, viď poučenie #800).
+**Čo to NErobí:** nespúšťa preflight ani test sám; vkladá pripomienku do kontextu. Lokálny Postgres prostredie v tejto session odmietlo → pri MIGRACIA je test zatiaľ len návrh. % kvality je odhad, nie meranie.
+**Overené lokálne (7 prípadov):** „GO A" → žiadna rutina; migračná správa → MIGRACIA+COACH; nové zadanie → len COACH; notifikácia a „merguj …" → nič; bez stdinu, `start` a `webhook` fungujú.
+**Rollback:** zmazať blok „Podmienené rutiny" v skripte (jeden blok) alebo bloky MIGRACIA/COACH v `memory/working-agreement.md`.
+
 # Critical Decisions Log
 
 ## 2026-10-15 — Anthropic prompt cache na existujúcich Claude volaniach (BUILD)
