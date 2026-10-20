@@ -24,6 +24,7 @@ import { spendForAction } from "@/lib/credits/spend-for-action";
 import { saveGeneration } from "@/lib/listings/generations-store";
 import { validateBody } from "@/lib/api-validate";
 import { errorResponse, okResponse } from "@/lib/api-response";
+import { incrementUsageMetric } from "@/lib/usage-metrics";
 
 export const runtime = "nodejs";
 
@@ -154,6 +155,12 @@ export async function POST(req: Request) {
       { property, persona, photos: validated.photos },
       resolveListingVisionProvider(),
     );
+
+    await incrementUsageMetric({
+      agencyId,
+      metric: "ai_openai_tokens",
+      delta: audit.inputTokens + audit.outputTokens,
+    });
 
     await logAiAction({
       action: "listing_from_photos",

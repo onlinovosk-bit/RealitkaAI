@@ -67,7 +67,10 @@ Merané v tomto turne:
 | Marketing `npx vitest run` | **61/61 passed** |
 | `apps/marketing` `npx next build` | zelený, Next 15.5.15 |
 | `apps/crm` `npm run build` | zelený; route `/api/ai/listing-from-photos` v zozname |
-| CI na PR | po pushi — ešte nebežalo |
+| `node apps/crm/scripts/check-api-contract.mjs --ci` | **0 nových porušení** (523 = baseline; route má `incrementUsageMetric`) |
+| listing-from-photos unit + route + verification | **17/17 passed** |
+| CI required `Lint, test, build` na `91d02da7` | SUCCESS (GitHub check) |
+| CI `Zmluva kódu` na `91d02da7` | FAIL → opravené v tomto commite (`incrementUsageMetric`) |
 
 RLS súbory padli lokálne na chýbajúce `TEST_SUPABASE_*` (rovnaké ako pred touto zmenou). CI ich spúšťa po `supabase db reset`.
 

@@ -26,6 +26,9 @@ vi.mock("@/lib/listings/generations-store", () => ({
 vi.mock("@/lib/ai-action-audit", () => ({
   logAiAction: (...a: unknown[]) => mocks.logAiAction(...a),
 }));
+vi.mock("@/lib/usage-metrics", () => ({
+  incrementUsageMetric: vi.fn(async () => undefined),
+}));
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
     auth: { getUser: async () => ({ data: { user: mocks.user } }) },
@@ -55,6 +58,7 @@ vi.mock("@/lib/supabase/admin", () => ({
   }),
 }));
 
+import { incrementUsageMetric } from "@/lib/usage-metrics";
 import { POST } from "../route";
 
 const TINY_PNG =
@@ -156,6 +160,9 @@ describe("POST /api/ai/listing-from-photos", () => {
     );
     expect(mocks.logAiAction).toHaveBeenCalledWith(
       expect.objectContaining({ action: "listing_from_photos", agencyId: "agency-A" }),
+    );
+    expect(incrementUsageMetric).toHaveBeenCalledWith(
+      expect.objectContaining({ agencyId: "agency-A", metric: "ai_openai_tokens" }),
     );
   });
 });

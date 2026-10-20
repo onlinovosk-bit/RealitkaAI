@@ -1,3 +1,14 @@
+## Session 2026-10-20 (speed / time-saving VP — CI ratchet)
+### Dokončené
+- `POST /api/ai/listing-from-photos` volá `incrementUsageMetric({ metric: "ai_openai_tokens", delta: input+output })` — Code Contract Guard na `91d02da7` padol (1 nové porušenie vs baseline 523).
+- Lokálne `check-api-contract.mjs --ci` → 0 nových; listing-from-photos 17/17, po assertion 10/10.
+### Rozpracované / Pending
+- Draft PR #892 (bez merge). CI `Zmluva kódu` po tomto pushi. Flag PROD len na GO.
+### Kľúčové súbory zmenené
+- `apps/crm/src/app/api/ai/listing-from-photos/route.ts`: telemetry po úspešnom vision.
+### Ďalší krok
+Founder review #892; merge a `LISTING_FROM_PHOTOS_V0=1` len na výslovné GO.
+
 ## Session 2026-10-20 (speed / time-saving VP)
 ### Dokončené
 - RAU route: GO_REQUIRED BUILD revolis (merge/PROD/secrets/pricing v zadaní; tie kroky som neurobil).

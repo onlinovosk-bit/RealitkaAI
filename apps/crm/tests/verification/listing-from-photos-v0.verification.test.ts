@@ -26,6 +26,7 @@ describe("[verification] Listing from photos V0", () => {
     expect(route).toContain("spendForAction");
     expect(route).toContain("eq(\"agency_id\", agencyId)");
     expect(route).toContain("assertTenantPhotoUrls");
+    expect(route).toContain("incrementUsageMetric");
   });
 
   it("does not embed secrets and documents ANTHROPIC_API_KEY", () => {
