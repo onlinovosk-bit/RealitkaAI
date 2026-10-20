@@ -1,3 +1,16 @@
+## Session 2026-10-20 (GMAIL-CONNECT critical hunt)
+### Dokončené
+- Hunt #819 Gmail connect/callback/disconnect/pull → 1 CRITICAL: markPulled resurrect after disconnect∩pull.
+- Fix + tests + report `docs/reports/2026-10-20-gmail-connect-critical-bug-hunt.md` on `cursor/critical-bug-detection-267c` (`04e6d3ef`).
+### Rozpracované / Pending
+- PR open via orchestrator (subagent cannot open_git_pr); merge after CI green.
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/inbound/gmail-connect-store.ts`: gate markPulled/markError
+- `apps/crm/src/lib/inbound/__tests__/gmail-connect-store.test.ts`: race regression
+- `apps/crm/tests/verification/gmail-connect-boundaries.verification.test.ts`: static guard
+### Ďalší krok
+Orchestrator: open PR + Slack; founder merge after CI.
+
 ## Session 2026-10-20 (CRITICAL billing/credits/auth bug hunt)
 ### Dokončené
 - Read-only hunt na `5c6956cb`: 4 CRITICAL stále živé (seat grant swallow, legacy unpaid fulfill, NO_AGENCY_FACTS, ghostwriter access-gate bypass).
