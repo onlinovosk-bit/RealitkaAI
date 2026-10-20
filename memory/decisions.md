@@ -1,3 +1,8 @@
+## 2026-10-20 — GO COACH-LOOP-FIX: schválený prompt od coacha sa vykoná, neaudituje sa znova (BUILD)
+**GO:** founder „GO COACH-LOOP-FIX". Problém: Grok sa zacyklil — vložený prompt od Coacha bral ako nové zadanie a vytvoril ďalší vylepšený prompt.
+**Príčina:** pravidlo „pri každom novom zadaní pridaj Prompt-coach" nerozlišovalo prompt, ktorý coach sám vytvoril. Zdroj: vložený prepis a súbor od foundera (správanie Groka som nevidel).
+**Oprava:** značka `[COACH-PROMPT-OK]` na prvom riadku každého promptu od coacha; správa s ňou (alebo hotový prompt so sekciami ROLA…HOTOVO) = vykonať bez bloku Prompt-coach; blok najviac raz na pôvodné zadanie; „BEZ COACHA" ho vypne. Hook `working-agreement.sh` pri tejto značke COACH nevloží. Platí pre blok COACH v repe; texty pre ChatGPT/Gemini/Grok a štyri inštalačné prompty (Onlinovo, UPTM, AI Influencerka, COZY Tatras) dostal founder v chate.
+**Rollback:** revert commitu.
 ## 2026-10-20 — GO PROD-MIGRACIE uzavreté: obe migrácie v PROD, septembrová príčina dokázateľne preč (PROD ZMENA)
 **Stav:** founder spustil `DROP INDEX idx_properties_source_id_unique` v SQL editore. **Overené nezávisle v mojom spojení**, nie prevzaté z tvrdenia inej session: jediné UNIQUE indexy na `properties` sú `properties_pkey` a `idx_properties_tenant_source_unique`.
 **Dôkaz, že septembrová chyba je preč (merané v PROD, transakcia s ROLLBACK, `properties` 164 pred aj po, 0 testovacích riadkov):** dve rôzne agentúry s tým istým `source_system`+`source_id` → **prešlo** (presne toto 11. 9. padalo, 24 z 25 pokusov); tá istá agentúra to isté `source_id` druhýkrát → **správne odmietnuté** `unique_violation`. Test je napísaný tak, že zlyhanie v ktoromkoľvek smere vyhodí výnimku, takže „prešlo bez výnimky" dokazuje obe strany naraz.
