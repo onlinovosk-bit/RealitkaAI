@@ -1,15 +1,16 @@
 .balik-page {
-  --balik-brand: #0ea5e9;
-  --balik-brand-deep: #0284c7;
-  --balik-ink: #0f172a;
-  --balik-muted: #64748b;
-  --balik-line: #e2e8f0;
-  --balik-bg: #f8fafc;
-  --balik-soft: #eff6ff;
-  --balik-green: #047857;
-  --balik-cta: linear-gradient(90deg, #0ea5e9, #38bdf8);
-  --balik-shadow: 0 8px 32px rgba(15, 23, 42, 0.06);
-  background: linear-gradient(180deg, var(--balik-bg), #fff);
+  --balik-brand: var(--rev-gold);
+  --balik-brand-deep: var(--rev-gold-hi);
+  --balik-ink: var(--rev-text);
+  --balik-muted: var(--rev-muted);
+  --balik-line: var(--rev-line);
+  --balik-bg: var(--rev-bg);
+  --balik-soft: var(--rev-surface);
+  --balik-green: var(--rev-good);
+  --balik-cta: var(--rev-cta-fill);
+  --balik-shadow: 0 8px 32px rgba(10, 16, 32, 0.45);
+  background: var(--rev-bg);
+  background-image: var(--rev-hero-glow);
   color: var(--balik-ink);
   min-height: 100vh;
 }
@@ -23,7 +24,7 @@
   justify-content: space-between;
   gap: 16px;
   padding: 14px 24px;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(10, 16, 32, 0.86);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--balik-line);
 }
@@ -83,7 +84,7 @@
 
 .balik-price-card {
   display: inline-block;
-  background: #fff;
+  background: var(--rev-surface);
   border: 2px solid var(--balik-brand);
   border-radius: 20px;
   padding: 28px 40px;
@@ -123,13 +124,13 @@
   padding: 16px 32px;
   font-size: 1rem;
   font-weight: 800;
-  color: #fff;
+  color: var(--rev-ink);
   background: var(--balik-cta);
   border: none;
   border-radius: 12px;
   cursor: pointer;
   text-decoration: none;
-  box-shadow: 0 4px 20px rgba(14, 165, 233, 0.35);
+  box-shadow: var(--rev-cta-glow);
   transition: transform 0.15s, opacity 0.15s;
 }
 
@@ -161,7 +162,7 @@
 }
 
 .balik-item {
-  background: #fff;
+  background: var(--rev-surface);
   border: 1px solid var(--balik-line);
   border-radius: 14px;
   padding: 20px;
@@ -208,6 +209,15 @@
   border-radius: 10px;
   font-size: 1rem;
   margin-bottom: 12px;
+  background: var(--rev-surface);
+  color: var(--rev-text);
+}
+.balik-form input:focus-visible {
+  outline: 2px solid var(--rev-gold);
+  outline-offset: 2px;
+}
+.balik-form input::placeholder {
+  color: var(--rev-muted);
 }
 
 .balik-consent {
@@ -221,7 +231,7 @@
 }
 
 .balik-error {
-  color: #dc2626;
+  color: var(--rev-bad);
   font-size: 0.85rem;
   margin-top: 8px;
 }

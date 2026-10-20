@@ -1,24 +1,20 @@
 
 .landing-v2 {
   --gap-section:30px;
-  --bg:#0B0A12; --surface:#15131F; --surface-2:#1C1929; --line:#2A2640;
-  /* Modrá rodina zo slate-horizon-theme.ts (téma app.revolis.ai), aby marketing
-     a produkt hovorili tou istou farbou. --brand/--brand-grad sú presné hodnoty
-     z témy (brand, topbarGradient). --brand-soft je odvodený svetlejší odtieň
-     brand2 (#3D6BA5 +35 % bielej): na tomto pozadí má kontrast 7.21, teda to isté
-     čo mala fialová #819FC4 (7.24) — výmena odtieňa bez straty čitateľnosti.
-     brand2 samotná by mala 3.61 a spadla by pod AA. */
-  --violet:#1B4F8A; --violet-soft:#819FC4; --violet-dim:rgba(27,79,138,.18);
-  --brand-grad:linear-gradient(90deg,#143A6B 0%,#1B4F8A 55%,#0C2348 100%);
-  --brand-grad-soft:linear-gradient(135deg,#1B4F8A 0%,#3D6BA5 100%);
-  --text:#EDEBF6; --muted:#9B95B3; --good:#34D399; --hot:#FBBF24; --bad:#F87171;
+  --bg:var(--rev-bg); --surface:var(--rev-surface); --surface-2:var(--rev-surface-2); --line:var(--rev-line);
+  /* Marketing-only navy + gold (www.revolis.ai). app.revolis.ai keeps its own
+     slate-horizon tokens — do not reuse this palette in apps/crm. */
+  --violet:var(--rev-gold); --violet-soft:var(--rev-gold-hi); --violet-dim:var(--rev-gold-dim);
+  --brand-grad:var(--rev-cta-fill);
+  --brand-grad-soft:var(--rev-cta-fill-hover);
+  --text:var(--rev-text); --muted:var(--rev-muted); --good:var(--rev-good); --hot:var(--rev-gold-hi); --bad:var(--rev-bad);
   --mono:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   --radius:14px;
 }
 .landing-v2, .landing-v2 *{box-sizing:border-box;margin:0;padding:0}
 .landing-v2 section[id]{scroll-margin-top:80px}
-.landing-v2 ::selection{background:var(--violet);color:#fff}
+.landing-v2 ::selection{background:var(--violet);color:var(--rev-ink)}
 .landing-v2 a{color:var(--violet-soft)}
 /* globals.css:66 nastavuje `h1{color:var(--dark)}` holym element selektorom (0,0,1).
    Dedenie farby z `.landing-v2` proti priamemu pravidlu prehrava, takze H1 landingu
@@ -30,20 +26,20 @@
 .landing-v2 .eyebrow{font-family:var(--mono);font-size:15px;letter-spacing:.14em;text-transform:uppercase;color:var(--violet-soft);display:flex;align-items:center;gap:10px}
 .landing-v2 .eyebrow::before{content:"";width:22px;height:1px;background:var(--violet)}
 
-.landing-v2 header{position:sticky;top:0;z-index:50;background:rgba(11,10,18,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.landing-v2 header{position:sticky;top:0;z-index:50;background:rgba(10,16,32,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
 .landing-v2 .nav{display:flex;align-items:center;justify-content:space-between;height:62px}
 .landing-v2 .logo{font-family:var(--mono);font-weight:700;font-size:17px;color:var(--text);text-decoration:none;letter-spacing:.02em}
 .landing-v2 .logo b{color:var(--violet-soft)}
-.landing-v2 .btn{display:inline-block;background:var(--brand-grad);color:#fff;text-decoration:none;font-weight:600;font-size:16px;padding:11px 20px;border-radius:10px;transition:transform .15s ease,background .15s ease;border:none;cursor:pointer}
+.landing-v2 .btn{display:inline-block;background:var(--brand-grad);color:var(--rev-ink);text-decoration:none;font-weight:600;font-size:16px;padding:11px 20px;border-radius:10px;transition:transform .15s ease,background .15s ease,box-shadow .15s ease;border:none;cursor:pointer;box-shadow:var(--rev-cta-glow)}
 .landing-v2 .btn:hover{background:var(--brand-grad-soft);transform:translateY(-1px)}
-.landing-v2 .btn:focus-visible{outline:2px solid #fff;outline-offset:3px}
+.landing-v2 .btn:focus-visible{outline:2px solid var(--rev-gold-hi);outline-offset:3px}
 .landing-v2 .btn:active{transform:scale(.98)}
 .landing-v2 .btn-lg{padding:15px 28px;font-size:18px}
-.landing-v2 .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
+.landing-v2 .btn-ghost{background:transparent;border:1px solid var(--rev-text);color:var(--text);box-shadow:none}
 .landing-v2 .btn-ghost:hover{background:var(--surface-2)}
 
 .landing-v2 .hero{padding:70px 0 30px;position:relative;overflow:hidden}
-.landing-v2 .hero::after{content:"";position:absolute;inset:auto -20% -60% -20%;height:380px;background:radial-gradient(50% 100% at 50% 100%,rgba(27,79,138,.16),transparent 70%);pointer-events:none}
+.landing-v2 .hero::after{content:"";position:absolute;inset:auto -20% -60% -20%;height:380px;background:radial-gradient(50% 100% at 50% 100%,var(--rev-gold-dim),transparent 70%);pointer-events:none}
 .landing-v2 .hero h1{font-size:clamp(34px,6vw,56px);line-height:1.07;font-weight:800;letter-spacing:-.02em;margin:18px 0 20px;max-width:18ch}
 .landing-v2 .hero h1 em{font-style:normal;color:var(--violet-soft);display:block;white-space:nowrap}
 .landing-v2 .hero p.lead{font-size:clamp(18px,2.3vw,22px);color:var(--muted);max-width:56ch;margin-bottom:28px}
@@ -57,7 +53,7 @@
 .landing-v2 .sub{color:var(--muted);max-width:58ch}
 
 /* ── mockup ── */
-.landing-v2 .mock-frame{margin-top:34px;border:1px solid var(--line);border-radius:16px;background:var(--surface);box-shadow:0 30px 80px -30px rgba(27,79,138,.25),0 10px 30px rgba(0,0,0,.5);overflow:hidden}
+.landing-v2 .mock-frame{margin-top:34px;border:1px solid var(--line);border-radius:16px;background:var(--surface);box-shadow:0 30px 80px -30px var(--rev-gold-glow),0 10px 30px rgba(0,0,0,.5);overflow:hidden}
 .landing-v2 .mock-top{display:flex;align-items:center;gap:8px;padding:11px 16px;border-bottom:1px solid var(--line);background:var(--surface-2);font-family:var(--mono);font-size:15px;color:var(--muted)}
 .landing-v2 .dot{width:10px;height:10px;border-radius:50%;background:var(--line)}
 .landing-v2 .mock-title{margin-left:8px}
@@ -67,7 +63,7 @@
 .landing-v2 .mock-col:first-child{border-left:none}
 .landing-v2 .mock-h{font-family:var(--mono);font-size:14px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
 .landing-v2 .lead-row{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:9px;background:var(--bg);font-size:17.5px;cursor:pointer}
-.landing-v2 .lead-row.sel{border-color:var(--violet);box-shadow:0 0 0 1px rgba(27,79,138,.35)}
+.landing-v2 .lead-row.sel{border-color:var(--violet);box-shadow:0 0 0 1px var(--rev-gold-glow)}
 .landing-v2 .lead-row .nm{font-weight:600}
 .landing-v2 .lead-row .src{font-family:var(--mono);font-size:14.5px;color:var(--muted)}
 .landing-v2 .score{margin-left:auto;font-family:var(--mono);font-size:15.5px;font-weight:700;padding:3px 9px;border-radius:7px}
@@ -76,7 +72,7 @@
 @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(251,191,36,.55)}100%{box-shadow:0 0 0 9px rgba(251,191,36,0)}}
 .landing-v2 .score.ok{background:rgba(52,211,153,.12);color:var(--good)}
 .landing-v2 .score.cold{background:var(--surface-2);color:var(--muted)}
-.landing-v2 .nba{border:1px solid rgba(27,79,138,.4);background:linear-gradient(180deg,var(--violet-dim),transparent 70%);border-radius:12px;padding:14px;margin-bottom:14px}
+.landing-v2 .nba{border:1px solid var(--rev-gold-glow);background:linear-gradient(180deg,var(--violet-dim),transparent 70%);border-radius:12px;padding:14px;margin-bottom:14px}
 .landing-v2 .nba .tag{font-family:var(--mono);font-size:13.5px;letter-spacing:.12em;color:var(--violet-soft);text-transform:uppercase}
 .landing-v2 .nba p{font-size:16px;margin-top:6px}
 .landing-v2 .nba p b{color:var(--violet-soft)}
@@ -119,7 +115,7 @@ input[type=range]:focus-visible{outline:2px solid var(--violet);outline-offset:4
 .landing-v2 .goal[aria-pressed=true]{border-color:var(--violet);background:linear-gradient(180deg,var(--violet-dim),var(--surface) 80%)}
 .landing-v2 .goal[aria-pressed=true] .chk{color:var(--violet-soft)}
 .landing-v2 .goal:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
-.landing-v2 .goal-result{margin-top:18px;border:1px solid rgba(27,79,138,.4);border-radius:12px;background:var(--surface);padding:18px;font-size:16.5px;display:none}
+.landing-v2 .goal-result{margin-top:18px;border:1px solid var(--rev-gold-glow);border-radius:12px;background:var(--surface);padding:18px;font-size:16.5px;display:none}
 .landing-v2 .goal-result.show{display:block}
 .landing-v2 .goal-result b{color:var(--violet-soft)}
 
@@ -131,7 +127,7 @@ input[type=range]:focus-visible{outline:2px solid var(--violet);outline-offset:4
 .landing-v2 .pain .pk{font-family:var(--mono);font-size:14.5px;color:var(--muted);letter-spacing:.1em;display:block;margin-bottom:10px}
 
 /* ── case ── */
-.landing-v2 .case{border:1px solid rgba(27,79,138,.35);border-radius:18px;background:linear-gradient(160deg,var(--violet-dim),var(--surface) 55%);padding:34px;margin-top:32px;display:grid;grid-template-columns:1fr auto;gap:26px;align-items:center}
+.landing-v2 .case{border:1px solid var(--rev-gold-glow);border-radius:18px;background:linear-gradient(160deg,var(--violet-dim),var(--surface) 55%);padding:34px;margin-top:32px;display:grid;grid-template-columns:1fr auto;gap:26px;align-items:center}
 .landing-v2 .case blockquote{font-size:clamp(19px,2.6vw,23px);line-height:1.45;font-weight:600;max-width:32ch}
 .landing-v2 .case .who{margin-top:14px;color:var(--muted);font-size:17.5px}
 .landing-v2 .case-num{text-align:center;border-left:1px solid var(--line);padding-left:26px}
@@ -142,7 +138,7 @@ input[type=range]:focus-visible{outline:2px solid var(--violet);outline-offset:4
 .landing-v2 .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:30px;align-items:stretch}
 .landing-v2 .plan{border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:24px;display:flex;flex-direction:column}
 .landing-v2 .plan.featured{border-color:var(--violet);background:linear-gradient(180deg,var(--violet-dim),var(--surface) 60%);position:relative}
-.landing-v2 .plan .pill{position:absolute;top:-12px;left:24px;background:var(--violet);color:#fff;font-family:var(--mono);font-size:14px;letter-spacing:.08em;padding:4px 12px;border-radius:99px}
+.landing-v2 .plan .pill{position:absolute;top:-12px;left:24px;background:var(--violet);color:var(--rev-ink);font-family:var(--mono);font-size:14px;letter-spacing:.08em;padding:4px 12px;border-radius:99px}
 .landing-v2 .plan h3{font-size:20px}
 .landing-v2 .price{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em;font-size:34px;font-weight:700;margin:10px 0 2px}
 .landing-v2 .price small{font-size:16.5px;color:var(--muted);font-weight:400}
@@ -172,7 +168,7 @@ input[type=range]:focus-visible{outline:2px solid var(--violet);outline-offset:4
 .landing-v2 footer{border-top:1px solid var(--line);padding:26px 0 110px;font-family:var(--mono);font-size:15.5px;color:var(--muted)}
 .landing-v2 footer .wrap{display:flex;flex-wrap:wrap;gap:8px 22px;justify-content:space-between}
 .landing-v2 footer a{color:var(--muted)}
-.landing-v2 .sticky-cta{position:fixed;left:0;right:0;bottom:0;z-index:60;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:rgba(11,10,18,.92);backdrop-filter:blur(10px);border-top:1px solid var(--line);transform:translateY(100%);transition:transform .25s ease}
+.landing-v2 .sticky-cta{position:fixed;left:0;right:0;bottom:0;z-index:60;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:rgba(10,16,32,.92);backdrop-filter:blur(10px);border-top:1px solid var(--line);transform:translateY(100%);transition:transform .25s ease}
 .landing-v2 .sticky-cta.show{transform:translateY(0)}
 .landing-v2 .sticky-cta .btn{display:block;text-align:center;width:100%}
 
@@ -211,7 +207,7 @@ input[type=range]:focus-visible{outline:2px solid var(--violet);outline-offset:4
 .landing-v2 .cockpit-intro{color:var(--muted);font-size:16px;margin-bottom:18px;max-width:64ch}
 .landing-v2 .cockpit-compare{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
 .landing-v2 .cockpit-col{border:1px solid var(--line);border-radius:12px;background:var(--bg);padding:18px 20px}
-.landing-v2 .cockpit-col--owner{border-color:rgba(27,79,138,.45)}
+.landing-v2 .cockpit-col--owner{border-color:var(--rev-gold-glow)}
 .landing-v2 .cockpit-col h4{font-size:18px;font-weight:700;margin-bottom:8px}
 .landing-v2 .cockpit-price{font-family:var(--mono);font-size:28px;font-weight:700;line-height:1.1;margin-bottom:12px}
 .landing-v2 .cockpit-price small{font-size:16.5px;color:var(--muted);font-weight:400}
@@ -227,7 +223,7 @@ input[type=range]:focus-visible{outline:2px solid var(--violet);outline-offset:4
 .landing-v2 .lead-row{width:100%;text-align:left;color:inherit;font-family:inherit}
 .landing-v2 .plan .btn{width:100%;text-align:center}
 .landing-v2 .btn{font-family:inherit}
-.landing-v2{min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:18px;line-height:1.62;-webkit-font-smoothing:antialiased}
+.landing-v2{min-height:100vh;background:var(--bg);background-image:var(--rev-hero-glow);color:var(--text);font-family:var(--sans);font-size:18px;line-height:1.62;-webkit-font-smoothing:antialiased}
 
 /* Cenník v2 (PRICING_V2_ENABLED): nové triedy, legacy výstup ich nepoužíva */
 .landing-v2 .plans--four{grid-template-columns:repeat(4,1fr)}
