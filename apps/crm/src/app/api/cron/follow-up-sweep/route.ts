@@ -13,8 +13,10 @@ import { FOLLOWUP_SWEEP_AGENT_ID } from "@/lib/inbound/draft-view";
 import { insertAgentDraft, recipientFor } from "@/lib/inbound/insert-agent-draft";
 import type { StaleLeadInput } from "@/lib/ai/open-followup-generator";
 import { scoreFollowUp } from "@/lib/cron/follow-up-scoring";
+import { deriveCronStatus, recordCronRun } from "@/lib/ops/cron-run";
 
 const OPEN_STATUSES = ["Nový", "Teplý", "Horúci", "Obhliadka", "Ponuka"];
+const JOB = "follow-up-sweep";
 
 async function bumpFollowupMeta(admin: ReturnType<typeof createAdminClient>, leadId: string, now: string) {
   const { data: cur } = await admin
@@ -38,6 +40,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const startedAt = new Date();
   const staleDays = Math.max(1, Number(process.env.FOLLOWUP_STALE_DAYS ?? "5"));
   const maxCandidates = Math.min(Number(process.env.FOLLOWUP_SWEEP_LIMIT ?? "24"), 60);
   // Kept only to report a stale config; it no longer changes behaviour.
@@ -63,8 +66,16 @@ export async function GET(request: NextRequest) {
     .limit(maxCandidates * 2);
 
   if (error) {
+    await recordCronRun(admin, {
+      job: JOB,
+      status: "failed",
+      startedAt,
+      firstError: `leads: ${error.message}`,
+    });
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   }
+
+  const scanned = rows?.length ?? 0;
 
   const eligible = (rows ?? []).filter((r: { last_ai_followup_at?: string | null }) => {
     const last = r.last_ai_followup_at;
@@ -109,13 +120,23 @@ export async function GET(request: NextRequest) {
   const failures: string[] = [];
 
   if (!inputs.length) {
+    const logError = await recordCronRun(admin, {
+      job: JOB,
+      status: "empty",
+      startedAt,
+      scanned,
+      eligible: 0,
+      detail: { stale_days: staleDays, cooldown_days: cooldownMs / 86_400_000 },
+    });
     return NextResponse.json({
       ok: true,
       mode,
       requested_mode: requestedMode,
+      scanned,
       eligible: 0,
       drafted: 0,
       sent: 0,
+      run_log_error: logError,
     });
   }
 
@@ -159,13 +180,33 @@ export async function GET(request: NextRequest) {
     await bumpFollowupMeta(admin, plan.lead_id, now);
   }
 
+  const status = deriveCronStatus(inputs.length, drafted, failures.length);
+  const logError = await recordCronRun(admin, {
+    job: JOB,
+    status,
+    startedAt,
+    scanned,
+    eligible: inputs.length,
+    written: drafted,
+    failed: failures.length,
+    firstError: failures[0] ?? null,
+    detail: {
+      stale_days: staleDays,
+      cooldown_days: cooldownMs / 86_400_000,
+      max_candidates: maxCandidates,
+      planned: plans.length,
+    },
+  });
+
   return NextResponse.json({
     ok: true,
     mode,
     requested_mode: requestedMode,
+    scanned,
     evaluated: inputs.length,
     drafted,
     sent: 0,
     failures,
+    run_log_error: logError,
   });
 }

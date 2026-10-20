@@ -47,6 +47,85 @@ Founder spustí `bash scripts/ops/stripe-verify-prices.sh` s restricted kľúčo
 - `memory/decisions.md`: engineering justification.
 ### Ďalší krok
 Founder zvolí A (checkout zostane zatvorený), B (človek založí v2 ceny) alebo C (najprv read-only Stripe verify). Odporúčanie je C. Samostatné GO. Agent ceny nevytvára.
+## Session 2026-10-18 (VLNY-AB — reporty z overených nálezov)
+### Dokončené
+- Vlna A premeraná mnou v PROD v tomto turne: `realvia_metrics` 1 077 riadkov, processed 1 543, ok 256, fail 1 287, `ok+fail = 1543`, **83,41 %**.
+- Mesačný + denný rozpad: máj 92,5 % (1 189) · jún 36,0 % (9) · júl/aug 0 % · **sep 58,9 % (89)** · **okt 16 pokusov / 0 fail**. Opravená MOJA chyba z #864: agregát „jún – dnes 38,1 %" zakrýval september.
+- Príčina zlyhaní NIE JE zistená a per-attempt sa nemá kde uložiť: `meta` neprázdne v **0 z 1 077** riadkov metrík, texty chyby iba pre **5 z 253** riadkov fronty.
+- Retry-slučka ako príčina **vyvrátená**: 518+215 = 733 retry ≠ 1 287 zlyhaní; oba poison riadky `completed` 2026-05-23 14:45, ale 322 májových zlyhaní prišlo 26.–28. 5.; september má iný text chyby (`idx_properties_source_id_unique`).
+- Vlna B overená `grep`om + `to_regclass`: `event_store` reálny mŕtvy kód (`EventStore.ts` píše do neexistujúcej tabuľky; jediný konzument `LeadService` nikto neimportuje) · `outreach_messages` **fantóm** (0 výskytov v repozitári, 0 v PROD) · navigačné oprávnenia **už opravené** 2026-10-05 (`d03cc47`, #817).
+- Riadok Realvia v `capability-truth-matrix.md` opravený (83,41 %, rozpad, „príčina nie je zistená", bez kauzálneho príbehu).
+### Rozpracované / Pending
+- Draft PR tejto steny (bez merge) — čaká na „merguj N".
+- **#864 je starší, konfliktný (`dirty`) draft tej istej opravy. Nahrádza ho tento PR → odporúčam zavrieť.**
+- Samostatné steny s GO: export z Realvie od dodávateľa · stĺpec s príčinou v `realvia_metrics` (migrácia) · pin na `idx_properties_source_id_unique` · zmazanie `LeadService`/`EventStore`/`002_event_store.sql`.
+- Stále na founderovi: `RESEND_API_KEY`, šesť `GOOGLE_GMAIL_INBOUND_*`, Stripe live katalóg → `STRIPE_PRICE_V2_*` → `PRICING_V2_ENABLED`, jeden reálny `.xlsx` export na dôkaz parsera v PROD.
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-18-vlna-a-realvia-zlyhania.md`: nový — zmeraný obraz zlyhaní + prečo retry-slučka nie je príčina.
+- `docs/reports/2026-10-18-vlna-b-mrtvy-kod-a-fantomy.md`: nový — 1 reálny nález, 1 fantóm, 1 už opravené + cena metódy (87 agentov, 729,5 k tokenov).
+- `docs/architecture/capability-truth-matrix.md`: riadok Realvia — 45 % → 83,41 % so rozpadom a bez kauzality.
+- `memory/decisions.md`: PREPEND záznam VLNY-AB vrátane pravidla „výstup swarmu je hypotéza, nie zistenie".
+- `docs/STATUS.md`: blok SESSION prepnutý na cieľ VLNY-AB.
+### Ďalší krok
+Export z Realvie od dodávateľa je jediný krok, ktorý odblokuje príčinu a stojí nás 0 h — všetko ostatné je hádanie nad 5 textami chyby.
+
+## Session 2026-10-17 (www.revolis.ai SEO)
+### Dokončené
+- RAU route: GO_REQUIRED BUILD revolis (slovo „merge“ v zadaní; merge nerobím).
+- Apex→www 307 overený naživo (`server: Vercel`); v repe host redirect nie je.
+- Canonical + og:url na `/`, `/demo`, `/balik`; `robots.ts` + `sitemap.ts` (len www `/` `/demo` `/balik`).
+- Testy 48/48, `next build` (15.5.15) zelený, lokálny smoke 200 na robots/sitemap + canonical tagy.
+- Report: `docs/reports/2026-10-17-marketing-www-seo.md`.
+### Rozpracované / Pending
+- Draft PR (bez merge). 308/301 na apexe ostáva manuálny krok vo Vercel Domains projektu `revolis-marketing`.
+- Preview deploy pre `cursor/*` je v `apps/marketing/vercel.json` vypnutý.
+### Kľúčové súbory zmenené
+- `apps/marketing/lib/site.ts`: kanonický origin www.
+- `apps/marketing/app/{layout,demo/page,balik/layout,robots,sitemap}.tsx?ts`: metadata + robots + sitemap.
+- `apps/marketing/__tests__/seo.test.ts`: unit testy.
+### Ďalší krok
+Founder: review draft PR; po merge zmeniť Vercel Domains 307→308. RAU route: GO_REQUIRED BUILD revolis.
+
+## Session 2026-10-16 (10 bodov zadania 2026-10-15)
+### Dokončené
+- **Bod 1** — AI návrhy odpovedí za 30 dní zmerané na PROD (3 vytvorené / 0 schválených / 0 odoslaných), PR #851 zmergovaný (`515a8b5b`).
+- **Bod 3** — plánovač Gmail pull v `apps/crm/vercel.json` (`20 8 * * *`) + stopa pri vypnutí (`recordSkippedCronRun`), PR #855 zmergovaný (`4094e12e`), nasadenie zelené.
+- **Bod 2** — UI nastavení ranného prehľadu (stránka + API + panel), PR #852, ready for review.
+- **Bod 4** — plánovač Realvia fronty (`50 11 * * *`) + denník behov, PR #856 (draft).
+- **Bod 5** — rozsah importu zmapovaný; `importPortalLeadsFromCsv` prepísaný (chýbal `agency_id` → RLS odmietala KAŽDÝ riadok a volajúci to hlásil ako `{imported: 0}`), PR #858 (draft).
+- **Bod 9** — 12 živých LLM call sites minimalizovaných (`lib/privacy/minimize.ts` + 18 testov), PR #857.
+- **Bod 10** — trial bez karty overený end-to-end (pri samoobslužnej registrácii nevzniká žiadny objekt v Stripe, takže niet čo strhnúť); `trialGraceFrom()` vyčlenená ako čistá funkcia a opravené dve chyby prístupovej brány; skript pre live katalóg cien pripravený, PR #854 (draft).
+### Rozpracované / Pending
+- **Bod 6** — PR #853 founder 16. 10. zavrel bez mergu. Overené na `main` (`f7f53686`) v tomto turne: `apps/crm/src/app/api/cron/follow-up-sweep/route.ts` obsahuje **0** výskytov `recordCronRun`. Nočný sweep teda zostáva nepozorovateľný a záhada „522 z 523 leadov spĺňa podmienky, 0 návrhov vzniklo" sa nedá zodpovedať.
+- **Body 7 a 8** — blokované na founderovi: korpus e-mailov, gold labels vyrobené človekom, LIA, Anthropic v `/legal/sub-processors`, env vlajky. V kóde netreba nič.
+- Founder musí urobiť: `RESEND_API_KEY` do Vercelu; šesť `GOOGLE_GMAIL_INBOUND_*`; spustiť live Stripe skript; nastaviť `STRIPE_PRICE_V2_*` a potom `PRICING_V2_ENABLED`.
+- Otvorené PR: #852, #854, #856, #857, #858.
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/saas-ops.ts`, `billing-store.ts`: `trialGraceFrom()` ako čistá funkcia; `lookupFailed` sa číta z objektu, nie z `catch`, ktorý nikdy nenastal.
+- `apps/crm/src/lib/ops/cron-run.ts`: `recordSkippedCronRun()` s `SKIPPED_CRON_MIN_INTERVAL_MS` (strop na dvojicu job+dôvod, aby častý plán nezaplavil denník).
+- `apps/crm/src/lib/privacy/minimize.ts` + 12 call sites: meno von, `firstNameOnly` / `cityOnly` / placeholdery + `restoreName`.
+- `apps/crm/src/lib/integrations-store.ts`: `PortalImportResult` s chybami po riadkoch, `agency_id` doplnené.
+- `apps/crm/src/app/(dashboard)/billing/__tests__/billing-page-w3.test.tsx`: oprava náhodne padajúceho golden testu.
+### Ďalší krok
+Zmergovať #852 (nesie opravu flaky testu, ktorá na `main` odblokuje ostatné PR), potom zvyšné podľa GO foundera.
+
+## Session 2026-10-15 (Anthropic prompt cache)
+### Dokončené
+- Inventúra všetkých Anthropic/Claude call sites (žiadny Vercel AI SDK anthropic provider).
+- Helper `apps/crm/src/lib/ai/prompt-cache.ts`: min Sonnet 1024 / Haiku 4.5 4096; marker len nad čiarou.
+- Cache ADDED: listing Sonnet sync + stream (`SYSTEM_PROMPT` ≈ 3931 tok.).
+- Cache SKIPPED: všetky Haiku sitami + prospecting fetch (prefix príliš krátky).
+- usage.cache_creation_input_tokens / cache_read_input_tokens v callClaude, dashboard, listing audit, call-coach stream.
+- Testy 204 passed (AI suite) + lint + typecheck baseline 54/54 + `next build` OK.
+- Report: `docs/reports/2026-10-15-anthropic-prompt-caching.md`.
+### Rozpracované / Pending
+- Jeden PR, **nemergovať / nenasadzovať** (zadanie).
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/ai/prompt-cache.ts`: eligibilita + cachedSystem + usage log.
+- `apps/crm/src/lib/ai/claude.ts`, `llm-usage-cost.ts`, listing + Haiku call sites.
+- `docs/reports/2026-10-15-anthropic-prompt-caching.md`.
+### Ďalší krok
+Founder review PR; merge len na výslovné GO.
 
 ## Session 2026-10-09 (P23 strana GA4)
 ### Dokončené

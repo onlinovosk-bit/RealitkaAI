@@ -8,6 +8,7 @@
  */
 
 import { callClaude, CLAUDE_HAIKU, extractJson } from "./claude";
+import { cachedSystem } from "./prompt-cache";
 import type { PlaybookItemDto } from "@/services/playbook/types";
 
 export interface EnrichedPlaybookItem extends PlaybookItemDto {
@@ -60,7 +61,7 @@ export async function enrichPlaybookWithClaude(
   const response = await callClaude({
     model: CLAUDE_HAIKU,
     max_tokens: 1_200,
-    system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
+    system: cachedSystem(SYSTEM, CLAUDE_HAIKU),
     messages: [
       {
         role: "user",

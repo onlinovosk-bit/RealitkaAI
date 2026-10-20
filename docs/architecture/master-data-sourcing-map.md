@@ -42,6 +42,39 @@ zapíše status+last_contact+activity. Po týždni práce máš dáta na celý z
 **Toto je tvoj fundament — bez neho je polovica featur prázdna bez ohľadu na
 externé zdroje. Najvyššia priorita.**
 
+## ZHLUK 1b — IMPORT OD ZÁKAZNÍKA (súbor, ktorý prinesie sám)
+**Featury:** prvé naplnenie CRM pri onboardingu, migrácia z iného CRM,
+portálový import kontaktov.
+**Zdroj:** súbor, ktorý nahrá sám zákazník (`import_jobs`, `import_rows`,
+`leads`). Dve cesty: sprievodca `/api/universal-import/*` a portálový import
+`/api/integrations/portal/import`.
+**Legálnosť:** najjednoduchší prípad v celej mape — prevádzkovateľom je
+kancelária, my sme sprostredkovateľ. Nič sa nezbiera, nič sa nescrapuje;
+zákazník nám dáva to, čo už legálne má. Žiadna nová brána GDPR.
+**Rozsah k 2026-10-16 (zmerané, bod 5 + XLSX-IMPORT):**
+- formát: **CSV** (UTF-8, fallback windows-1250) **a `.xlsx`**. Formát sa
+  rozoznáva z obsahu súboru (ZIP podpis `PK\x03\x04`), nie z výberu
+  v rozbaľovacom zozname — export z Realvie uložený ako Excel predtým skončil
+  nezrozumiteľnou chybou o hlavičkách. `.xlsx` číta vlastný parser
+  (`xlsx-parse.ts`, ZIP cez `node:zlib`, XML cez `fast-xml-parser`); žiadna
+  nová npm závislosť, lebo jediná rozšírená knižnica `xlsx` má na registri
+  poslednú verziu z 2022 s neopravenou prototype-pollution dierou.
+  `vcf` parser stále nemá a je vypnutý s vysvetlením; Realvia JSON má vlastnú
+  cestu.
+- limit: **2000 riadkov**, **10 MB** na súbor (strop sa kontroluje pred
+  načítaním do pamäte).
+- deduplikácia: podľa **e-mailu**, v dávke aj proti databáze v rámci
+  kancelárie; zhoda = aktualizácia leadu. Telefónna deduplikácia je
+  deklarovaná v typoch, ale **nie je implementovaná**.
+- chybný riadok: preskočí sa s dôvodom a číslom riadku, import pokračuje.
+**Čo na PROD naozaj prešlo:** cez sprievodcu 1 skúšobný job (3 riadky,
+9. 6. 2026), cez portálový import **0 leadov za celý čas** — ten do zápisu
+neposielal `agency_id`, takže ho RLS zakaždým odmietol (opravené v bode 5).
+Z 523 leadov na PROD je 439 z jednorazového importu Realvie.
+**Otvorené:** deduplikácia podľa telefónu, zjednotenie dvoch ciest do jednej,
+vCard (.vcf). Na PROD zatiaľ **ani jeden .xlsx import neprebehol** — parser je
+overený na fixtures, nie na zákazníkovom súbore.
+
 ## ZHLUK 2 — KATASTER: GEOMETRIA (parcely)
 **Featury:** Zmena v okolí (mapový základ), Bod zlomu (mapový základ),
 katastrálna mapa, parcelný kontext pod leadom.
