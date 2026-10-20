@@ -83,7 +83,8 @@ if [ "$event" = "prompt" ]; then
       if printf '%s' "$user_prompt" | grep -qiE 'migr[aá]ci|migration|drop (index|table|constraint)|\bddl\b|ledger|schema_migrations|prod z[aá]pis|db push'; then
         m="$(block MIGRACIA)"; [ -n "$m" ] && text="$text"$'\n'"$m"
       fi
-      if [ "${#user_prompt}" -ge 60 ] && ! printf '%s' "$user_prompt" | grep -qiE '^[[:space:]]*(go\b|merguj|merge)'; then
+      # [COACH-PROMPT-OK] na prvom riadku = schválený prompt od coacha: vykonať, nikdy znova neauditovať (proti cyklu)
+      if [ "${#user_prompt}" -ge 60 ] && ! printf '%s' "$user_prompt" | grep -qiE '^[[:space:]]*(\[COACH-PROMPT-OK\]|go\b|merguj|merge)'; then
         c="$(block COACH)"; [ -n "$c" ] && text="$text"$'\n'"$c"
       fi
       ;;
