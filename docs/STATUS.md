@@ -41,15 +41,14 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: VLNY-AB — reporty vlny A (Realvia zlyhania) a vlny B (mŕtvy kód / fantómy) z vlastného overenia v PROD + oprava čísla v matici (draft PR)
+Cieľ: Preflight audit dodávky + tri opravy na PROD-ceste (Realvia príčiny, pravda v cron_runs, BRI ON CONFLICT)
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] 1 — Agregát zlyhaní premeraný v PROD v tomto turne: 1 543 / 256 / 1 287 = 83,41 %, identita `ok+fail = processed`
-- [x] 2 — Mesačný aj denný rozpad premeraný; nájdená a opravená MOJA chyba, že agregát „jún – dnes 38,1 %" zakrýval september (89 zlyhaní, 58,9 %)
-- [x] 3 — Príčina: `meta` prázdne v 0 z 1 077 riadkov, 5 textov chyby na 253 riadkov fronty → per-attempt príčina nie je uložená nikde
-- [x] 4 — Retry-slučka ako príčina VYVRÁTENÁ počtami aj časmi (733 ≠ 1 287; 322 zlyhaní po zavretí oboch poison riadkov)
-- [x] 5 — Vlna B overená: `event_store`/`LeadService` reálny mŕtvy kód · `outreach_messages` fantóm (0 výskytov) · nav oprávnenia už opravené 2026-10-05 (`d03cc47`)
-- [x] 6 — Riadok Realvia v `capability-truth-matrix.md` opravený + PREPEND do `memory/decisions.md`
-- [ ] 7 — Draft PR (bez merge)
+- [x] 1 — Vlny A/B: reporty z meraných dát, nie z agentov (#882 zmergovaný)
+- [x] 2 — Realvia: druh zlyhania ide do `realvia_metrics.meta` bez migrácie (#885 → `26eafd9`)
+- [x] 3 — Preflight audit dodávky A–J, read-only, merané v PROD (`docs/reports/2026-10-20-preflight-audit-dodavky.md`)
+- [x] 4 — CRON-TRUTH-01: `cron_runs` už nehlási `failed` pri legitímnom „nič na výstupe" (#888 → `d25c101`)
+- [x] 5 — BRI-ONCONFLICT: obe skórovacie funkcie cielia na existujúci kľúč (#889 → `5ab3da4`; migrácia NEAPLIKOVANÁ na PROD, čaká na GO)
+- [x] 6 — Zápis do memory (PREPEND, `+9 −0` a `+19 −0`) + tento blok SESSION
 <!-- SESSION:END -->
 
 ## Čo potrebujem od teba (zoradené podľa dopadu)

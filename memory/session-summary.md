@@ -1,3 +1,101 @@
+## Session 2026-10-20 (preflight audit dodávky + tri opravy na PROD-ceste)
+### Dokončené
+- `docs/reports/2026-10-18-vlna-a-realvia-zlyhania.md`, `…-vlna-b-mrtvy-kod-a-fantomy.md` — vlny A/B prepísané z meraných dát (#882).
+- `apps/crm/src/lib/realvia/failureKinds.ts` + `metrics.ts` + `processQueue.ts` — druh zlyhania do `realvia_metrics.meta`, bez migrácie (#885 → `26eafd9`).
+- `docs/reports/2026-10-20-preflight-audit-dodavky.md` — read-only audit A–J; hypotéza „PR sa hromadia" vyvrátená (800/728/24), skutočné hrdlo je medzera merge→účinok.
+- `apps/crm/src/lib/ops/cron-run.ts` + `__tests__/derive-cron-status.test.ts` — `cron_runs` už nehlási `failed` pri legitímnom „nič na výstupe" (#888 → `d25c101`).
+- `apps/crm/supabase/migrations/20261020050000_bri_onconflict_lead_id.sql` + `tests/verification/bri-onconflict.verification.test.ts` — obe skórovacie funkcie cielia na `ON CONFLICT (lead_id)` (#889 → `5ab3da4`).
+### Rozpracované / Pending
+- Migrácia `20261020050000` je na `main`, NEAPLIKOVANÁ na PROD — čaká na `GO PROD-MIGRACIE`. Kým sa neaplikuje, BRI v PROD stále padá.
+- `20260617120000` (globálny → tenantový unique na `properties.source_id`) rovnako neaplikovaná.
+- Skill `gdpr-advisor` z direktívy 5 neexistuje — brána `GO GDPR-ADVISOR`.
+- Mŕtvy kód (`LeadService.ts`, `EventStore.ts`, `002_event_store.sql`, `LeadsRepository.ts`, `SupabaseLeadsRepository.ts`) — mazanie blokuje harness.
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/ops/cron-run.ts`: `written === 0 && failed === 0` → `empty`, nie `failed`.
+- `apps/crm/supabase/migrations/20261020050000_bri_onconflict_lead_id.sql`: patch živej definície cez `pg_get_functiondef`, v `BEGIN/COMMIT`, s `RAISE EXCEPTION` a post-checkom.
+- `docs/STATUS.md`: blok SESSION prepísaný na cieľ tejto session (predtým hlásil 100 % k marketingovému recoloru).
+### Ďalší krok
+`GO PROD-MIGRACIE` — aplikovať `20261020050000` na PROD s mapovaním ciest a dôkazom pred/po; bez toho zostáva BRI rozbité napriek zmergovanej oprave.
+
+## Session 2026-10-20 (marketing navy + gold paleta)
+### Dokončené
+- RAU route: AUTO-SAFE CONTENT revolis. PR #878 už merged — SEO súbory netknuté.
+- Tokeny `apps/marketing/public/palette.css`; aplikované na `/`, `/demo`, `/balik`, landing-v2.
+- Contrast AA nameraný (headline 16.58, CTA 9.50). Vitest 60/60, `next build --webpack` zelený.
+- Before/after screenshoty desktop+mobile v `/opt/cursor/artifacts/{before,after}/`.
+- Report: `docs/reports/2026-10-20-marketing-gohouse-palette.md`. Draft PR, bez merge.
+### Rozpracované / Pending
+- Merge len na founder GO. Preview pre `cursor/*` je vypnutý.
+### Kľúčové súbory zmenené
+- `apps/marketing/public/palette.css`: zdroj tokenov.
+- `apps/marketing/public/index.html`: kampaň `/` remapovaná na tokeny (copy/ceny/CTA/SEO bez zmeny).
+- `apps/marketing/app/{globals,landing-v2,demo/demo,balik/balik}.css`: spotreba tokenov.
+- `apps/marketing/__tests__/palette.test.ts`: AA + no-pilot + CTA guard.
+### Ďalší krok
+Founder review draft PR; merge len na GO.
+RAU route: AUTO-SAFE CONTENT revolis.
+
+## Session 2026-10-19 (REALVIA-PRICINY)
+### Dokončené
+- #882 zmergované (squash `060c5f4`), obsah overený priamo na `main`: `83,41` v matici = 1, staré tvrdenie „1 287 zlyhalo (45 %)" = 0, oba reporty prítomné, `session-summary.md` 3 847 riadkov (nič zmazané). #864 zavreté ako **nahradené**, s komentárom prečo.
+- **Príčina zlyhania sa zapisuje BEZ migrácie.** Mýlil som sa, že treba stĺpec: `realvia_metrics.meta` je `jsonb` a existuje — worker tam písal natvrdo `meta: {}`. Nové: `failureKinds.ts` (uzavretá množina 7 druhov), `tallyRealviaFailures(results)` v dávke, `buildMetricsMeta` v `metrics.ts`.
+- 13 unit testov + 6 verifikačných pinov zelených. Pin „worker už nepíše `meta: {}`" dokázaný **v oboch smeroch** (po dočasnom vrátení literálu padol, po obnovení prešiel).
+- **ZMERANÉ v PROD:** `idx_properties_source_id_unique` je UNIQUE na `properties.source_id` SAMOTNOM a platí; `idx_properties_tenant_source_unique` neexistuje; `20260617120000` nie je v `schema_migrations`. **Dve agentúry nemôžu mať tú istú inzerátovú id** → zmeraná príčina septembrovej chyby `duplicate key`.
+- **ZMERANÉ:** 138 migrácií v repe vs 78 v `schema_migrations`; najnovšia aplikovaná je, chýbajú veci v strede → aplikovalo sa výberovo.
+- Z matice odstránený zastaraný duplicitný riadok „Gmail pull" („chýba plánovač v repozitári"), ktorý si protirečil s riadkom pod ním.
+### Rozpracované / Pending
+- **Zmazanie mŕtveho kódu zablokoval harness** (`[Irreversible Local Destruction]` na `git rm`): `LeadService.ts`, `EventStore.ts`, `002_event_store.sql` + osirené `LeadsRepository.ts`, `SupabaseLeadsRepository.ts`. Nič sa nezmazalo. Potrebuje povolenie foundera.
+- **Aplikovať `20260617120000` na PROD — čaká na GO.** Pre-flight: unique na `source_id` implikuje unique na trojici, takže index nemôže naraziť na dáta; migrácia je inak aditívna (`ADD COLUMN`, `IF NOT EXISTS`), bez `DROP COLUMN`.
+- Stále na founderovi: `RESEND_API_KEY`, šesť `GOOGLE_GMAIL_INBOUND_*`, Stripe live katalóg → `STRIPE_PRICE_V2_*` → `PRICING_V2_ENABLED`, export z Realvie.
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/realvia/failureKinds.ts`: nový — klasifikácia zlyhaní na 7 stabilných druhov + `tallyRealviaFailures`.
+- `apps/crm/src/lib/realvia/metrics.ts`: `meta: {}` → `buildMetricsMeta(row)`, nové pole `failures`.
+- `apps/crm/src/lib/realvia/processQueue.ts`: dávka posiela spočítané druhy zlyhaní do metrík.
+- `apps/crm/tests/verification/realvia-failure-cause.verification.test.ts`: nový — 6 pinov vrátane „žiadna novšia migrácia nezaloží globálny unique na `properties (source_id)`".
+- `docs/reports/2026-10-19-properties-source-id-globalny-unique.md`: nový — zmeraný rozpor schémy + pre-flight.
+- `docs/architecture/capability-truth-matrix.md`: riadok Realvia doplnený o zmeranú septembrovú príčinu; zmazaný protirečivý riadok Gmail pull.
+### Ďalší krok
+Rozhodnutie foundera: aplikovať `20260617120000` na PROD (odblokuje import tej istej inzerátovej id pre druhú agentúru), alebo len samotný index ako minimálna migrácia.
+
+## Session 2026-10-20 (PREFLIGHT AUDIT + CRON-TRUTH-01)
+### Dokončené
+- Phase Zero read-only preflight podľa META-PROMPT v2.0; pracovný strom nedotknutý.
+- **Hypotéza „PR sa hromadia" VYVRÁTENÁ:** 800 PR / 728 zmergovaných / 24 otvorených (3 %) za 5 mesiacov.
+- **Skutočné hrdlo zmerané:** medzera merge→účinok. 51 behov cronov za 14 dní, 1 `ok`. PROD: 0 Stripe predplatných, 0 trialov, 0 self-serve, 0 `outbound_messages`, 1 `events`, 1 lead za 14 dní. Migrácie 138 vs 78.
+- **Nový P1:** `compute_bri_score` → `ON CONFLICT (profile_id, lead_id)` bez zodpovedajúceho constraintu (`lead_scores` má len `UNIQUE (lead_id)`), padá 3 z 3.
+- **Bezpečnosť: 3 zo 4 „nálezov" vyvrátené** — 36× `rls_enabled_no_policy` je fail-closed INFO; `profile_agencies_for_auth()` filtruje cez `auth.uid()`; `get_valuation_tenant()` je zámerne verejná. Reálny WARN: vypnutá ochrana proti uniknutým heslám.
+- **CRON-TRUTH-01:** `deriveCronStatus` už nehlási `failed`, keď beh kandidátov zvážil a legitímne nemal čo robiť. 25/25 testov, regresia dokázaná v oboch smeroch.
+### Rozpracované / Pending
+- Draft PR CRON-TRUTH-01 — čaká na „merguj N".
+- #885 otvorený, zelený, `behind` — čaká na „merguj 885".
+- `GO SOURCE-ID-INDEX`; oprava `compute_bri_score` migráciou; povolenie zmazať mŕtvy kód.
+- Stripe krok C, `RESEND_API_KEY`, 6× `GOOGLE_GMAIL_INBOUND_*` — bez nich sa „0 platieb / 0 správ" nepohne.
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/ops/cron-run.ts`: `failed` vyžaduje `failed > 0`; dôvod voľby `empty` namiesto nového stavu je v komentári.
+- `apps/crm/src/lib/ops/__tests__/derive-cron-status.test.ts`: nový, 6 testov vrátane pinu na povolené hodnoty CHECK.
+- `docs/reports/2026-10-20-preflight-audit-dodavky.md`: nový — celý audit s číslami a s tým, čo nálezom NIE JE.
+### Ďalší krok
+Rozhodnutie foundera o dvoch migráciách (`source_id` index, `compute_bri_score`); obe sú zmerané P1 a obe čakajú len na GO.
+
+## Session 2026-10-20 (BRI-ONCONFLICT)
+### Dokončené
+- **Zmeraná príčina:** `compute_bri_score` aj `compute_bri_score_v2` cielia `ON CONFLICT (profile_id, lead_id)`, ale `lead_scores` má len `PRIMARY KEY (id)` + `UNIQUE (lead_id)`. Obe padajú pri každom volaní; `lead_scores` má 0 riadkov.
+- **Pôvod:** dve `CREATE TABLE IF NOT EXISTS` migrácie na tú istú tabuľku; `20260418` (UNIQUE lead_id) bola prvá a vyhrala, z `20260425231407` (UNIQUE profile_id,lead_id) prešli len ADD COLUMN.
+- **Zmapovaní traja zapisovatelia:** obe BRI funkcie chcú composite, `enterprise-intelligence-store.ts` chce `lead_id`. Doložené, že pridať aj zahodiť constraint rozbije jednu z ciest → ani jedno.
+- **Oprava:** `ON CONFLICT (lead_id)` + `profile_id = EXCLUDED.profile_id`. Správny kľúč podľa modelu (`leads.assigned_profile_id` = jeden lead, jeden profil). Bez `ALTER TABLE`, bez `DROP`.
+- **Migrácia patchuje živú definíciu** cez `pg_get_functiondef` + `replace`, nie kópiou z repa — pri 78/138 aplikovaných migráciách by kópia potichu vrátila neznáme zmeny. `RAISE EXCEPTION` pri nenájdení, `BEGIN/COMMIT`, overenie na konci.
+- **Dôkaz:** read-only dry run proti PROD — v1 3133→3165, v2 9383→9415 (oba +32), zlý cieľ preč, práve jeden `DO UPDATE SET` v každej. 6 pinov zelených, strážny regex overený oproti `20260425231407` aj `20260425231426`.
+### Rozpracované / Pending
+- Draft PR BRI-ONCONFLICT — čaká na „merguj N".
+- **Aplikovanie migrácie na PROD čaká na GO**; dovtedy je jej správanie NEZMERANÉ (bez Dockera `prepush-gate` hlási migrácie NEOVERENÉ).
+- Otvorené aj: #885, #888, `GO SOURCE-ID-INDEX`, povolenie zmazať mŕtvy kód, Stripe krok C, `RESEND_API_KEY`, 6× `GOOGLE_GMAIL_INBOUND_*`.
+### Kľúčové súbory zmenené
+- `apps/crm/supabase/migrations/20261020050000_bri_onconflict_lead_id.sql`: nová — patch oboch funkcií so strážami.
+- `apps/crm/tests/verification/bri-onconflict.verification.test.ts`: nová — 6 pinov vrátane „žiadna novšia migrácia nevráti composite".
+- `docs/reports/2026-10-20-bri-onconflict.md`: nový — celý pre-flight, tri cesty zapisovateľov a dry run.
+### Ďalší krok
+GO na aplikovanie migrácie. Poctivo: odstráni pád, ale skóre neprinesie, kým `events` má 1 riadok.
+
 ## Session 2026-10-18 (VLNY-AB — reporty z overených nálezov)
 ### Dokončené
 - Vlna A premeraná mnou v PROD v tomto turne: `realvia_metrics` 1 077 riadkov, processed 1 543, ok 256, fail 1 287, `ok+fail = 1543`, **83,41 %**.
