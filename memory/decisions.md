@@ -7,6 +7,15 @@
 
 # Critical Decisions Log
 
+## 2026-10-20 — BRI-ONCONFLICT zmergovaný + nález: brána `gdpr-advisor` neexistuje (BUILD)
+**GO:** founder „GO BRI-ONCONFLIC" a „merguj 885, 888, 889". Všetky tri na `main`, CI zelené na aktuálnej hlave pred každým mergom:
+`#885 → 26eafd9` · `#888 → d25c101` · `#889 → 5ab3da4`. Obsah overený na `main` po mergi (migrácia, testy, reporty, `deriveCronStatus`).
+**#889 si vyžiadal dve kolá riešenia konfliktu** (memory súbory, po každom pohybe `main`). Obe strany zachované — strážny skript potvrdil `+11 −0` a `+19 −0`, žiadne mazanie histórie. Push s `WALL_PUSH_OK=1`, dôvod: odblokovanie konfliktu na vlastnom PR pod explicitným GO na merge.
+**Migrácia `20261020050000_bri_onconflict_lead_id.sql` je na `main`, ale NIE JE aplikovaná na PROD.** Čaká na samostatné GO. Dokiaľ sa neaplikuje, `compute_bri_score` aj `v2` v PROD stále padajú — merge ten pád neodstránil.
+**Nový nález (ZMERANÉ, `find . -name SKILL.md`):** CLAUDE.md direktíva 5 predpisuje spustiť skill **`gdpr-advisor`** pred každou funkciou dotýkajúcou sa osobných/externých dát. **Taký skill neexistuje.** V repozitári sú štyri: `kontrolor`, `rau`, `strategic-analysis`, `task-loop` (+ `.cursor/skills/ui-ux-pro-max`). Na `gdpr-advisor` sa pritom odvoláva 10 dokumentov vrátane `docs/rau/prompts/P06-data-event-contract.md` a `RAU-v1.0.md`. Povinná brána, ktorú nemožno spustiť, nie je brána — pri katastri a portáloch je to presne tá vrstva, ktorá sa nedá nahradiť pluginom z katalógu. Otvorené s bránou `GO GDPR-ADVISOR`.
+**Odpoveď na otázku o „Skills Vault":** čo senior inžinieri „bežne používajú" som nemeral a netvrdím to — telemetria inštalácií nie je čitateľná. Zmerané je len: 4 skilly + 6 hookov v tomto repe, a skutočný obsah katalógu (Billing Plane so `stripe-billing` a agentom `webhook-validator`; backlog s cross-session hookmi; claude-code-review-council; Security Audit Loop; finecomb; Engineering; Flow). Odporúčanie **Billing Plane** — jediné, čo mieri na zmeranú dieru (0 predplatných pri 7 agentúrach), teda na Prime Directive.
+**Otvorené s GO bránou:** `GO PROD-MIGRACIE` (20261020050000 + 20260617120000, mapovanie ciest + dôkaz pred/po) · `GO GDPR-ADVISOR` · zmazanie mŕtveho kódu (harness blokuje) · Stripe krok C, `RESEND_API_KEY`, šesť `GOOGLE_GMAIL_INBOUND_*`.
+
 ## 2026-10-20 — www.revolis.ai navy + gold paleta (BUILD, draft)
 **GO:** zadanie Cloud Agent — recolor len `apps/marketing`, draft PR, nemergovať. **RAU:** AUTO-SAFE CONTENT.
 **Ústava v2:** vizuál existujúceho webu, nie nová featura. Timing OK (kampaň `/` beží). Q1 neplatí ako veto — nálada predajnej stránky.
@@ -34,6 +43,17 @@
 **Dôkaz:** 6 nových testov + 2 existujúce suity nezmenené (25/25), regresia dokázaná v oboch smeroch (po vypnutí riadku test padol, po obnovení prešiel), `prepush-gate.sh` VŠETKO PREŠLO.
 **Pravidlo, ktoré z toho platí:** merge nie je koniec. Zelené CI, zmergovaný PR a nasadený build sú tri rôzne veci a ani jedna z nich nie je dôkaz, že to u zákazníka funguje. Jediný dôkaz je riadok v PROD.
 **Otvorené s GO bránou:** `merguj 885` · `GO SOURCE-ID-INDEX` · oprava `compute_bri_score` (migrácia) · povolenie zmazať mŕtvy kód · Stripe krok C, `RESEND_API_KEY`, 6× `GOOGLE_GMAIL_INBOUND_*`.
+
+## 2026-10-20 — BRI-ONCONFLICT: obe skórovacie funkcie padali na neexistujúci constraint (BUILD, draft, čaká na GO na PROD)
+**GO:** founder „GO BRI-ONCONFLIC".
+**Chyba (ZMERANÉ):** `compute_bri_score` aj `compute_bri_score_v2` upsertujú do `lead_scores` s `ON CONFLICT (profile_id, lead_id)`. Tabuľka má len `PRIMARY KEY (id)` a `UNIQUE (lead_id)` → obe funkcie padajú pri KAŽDOM volaní. Cron `recompute-bri` 3 z 3 `failed`, `lead_scores` **0 riadkov** — BRI skóre nikdy nevzniklo.
+**Pôvod:** tabuľku zakladajú DVE migrácie, obe `CREATE TABLE IF NOT EXISTS`. `20260418_enterprise_ai_intelligence.sql` (`UNIQUE (lead_id)`) bola prvá a vyhrala; z `20260425231407_event_pipeline.sql` (`UNIQUE (profile_id, lead_id)`) prešli len `ADD COLUMN` — preto je `profile_id` nullable a composite nikdy nevznikol.
+**Čo som NEurobil a prečo:** nepridal ani nezmenil constraint. Na tabuľke sedia traja zapisovatelia s dvoma nezlučiteľnými kľúčmi — obe BRI funkcie chcú `(profile_id, lead_id)`, `enterprise-intelligence-store.ts` (`/api/ai/process-lead`) chce `lead_id`. Pridať composite rozbije tretieho pri druhom profile na tom istom leade; zahodiť `UNIQUE (lead_id)` ho rozbije rovno. **Oba smery vymenia jednu rozbitú cestu za inú.**
+**Oprava:** cieliť konflikt na kľúč, ktorý EXISTUJE — `ON CONFLICT (lead_id)` + `profile_id = EXCLUDED.profile_id` v `DO UPDATE`. Je to aj správny kľúč podľa modelu: `leads.assigned_profile_id` priraďuje lead jednému profilu a `batchRecomputeBRI` skóruje len leady toho profilu. Prepis `profile_id` rieši prepis leadu na iného makléra. Žiadny `ALTER TABLE`, žiadny `DROP`.
+**Prečo migrácia PATCHUJE živú definíciu (`pg_get_functiondef` + `replace`) a neprepisuje ju kópiou z repa:** v PROD je 78 zo 138 migrácií, takže živé telo sa môže líšiť od ktoréhokoľvek súboru v repe a kópia by potichu vrátila späť neznáme zmeny. Migrácia `RAISE EXCEPTION`, keď podreťazec nenájde; celé v `BEGIN/COMMIT` s overením na konci.
+**Dôkaz (read-only dry run proti PROD):** tá istá dvojica `replace()` ako `SELECT`. v1 3133→3165, v2 9383→9415, oba **+32**, zlý cieľ preč, správny cieľ aj prepis vlastníka prítomné, a **práve jeden `DO UPDATE SET`** v každej funkcii → druhý `replace` nemal čo iné zasiahnuť. 6 verifikačných pinov zelených; strážny regex overený oproti skutočným historickým previnilcom (`20260425231407`, `20260425231426`) a neoznačí túto opravu.
+**NEZMERANÉ:** správanie migrácie po aplikovaní (bez Dockera `prepush-gate` hlási migrácie NEOVERENÉ). **Poctivo:** oprava odstráni pád, neprinesie skóre — `events` má 1 riadok, takže BRI by aj tak dalo takmer všetkým rovnakú hodnotu.
+**Opravujem svoj vlastný návrh:** pri GO som písal, že si budem pýtať rozhodnutie „pridať vedľa vs nahradiť constraint". Pre-flight ukázal, že ani jedno nie je potrebné ani bezpečné — rozhodnutie teda nepotrebujem a nepýtam si ho.
 
 ## 2026-10-18 — VLNY-AB: reporty z overených nálezov, nie z výstupu swarmu (BUILD, draft)
 **GO:** founder zvolil variant **A** — „zastaviť vlny a reporty napíšem z toho, čo mám; nosné tvrdenia si overím sám priamo v PROD".
