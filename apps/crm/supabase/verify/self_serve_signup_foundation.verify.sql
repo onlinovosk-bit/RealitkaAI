@@ -36,7 +36,7 @@ begin
   a := (j->>'agency_id')::uuid;
   insert into _r select 'T6 created', (j->>'ok')::boolean and (j->>'created')::boolean and a is not null, j::text;
   insert into _r select 'T7 safe defaults',
-    exists(select 1 from public.agencies g where g.id=a and g.seats=0 and g.account_tier='free' and g.plan='free'
+    exists(select 1 from public.agencies g where g.id=a and g.seats=0 and g.account_tier='free' and g.plan='Free'
            and g.created_via='self_serve' and g.trial_ends_at between now()+interval '13 days' and now()+interval '15 days'
            and coalesce(g.credits_balance,0)=0), '';
   insert into _r select 'T8 owner profile linked',
@@ -67,7 +67,7 @@ update public.agencies set trial_ends_at = now() + interval '3650 days', plan = 
   where id = current_setting('v.agency')::uuid;
 reset role;
 insert into _r select 'T13 guard reverts billing cols, allows name',
-  g.plan = 'free' and g.seats = 0 and g.trial_ends_at < now() + interval '15 days' and g.name = 'Premenovana', g.plan || '/' || g.seats
+  g.plan = 'Free' and g.seats = 0 and g.trial_ends_at < now() + interval '15 days' and g.name = 'Premenovana', g.plan || '/' || g.seats
   from public.agencies g where g.id = (select a from _g);
 select set_config('request.jwt.claim.role', '', true);
 

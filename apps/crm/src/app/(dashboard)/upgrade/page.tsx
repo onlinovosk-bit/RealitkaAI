@@ -8,6 +8,7 @@ import { RedeemStarterPackCode } from '@/components/billing/RedeemStarterPackCod
 import PricingV2Plans from '@/components/billing/v2/PricingV2Plans';
 import PricingV2CreditsTopup from '@/components/billing/v2/PricingV2CreditsTopup';
 import { readPricingV2Config } from '@/components/billing/v2/usePricingV2Config';
+import { usersForPlanParam } from '@/components/billing/v2/preselect';
 import type { PricingV2ConfigPayload } from '@/lib/pricing-v2-contract';
 
 type SeatTierKey = 'solo' | 'team' | 'office';
@@ -42,18 +43,40 @@ type CheckoutConfig = {
     priceEur: number;
     featured?: boolean;
   }>;
+  /** Názvy env premenných (nikdy hodnoty `price_…`). Staršie API ich nemusí poslať. */
+  missingPriceEnvKeys?: {
+    seat?: string[];
+    topup?: string[];
+  };
 };
+
+const PRICE_ENV_NAME = /^STRIPE_PRICE_[A-Z0-9_]+$/;
+
+/** Len názvy premenných z checkout-config. Hodnotu Price ID sem nikdy nedávame. */
+function listedMissingPriceEnvKeys(config: CheckoutConfig | null): string[] {
+  const raw = [
+    ...(config?.missingPriceEnvKeys?.seat ?? []),
+    ...(config?.missingPriceEnvKeys?.topup ?? []),
+  ];
+  return raw.filter((name) => PRICE_ENV_NAME.test(name));
+}
 
 export default function UpgradePage() {
   const [config, setConfig] = useState<CheckoutConfig | null>(null);
   // Cenník v2 len pri pricingV2.enabled === true; inak null a stránka ostáva legacy.
   const [pricingV2, setPricingV2] = useState<PricingV2ConfigPayload | null>(null);
   const [loading, setLoading] = useState(true);
+  // undefined = query ešte nečítaný; null = bez predvýberu; číslo = počet používateľov z ?plan=
+  const [preselectUsers, setPreselectUsers] = useState<number | null | undefined>(undefined);
   const [seatTier, setSeatTier] = useState<SeatTierKey>('team');
   const [seatCount, setSeatCount] = useState(3);
   const [includeCockpit, setIncludeCockpit] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPreselectUsers(usersForPlanParam(new URLSearchParams(window.location.search).get('plan')));
+  }, []);
 
   useEffect(() => {
     fetch('/api/billing/checkout-config')
@@ -124,6 +147,7 @@ export default function UpgradePage() {
   );
 
   const unavailable = !loading && !config?.checkoutAvailable && !pricingV2;
+  const missingPriceEnvNames = unavailable ? listedMissingPriceEnvKeys(config) : [];
 
   return (
     <div
@@ -156,9 +180,17 @@ export default function UpgradePage() {
         >
           <h2 className="text-lg font-semibold mb-2">Checkout momentálne nedostupný</h2>
           <p className="text-sm">
-            Stripe ceny pre seat alebo top-up balíčky nie sú nakonfigurované v tomto prostredí.
-            Kontaktujte podporu alebo skúste neskôr.
+            Checkout sa nedá spustiť, lebo v tomto prostredí chýbajú Stripe Price ID
+            pre seat alebo top-up balíčky. Hodnoty sa do stránky nedostanú — nastavujú sa
+            mimo aplikácie.
           </p>
+          {missingPriceEnvNames.length > 0 && (
+            <ul data-testid="missing-price-env" className="mt-3 list-disc pl-5 text-sm font-mono">
+              {missingPriceEnvNames.map((name) => (
+                <li key={name}>{name}</li>
+              ))}
+            </ul>
+          )}
           <Link
             href="/billing"
             className="mt-4 inline-block text-sm font-medium underline"
@@ -178,7 +210,9 @@ export default function UpgradePage() {
         </div>
       )}
 
-      {pricingV2 && <PricingV2Plans config={pricingV2} />}
+      {pricingV2 && preselectUsers !== undefined && (
+        <PricingV2Plans config={pricingV2} initialUsers={preselectUsers ?? 1} />
+      )}
 
       {!pricingV2 && config?.seatCheckoutAvailable && (
         <section
@@ -295,22 +329,24 @@ export default function UpgradePage() {
         </section>
       )}
 
+      {!pricingV2 && (
       <section
-        className="mb-8 rounded-xl border p-6"
-        style={{
-          background: WORKDESK_CARD.background,
-          borderColor: WORKDESK_CARD.borderColor,
-          boxShadow: WORKDESK_CARD.boxShadow,
-        }}
-      >
-        <h2 className="text-xl font-semibold mb-2" style={{ color: SLATE_HORIZON.ink }}>
-          Kód zo štartovacieho balíka
-        </h2>
-        <p className="text-sm mb-4" style={{ color: SLATE_HORIZON.muted }}>
-          Kúpil si maklérsky balík za 47 €? Zadaj kód z emailu — pripíšeme 47 € kreditov na účet.
-        </p>
-        <RedeemStarterPackCode />
-      </section>
+          className="mb-8 rounded-xl border p-6"
+          style={{
+            background: WORKDESK_CARD.background,
+            borderColor: WORKDESK_CARD.borderColor,
+            boxShadow: WORKDESK_CARD.boxShadow,
+          }}
+        >
+          <h2 className="text-xl font-semibold mb-2" style={{ color: SLATE_HORIZON.ink }}>
+            Kód zo štartovacieho balíka
+          </h2>
+          <p className="text-sm mb-4" style={{ color: SLATE_HORIZON.muted }}>
+            Kúpil si maklérsky balík za 47 €? Zadaj kód z emailu — pripíšeme 47 € kreditov na účet.
+          </p>
+          <RedeemStarterPackCode />
+        </section>
+      )}
 
       {pricingV2 && <PricingV2CreditsTopup config={pricingV2} />}
 

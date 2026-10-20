@@ -131,12 +131,16 @@ describe("grant-engine", () => {
     expect(mockUpdate).not.toHaveBeenCalled();
   });
 
-  it("grantMonthlyCreditsForAgency treats an RPC failure as a skip", async () => {
+  it("grantMonthlyCreditsForAgency surfaces an RPC failure as a hard error (cron must retry)", async () => {
     applyMonthlyGrantCreditsMock.mockResolvedValueOnce({ ok: false, error: "agency_not_found" });
 
     const result = await grantMonthlyCreditsForAgency(agency(), "202606");
 
-    expect(result).toEqual({ granted: 0, skipped: true });
+    expect(result).toEqual({
+      granted: 0,
+      skipped: true,
+      error: "agency_not_found",
+    });
   });
 
   it("expireGrantCreditsForAgency expires through the RPC without a stale balance", async () => {
@@ -288,12 +292,12 @@ describe("grant-engine", () => {
       });
 
     it("v2 grant = band credits + pack_credits, NOT seats x rate", () => {
-      // office 100 + 60 balík; legacy výpočet by dal 10 seatov x sadzba.
-      expect(monthlyGrantAmountForAgency(v2())).toBe(160);
-      expect(monthlyGrantAmountForAgency(v2({ seats: 500 }))).toBe(160);
-      expect(monthlyGrantAmountForAgency(v2({ pricing_band: "start", pack_credits: 0 }))).toBe(20);
-      expect(monthlyGrantAmountForAgency(v2({ pricing_band: "team", pack_credits: null }))).toBe(50);
-      expect(monthlyGrantAmountForAgency(v2({ pricing_band: "network", pack_credits: 300 }))).toBe(450);
+      // office 120 + 60 balík; legacy výpočet by dal 10 seatov x sadzba.
+      expect(monthlyGrantAmountForAgency(v2())).toBe(180);
+      expect(monthlyGrantAmountForAgency(v2({ seats: 500 }))).toBe(180);
+      expect(monthlyGrantAmountForAgency(v2({ pricing_band: "start", pack_credits: 0 }))).toBe(25);
+      expect(monthlyGrantAmountForAgency(v2({ pricing_band: "team", pack_credits: null }))).toBe(60);
+      expect(monthlyGrantAmountForAgency(v2({ pricing_band: "network", pack_credits: 300 }))).toBe(475);
       expect(monthlyGrantAmountForAgency(v2())).not.toBe(
         previewMonthlyGrant("office", 10, false),
       );
@@ -342,12 +346,12 @@ describe("grant-engine", () => {
     });
 
     it("grantMonthlyCreditsForAgency sends the v2 amount to the idempotent RPC", async () => {
-      applyMonthlyGrantCreditsMock.mockResolvedValue({ ok: true, granted: 160, skipped: false });
+      applyMonthlyGrantCreditsMock.mockResolvedValue({ ok: true, granted: 180, skipped: false });
       const result = await grantMonthlyCreditsForAgency(v2(), "202610");
-      expect(result).toEqual({ granted: 160, skipped: false });
+      expect(result).toEqual({ granted: 180, skipped: false });
       expect(applyMonthlyGrantCreditsMock).toHaveBeenCalledWith({
         agencyId: "agency-1",
-        amount: 160,
+        amount: 180,
         periodKey: "202610",
         idempotencyKey: monthlyGrantIdempotencyKey("agency-1", "202610"),
       });

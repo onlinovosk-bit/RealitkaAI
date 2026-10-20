@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { register } from "./actions";
 import { isSelfServeSignupEnabled } from "@/lib/signup/self-serve";
-import { LANDING_FOCUS_RING, LANDING_INPUT_FOCUS } from "@/lib/landing-a11y";
+import { AUTH_INPUT_CLASS, AUTH_PAGE } from "@/lib/auth-page-theme";
 
 export default async function RegisterPage({
   searchParams,
@@ -12,11 +12,16 @@ export default async function RegisterPage({
   const selfServe = isSelfServeSignupEnabled();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50 via-teal-50/40 to-white px-4 py-10">
-      <div className="mx-auto max-w-md rounded-3xl border border-teal-200/70 bg-white p-8 shadow-[0_20px_60px_rgba(15,118,110,0.08)]">
+    <div className="min-h-screen px-4 py-10" style={{ background: AUTH_PAGE.pageBackground }}>
+      <div
+        className="mx-auto max-w-md rounded-3xl border bg-white p-8"
+        style={{ borderColor: AUTH_PAGE.cardBorder, boxShadow: AUTH_PAGE.cardShadow }}
+      >
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-teal-950">Registrácia</h1>
-          <p className="mt-2 text-sm text-teal-700/80">
+          <h1 className="text-3xl font-bold" style={{ color: AUTH_PAGE.ink }}>
+            Registrácia
+          </h1>
+          <p className="mt-2 text-sm" style={{ color: AUTH_PAGE.muted }}>
             {selfServe
               ? "14 dní zadarmo, bez platobnej karty. Po skončení sa skúšobná verzia sama vypne — nič sa neúčtuje automaticky."
               : "Prvý účet sa nastaví ako owner, ďalšie ako agent."}
@@ -24,7 +29,15 @@ export default async function RegisterPage({
         </div>
 
         {selfServe && params.sent === "1" && (
-          <div data-testid="signup-sent" className="mb-4 rounded-xl border border-teal-200 bg-teal-50 p-3 text-sm text-teal-900">
+          <div
+            data-testid="signup-sent"
+            className="mb-4 rounded-xl border p-3 text-sm"
+            style={{
+              borderColor: AUTH_PAGE.cardBorder,
+              background: AUTH_PAGE.soft,
+              color: AUTH_PAGE.ink,
+            }}
+          >
             Poslali sme potvrdzovací e-mail{params.email ? ` na ${params.email}` : ""}. Kliknutím na odkaz v ňom dokončíte vytvorenie kancelárie.
           </div>
         )}
@@ -46,56 +59,71 @@ export default async function RegisterPage({
                 </label>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-teal-900">Názov kancelárie</label>
+                <label className="mb-1 block text-sm font-medium" style={{ color: AUTH_PAGE.deep }}>
+                  Názov kancelárie
+                </label>
                 <input
                   name="agencyName"
                   maxLength={120}
-                  className={`w-full rounded-xl border border-teal-200 px-4 py-3 text-sm outline-none transition-colors focus:border-teal-500 ${LANDING_INPUT_FOCUS}`}
+                  className={AUTH_INPUT_CLASS}
+                  style={{ borderColor: AUTH_PAGE.cardBorder }}
                 />
               </div>
             </>
           )}
           <div>
-            <label className="mb-1 block text-sm font-medium text-teal-900">Meno a priezvisko</label>
+            <label className="mb-1 block text-sm font-medium" style={{ color: AUTH_PAGE.deep }}>
+              Meno a priezvisko
+            </label>
             <input
               name="fullName"
               required
-              className={`w-full rounded-xl border border-teal-200 px-4 py-3 text-sm outline-none transition-colors focus:border-teal-500 ${LANDING_INPUT_FOCUS}`}
+              className={AUTH_INPUT_CLASS}
+              style={{ borderColor: AUTH_PAGE.cardBorder }}
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-teal-900">Email</label>
+            <label className="mb-1 block text-sm font-medium" style={{ color: AUTH_PAGE.deep }}>
+              Email
+            </label>
             <input
               name="email"
               type="email"
               defaultValue={params.email ?? ""}
               required
-              className={`w-full rounded-xl border border-teal-200 px-4 py-3 text-sm outline-none transition-colors focus:border-teal-500 ${LANDING_INPUT_FOCUS}`}
+              className={AUTH_INPUT_CLASS}
+              style={{ borderColor: AUTH_PAGE.cardBorder }}
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-teal-900">Telefón</label>
+            <label className="mb-1 block text-sm font-medium" style={{ color: AUTH_PAGE.deep }}>
+              Telefón
+            </label>
             <input
               name="phone"
-              className={`w-full rounded-xl border border-teal-200 px-4 py-3 text-sm outline-none transition-colors focus:border-teal-500 ${LANDING_INPUT_FOCUS}`}
+              className={AUTH_INPUT_CLASS}
+              style={{ borderColor: AUTH_PAGE.cardBorder }}
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-teal-900">Heslo</label>
+            <label className="mb-1 block text-sm font-medium" style={{ color: AUTH_PAGE.deep }}>
+              Heslo
+            </label>
             <input
               name="password"
               type="password"
               required
               minLength={selfServe ? 8 : 6}
-              className={`w-full rounded-xl border border-teal-200 px-4 py-3 text-sm outline-none transition-colors focus:border-teal-500 ${LANDING_INPUT_FOCUS}`}
+              className={AUTH_INPUT_CLASS}
+              style={{ borderColor: AUTH_PAGE.cardBorder }}
             />
           </div>
 
           {selfServe && (
-            <label className="flex items-start gap-2 text-sm text-teal-900">
+            <label className="flex items-start gap-2 text-sm" style={{ color: AUTH_PAGE.ink }}>
               <input type="checkbox" name="consent" required className="mt-1" />
               <span>
                 Súhlasím s <Link href="/legal/zmluva-o-poskytovani-softverovych-sluzieb" className="underline">podmienkami služby</Link> a{" "}
@@ -106,30 +134,30 @@ export default async function RegisterPage({
 
           <button
             type="submit"
-            className={`w-full rounded-xl px-4 py-3 text-sm font-semibold text-white transition-opacity duration-200 hover:opacity-95 ${LANDING_FOCUS_RING}`}
-            style={{ background: "linear-gradient(90deg, #0F766E 0%, #14B8A6 100%)" }}
+            className={`w-full rounded-xl px-4 py-3 text-sm font-semibold text-white transition-opacity duration-200 hover:opacity-95 ${AUTH_PAGE.focusRing}`}
+            style={{ background: AUTH_PAGE.buttonBackground }}
           >
             Vytvoriť účet
           </button>
         </form>
 
-        <p className="mt-6 text-sm text-teal-700/80">
-          Už máš účet?{" "}
-          <Link href="/login" className={`font-semibold text-teal-900 underline ${LANDING_FOCUS_RING}`}>
-            Prihlás sa
+        <p className="mt-6 text-sm" style={{ color: AUTH_PAGE.muted }}>
+          Už máte účet?{" "}
+          <Link href="/login" className={`font-semibold underline ${AUTH_PAGE.focusRing}`} style={{ color: AUTH_PAGE.brandDeep }}>
+            Prihláste sa
           </Link>
         </p>
-        <p className="mt-4 text-xs text-teal-700/70">
+        <p className="mt-4 text-xs" style={{ color: AUTH_PAGE.muted }}>
           Pokračovaním súhlasíte s{" "}
-          <Link href="/terms" className="underline text-teal-800">
+          <Link href="/terms" className="underline" style={{ color: AUTH_PAGE.brand }}>
             VOP
           </Link>{" "}
           a beriete na vedomie{" "}
-          <Link href="/privacy-policy" className="underline text-teal-800">
+          <Link href="/privacy-policy" className="underline" style={{ color: AUTH_PAGE.brand }}>
             Privacy Policy
           </Link>
           {" · "}
-          <Link href="/cookie-policy" className="underline text-teal-800">
+          <Link href="/cookie-policy" className="underline" style={{ color: AUTH_PAGE.brand }}>
             Cookie Policy
           </Link>
           .

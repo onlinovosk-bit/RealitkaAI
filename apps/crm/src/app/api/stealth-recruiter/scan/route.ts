@@ -12,6 +12,7 @@ import {
   upsertStealthProspects,
 } from "@/lib/stealth-recruiter/store";
 import type { StealthProspect } from "@/types/acquisition-hub";
+import { cityOnly } from "@/lib/privacy/minimize";
 
 type CommentItem = { id: string; comment: string };
 
@@ -48,7 +49,9 @@ Kandidáti:
 ${prospects
   .map(
     (p) =>
-      `- ${p.id}: ${p.address}, ${p.daysListed} dní inzeruje, znížil cenu o ${p.priceDropPercent}%`,
+      // BOD 9 (PII): von ide mesto, nie ulica a číslo domu. Komentár
+      // o vhodnosti kandidáta presnú adresu nepotrebuje.
+      `- ${p.id}: ${cityOnly(p.address) || 'neuvedená lokalita'}, ${p.daysListed} dní inzeruje, znížil cenu o ${p.priceDropPercent}%`,
   )
   .join("\n")}`;
 

@@ -3,7 +3,7 @@
 // Server-side compute, history, and notification dispatch
 // ================================================================
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { createClient }        from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { logEvent }            from '@/lib/events/log-event'
 import type {
   BRIScoreV2, BRIComputeResult, BRIHistoryPoint, BRIConfig
@@ -20,7 +20,9 @@ export async function computeBRI(
   triggerEvent: string = 'manual'
 ): Promise<BRIComputeResult | null> {
   try {
-    const supabase = await createClient()
+    // SECURITY DEFINER RPC s p_profile_id od volajúceho — EXECUTE má iba
+    // service_role (balík D); profileId overuje volajúca route / webhook.
+    const supabase = createAdminClient()
 
     const { data, error } = await supabase
       .rpc('compute_bri_score_v2', {

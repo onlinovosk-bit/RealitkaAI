@@ -29,15 +29,17 @@ export type PricingV2BandView = {
   id: string
   label: string
   usersLabel: string
-  /** napr. „60 €“ alebo „od 349 €“ */
+  /** napr. „65 €“ alebo „od 74 €“ */
   netLabel: string
   /** napr. „73,80 € s DPH“ */
   grossLabel: string
   creditsLabel: string
+  /** zahrnuté funkcie plánu (kumulatívne: „Všetko z …“); text vychádza z už verejných tvrdení o produkte */
+  features: string[]
   /** napr. „Ročne 300 € bez DPH (369 € s DPH)“; Sieť s predponou „od“ */
   annualLabel: string
   isFromPrice: boolean
-  /** adresa CTA: registrácia v CRM (alebo demo pri objemovom pásme Sieť) */
+  /** adresa CTA: registrácia v CRM (alebo demo pri „od“ pásmach Kancelária a Sieť) */
   ctaHref: string
   ctaLabel: string
   /** true = CTA vedie na demo (Calendly), nie do registrácie */
@@ -97,6 +99,22 @@ export function buildRegisterUrl(crmUrl: string, params: { plan?: string; pack?:
   return `${safeCrmUrl(crmUrl)}${V2_REGISTER_PATH}?${q.toString()}`
 }
 
+/**
+ * Funkcie plánov. Cena sa líši počtom používateľov a kreditmi, funkcie sú kumulatívne. Nové tvrdenia sem
+ * nepridávať bez toho, aby fungovali v produkte (nesľubovať nedokončené ako hotové).
+ */
+const V2_BAND_FEATURES: Record<string, string[]> = {
+  start: [
+    'Denný briefing priorít',
+    'Skóre pripravenosti kúpy (BRI)',
+    'AI návrhy odpovedí na schválenie',
+    'Dopyty z portálov na jednom mieste',
+  ],
+  team: ['Všetko zo Start', 'Tímový prehľad pre majiteľa', 'Ranný report pre celý tím'],
+  office: ['Všetko z Team', 'Prioritná podpora'],
+  network: ['Všetko z Kancelárie'],
+}
+
 function usersLabel(min: number, max: number | null): string {
   if (max === null) return `${min}+ používateľov`
   if (min === max) return min === 1 ? '1 používateľ' : `${min} používatelia`
@@ -124,6 +142,7 @@ export function buildPricingV2View(
         netLabel: `${b.isFromPrice ? 'od ' : ''}${formatEurCents(b.netCents)}`,
         grossLabel: `${b.isFromPrice ? 'od ' : ''}${formatEurCents(b.grossCents)} s DPH`,
         creditsLabel: `${b.monthlyCredits} kreditov mesačne pre celú kanceláriu`,
+        features: V2_BAND_FEATURES[b.id] ?? [],
         annualLabel: `Ročne ${b.isFromPrice ? 'od ' : ''}${formatEurCents(b.annual.netCents)} bez DPH (${b.isFromPrice ? 'od ' : ''}${formatEurCents(b.annual.grossCents)} s DPH)`,
         isFromPrice: b.isFromPrice,
         ctaIsDemo,

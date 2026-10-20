@@ -65,6 +65,24 @@ export function collectRequestHeaders(request: NextRequest): Record<string, stri
   const headersMap: Record<string, string> = {};
   request.headers.forEach((value, key) => {
     headersMap[key] = isSensitiveHeaderName(key.toLowerCase()) ? '[REDACTED]' : value;
+    const lower = key.toLowerCase();
+    if (
+      lower === 'x-revolis-secret' ||
+      lower === 'authorization' ||
+      lower === 'forwarded' ||
+      lower === 'x-vercel-oidc-token' ||
+      lower === 'x-vercel-proxy-signature' ||
+      lower === 'x-vercel-proxy-signature-ts' ||
+      lower === 'x-vercel-sc-headers' ||
+      lower.includes('password') ||
+      lower.includes('secret') ||
+      lower.includes('signature') ||
+      lower.includes('token')
+    ) {
+      headersMap[key] = '[REDACTED]';
+    } else {
+      headersMap[key] = value;
+    }
   });
   return headersMap;
 }

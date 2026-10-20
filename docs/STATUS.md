@@ -4,6 +4,10 @@
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-05, 07:55 UTC** (FAIL-OPEN-SWEEP + TRIAL-GATE-CLOSED variant A: po vypršaní trialu je účet read-only, nie otvorený; hlavička prepočítaná z tabuľky 53 % → 51 %).
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 08:30 UTC** (EVENTS-WIRE + CRON-ALIVE, zatiaľ nezmergované).
 
+> **2026-10-16 (víkend, bez prepočtu tabuľky):** vážené **≈ 51 %** ostáva meranie z **2026-10-05**. **ZMERANÉ** `git rev-list --count origin/main --since=2026-10-05` na `9168d583` = **34** commitov. SESSION blok nižšie už má body 1, 2, 3, 4, 5, 9 a 10 odškrtnuté s PR na main (#851, #852, #855, #856, #858, #857, #854). Predaj / platby ostáva **0 %**, lebo live Stripe katalóg je v tomto behu **NEZMERANÉ** (žiaden live kľúč, `scripts/ops/stripe-verify-prices.sh` sa nespúšťal). Tabuľka sa neprepočítava, kým nie je živý nákup.
+>
+> **2026-10-08 SIGNUP-PROD:** migrácie SIGNUP-ARCH a pricing v2 stĺpce sú **aplikované na PROD** (dôkaz v `docs/architecture/2026-10-06-self-serve-signup.md`). Zavreté 2 nové cesty (zápis billing/trial stĺpcov agentúry z prehliadača; zhoda neoverený e-mail → tenant). Tabuľka nižšie sa NEPREPOČÍTAVA, kým nie je aj živý nákup (váha Predaj/platby 30).
+>
 > **2026-10-06 SIGNUP-ARCH:** kód + migrácia + TEST dôkaz (guard, bootstrap, hardening) pripravené, **na PROD neaplikované → tabuľka nižšie sa NEMENÍ** (percentá rastú až s PROD dôkazom: živé ceny + webhook → „Predaj/platby"; aplikovaná migrácia → „Tenantová izolácia" a „Schéma + nasadenie"). Pozri `docs/architecture/2026-10-06-self-serve-signup.md`.
 
 ## Celkom: ≈ 51 %  (odhad, prepočítané z tabuľky nižšie)
@@ -37,20 +41,13 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: Demand OS — D1 + D4 v PROD, merané
+Cieľ: Recolor www.revolis.ai (apps/marketing) na navy + gold paletu — draft PR, bez merge
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] D1 kód + Demand Contract v1 (#749)
-- [x] PII oprava LLM volaní (#750)
-- [x] Audit + kontrakt D1→D4 + Truth Matrix (#745)
-- [x] MEMORY-GUARD (#766)
-- [x] D4 matching kód (#769)
-- [x] Backfill vstup z historických e-mailov (#770)
-- [x] PROD migrácie D1 + D4 (overené 2026-10-02: tabuľky `lead_demands`, `demand_property_matches` existujú, 0 riadkov)
-- [ ] Anthropic v DPA + `/legal/sub-processors` (founder/právnik)
-- [ ] Backfill beh nad e-mailmi + gold labels + `score` (founder)
-- [ ] D1 verdikt PASS (z výstupu `score`)
-- [ ] `DEMAND_EXTRACTION_ENABLED` na PROD + zmerané
-- [ ] `DEMAND_MATCHING_ENABLED` + `demand-match-run --apply`
+- [x] 1 — Tokeny v `public/palette.css` + WCAG AA namerané (headline 16.58, muted 9.27, gold CTA 9.50)
+- [x] 2 — Paleta aplikovaná na `/` (`public/index.html`), `/demo`, `/balik` a landing-v2; copy/ceny/CTA/SEO nedotknuté
+- [x] 3 — `npx vitest run` 60/60 + `next build --webpack` zelený v tomto turne
+- [x] 4 — Before/after screenshoty desktop+mobile pre `/`, `/demo`, `/balik`
+- [x] 5 — Draft PR (bez merge)
 <!-- SESSION:END -->
 
 ## Hotové 2026-10-07 — s dôkazom (REALVIA-SEC-01)

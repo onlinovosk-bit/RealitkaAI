@@ -1,6 +1,6 @@
 # Samoobslužné založenie agentúry (SIGNUP-ARCH) — 2026-10-06
 
-Stav: **kód + migrácia pripravené, NIČ nenasadené, vlajka vypnutá.** Aplikovanie na PROD len na výslovné GO.
+Stav (2026-10-08): **migrácie aplikované na PROD (po výslovnom GO foundera), vlajky vypnuté.** Pôvodný stav: kód + migrácia pripravené, nenasadené.
 
 ## Rozhodnutia foundera
 - B: skúška **bez karty, 14 dní plný Revolis**, po skončení sa sama vypne (read-only, nič sa neúčtuje automaticky).
@@ -38,3 +38,17 @@ Kód: 27 testov (`src/lib/signup`, `register/__tests__`), mutačný dôkaz 6/6 (
 - Výška skúšobných kreditov (C) — founder.
 - Google OAuth, VOP/refund text pre ročné platenie, predvýber plánu na `/upgrade`.
 - Odovzdanie trialu do `canUseFullApp` používa existujúcu `getTrialGraceState` (zmena len v zdroji konca trialu; po vypršaní read-only podľa #817).
+
+
+## Aplikácia na PROD (2026-10-08, projekt `ypgajkhqtbriqqmyawyv`)
+Aplikované v malých idempotentných krokoch (nástroj SQL na PROD čaká na potvrdenie pri `DROP`, preto `CREATE OR REPLACE TRIGGER`):
+1. `20261005120000 pricing_v2_agency_columns` + stĺpce `trial_ends_at`, `created_via` na `agencies` (aditívne). PROD ich dovtedy nemal vôbec (ani pricing v2 stĺpce).
+2. `account_signups` (RLS zapnuté, `anon`/`authenticated` bez prístupu).
+3. `bootstrap_self_serve_agency` (EXECUTE len `service_role`; plán sa zakladá ako `Free`, ako ostatné agentúry na PROD).
+4. trigger `agencies_guard_protected_columns`.
+5. `profile_agencies_for_auth` len pre overený e-mail.
+6. záznam do `supabase_migrations.schema_migrations` (`20261005120000`, `20261006120000`).
+
+**Dôkaz pred/po (PROD):** 7 agentúr a 23 profilov; hash existujúcich riadkov agentúr (bez nových stĺpcov) `625ce4a7…` aj profilov `cf882d7f…` identický pred aj po; 0 riadkov s novými hodnotami; po testoch 0 testovacích používateľov (294 auth používateľov ako predtým).
+**Funkčné testy na PROD (v transakcii s rollbackom):** PASS T2–T11, T14 a guard: používateľ s rolou `authenticated` zmenil `name`, ale `plan` (`Free`), `seats` (0), `credits_balance` (0) a `trial_ends_at` ostali.
+Nepodarilo sa overiť: „Confirm email“ v Supabase Auth (konfigurácia mimo SQL), skutočný signup cez e-mail, vetvu `service_role` guardu (čítaním kódu).

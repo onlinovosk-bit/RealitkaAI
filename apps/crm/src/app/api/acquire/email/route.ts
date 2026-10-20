@@ -23,6 +23,8 @@ import { INBOUND_REPLY_DRAFT_TIMEOUT_MS, scheduleInboundReplyDraft } from "@/lib
 import { describeError } from "@/lib/log-safe";
 import { mailboxLogEvent } from "@/lib/inbound/mailbox-routing";
 import { buildMailOutcomeRow, recordInboundMailOutcome } from "@/lib/inbound/mail-outcome";
+import { logEvent } from "@/lib/events/log-event";
+import { resolveProfileForLead } from "@/lib/events/email-engagement";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -451,6 +453,44 @@ export async function POST(req: NextRequest) {
     }
 
     // `last_received_at` sa zapisuje už v kroku 3b — pri každom prijatom maili, nielen tu.
+
+    // `public.events` ostane prázdna, kým vznik leadu nezavolá existujúci zapisovateľ.
+    // Webhook `processInboundLead` to robí; táto živá cesta doteraz nie. Zápis je
+    // fail-soft: padnutý event nesmie z už vloženého leadu spraviť 500.
+    // `profile_id` je NOT NULL. Schránka agentúry makléra nemá — záloha je
+    // existujúce `resolveProfileForLead` (priradený profil, inak aktívny profil
+    // agentúry). Bez profilu sa event nezapíše a lead ostane.
+    try {
+      let profileId = owner?.profileId ?? null;
+      if (!profileId) {
+        const resolved = await resolveProfileForLead(supa, String(lead.id));
+        profileId = resolved.profileId;
+        if (!profileId) {
+          console.error("[acquire.email] lead_created event skipped:", resolved.reason);
+        }
+      }
+      if (profileId) {
+        await logEvent({
+          // Bez service-role klienta RLS insert odmietne (žiadna session).
+          client: supa,
+          profileId,
+          entityType: "lead",
+          entityId: String(lead.id),
+          eventType: "lead_created",
+          payload: {
+            source: candidate.source,
+            channel: "email",
+            has_email: candidate.email.length > 0,
+            has_phone: candidate.phone.length > 0,
+          },
+        });
+      }
+    } catch (eventErr) {
+      console.error(
+        "[acquire.email] lead_created event failed:",
+        eventErr instanceof Error ? eventErr.message : String(eventErr),
+      );
+    }
 
     await runInboundLeadTriageAndNotify(supa, lead, candidate);
     await runInboundLeadAutoResponse(supa, lead, candidate);

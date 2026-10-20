@@ -48,7 +48,11 @@ export type UsageMetricName =
   | "lead_contact_attempt"
   // DEMAND-D4: a broker opened the verified-demand matches on a lead — the
   // "opened" step of the matching funnel (matching-input-contract-v1 §4).
-  | "demand_matches_view";
+  | "demand_matches_view"
+  // MORNING-BRIEF-UI-01: maklér si uložil nastavenie ranného prehľadu. Počíta
+  // sa preto, že do 2026-10-15 nebolo kde to nastaviť a tabuľka mala nula
+  // riadkov — bez tohto čísla sa nedá povedať, či sa to po nasadení zmenilo.
+  | "morning_brief_settings_save";
 
 /**
  * Inkrementuje denný počítadlo cez RPC (service role).

@@ -16,11 +16,18 @@ describe('collectRequestHeaders', () => {
       makeRequest({
         'x-revolis-secret': 'top-secret',
         authorization: 'Bearer abc',
+        authorization: 'Bearer cron-secret',
+        'x-vercel-oidc-token': 'oidc-token',
+        'x-vercel-proxy-signature': 'proxy-signature',
+        'x-vercel-sc-headers': '{"Authorization":"Bearer internal"}',
         'content-type': 'application/json',
       }),
     );
     expect(headers['x-revolis-secret']).toBe('[REDACTED]');
     expect(headers.authorization).toBe('[REDACTED]');
+    expect(headers['x-vercel-oidc-token']).toBe('[REDACTED]');
+    expect(headers['x-vercel-proxy-signature']).toBe('[REDACTED]');
+    expect(headers['x-vercel-sc-headers']).toBe('[REDACTED]');
     expect(headers['content-type']).toBe('application/json');
   });
 

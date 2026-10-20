@@ -95,7 +95,7 @@ BEGIN
   v_slug := v_slug_base || '-' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 6);
 
   INSERT INTO public.agencies (name, slug, plan, seats, account_tier, billing_source, is_active, trial_ends_at, created_via)
-  VALUES (v_name, v_slug, 'free', 0, 'free', 'self_serve', true, now() + make_interval(days => v_days), 'self_serve')
+  VALUES (v_name, v_slug, 'Free', 0, 'free', 'self_serve', true, now() + make_interval(days => v_days), 'self_serve')
   RETURNING id INTO v_agency_id;
 
   INSERT INTO public.profiles (agency_id, team_id, full_name, email, role, phone, is_active, auth_user_id)

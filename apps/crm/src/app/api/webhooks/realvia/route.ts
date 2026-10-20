@@ -26,6 +26,11 @@ import { buildRealviaInboundConfigSnapshot } from '@/lib/realvia/inboundDiagnost
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+function hasCronAuthorization(request: NextRequest): boolean {
+  const cronSecret = process.env.CRON_SECRET?.trim();
+  return Boolean(cronSecret && request.headers.get('authorization') === `Bearer ${cronSecret}`);
+}
+
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
   let requestId = crypto.randomUUID();
@@ -188,6 +193,14 @@ export async function GET(request: NextRequest) {
   }
 
   if (dumpHeaders) {
+ * Diagnostic views require cron authorization.
+ */
+export async function GET(request: NextRequest) {
+  if (request.nextUrl.searchParams.get('dump') === 'headers') {
+    if (!hasCronAuthorization(request)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     return NextResponse.json({
       service: 'realvia-webhook',
       ip: extractClientIP(request),
@@ -197,6 +210,11 @@ export async function GET(request: NextRequest) {
   }
 
   if (diagConfig) {
+  /** Operator checklist — same auth as cron (`Authorization: Bearer $CRON_SECRET`). No secrets in body. */
+  if (request.nextUrl.searchParams.get('diag') === 'config') {
+    if (!hasCronAuthorization(request)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const snapshot = buildRealviaInboundConfigSnapshot();
     return NextResponse.json({
       service: 'realvia-webhook',

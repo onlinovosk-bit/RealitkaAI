@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { supabaseClient } from "@/lib/supabase/client";
 import { getPasswordRecoveryRedirectUrl } from "@/lib/supabase/recovery-redirect";
-import { LANDING_FOCUS_RING, LANDING_INPUT_FOCUS } from "@/lib/landing-a11y";
+import { AUTH_INPUT_CLASS, AUTH_PAGE } from "@/lib/auth-page-theme";
 
 const RECOVERY_REDIRECT = getPasswordRecoveryRedirectUrl();
 
@@ -32,12 +32,19 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-sky-50 via-teal-50 to-white px-4 py-10">
-      <section className="w-full max-w-md rounded-3xl border border-teal-200 bg-white p-7 shadow-xl">
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-600">Revolis.AI</p>
-        <h1 className="mt-2 text-2xl font-bold text-teal-950">Zabudnuté heslo</h1>
-        <p className="mt-2 text-sm text-teal-700">
-          Pošleme ti e-mail s odkazom na nastavenie nového hesla.
+    <main className="flex min-h-screen items-center justify-center px-4 py-10" style={{ background: AUTH_PAGE.pageBackground }}>
+      <section
+        className="w-full max-w-md rounded-3xl border bg-white p-7"
+        style={{ borderColor: AUTH_PAGE.cardBorder, boxShadow: AUTH_PAGE.cardShadow }}
+      >
+        <p className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: AUTH_PAGE.brand }}>
+          Revolis.AI
+        </p>
+        <h1 className="mt-2 text-2xl font-bold" style={{ color: AUTH_PAGE.ink }}>
+          Zabudnuté heslo
+        </h1>
+        <p className="mt-2 text-sm" style={{ color: AUTH_PAGE.muted }}>
+          Pošleme vám e-mail s odkazom na nastavenie nového hesla.
         </p>
 
         {done ? (
@@ -45,8 +52,8 @@ export default function ForgotPasswordPage() {
             role="status"
             className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800"
           >
-            Ak účet s týmto e-mailom existuje, odkaz na obnovenie hesla už je na ceste. Skontroluj aj
-            spam. Odkaz platí obmedzený čas a dá sa použiť raz.
+            Ak účet s týmto e-mailom existuje, odkaz na obnovenie hesla už je na ceste. Skontrolujte aj
+            priečinok so spamom. Odkaz platí obmedzený čas a dá sa použiť raz.
           </div>
         ) : (
           <form onSubmit={submit} className="mt-5 space-y-4">
@@ -55,7 +62,7 @@ export default function ForgotPasswordPage() {
                 {error}
               </div>
             )}
-            <label className="block text-sm font-medium text-teal-900">
+            <label className="block text-sm font-medium" style={{ color: AUTH_PAGE.deep }}>
               E-mail
               <input
                 type="email"
@@ -63,21 +70,27 @@ export default function ForgotPasswordPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className={`mt-1 w-full rounded-xl border border-teal-200 px-4 py-3 outline-none focus:border-teal-500 ${LANDING_INPUT_FOCUS}`}
+                className={`mt-1 ${AUTH_INPUT_CLASS}`}
+                style={{ borderColor: AUTH_PAGE.cardBorder }}
                 placeholder="jan@realitka.sk"
               />
             </label>
             <button
               type="submit"
               disabled={loading}
-              className={`w-full rounded-xl bg-teal-700 px-4 py-3 font-bold text-white disabled:opacity-50 ${LANDING_FOCUS_RING}`}
+              className={`w-full rounded-xl px-4 py-3 font-bold text-white disabled:opacity-50 ${AUTH_PAGE.focusRing}`}
+              style={{ background: AUTH_PAGE.buttonBackground }}
             >
               {loading ? "Odosielam…" : "Poslať odkaz na obnovenie"}
             </button>
           </form>
         )}
 
-        <Link href="/login" className={`mt-5 inline-block text-sm font-semibold text-teal-800 underline ${LANDING_FOCUS_RING}`}>
+        <Link
+          href="/login"
+          className={`mt-5 inline-block text-sm font-semibold underline ${AUTH_PAGE.focusRing}`}
+          style={{ color: AUTH_PAGE.brandDeep }}
+        >
           Späť na prihlásenie
         </Link>
       </section>
