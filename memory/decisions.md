@@ -1,5 +1,14 @@
 # Critical Decisions Log
 
+## 2026-10-20 — BRI-ONCONFLICT zmergovaný + nález: brána `gdpr-advisor` neexistuje (BUILD)
+**GO:** founder „GO BRI-ONCONFLIC" a „merguj 885, 888, 889". Všetky tri na `main`, CI zelené na aktuálnej hlave pred každým mergom:
+`#885 → 26eafd9` · `#888 → d25c101` · `#889 → 5ab3da4`. Obsah overený na `main` po mergi (migrácia, testy, reporty, `deriveCronStatus`).
+**#889 si vyžiadal dve kolá riešenia konfliktu** (memory súbory, po každom pohybe `main`). Obe strany zachované — strážny skript potvrdil `+11 −0` a `+19 −0`, žiadne mazanie histórie. Push s `WALL_PUSH_OK=1`, dôvod: odblokovanie konfliktu na vlastnom PR pod explicitným GO na merge.
+**Migrácia `20261020050000_bri_onconflict_lead_id.sql` je na `main`, ale NIE JE aplikovaná na PROD.** Čaká na samostatné GO. Dokiaľ sa neaplikuje, `compute_bri_score` aj `v2` v PROD stále padajú — merge ten pád neodstránil.
+**Nový nález (ZMERANÉ, `find . -name SKILL.md`):** CLAUDE.md direktíva 5 predpisuje spustiť skill **`gdpr-advisor`** pred každou funkciou dotýkajúcou sa osobných/externých dát. **Taký skill neexistuje.** V repozitári sú štyri: `kontrolor`, `rau`, `strategic-analysis`, `task-loop` (+ `.cursor/skills/ui-ux-pro-max`). Na `gdpr-advisor` sa pritom odvoláva 10 dokumentov vrátane `docs/rau/prompts/P06-data-event-contract.md` a `RAU-v1.0.md`. Povinná brána, ktorú nemožno spustiť, nie je brána — pri katastri a portáloch je to presne tá vrstva, ktorá sa nedá nahradiť pluginom z katalógu. Otvorené s bránou `GO GDPR-ADVISOR`.
+**Odpoveď na otázku o „Skills Vault":** čo senior inžinieri „bežne používajú" som nemeral a netvrdím to — telemetria inštalácií nie je čitateľná. Zmerané je len: 4 skilly + 6 hookov v tomto repe, a skutočný obsah katalógu (Billing Plane so `stripe-billing` a agentom `webhook-validator`; backlog s cross-session hookmi; claude-code-review-council; Security Audit Loop; finecomb; Engineering; Flow). Odporúčanie **Billing Plane** — jediné, čo mieri na zmeranú dieru (0 predplatných pri 7 agentúrach), teda na Prime Directive.
+**Otvorené s GO bránou:** `GO PROD-MIGRACIE` (20261020050000 + 20260617120000, mapovanie ciest + dôkaz pred/po) · `GO GDPR-ADVISOR` · zmazanie mŕtveho kódu (harness blokuje) · Stripe krok C, `RESEND_API_KEY`, šesť `GOOGLE_GMAIL_INBOUND_*`.
+
 ## 2026-10-20 — www.revolis.ai navy + gold paleta (BUILD, draft)
 **GO:** zadanie Cloud Agent — recolor len `apps/marketing`, draft PR, nemergovať. **RAU:** AUTO-SAFE CONTENT.
 **Ústava v2:** vizuál existujúceho webu, nie nová featura. Timing OK (kampaň `/` beží). Q1 neplatí ako veto — nálada predajnej stránky.
