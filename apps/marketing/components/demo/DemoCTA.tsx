@@ -50,9 +50,9 @@ export default function DemoCTA({ variant = 'hero' }: Props) {
   return (
     <>
       <div className="demo-cta-band">
-        <h2>Dnes v noci prídu dopyty.<br />Kto odpovie prvý, berie províziu.</h2>
+        <h2>Dnes v noci prídu dopyty.<br />Ráno ich máte v CRM, nie v schránke.</h2>
         <p>
-          Revolis.AI ukáže maklérom komu zavolať ako prvému a stráži follow-upy — bez ďalšieho CRM na učenie.
+          Revolis.AI uloží dopyty z portálových e-mailov a pripraví text inzerátu — bez ďalšieho CRM na učenie.
         </p>
         <div className="demo-cta-row">
           <button

@@ -1,3 +1,31 @@
+## Session 2026-10-20 (speed / time-saving VP — CI ratchet)
+### Dokončené
+- `POST /api/ai/listing-from-photos` volá `incrementUsageMetric({ metric: "ai_openai_tokens", delta: input+output })` — Code Contract Guard na `91d02da7` padol (1 nové porušenie vs baseline 523).
+- Lokálne `check-api-contract.mjs --ci` → 0 nových; listing-from-photos 17/17, po assertion 10/10.
+### Rozpracované / Pending
+- Draft PR #892 (bez merge). CI `Zmluva kódu` po tomto pushi. Flag PROD len na GO.
+### Kľúčové súbory zmenené
+- `apps/crm/src/app/api/ai/listing-from-photos/route.ts`: telemetry po úspešnom vision.
+### Ďalší krok
+Founder review #892; merge a `LISTING_FROM_PHOTOS_V0=1` len na výslovné GO.
+
+## Session 2026-10-20 (speed / time-saving VP)
+### Dokončené
+- RAU route: GO_REQUIRED BUILD revolis (merge/PROD/secrets/pricing v zadaní; tie kroky som neurobil).
+- Roadmap: `docs/strategy/2026-10-20-speed-time-saving-roadmap.md` — audit vs AIRAmax (exists / partial / missing).
+- Phase 1: `POST /api/ai/listing-from-photos` za `LISTING_FROM_PHOTOS_V0` (default OFF), auth + tenant + `listingDescription` kredit, mock adapter.
+- UI `/inzerat-generator` ukáže fotky len pri zapnutom flagu.
+- Landing copy (SK) okolo rýchlosti; ceny v3 a navy+gold paleta nedotknuté; žiadny klaim Phase 1 / Studio.
+- Testy: CRM 3591 passed (bez RLS/DB), marketing 61/61; oba next build zelené.
+### Rozpracované / Pending
+- Draft PR (bez merge). Zapnutie `LISTING_FROM_PHOTOS_V0=1` na PROD len na GO foundera.
+### Kľúčové súbory zmenené
+- `docs/strategy/2026-10-20-speed-time-saving-roadmap.md`: audit + fázy.
+- `apps/crm/src/app/api/ai/listing-from-photos/route.ts`: flag + auth + tenant + kredity.
+- `apps/marketing/public/index.html`: hero/benefity na rýchlosť.
+### Ďalší krok
+Founder review draft PR; merge a PROD flag len na výslovné GO.
+RAU route: GO_REQUIRED BUILD revolis
 ## Session 2026-10-20 (preflight audit dodávky + tri opravy na PROD-ceste)
 ### Dokončené
 - `docs/reports/2026-10-18-vlna-a-realvia-zlyhania.md`, `…-vlna-b-mrtvy-kod-a-fantomy.md` — vlny A/B prepísané z meraných dát (#882).

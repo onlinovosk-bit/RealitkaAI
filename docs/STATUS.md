@@ -41,6 +41,14 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
+Cieľ: Speed / time-saving VP — roadmap + Phase 1 (listing z fotiek, flag OFF) + www copy — jeden draft PR, bez merge
+> % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
+- [x] 1 — Roadmap `docs/strategy/2026-10-20-speed-time-saving-roadmap.md` (audit exists/partial/missing vs AIRAmax)
+- [x] 2 — Phase 1: `POST /api/ai/listing-from-photos` za `LISTING_FROM_PHOTOS_V0` (default OFF), auth + tenant + kredity
+- [x] 3 — UI `/inzerat-generator` + unit/integration/verification testy
+- [x] 4 — Landing copy (SK) okolo rýchlosti; ceny v3 a paleta navy+gold nedotknuté; žiadny klaim Phase 1
+- [x] 5 — Testy + build zelené v tomto turne (CRM 3591 passed bez RLS/DB; marketing 61/61; oba `next build` zelené)
+- [x] 6 — Draft PR #892 (bez merge)
 Cieľ: Preflight audit dodávky + tri opravy na PROD-ceste (Realvia príčiny, pravda v cron_runs, BRI ON CONFLICT)
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
 - [x] 1 — Vlny A/B: reporty z meraných dát, nie z agentov (#882 zmergovaný)
