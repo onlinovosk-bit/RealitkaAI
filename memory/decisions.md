@@ -1,3 +1,21 @@
+## 2026-10-20 — GO PROD-MIGRACIE: BRI beží v PROD; jeden DROP INDEX ostáva founderovi (PROD ZMENA)
+**GO:** founder „GO PROD-MIGRACIE". Projekt `ypgajkhqtbriqqmyawyv` (identita overená v tom istom spojení: 7 agentúr, 524 leadov, 164 ponúk). Plný rozpis: `docs/reports/2026-10-20-prod-migracie-bri-a-source-id.md`.
+**Migrácia A `20261020050000` — CELÁ, a dokázane funguje.** Nie „text sa zmenil", ale skutočné volania v PROD: `compute_bri_score` → 12 (a 12 aj na druhé volanie, teda vetva `ON CONFLICT`, ktorá predtým padala), `compute_bri_score_v2` → new 16 / old 0 / delta 16, druhé volanie new 16 / old 16 / delta 0. **`lead_scores` 0 → 2 riadky, `bri_score_history` 2 záznamy** — dovtedy nevzniklo ani jedno BRI skóre. Zachované `secdef=true`, `owner=postgres`, `service_role=X`, signatúry.
+**Migrácia B `20260617120000` — všetko okrem jedného príkazu.** Prešlo: 5× `profiles.import_*`, `uq_profiles_uc_import_source`, 18× `properties` ADD COLUMN (no-op, už existovali), `realsoft_import_logs.result_code` (no-op), `import_jobs_source_check` + `uc` a `realvia-json`, a **`idx_properties_tenant_source_unique` založený**. NEPREŠLO: `DROP INDEX idx_properties_source_id_unique`.
+**Prečo neprešlo a čo som NEurobil:** MCP nástroj púšťa deštruktívne príkazy cez potvrdenie, ktoré sa do session nedostane → 60 s timeout a rollback, overené 3×; každý iný krok vrátane `DROP CONSTRAINT` prešiel okamžite. Obísť sa to dá dynamickým SQL v `DO` bloku — **neurobil som to**, bezpečnostná brána sa neobchádza. Founder spustí jeden riadok v SQL editore. **Kým to nespraví, dve agentúry stále nemôžu mať tú istú inzerátovú id** — septembrová príčina trvá, hoci nový index už existuje vedľa.
+**Zmena oproti súboru migrácie:** nový index sa zakladá PRED zrušením starého, aby nevzniklo okno bez ochrany. Výsledný stav identický.
+**Ledger zámerne neúplný:** do `schema_migrations` šla len `20261020050000`. `20260617120000` tam nie je a nemá byť, kým nedobehne `DROP INDEX` — inak by ledger klamal. Migrácia je idempotentná, takže sa dá prehnať znova.
+**Pre-flight, ktorý to umožnil (merané pred zápisom):** `idx_properties_source_id_unique` nie je krytý constraintom; 0 duplicitných skupín na trojici; 0 riadkov so `source_id NOT NULL` a `agency_id NULL` (nikto nestráca pokrytie); `import_jobs` má len `realvia`; obe funkcie majú vzor `ON CONFLICT (profile_id, lead_id)` práve 1× a `DO UPDATE SET` 1×, takže `replace` nemá čo iné zasiahnuť. Kód už dnes upsertuje per tenant (`processQueue.ts:217`) a **nikde v `apps/crm/src` nie je `onConflict` na `source_id`** — zrušenie globálneho indexu nerozbije žiadnu zapisovaciu cestu.
+**Vedľajší nález (nedotknuté):** `realvia_schema_health()` hlási kľúč podľa starého názvu indexu, po dokončení sa preklopí na `false` pri správnej schéme. Nikto tú funkciu nevolá (0 volajúcich v repe) → zastaralý signál, nie porucha.
+**Otvorené s GO bránou:** `DROP INDEX` (founder, SQL editor) → potom zápis `20260617120000` do ledgera · `GO GDPR-ADVISOR` (skill z direktívy 5 neexistuje) · zmazanie mŕtveho kódu · Stripe krok C.
+
+## 2026-10-20 — Speed / time-saving VP + listing z fotiek (BUILD, draft)
+**GO:** founder (Andrej) — zmena value proposition na rýchlosť a úsporu času; jeden draft PR, **nikdy merge**; ceny v3 nemením.
+**RAU:** GO_REQUIRED BUILD revolis (merge / production / secrets / pricing v texte). Merge, PROD env a ceny som neurobil.
+**Ústava v2:** BUILD. Q1 = founder povedal, že AIRAmax vyhráva týmito funkciami. Q8 = teraz. Phase 1 = EXTEND existujúceho listing generatora (Claude vision), nie nové Studio.
+**Rozhodnutie:** roadmap + `LISTING_FROM_PHOTOS_V0` (default OFF) + www copy len o LIVE funkciách. Staging / reel / pôdorys označené missing / not feasible.
+**Výstup:** `docs/strategy/2026-10-20-speed-time-saving-roadmap.md`, `docs/reports/2026-10-20-speed-time-saving.md`.
+
 # Critical Decisions Log
 
 ## 2026-10-20 — BRI-ONCONFLICT zmergovaný + nález: brána `gdpr-advisor` neexistuje (BUILD)
@@ -6632,3 +6650,132 @@ neoverím: či je endpoint registrovaný na `email.opened` a `email.clicked`,
 a či je pre odosielaciu doménu zapnuté Open/Click tracking (v Resende je
 vypnuté by default). `RESEND_WEBHOOK_SECRET` v produkcii **je** — typ
 `sensitive`, target production + preview, overené cez Vercel API.
+
+---
+
+## 2026-10-05 — „2260": príčina nájdená a reprodukovaná (chyba minifikátora SWC)
+
+GO na vyšetrenie. Štyri noci po sebe (2.–5. 10.) zapísal cron `recompute-bri`
+do `cron_runs` vetu, ktorej chýbal presne fragment `, prah pre horúci lead je `,
+takže v denníku stálo nezmyselné „strop bez eventov je 2260" — čísla 22 a 60
+zlepené. Zdroj pritom vracal celú vetu.
+
+### Príčina
+
+**Minifikátor SWC, ktorý Next používa na produkčný build** (`compress: true`).
+Keď skladá zreťazené template literály, v ktorých sú interpolované
+**konštanty známe v čase buildu**, zloží ich do jedného reťazca — a pri tom
+zahodí statický text medzi dvoma takto zloženými interpoláciami.
+
+Reprodukované cez `next/dist/build/swc` (Next 16.2.4), na čistom ASCII, takže
+diakritika ani kódovanie v tom nehrajú rolu:
+
+```
+vstup:   'a' + `b${X}T` + `${Y}c`      X = 22, Y = 60  (const)
+výstup:  "ab2260c"                     ← T zmizlo
+```
+
+### Presné pravidlo, kedy to nastane
+
+| vzor | výsledok |
+|---|---|
+| `` `b${KONST}T` + `${KONST}c` `` | **T zmizne** |
+| `` `b${KONST}T` + 'plain string' `` | v poriadku |
+| `` `b${runtime}T` + `${runtime}c` `` | v poriadku (nedá sa zložiť) |
+| `` `b${KONST}T` + `${runtime}c` `` | v poriadku |
+| tri literály s konštantami | zmiznú **oba** stredné texty |
+
+Podmienka je teda úzka: **obe** strany hranice musia byť konštanty známe
+v čase buildu a oba fragmenty musia byť template literály.
+
+### Rozsah v repe
+
+Prehľadané všetky `.ts`/`.tsx` v `apps/` a `packages/`. 15 miest má tvar
+„literál končiaci textom za `${…}` + ďalší literál". Z nich interpoluje
+konštantu jediné — `rescore-lead.ts:58` (`AI_ASSISTANT_NAME`) — a tam
+nasleduje **obyčajný reťazec**, nie template literál, čo je podľa tabuľky
+vyššie bezpečné. Ostatných 14 interpoluje runtime hodnoty
+(`lead.*`, `input.*`, `ctx.action`, `process.env`…).
+
+**Zasiahnuté miesto bolo teda v repe jediné** a #805 ho odstránilo tým, že
+vetu prepísalo na jeden template literál. Overené: po oprave minifikátor text
+zachová.
+
+### Prečo to štyri dni nikto nevidel
+
+Test kontroloval `toContain('22')` a `toContain('60')`. Reťazec „2260"
+obsahuje oboje. #805 to zmenil na rovnosť plus kontrolu samotnej kontroly.
+
+### Čo si z toho odniesť
+
+Lokálne spustenie funkcie nie je dôkaz o produkcii. `vitest` beží nad
+zdrojom, produkcia nad minifikovaným buildom — a toto je trieda chýb, ktorá
+existuje **iba** v tom druhom. Pri čomkoľvek, čoho výstup je text závislý na
+konštantách, je dôkazom až minifikovaný výstup alebo hodnota z PROD.
+
+---
+
+## REALVIA-SEC-01 — Realviine prihlasovacie údaje v logoch a DB (2026-10-07)
+
+**Ako sa to našlo.** Founder priniesol plán od ChatGPT (Sol) s piatimi bodmi.
+Audit proti kódu na `main` (`98eea03c`) dal tri body platné, jeden
+nereprodukovateľný a jeden nález, ktorý plán minul — a práve ten bol
+najzávažnejší.
+
+**Nález (opravené).** `collectRequestHeaders` (`lib/realvia/validate.ts`)
+redagovala `authorization`, `x-revolis-secret` a všetko s `secret`/`password`,
+ale **nie `identifikator`/`identifikator2`** — a tie sú PRIMÁRNA produkčná
+autentifikácia Realvie (Mode 1 vo `validateSecret`). Tá istá mapa hlavičiek
+ide do `logInfo('[realvia-webhook] Incoming headers')` **pri každom doručení**
+aj do `headers_json` v `realvia_webhook_logs`. Credentials boli teda čitateľné
+v logoch aj v DB. Opravené prefixovou kontrolou (`identifikator*`), nie
+zoznamom presných mien — `identifikator3` by zoznam ticho obišiel.
+
+**Diera bola zamknutá testom.** `validate.test.ts` tvrdil
+`expect(headers.identifikator).toBe('id1')` — teda PRIKAZOVAL, aby sa
+credential vypísal. CI to dva roky považovalo za správne chovanie. Druhý
+prípad po „2260" (#816), kde test nie že chybu nenašel, ale ju držal.
+**Poučenie: pri bezpečnostnej oprave si vždy prečítaj, čo existujúci test
+vlastne tvrdí — môže byť na strane chyby.**
+
+**Druhá zmena.** `?dump=headers` bol bez autentifikácie. Sám credentials
+neprezradí (vracia hlavičky VOLAJÚCEHO, nie Realviine — Sol túto severitu
+nadhodnotil), ale komukoľvek vypísal Vercel metadáta nášho nasadenia.
+Teraz za `CRON_SECRET`, rovnako ako `diag=config`. Verejný health check bez
+parametra zostáva — Realvia aj uptime monitor ním overujú, že endpoint žije.
+
+**Tretia zmena — heartbeat vidí aj spracovanie, nie len prítok.**
+Pôvodne som founderovi napísal, že `heartbeat-check` nemá „ani jednu zmienku
+o Realvii". **Bolo to nesprávne a opravené:** grepol som 25-riadkovú route,
+nie `lib/infra/platform-heartbeat.ts`, kam deleguje — tam už existovali
+`realviaLastWebhookAt`, `realviaWebhookTotal` a signály na 48 h/7 d ticho.
+Chýbalo štvoro a to je doplnené: `realviaQueuePending`, `realviaQueueFailed`,
+`realviaLastWorkerRunAt`, `realviaPropertiesUpdated24h`, plus dva signály —
+`realvia_queue_failed_jobs` (critical pri ≥1, lebo `max_retries` je 3 a čo
+spadlo do `failed`, sa samo nepohne) a `realvia_worker_stale_2h` (critical len
+keď front NIEČO čaká; prázdna rada bez behu nie je porucha). Oboje za rovnakou
+bránou ako existujúce realvia signály (`realviaWebhookTotal > 0`), aby tenant
+bez Realvie nedostal falošný alarm.
+
+`realvia_processing_queue` **nemá `agency_id`** → tieto tri metriky sú
+platformové, nescopujú sa. Properties sa scopovať dajú a počítajú sa cez
+`realvia_updated_at`, ktorý píše výlučne realvianá cesta.
+
+**Čo z plánu vypadlo a prečo.** Sol navrhoval „vyčistiť build/lint blokery
+(`useRealtimeLeadScore.ts`, stale `.next` typy)". **Nereprodukovateľné:**
+`npm run lint` v `apps/crm` skončil exit 0 bez výstupu, typecheck 49 chýb
+proti baseline 54, CI „Lint, test, build" zelené na každom heade dva dni.
+Bod škrtnutý — oprava toho, čo nie je rozbité, je nesprávna investícia.
+
+**Dôkaz.** 28 testov v troch dotknutých suitách; celý balík 3205 prešlo,
+8 zlyhaní je nemenná množina integračných/RLS testov vyžadujúcich lokálnu
+Supabase (`TEST_SUPABASE_*`), ktoré CI nespúšťa. Typecheck 49 (nepridal som
+ani jednu chybu — prvý beh mal 50, nový `HeartbeatMetrics` fixture
+v `guardian.test.ts` doplnený). Lint exit 0.
+
+**Neoverené, zámerne.** Či Realvia naozaj posiela na `www.revolis.ai` namiesto
+`app.revolis.ai` (Solov bod 3). Mechanizmus drží — `apps/marketing` nemá ani
+jednu API route, takže `/api/webhooks/realvia` tam je 404 — ale čo je nastavené
+na strane Realvie, z repa vidieť nedá a živý probe produkcie bol zamietnutý.
+Autorizovaný E2E smoke (Solov bod 2) je ďalšia brána a potrebuje produkčný
+`CRON_SECRET` ako env premennú session, nie v chate.

@@ -38,6 +38,21 @@ describe("[verification] Realvia dump=headers requires cron auth", () => {
     expect(validate).toContain("lower === 'x-vercel-oidc-token'");
     expect(validate).toContain("lower === 'x-vercel-proxy-signature'");
     expect(validate).toContain("lower === 'x-vercel-sc-headers'");
-    expect(validate).toContain("headersMap[key] = '[REDACTED]'");
+    // Pôvodne `headersMap[key] = '[REDACTED]'`. REALVIA-SEC-01 zlúčilo dve
+    // nezávislé verzie redakcie do jednej funkcie `isSensitiveHeaderName`
+    // (merge `main` ich predtým zlepil do jedného tela a časť podmienok sa
+    // stala nedosiahnuteľnou), takže priradenie je teraz ternárne. Kontroluje
+    // sa značka a to, že ju píše redakčná cesta — nie presný tvar príkazu.
+    expect(validate).toContain("'[REDACTED]'");
+    expect(validate).toContain("isSensitiveHeaderName(key.toLowerCase())");
+  });
+
+  it("redacts the identifikator credential pair (REALVIA-SEC-01)", () => {
+    // `identifikator`/`identifikator2` sú Mode 1 vo `validateSecret` — primárna
+    // produkčná autentifikácia Realvie. Do 2026-10-07 ich redakcia nepokrývala,
+    // takže šli v čitateľnej podobe do logu aj do `realvia_webhook_logs`.
+    // Prefix, nie presné mená: `identifikator3` by zoznam ticho obišiel.
+    const validate = read("src/lib/realvia/validate.ts");
+    expect(validate).toContain("lower.startsWith('identifikator')");
   });
 });

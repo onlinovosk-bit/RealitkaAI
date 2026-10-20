@@ -61,6 +61,14 @@ describe('public/index.html — kampaň cenník v3', () => {
     expect(html).not.toMatch(/smolko/i)
   })
 
+  it('hero hovorí o rýchlosti a netvrdí funkcie, ktoré nie sú LIVE', () => {
+    expect(html).toContain('Inzerát hotový za minúty.')
+    expect(html).toContain('Dopyty v CRM samé.')
+    expect(html).not.toMatch(/komu volať ako prvému/i)
+    expect(html).not.toMatch(/virtuáln(y|y) staging|vyprázdnenie miestnosti|pôdorys|tiktok|reels/i)
+    expect(html).not.toMatch(/watermark/i)
+  })
+
   it('SEO: canonical a og:url na www, CTA vedú na registráciu a nesú UTM', () => {
     expect(html).toContain('<link rel="canonical" href="https://www.revolis.ai/">')
     expect(html).toContain('<meta property="og:url" content="https://www.revolis.ai/">')
@@ -71,5 +79,10 @@ describe('public/index.html — kampaň cenník v3', () => {
   it('next.config presmeruje root na index.html cez rewrite', () => {
     const cfg = readFileSync(resolve(__dirname, '../next.config.ts'), 'utf-8')
     expect(cfg).toContain("source: '/', destination: '/index.html'")
+  })
+
+  it('počet miest: bez sľubu "zadarmo" pre role, ktoré CRM zatiaľ nevynucuje (SEAT-AUDIT)', () => {
+    expect(html).toContain('Cena sa riadi počtom maklérov v tíme')
+    expect(html).not.toMatch(/asistentka a back office sú zadarmo/)
   })
 })

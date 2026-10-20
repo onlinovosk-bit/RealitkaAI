@@ -1,3 +1,49 @@
+## Session 2026-10-20 (GO PROD-MIGRACIE — zápis na PROD)
+### Dokončené
+- Migrácia `20261020050000` aplikovaná na PROD. Dôkaz nie je text funkcie, ale volanie: `compute_bri_score` → 12 aj na druhé volanie (vetva `ON CONFLICT`, ktorá predtým padala), `compute_bri_score_v2` → 16. `lead_scores` 0 → 2 riadky, `bri_score_history` 2 záznamy.
+- Migrácia `20260617120000` aplikovaná okrem `DROP INDEX`: `profiles.import_*` (5 stĺpcov), `uq_profiles_uc_import_source`, `import_jobs_source_check` + `uc`/`realvia-json`, `idx_properties_tenant_source_unique` založený.
+- Mapa všetkých ciest pred zápisom (tabuľky, funkcie, RLS × anon/authenticated, volajúci v kóde) + pre-flight na agregátoch: `docs/reports/2026-10-20-prod-migracie-bri-a-source-id.md`.
+### Rozpracované / Pending
+- **`DROP INDEX IF EXISTS public.idx_properties_source_id_unique;`** — jediný zostávajúci krok, blokuje bezpečnostná brána MCP (deštruktívny príkaz, potvrdenie sa do session nedostane; 60 s timeout a rollback, overené 3×). Founder v Supabase SQL editore. Kým sa nespustí, dve agentúry nemôžu mať tú istú inzerátovú id.
+- `20260617120000` zámerne NEzapísaná v `schema_migrations` — ledger nemá tvrdiť viac, než je pravda. Po `DROP INDEX` zapísať.
+- `realvia_schema_health()` hlási kľúč podľa starého názvu indexu; nikto ju nevolá (0 volajúcich) → zastaralý signál, nie porucha.
+- Skill `gdpr-advisor` z direktívy 5 stále neexistuje (`GO GDPR-ADVISOR`).
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-20-prod-migracie-bri-a-source-id.md`: mapa ciest, pre-flight, dôkaz pred/po, zostávajúci krok.
+- `docs/STATUS.md`: blok SESSION 7/8 (8. je blokovaný `DROP INDEX`).
+### Ďalší krok
+Founder spustí `DROP INDEX IF EXISTS public.idx_properties_source_id_unique;` v SQL editore; potom zapísať `20260617120000` do ledgera.
+
+## Session 2026-10-20 (speed / time-saving VP — CI ratchet)
+### Dokončené
+- `POST /api/ai/listing-from-photos` volá `incrementUsageMetric({ metric: "ai_openai_tokens", delta: input+output })` — Code Contract Guard na `91d02da7` padol (1 nové porušenie vs baseline 523).
+- Lokálne `check-api-contract.mjs --ci` → 0 nových; listing-from-photos 17/17, po assertion 10/10.
+### Rozpracované / Pending
+- Draft PR #892 (bez merge). CI `Zmluva kódu` po tomto pushi. Flag PROD len na GO.
+### Kľúčové súbory zmenené
+- `apps/crm/src/app/api/ai/listing-from-photos/route.ts`: telemetry po úspešnom vision.
+### Ďalší krok
+Founder review #892; merge a `LISTING_FROM_PHOTOS_V0=1` len na výslovné GO.
+
+## Session 2026-10-20 (speed / time-saving VP)
+### Dokončené
+- RAU route: GO_REQUIRED BUILD revolis (merge/PROD/secrets/pricing v zadaní; tie kroky som neurobil).
+- Roadmap: `docs/strategy/2026-10-20-speed-time-saving-roadmap.md` — audit vs AIRAmax (exists / partial / missing).
+- Phase 1: `POST /api/ai/listing-from-photos` za `LISTING_FROM_PHOTOS_V0` (default OFF), auth + tenant + `listingDescription` kredit, mock adapter.
+- UI `/inzerat-generator` ukáže fotky len pri zapnutom flagu.
+- Landing copy (SK) okolo rýchlosti; ceny v3 a navy+gold paleta nedotknuté; žiadny klaim Phase 1 / Studio.
+- Testy: CRM 3591 passed (bez RLS/DB), marketing 61/61; oba next build zelené.
+### Rozpracované / Pending
+- Draft PR (bez merge). Zapnutie `LISTING_FROM_PHOTOS_V0=1` na PROD len na GO foundera.
+### Kľúčové súbory zmenené
+- `docs/strategy/2026-10-20-speed-time-saving-roadmap.md`: audit + fázy.
+- `apps/crm/src/app/api/ai/listing-from-photos/route.ts`: flag + auth + tenant + kredity.
+- `apps/marketing/public/index.html`: hero/benefity na rýchlosť.
+### Ďalší krok
+Founder review draft PR; merge a PROD flag len na výslovné GO.
+RAU route: GO_REQUIRED BUILD revolis
+
+
 ## Session 2026-10-20 (preflight audit dodávky + tri opravy na PROD-ceste)
 ### Dokončené
 - `docs/reports/2026-10-18-vlna-a-realvia-zlyhania.md`, `…-vlna-b-mrtvy-kod-a-fantomy.md` — vlny A/B prepísané z meraných dát (#882).
@@ -16,6 +62,27 @@
 - `docs/STATUS.md`: blok SESSION prepísaný na cieľ tejto session (predtým hlásil 100 % k marketingovému recoloru).
 ### Ďalší krok
 `GO PROD-MIGRACIE` — aplikovať `20261020050000` na PROD s mapovaním ciest a dôkazom pred/po; bez toho zostáva BRI rozbité napriek zmergovanej oprave.
+
+## Session 2026-10-07 (REALVIA-SEC-01)
+### Dokončené
+- `apps/crm/src/lib/realvia/validate.ts`: `identifikator*` sa už neukladá do logov ani do `realvia_webhook_logs.headers_json` — boli to PRIMÁRNE produkčné credentials Realvie, redakcia ich nepokrývala. Prefixová kontrola, nie zoznam mien.
+- `apps/crm/src/lib/realvia/validate.test.ts`: pôvodný test PRIKAZOVAL výpis credentialu (`toBe('id1')`) — diera bola zamknutá testom. Prepísané + test na opačnú stranu (diagnostické hlavičky sa nesmú zožrať).
+- `apps/crm/src/app/api/webhooks/realvia/route.ts`: `?dump=headers` za `CRON_SECRET` (bol verejný; vypisoval Vercel metadáta nasadenia). Verejný health check bez parametra zostáva.
+- `apps/crm/src/app/api/webhooks/realvia/__tests__/route.diag-auth.test.ts`: nový, 6 testov vrátane fail-closed bez `CRON_SECRET`.
+- `apps/crm/src/lib/infra/platform-heartbeat.ts`: +4 metriky (pending/failed front, posledný beh workera, properties za 24 h) a +2 signály (`realvia_queue_failed_jobs`, `realvia_worker_stale_2h`). Heartbeat dovtedy videl len PRÍTOK webhookov, nie ich SPRACOVANIE.
+- Audit Solovho (ChatGPT) plánu: 3 body platné, 1 nereprodukovateľný (lint/build blokery — lint exit 0, CI zelené), 1 nález, ktorý plán minul (credentials v logoch).
+### Rozpracované / Pending
+- PR #816 (záznam „2260") — zelené, `behind`, čaká na foundera: A „Update branch"+Merge, B `GO auto-merge`, C necháť ležať.
+- Autorizovaný Realvia E2E smoke — potrebuje produkčný `CRON_SECRET` ako env premennú session (nie v chate).
+- Či Realvia posiela na správnu URL (`app.revolis.ai`) — z repa neoveriteľné, živý probe zamietnutý.
+- `STRIPE-C` stále na 0 %, váha 30 — podľa Prime Directive ďalší v poradí.
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/realvia/validate.ts`: redakcia `identifikator*`, `token`, `api-key`.
+- `apps/crm/src/app/api/webhooks/realvia/route.ts`: diagnostika za operátorskou bránou.
+- `apps/crm/src/lib/infra/platform-heartbeat.ts`: Realvia worker + front rady v heartbeate.
+- `apps/crm/src/lib/guardian/__tests__/guardian.test.ts`: fixture doplnený o nové polia.
+### Ďalší krok
+`GO STRIPE-C` — jediný blok na 0 % s váhou 30.
 
 ## Session 2026-10-20 (marketing navy + gold paleta)
 ### Dokončené
