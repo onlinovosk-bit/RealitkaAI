@@ -20,6 +20,15 @@ export type HeartbeatMetrics = {
   maxAiTriageAt: string | null;
   realviaLastWebhookAt: string | null;
   realviaWebhookTotal: number;
+  /**
+   * Front rady a posledný beh workera. `realvia_processing_queue` NEMÁ
+   * `agency_id` (viď baseline migráciu), takže tieto tri sú platformové —
+   * neriadia sa `agencyScope`. Properties sa naopak scopovať dajú.
+   */
+  realviaQueuePending: number;
+  realviaQueueFailed: number;
+  realviaLastWorkerRunAt: string | null;
+  realviaPropertiesUpdated24h: number;
   inboundMailboxCount: number;
   sellerRescueLastNotifAt: string | null;
   sellerRescueLastTaskAt: string | null;
@@ -117,6 +126,49 @@ export function evaluateHeartbeatSignals(
     }
   }
 
+  // Realvia worker a front rady (REALVIA-SEC-01). Doteraz heartbeat videl len
+  // to, či webhooky PRICHÁDZAJÚ — nie to, či ich niekto SPRACÚVA. Prítok môže
+  // byť živý a properties sa pritom neaktualizujú celé dni.
+  //
+  // Rovnaká brána ako pri signáloch vyššie: bez jediného webhooku v histórii
+  // tenant Realviu nepoužíva a ticho je správny stav, nie porucha.
+  if (metrics.realviaWebhookTotal > 0) {
+    // `max_retries` je 3 — čo spadlo do `failed`, vyčerpalo opakovania a samo
+    // sa už nepohne. Jediný taký job je strata dát, preto prah 1, nie výmysel.
+    if (metrics.realviaQueueFailed > 0) {
+      signals.push({
+        id: "realvia_queue_failed_jobs",
+        severity: "critical",
+        title: "Realvia front: joby po vyčerpaní opakovaní",
+        detail: `${metrics.realviaQueueFailed} job(ov) v stave failed — payload je uložený, ale nič ho nespracuje. Replay: GET /api/cron/realvia-process?replay_failed=1`,
+        evidence: {
+          realviaQueueFailed: metrics.realviaQueueFailed,
+          realviaQueuePending: metrics.realviaQueuePending,
+          realviaLastWorkerRunAt: metrics.realviaLastWorkerRunAt,
+        },
+      });
+    }
+
+    // Worker beží externým cronom každých 5 min a na každú dávku zapíše riadok
+    // do `realvia_metrics`. Dve hodiny ticha = cron alebo CRON_SECRET je mimo.
+    // Hlási sa len keď front niečo CAKÁ: prázdna rada bez behu nie je porucha.
+    const workerAge = ageMs(metrics.realviaLastWorkerRunAt, now);
+    const workerStale = workerAge === null || workerAge > MS_2H;
+    if (workerStale && metrics.realviaQueuePending > 0) {
+      signals.push({
+        id: "realvia_worker_stale_2h",
+        severity: "critical",
+        title: "Realvia worker: front čaká, worker nebeží 2h+",
+        detail: `${metrics.realviaQueuePending} job(ov) čaká v stave pending a posledná dávka workera je staršia ako 2h — over externý cron na /api/cron/realvia-process a CRON_SECRET.`,
+        evidence: {
+          realviaQueuePending: metrics.realviaQueuePending,
+          realviaLastWorkerRunAt: metrics.realviaLastWorkerRunAt,
+          realviaPropertiesUpdated24h: metrics.realviaPropertiesUpdated24h,
+        },
+      });
+    }
+  }
+
   const rescueNotifAge = ageMs(metrics.sellerRescueLastNotifAt, now);
   const rescueTaskAge = ageMs(metrics.sellerRescueLastTaskAt, now);
   const rescueSilent =
@@ -199,7 +251,7 @@ export async function collectHeartbeatMetrics(
   const agencyFilter = (q: any) =>
     agencyId ? q.eq("agency_id", agencyId) : q;
 
-  const [untriagedLeads24h, untriagedLeads7d, maxAiTriageAt, realviaLastWebhookAt, realviaWebhookTotal, inboundMailboxCount, sellerRescueLastNotifAt, sellerRescueLastTaskAt, moatCaptureTriage24h, moatCaptureNba24h, moatCaptureAiEmail24h, moatDealOutcomes24h, guardianLastRunAt, guardianOpenFindings] =
+  const [untriagedLeads24h, untriagedLeads7d, maxAiTriageAt, realviaLastWebhookAt, realviaWebhookTotal, realviaQueuePending, realviaQueueFailed, realviaLastWorkerRunAt, realviaPropertiesUpdated24h, inboundMailboxCount, sellerRescueLastNotifAt, sellerRescueLastTaskAt, moatCaptureTriage24h, moatCaptureNba24h, moatCaptureAiEmail24h, moatDealOutcomes24h, guardianLastRunAt, guardianOpenFindings] =
     await Promise.all([
       safeCount(supabase, "leads", (q) =>
         agencyFilter(q).is("ai_triage_at", null).gte("created_at", cutoff24h),
@@ -218,6 +270,22 @@ export async function collectHeartbeatMetrics(
       safeCount(supabase, "realvia_webhook_logs", (q) =>
         agencyId ? q.eq("agency_id", agencyId) : q,
       ),
+      // Rada nemá agency_id → platformový počet (viď komentár v HeartbeatMetrics).
+      safeCount(supabase, "realvia_processing_queue", (q) => q.eq("status", "pending")),
+      safeCount(supabase, "realvia_processing_queue", (q) => q.eq("status", "failed")),
+      latestIso(supabase, "realvia_metrics", "recorded_at", (q) =>
+        q.eq("source", "realvia-queue-batch"),
+      ),
+      // `realvia_updated_at` píše VÝLUČNE realvianá cesta (processQueue.ts pri
+      // inserte, update aj delete), takže toto je „čo Realvia naozaj dosiahla",
+      // nie „čo sa v properties zhodou okolností zmenilo".
+      safeCount(supabase, "properties", (q) => {
+        let query = q
+          .eq("source_system", "realvia")
+          .gte("realvia_updated_at", cutoff24h);
+        if (agencyId) query = query.eq("agency_id", agencyId);
+        return query;
+      }),
       safeCount(supabase, "inbound_mailboxes", (q) => {
         let query = q.eq("active", true);
         if (agencyId) query = query.eq("agency_id", agencyId);
@@ -260,6 +328,10 @@ export async function collectHeartbeatMetrics(
     maxAiTriageAt,
     realviaLastWebhookAt,
     realviaWebhookTotal,
+    realviaQueuePending,
+    realviaQueueFailed,
+    realviaLastWorkerRunAt,
+    realviaPropertiesUpdated24h,
     inboundMailboxCount,
     sellerRescueLastNotifAt,
     sellerRescueLastTaskAt,
