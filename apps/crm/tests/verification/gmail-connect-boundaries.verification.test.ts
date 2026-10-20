@@ -24,7 +24,13 @@ describe("[verification] Gmail connect — token a súhlas", () => {
     expect(sql).toMatch(/'https:\/\/www\.googleapis\.com\/auth\/gmail\.readonly' = any\(scopes\)/);
     expect(sql).toMatch(/enable row level security/i);
     expect(sql).toMatch(/revoke all on public\.agency_gmail_inbound_oauth from anon, authenticated/i);
-    expect(sql).not.toMatch(/create policy/i);
+    // Každá politika musí byť explicitný deny-all; povoľujúca (using (true), role mimo anon/authenticated) je chyba.
+    const policies = sql.match(/create policy[\s\S]*?;/gi) ?? [];
+    expect(policies.length).toBeGreaterThan(0);
+    for (const p of policies) {
+      expect(p).toMatch(/to anon, authenticated/i);
+      expect(p).toMatch(/using \(false\) with check \(false\)/i);
+    }
   });
 
   it("token sa šifruje AES-256-GCM a tajomstvá nemajú záložnú hodnotu", () => {

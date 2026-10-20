@@ -37,5 +37,12 @@ alter table public.agency_gmail_inbound_oauth enable row level security;
 
 revoke all on public.agency_gmail_inbound_oauth from anon, authenticated;
 
+-- Explicitná deny-all politika: tabuľku číta a zapisuje iba service role (obchádza RLS).
+-- Správanie je rovnaké ako RLS bez politík, ale zámer je zapísaný a vidí ho security review.
+drop policy if exists agency_gmail_inbound_oauth_deny_all on public.agency_gmail_inbound_oauth;
+create policy agency_gmail_inbound_oauth_deny_all on public.agency_gmail_inbound_oauth
+  for all to anon, authenticated
+  using (false) with check (false);
+
 comment on table public.agency_gmail_inbound_oauth is
   'Gmail pull: pripojenie agentúry. refresh_token_ciphertext je AES-256-GCM, kľúč mimo DB. Service role only.';
