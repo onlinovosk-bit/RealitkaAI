@@ -69,8 +69,6 @@ describe("POST /api/inbound/gmail-pull", () => {
     expect(mockRecord).not.toHaveBeenCalled();
   });
 
-  it("vypnutý pull nezapisuje do cron_runs", async () => {
-    mockPull.mockResolvedValue({ ok: true, skipped: "disabled", agencies: 0, pulled: 0, posted: 0, errors: [], alreadySeen: 0, outsideLabel: 0 });
   it("vypnutý pull nechá zastropovanú stopu s dôvodom, nie ticho", async () => {
     // Odkedy je pull v rozvrhu (vercel.json, 20 * * * *), prázdna tabuľka
     // znamenala dve rôzne veci: "Vercel to nespúšťa" a "spúšťa a chýba mu

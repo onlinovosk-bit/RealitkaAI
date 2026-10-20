@@ -52,7 +52,7 @@ export type UsageMetricName =
   // GMAIL-CONNECT: pripojenie / odpojenie schránky agentúry (príjem dopytov).
   | "gmail_connect_started"
   | "gmail_connect"
-  | "gmail_disconnect";
+  | "gmail_disconnect"
   // MORNING-BRIEF-UI-01: maklér si uložil nastavenie ranného prehľadu. Počíta
   // sa preto, že do 2026-10-15 nebolo kde to nastaviť a tabuľka mala nula
   // riadkov — bez tohto čísla sa nedá povedať, či sa to po nasadení zmenilo.
