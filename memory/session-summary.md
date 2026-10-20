@@ -1,3 +1,21 @@
+## Session 2026-10-20 (marketing navy + gold paleta)
+### Dokončené
+- RAU route: AUTO-SAFE CONTENT revolis. PR #878 už merged — SEO súbory netknuté.
+- Tokeny `apps/marketing/public/palette.css`; aplikované na `/`, `/demo`, `/balik`, landing-v2.
+- Contrast AA nameraný (headline 16.58, CTA 9.50). Vitest 60/60, `next build --webpack` zelený.
+- Before/after screenshoty desktop+mobile v `/opt/cursor/artifacts/{before,after}/`.
+- Report: `docs/reports/2026-10-20-marketing-gohouse-palette.md`. Draft PR, bez merge.
+### Rozpracované / Pending
+- Merge len na founder GO. Preview pre `cursor/*` je vypnutý.
+### Kľúčové súbory zmenené
+- `apps/marketing/public/palette.css`: zdroj tokenov.
+- `apps/marketing/public/index.html`: kampaň `/` remapovaná na tokeny (copy/ceny/CTA/SEO bez zmeny).
+- `apps/marketing/app/{globals,landing-v2,demo/demo,balik/balik}.css`: spotreba tokenov.
+- `apps/marketing/__tests__/palette.test.ts`: AA + no-pilot + CTA guard.
+### Ďalší krok
+Founder review draft PR; merge len na GO.
+RAU route: AUTO-SAFE CONTENT revolis.
+
 ## Session 2026-10-18 (VLNY-AB — reporty z overených nálezov)
 ### Dokončené
 - Vlna A premeraná mnou v PROD v tomto turne: `realvia_metrics` 1 077 riadkov, processed 1 543, ok 256, fail 1 287, `ok+fail = 1543`, **83,41 %**.

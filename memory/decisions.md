@@ -1,5 +1,11 @@
 # Critical Decisions Log
 
+## 2026-10-20 — www.revolis.ai navy + gold paleta (BUILD, draft)
+**GO:** zadanie Cloud Agent — recolor len `apps/marketing`, draft PR, nemergovať. **RAU:** AUTO-SAFE CONTENT.
+**Ústava v2:** vizuál existujúceho webu, nie nová featura. Timing OK (kampaň `/` beží). Q1 neplatí ako veto — nálada predajnej stránky.
+**Rozhodnutie:** paleta centralizovaná v `public/palette.css` (CSS premenné; Tailwind v marketingu nie je). `app.revolis.ai` a SEO súbory (#878) netknuté. Slovo pilot nezavádzať.
+**Výstup:** `docs/reports/2026-10-20-marketing-gohouse-palette.md`.
+
 ## 2026-10-18 — VLNY-AB: reporty z overených nálezov, nie z výstupu swarmu (BUILD, draft)
 **GO:** founder zvolil variant **A** — „zastaviť vlny a reporty napíšem z toho, čo mám; nosné tvrdenia si overím sám priamo v PROD".
 **Čo som premeral sám v tom istom turne** (PROD `ypgajkhqtbriqqmyawyv`, iba čítanie):
