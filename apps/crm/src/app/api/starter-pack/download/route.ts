@@ -15,6 +15,10 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = createServiceRoleClient();
+  if (!supabase && process.env.NODE_ENV === "production") {
+    // fail-closed: bez DB nevieme overiť nákup
+    return new NextResponse("Service unavailable", { status: 503 });
+  }
   if (supabase) {
     const { data: row } = await supabase
       .from("credit_redemption_codes")

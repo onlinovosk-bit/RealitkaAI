@@ -28,6 +28,15 @@ vi.mock("@/lib/inbound/reply-draft", () => ({
   scheduleInboundReplyDraft: (...args: unknown[]) => mockDraftReply(...args),
 }));
 
+const mockLogEvent = vi.hoisted(() => vi.fn());
+const mockResolveProfileForLead = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/events/log-event", () => ({
+  logEvent: (...args: unknown[]) => mockLogEvent(...args),
+}));
+vi.mock("@/lib/events/email-engagement", () => ({
+  resolveProfileForLead: (...args: unknown[]) => mockResolveProfileForLead(...args),
+}));
+
 const INQUIRY_BODY = {
   version: 1,
   receivedAt: "2026-08-17T12:00:00.000Z",
@@ -84,6 +93,8 @@ describe("POST /api/acquire/email dedup claim", () => {
     outcomeRows = [];
     outcomeWriteFails = false;
     vi.clearAllMocks();
+    mockLogEvent.mockResolvedValue("evt-1");
+    mockResolveProfileForLead.mockResolvedValue({ profileId: null, reason: "no profile" });
     vi.stubEnv("ACQUIRE_SHARED_SECRET", SECRET);
     claimedKeys = new Set();
     deletedKeys = [];
@@ -571,5 +582,126 @@ PO99999X`,
     expect(res.status).toBe(200);
     const lead = [...leadRows.values()][0];
     expect(lead.email).toBe("jan@example.com");
+  });
+
+  it("zapíše lead_created cez logEvent service-role klientom, keď lead vznikne", async () => {
+    mailboxProfileId = PROFILE_ID;
+    profileRow = { full_name: "Testovaci Makler" };
+    const { POST } = await import("../route");
+
+    const res = await POST(makeRequest());
+    expect(res.status).toBe(200);
+    expect((await res.json()).lead_created).toBe(true);
+    expect(mockResolveProfileForLead).not.toHaveBeenCalled();
+    expect(mockLogEvent).toHaveBeenCalledTimes(1);
+
+    const arg = mockLogEvent.mock.calls[0][0] as {
+      client: { from: (table: string) => unknown };
+      profileId: string;
+      entityType: string;
+      entityId: string;
+      eventType: string;
+      payload: Record<string, unknown>;
+    };
+    const [leadId] = [...leadRows.keys()];
+    // Ten istý service-role klient, ktorým route píše leady: neznáma tabuľka hodí.
+    // Bez `client` by `logEvent` siahol po cookie klientovi a RLS zápis odmietol.
+    expect(() => arg.client.from("events")).toThrow(/unexpected table events/);
+    expect(arg).toMatchObject({
+      profileId: PROFILE_ID,
+      entityType: "lead",
+      entityId: leadId,
+      eventType: "lead_created",
+      payload: { channel: "email", has_email: true, has_phone: true },
+    });
+    const serialized = JSON.stringify(arg.payload);
+    expect(serialized).not.toContain("jan@example.com");
+    expect(serialized).not.toContain("Jan Novak");
+    expect(serialized).not.toContain("+421");
+  });
+
+  it("nepriradený lead zoberie profil z resolveProfileForLead", async () => {
+    mailboxProfileId = null;
+    mockResolveProfileForLead.mockResolvedValue({ profileId: "fallback-profile", reason: null });
+    const { POST } = await import("../route");
+
+    const res = await POST(makeRequest());
+    expect((await res.json()).lead_created).toBe(true);
+    const [leadId] = [...leadRows.keys()];
+    expect(mockResolveProfileForLead).toHaveBeenCalledTimes(1);
+    expect(mockResolveProfileForLead.mock.calls[0][1]).toBe(leadId);
+    expect(mockLogEvent).toHaveBeenCalledTimes(1);
+    expect(mockLogEvent.mock.calls[0][0]).toMatchObject({
+      profileId: "fallback-profile",
+      eventType: "lead_created",
+      entityId: leadId,
+    });
+  });
+
+  it("bez profilu lead vznikne a lead_created sa nezapíše", async () => {
+    mailboxProfileId = null;
+    mockResolveProfileForLead.mockResolvedValue({
+      profileId: null,
+      reason: "agentúra nemá aktívny profil",
+    });
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const { POST } = await import("../route");
+
+    const res = await POST(makeRequest());
+    expect(res.status).toBe(200);
+    expect((await res.json()).lead_created).toBe(true);
+    expect(leadRows.size).toBe(1);
+    expect(mockLogEvent).not.toHaveBeenCalled();
+    expect(errSpy.mock.calls.map((c) => String(c[0])).join("\n")).toContain(
+      "lead_created event skipped",
+    );
+    errSpy.mockRestore();
+  });
+
+  it("pád zápisu eventu nerozbije vznik leadu", async () => {
+    mailboxProfileId = PROFILE_ID;
+    profileRow = { full_name: "Testovaci Makler" };
+    mockLogEvent.mockRejectedValue(new Error("events down"));
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const { POST } = await import("../route");
+
+    const res = await POST(makeRequest());
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.lead_created).toBe(true);
+    expect(body.lead_id).toBeTruthy();
+    expect(leadRows.size).toBe(1);
+    expect(outcomeRows[0]?.outcome).toBe("lead_created");
+    expect(errSpy.mock.calls.map((c) => String(c[0])).join("\n")).toContain(
+      "lead_created event failed",
+    );
+    errSpy.mockRestore();
+  });
+
+  it("duplicitná notifikácia nezapíše lead_created druhýkrát", async () => {
+    mailboxProfileId = PROFILE_ID;
+    profileRow = { full_name: "Testovaci Makler" };
+    const { POST } = await import("../route");
+
+    await POST(makeRequest());
+    const second = await POST(makeRequest());
+    expect((await second.json()).lead_created).toBe(false);
+    expect(mockLogEvent).toHaveBeenCalledTimes(1);
+  });
+
+  it("mail, z ktorého lead nevznikne, do events nezapisuje", async () => {
+    const { POST } = await import("../route");
+    const res = await POST(makeRequest({
+      ...INQUIRY_BODY,
+      email: {
+        to: "smolko@inbound.revolis.ai",
+        subject: "Newsletter",
+        text: "Dobry den",
+        html: "",
+      },
+    }));
+    expect((await res.json()).lead_created).toBe(false);
+    expect(mockLogEvent).not.toHaveBeenCalled();
+    expect(mockResolveProfileForLead).not.toHaveBeenCalled();
   });
 });

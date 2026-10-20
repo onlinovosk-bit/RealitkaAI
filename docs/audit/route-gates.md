@@ -4,7 +4,7 @@
 
 ## Pôvod a prepočet
 
-- Zdrojový commit: `e9ece0f` (dátum commitu 2026-10-09).
+- Zdrojový commit: `626748f` (dátum commitu 2026-10-17; pracovný strom mal necommitnuté zmeny v api/proxy).
 - Prepočet (z koreňa repa):
 
 ```bash
@@ -30,35 +30,35 @@ Ako číta proxy: `PUBLIC_PATHS` + `/api/healthz*` = bez session; `/api/agents*`
 
 ## Súhrn podľa kategórie
 
-Počet trás (`route.ts`): **232**
+Počet trás (`route.ts`): **234**
 
 | Kategória | Počet |
 |---|---:|
-| GATED-TENANT | 53 |
-| GATED-SESSION | 105 |
-| GATED-SECRET | 45 |
+| GATED-TENANT | 57 |
+| GATED-SESSION | 103 |
+| GATED-SECRET | 47 |
 | PUBLIC-BY-DESIGN | 18 |
 | GONE | 5 |
 | UNGATED | 3 |
-| UNKNOWN | 3 |
+| UNKNOWN | 1 |
 
-Z toho `GATED-SESSION` výlučne cez proxy (bez kontroly v trase): **29**.
+Z toho `GATED-SESSION` výlučne cez proxy (bez kontroly v trase): **30**.
 
 ### Kategória × režim proxy
 
 | Kategória | bypass:410-shim | bypass:cron | bypass:import | bypass:webhook | public | session |
 |---|---:|---:|---:|---:|---:|---:|
-| GATED-TENANT | 0 | 0 | 0 | 0 | 0 | 53 |
-| GATED-SESSION | 0 | 1 | 0 | 0 | 0 | 104 |
-| GATED-SECRET | 0 | 32 | 0 | 2 | 0 | 11 |
+| GATED-TENANT | 0 | 0 | 0 | 0 | 0 | 57 |
+| GATED-SESSION | 0 | 1 | 0 | 0 | 0 | 102 |
+| GATED-SECRET | 0 | 32 | 0 | 3 | 0 | 12 |
 | PUBLIC-BY-DESIGN | 0 | 0 | 0 | 0 | 18 | 0 |
 | GONE | 2 | 1 | 0 | 0 | 0 | 2 |
 | UNGATED | 0 | 0 | 3 | 0 | 0 | 0 |
-| UNKNOWN | 0 | 0 | 0 | 1 | 0 | 2 |
+| UNKNOWN | 0 | 0 | 0 | 0 | 0 | 1 |
 
 ## Zosúladenie čísel „27/40“ a „28/40“
 
-Skript naráta **232** súborov `route.ts`; z nich **203** má rozpoznanú bránu (GATED-*), **18** je verejných podľa dizajnu, **5** je 410, **3** je UNGATED a **3** UNKNOWN. Zoznam „40 ciest“ v repe neexistuje, takže čitateľ 27 (decisions.md) ani 28 (STATUS) sa tu **nedá zreprodukovať** — definícia „40“ je NEZNÁMA. Tento dokument nerobí žiadne tvrdenie o stave ciest v PROD.
+Skript naráta **234** súborov `route.ts`; z nich **207** má rozpoznanú bránu (GATED-*), **18** je verejných podľa dizajnu, **5** je 410, **3** je UNGATED a **1** UNKNOWN. Zoznam „40 ciest“ v repe neexistuje, takže čitateľ 27 (decisions.md) ani 28 (STATUS) sa tu **nedá zreprodukovať** — definícia „40“ je NEZNÁMA. Tento dokument nerobí žiadne tvrdenie o stave ciest v PROD.
 
 ## UNGATED a UNKNOWN podľa rizika
 
@@ -66,12 +66,10 @@ Riziko = súčet váh nad celým súborom trasy: odosielanie 5, platby 5, servic
 
 | # | Riziko | Cesta | Kategória | Metódy | Proxy | Rizikové znaky | Poznámka |
 |--:|--:|---|---|---|---|---|---|
-| 1 | 7 | `/api/starter-pack/download` | UNKNOWN | GET | session | platby, mutácia | GET: slabý náznak brány bez rozpoznanej: verifyStarterPackDownloadToken, searchParams.get("token" |
-| 2 | 5 | `/api/billing/checkout-config` | UNKNOWN | GET | session | platby | GET: slabý náznak brány bez rozpoznanej: STRIPE_WEBHOOK_SECRET |
-| 3 | 1 | `/api/realsoft/import` | UNGATED | GET,POST | bypass:import | - | GET: proxy bypass:import nevynucuje session a v trase nie je rozpoznaná brána; POST: proxy bypass:import nevynucuje session; request sa deleguje do importovanej funkcie (handleUcImportPost(request), brána môže byť tam, skript to nevie |
-| 4 | 1 | `/api/realvia/import` | UNGATED | GET,POST | bypass:import | - | GET: proxy bypass:import nevynucuje session a v trase nie je rozpoznaná brána; POST: proxy bypass:import nevynucuje session; request sa deleguje do importovanej funkcie (validateRequest(req), brána môže byť tam, skript to nevie |
-| 5 | 1 | `/api/uc/import` | UNGATED | GET,POST | bypass:import | - | GET: proxy bypass:import nevynucuje session a v trase nie je rozpoznaná brána; POST: proxy bypass:import nevynucuje session; request sa deleguje do importovanej funkcie (handleUcImportPost(request), brána môže byť tam, skript to nevie |
-| 6 | 1 | `/api/webhooks/realvia` | UNKNOWN | GET,POST | bypass:webhook | - | POST: proxy bypass:webhook nevynucuje session; request sa deleguje do importovanej funkcie (validateRequest(request), brána môže byť tam, skript to nevie |
+| 1 | 5 | `/api/billing/checkout-config` | UNKNOWN | GET | session | platby | GET: slabý náznak brány bez rozpoznanej: STRIPE_WEBHOOK_SECRET |
+| 2 | 1 | `/api/realsoft/import` | UNGATED | GET,POST | bypass:import | - | GET: proxy bypass:import nevynucuje session a v trase nie je rozpoznaná brána |
+| 3 | 1 | `/api/realvia/import` | UNGATED | GET,POST | bypass:import | - | GET: proxy bypass:import nevynucuje session a v trase nie je rozpoznaná brána |
+| 4 | 1 | `/api/uc/import` | UNGATED | GET,POST | bypass:import | - | GET: proxy bypass:import nevynucuje session a v trase nie je rozpoznaná brána |
 
 ## Sledovať: session len cez proxy + service-role / odosielanie / platby
 
@@ -81,6 +79,8 @@ Trasy bez kontroly session v samotnej trase, ktoré sa spoliehajú výlučne na 
 |--:|---|---|---|
 | 20 | `/api/neighborhood-watch/subscribe` | POST | odosielanie, platby, service-role, DB-zápis, mutácia |
 | 12 | `/api/acquisition/google/connect` | GET,POST | platby, DB-zápis, mutácia, AI/náklady |
+| 9 | `/api/morning-brief/track/click` | GET | service-role, DB-zápis, mutácia |
+| 9 | `/api/morning-brief/track/open` | GET | service-role, DB-zápis, mutácia |
 | 8 | `/api/billing/checkout` | POST | platby, mutácia |
 | 8 | `/api/billing/credits/checkout` | POST | platby, mutácia |
 | 8 | `/api/billing/portal` | POST | platby, mutácia |
@@ -171,9 +171,9 @@ Trasy bez kontroly session v samotnej trase, ktoré sa spoliehajú výlučne na 
 | `/api/concierge/properties` | GET | PUBLIC-BY-DESIGN | public | secret:conciergeSecretOk; tenant:agency_id+agencyId | mutácia |
 | `/api/crm/tenant-health` | GET | GATED-SESSION | session | session:getUser | mutácia |
 | `/api/cron/agency-scraping` | POST | GATED-SECRET | bypass:cron | secret:isAuthorizedCronBearer | service-role, mutácia |
-| `/api/cron/arbitrage-scan` | GET | GATED-SECRET | bypass:cron | secret:isAuthorizedCronBearer | DB-zápis, mutácia |
+| `/api/cron/arbitrage-scan` | GET | GATED-SECRET | bypass:cron | secret:isAuthorizedCronBearer | service-role, DB-zápis, mutácia |
 | `/api/cron/auto-tune` | POST | GATED-SECRET | bypass:cron | secret:CRON_SECRET | - |
-| `/api/cron/bri-snapshot` | GET | GATED-SECRET | bypass:cron | secret:CRON_SECRET | DB-zápis, mutácia |
+| `/api/cron/bri-snapshot` | GET | GATED-SECRET | bypass:cron | secret:CRON_SECRET | service-role, DB-zápis, mutácia |
 | `/api/cron/credits-cycle` | GET | GATED-SECRET | bypass:cron | secret:CRON_SECRET; tenant:agencyId | - |
 | `/api/cron/credits-expire` | GET | GATED-SECRET | bypass:cron | secret:CRON_SECRET | mutácia |
 | `/api/cron/credits-grant` | GET | GATED-SECRET | bypass:cron | secret:CRON_SECRET | mutácia |
@@ -193,7 +193,7 @@ Trasy bez kontroly session v samotnej trase, ktoré sa spoliehajú výlučne na 
 | `/api/cron/onboarding-dispatch` | POST | GATED-SECRET | bypass:cron | secret:isAuthorizedCronBearer | - |
 | `/api/cron/price-trail-sync` | GET | GATED-SECRET | bypass:cron | secret:isAuthorizedCronBearer | mutácia |
 | `/api/cron/pulse` | GET | GATED-SECRET | bypass:cron | secret:CRON_SECRET | - |
-| `/api/cron/realvia-process` | GET | GATED-SECRET | bypass:cron | secret:CRON_SECRET | - |
+| `/api/cron/realvia-process` | GET | GATED-SECRET | bypass:cron | secret:CRON_SECRET | mutácia |
 | `/api/cron/recompute-bri` | GET | GATED-SECRET | bypass:cron | secret:CRON_SECRET | service-role, mutácia |
 | `/api/cron/seller-rescue` | GET:GATED-SECRET, POST:GATED-TENANT | GATED-SECRET | bypass:cron | secret:CRON_SECRET; tenant:agency_id+agencyId; session:getUser+resolveProfileForAuthUser | service-role, DB-zápis, mutácia |
 | `/api/cron/stealth-recruiter-ingest` | GET | GONE | bypass:cron | 410 | service-role, DB-zápis, mutácia |
@@ -217,7 +217,7 @@ Trasy bez kontroly session v samotnej trase, ktoré sa spoliehajú výlučne na 
 | `/api/founder/ai-plan` | GET | GATED-SESSION | session | session:getUser | mutácia |
 | `/api/founder/send-legal-update-email` | POST | GATED-SESSION | session | session:requireRole | odosielanie, mutácia |
 | `/api/ghostwriter/generate` | POST | GATED-TENANT | session | session:getUser; tenant:agency_id+agencyId | service-role, DB-zápis, mutácia, AI/náklady |
-| `/api/ghostwriter/send-email` | POST | GATED-SESSION | session | session:getUser | odosielanie, service-role, DB-zápis, mutácia |
+| `/api/ghostwriter/send-email` | POST | GATED-TENANT | session | session:getUser+resolveProfileForAuthUser; tenant:agency_id+agencyId | odosielanie, mutácia |
 | `/api/guarantee/claim` | POST | GATED-SESSION | session | session:getUser | odosielanie, DB-zápis, mutácia |
 | `/api/guardian/open-summary` | GET | GATED-TENANT | session | session:getUser+resolveProfileForAuthUser; tenant:agency_id+agencyId | mutácia |
 | `/api/healthz` | GET | PUBLIC-BY-DESIGN | public | - | - |
@@ -226,6 +226,7 @@ Trasy bez kontroly session v samotnej trase, ktoré sa spoliehajú výlučne na 
 | `/api/import` | POST | GATED-TENANT | session | session:getUser; tenant:agency_id+agencyId | DB-zápis, mutácia |
 | `/api/import/test-xml` | POST | GATED-TENANT | session | session:getCurrentProfile; tenant:agency_id+agencyId | service-role, DB-zápis, mutácia, AI/náklady, ext-fetch |
 | `/api/inbound/gmail-pull` | GET,POST | GATED-SECRET | bypass:cron | secret:CRON_SECRET; tenant:agencyId | mutácia, AI/náklady |
+| `/api/inbound/outcomes` | GET | GATED-TENANT | session | session:getUser; tenant:agency_id+agencyId | service-role, mutácia, AI/náklady |
 | `/api/integrations/calendar` | GET,POST,DELETE | GATED-SESSION | session | session:getCurrentProfile | mutácia |
 | `/api/integrations/calendar/sync` | POST | GATED-SESSION | session | session:getCurrentProfile | - |
 | `/api/integrations/email/sync` | POST | GATED-SESSION | session | session:getUser | mutácia |
@@ -234,7 +235,7 @@ Trasy bez kontroly session v samotnej trase, ktoré sa spoliehajú výlučne na 
 | `/api/integrations/google/auth` | GET | GATED-SESSION | session | session:getUser+getCurrentProfile | mutácia |
 | `/api/integrations/google/callback` | GET | PUBLIC-BY-DESIGN | public | - | mutácia, ext-fetch |
 | `/api/integrations/hubspot/sync` | POST | GATED-TENANT | session | session:getUser; tenant:sameAgency+agency_id | service-role, DB-zápis, mutácia |
-| `/api/integrations/portal/import` | POST | GATED-SESSION | session | session:getUser | mutácia |
+| `/api/integrations/portal/import` | POST | GATED-TENANT | session | session:getUser; tenant:agency_id | mutácia |
 | `/api/invite` | POST | GATED-TENANT | session | session:getUser; tenant:agency_id | service-role, DB-zápis, mutácia |
 | `/api/kataster/watch` | GET,POST | GATED-SESSION | session | session:getUser | DB-zápis, mutácia |
 | `/api/l99/bri` | POST | GATED-SESSION | session | session:proxy-only | platby |
@@ -262,8 +263,9 @@ Trasy bez kontroly session v samotnej trase, ktoré sa spoliehajú výlučne na 
 | `/api/matching/export` | GET | GATED-SESSION | session | session:getUser | mutácia |
 | `/api/matching/recalculate` | POST | GATED-SESSION | session | session:getUser | mutácia |
 | `/api/meta/lookalike` | POST | GATED-SECRET | session | secret:isAuthorizedCronBearer | service-role, mutácia, ext-fetch |
-| `/api/morning-brief/track/click` | GET | GATED-SESSION | session | session:proxy-only | DB-zápis, mutácia |
-| `/api/morning-brief/track/open` | GET | GATED-SESSION | session | session:proxy-only | DB-zápis, mutácia |
+| `/api/morning-brief/settings` | GET,PUT | GATED-SESSION | session | session:proxy-only | DB-zápis, mutácia |
+| `/api/morning-brief/track/click` | GET | GATED-SESSION | session | session:proxy-only | service-role, DB-zápis, mutácia |
+| `/api/morning-brief/track/open` | GET | GATED-SESSION | session | session:proxy-only | service-role, DB-zápis, mutácia |
 | `/api/nav/permissions` | GET | GATED-SESSION | session | session:getUser | mutácia |
 | `/api/neighborhood-watch/alerts` | GET | GATED-SESSION | session | session:proxy-only | service-role, mutácia |
 | `/api/neighborhood-watch/subscribe` | POST | GATED-SESSION | session | session:proxy-only | odosielanie, platby, service-role, DB-zápis, mutácia |
@@ -288,7 +290,7 @@ Trasy bez kontroly session v samotnej trase, ktoré sa spoliehajú výlučne na 
 | `/api/outreach/templates` | GET,POST | GATED-SESSION | session | session:getUser | DB-zápis, mutácia |
 | `/api/playbook` | GET | GATED-SESSION | session | session:proxy-only | mutácia |
 | `/api/playbook/auto` | GET | GATED-SECRET | session | secret:revolisGuard | - |
-| `/api/playbook/confirm-viewing` | POST | GATED-SESSION | session | session:getCurrentUser | odosielanie, mutácia |
+| `/api/playbook/confirm-viewing` | POST | GATED-TENANT | session | session:getCurrentUser+getCurrentProfile; tenant:agency_id+agencyId | odosielanie, mutácia |
 | `/api/playbook/generate` | GET | GATED-SECRET | session | secret:isAuthorizedCronBearer | service-role, DB-zápis, mutácia |
 | `/api/price-trail` | GET,POST | GATED-SESSION | session | session:getUser | mutácia |
 | `/api/profiles` | GET | GATED-SESSION | session | session:getUser | mutácia |
@@ -298,8 +300,8 @@ Trasy bez kontroly session v samotnej trase, ktoré sa spoliehajú výlučne na 
 | `/api/properties/[id]` | PATCH,DELETE | GATED-TENANT | session | session:getUser; tenant:sameAgency+agency_id+agencyId | mutácia |
 | `/api/properties/inventory` | GET | GATED-SESSION | session | session:getUser | mutácia |
 | `/api/push/subscribe` | POST,DELETE | GATED-SESSION | session | session:getUser | platby, DB-zápis, mutácia |
-| `/api/realsoft/import` | GET:UNGATED, POST:UNKNOWN | UNGATED | bypass:import | - | - |
-| `/api/realvia/import` | GET:UNGATED, POST:UNKNOWN | UNGATED | bypass:import | - | - |
+| `/api/realsoft/import` | GET:UNGATED, POST:GATED-SECRET | UNGATED | bypass:import | secret:handleUcImportPost | - |
+| `/api/realvia/import` | GET:UNGATED, POST:GATED-SECRET | UNGATED | bypass:import | secret:validateRequest | - |
 | `/api/recommendations` | GET,POST | GATED-SESSION | session | session:getUser | mutácia |
 | `/api/recommendations/[id]` | PATCH | GATED-TENANT | session | session:getUser; tenant:sameAgency+agency_id+agencyId | mutácia |
 | `/api/recommendations/bulk` | PATCH | GATED-SESSION | session | session:getUser | mutácia |
@@ -320,7 +322,7 @@ Trasy bez kontroly session v samotnej trase, ktoré sa spoliehajú výlučne na 
 | `/api/settings/auth-email-tests` | GET,POST | GATED-TENANT | session | session:getUser+resolveProfileForAuthUser; tenant:agency_id; tenant:assertSameAgencyTarget+agency_id | service-role, DB-zápis, mutácia |
 | `/api/settings/plan` | GET | GATED-SESSION | session | session:proxy-only | - |
 | `/api/settings/usage-metrics` | GET | GATED-TENANT | session | session:getCurrentUser+getCurrentProfile; tenant:agency_id+agencyId | mutácia |
-| `/api/starter-pack/download` | GET | UNKNOWN | session | - | platby, mutácia |
+| `/api/starter-pack/download` | GET | GATED-SECRET | session | secret:verifyStarterPackDownloadToken | platby, mutácia |
 | `/api/stealth-recruiter/outreach` | POST | GONE | session | 410 | odosielanie, platby, DB-zápis, mutácia, AI/náklady |
 | `/api/stealth-recruiter/scan` | POST | GONE | session | 410 | platby, mutácia, AI/náklady |
 | `/api/strategic-alerts` | GET | GATED-SESSION | session | session:proxy-only | mutácia |
@@ -333,7 +335,7 @@ Trasy bez kontroly session v samotnej trase, ktoré sa spoliehajú výlučne na 
 | `/api/team/teams` | GET:GATED-SESSION, POST:GATED-TENANT | GATED-SESSION | session | session:getUser; tenant:agency_id+agencyId | mutácia |
 | `/api/team/teams/[id]` | PATCH | GATED-TENANT | session | session:getUser; tenant:sameAgency+agency_id | mutácia |
 | `/api/team/users` | GET:GATED-SESSION, POST:GATED-TENANT | GATED-SESSION | session | session:getUser; tenant:agency_id+agencyId | mutácia |
-| `/api/uc/import` | GET:UNGATED, POST:UNKNOWN | UNGATED | bypass:import | - | - |
+| `/api/uc/import` | GET:UNGATED, POST:GATED-SECRET | UNGATED | bypass:import | secret:handleUcImportPost | - |
 | `/api/universal-import/errors` | GET | GATED-SESSION | session | session:proxy-only | - |
 | `/api/universal-import/mapping` | POST | GATED-SESSION | session | session:proxy-only | mutácia |
 | `/api/universal-import/preview` | GET | GATED-SESSION | session | session:proxy-only | - |
@@ -345,5 +347,5 @@ Trasy bez kontroly session v samotnej trase, ktoré sa spoliehajú výlučne na 
 | `/api/webhooks/calendly` | POST | GATED-SECRET | bypass:webhook | secret:verifyCalendlySignature | service-role, DB-zápis, mutácia |
 | `/api/webhooks/hubspot` | POST | PUBLIC-BY-DESIGN | public | secret:timingSafeEqual+createHmac+verifyHubSpotSignature | platby, DB-zápis, mutácia |
 | `/api/webhooks/inbound-lead` | POST | GATED-SECRET | bypass:webhook | secret:timingSafeEqual | DB-zápis, mutácia |
-| `/api/webhooks/realvia` | GET:GATED-SECRET, POST:UNKNOWN | UNKNOWN | bypass:webhook | secret:CRON_SECRET | - |
+| `/api/webhooks/realvia` | GET,POST | GATED-SECRET | bypass:webhook | secret:CRON_SECRET; secret:validateRequest; tenant:agency_id+agencyId | - |
 | `/api/workdesk/first-audit` | GET | GATED-TENANT | session | session:getCurrentUser; tenant:agency_id | mutácia |

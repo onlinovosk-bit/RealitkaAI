@@ -84,8 +84,10 @@ export async function generateEmbedding(text: string): Promise<EmbeddingResult> 
 export function buildLeadEmbeddingText(lead: Pick<Lead,
   "name" | "location" | "budget" | "propertyType" | "rooms" | "note" | "status" | "source"
 >): string {
+  // BOD 9 (PII): meno do vektora nepatrí. Hľadanie podľa mena je úloha pre
+  // databázu (presná zhoda), nie pre sémantické vyhľadávanie — a meno by inak
+  // odišlo k poskytovateľovi embeddingov pri každom uložení leadu.
   return [
-    lead.name,
     lead.location,
     lead.budget,
     lead.propertyType,

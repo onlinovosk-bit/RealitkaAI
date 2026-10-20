@@ -61,7 +61,8 @@ async function getOpenAiInsight(
         {
           role:    "user",
           content:
-            `Lead: ${lead.name}, status: ${lead.status}, rozpočet: ${lead.budget}, ` +
+            // BOD 9 (PII): meno sa neposiela — next step z neho nevyplýva.
+            `Lead: status: ${lead.status}, rozpočet: ${lead.budget}, ` +
             `lokalita: ${lead.location}, financovanie: ${lead.financing}, ` +
             `horizont: ${lead.timeline}, AI skóre: ${score}/100. ` +
             "Napíš jeden konkrétny next step pre makléra.",

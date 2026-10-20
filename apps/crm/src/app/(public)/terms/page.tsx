@@ -1,8 +1,10 @@
 import LegalPageShell from "@/components/legal/legal-page-shell";
 import Link from "next/link";
-import { getPricingV2CatalogIfEnabled } from "@/components/marketing/pricing-v2-copy";
+import { isPricingV2Enabled, PRICING_V2_VAT_PERCENT_DEFAULT } from "@/lib/pricing-v2";
+import { getPublicPricingCatalog } from "@/components/marketing/public-pricing";
 import {
   buildTermsPaymentsClausesV2,
+  buildTermsProgramsOnRequest,
   buildTermsProgramsV2,
   TERMS_V2_DRAFT_BANNER,
   TERMS_V2_PROGRAMS_INTRO,
@@ -63,7 +65,7 @@ const legalSuiteChapters = [
 
 const programOverview = [
   {
-    name: "Solo Seat (79 €/mes/maklér)",
+    name: "Solo Seat",
     note: "Základný seat pre samostatného makléra alebo mikro tím.",
     features: [
       "1 maklérsky seat",
@@ -72,8 +74,8 @@ const programOverview = [
     ],
   },
   {
-    name: "Team Seat (71 €/seat/mes, 3-9 seatov)",
-    note: "Zvýhodnená cena pre tímový režim (10% zľava).",
+    name: "Team Seat (3-9 seatov)",
+    note: "Zvýhodnená cena pre tímový režim.",
     features: [
       "Owner dashboard v cene tímu",
       "Team radar a tímové prehľady",
@@ -81,8 +83,8 @@ const programOverview = [
     ],
   },
   {
-    name: "Office Seat (63 €/seat/mes, 10+ seatov)",
-    note: "Kancelársky režim s 20% zľavou a enterprise pripravenosťou.",
+    name: "Office Seat (10+ seatov)",
+    note: "Kancelársky režim s výhodnejšou cenou a enterprise pripravenosťou.",
     features: [
       "Priority support",
       "Protocol AI readiness",
@@ -93,8 +95,8 @@ const programOverview = [
     name: "Add-on moduly (tenant pricing)",
     note: "Modulárny stack aktivovaný nad seat licenciami. Moduly označené „Čoskoro“ nie sú v self-serve predaji.",
     features: [
-      "CRM Sync (49 €/mes) — dostupné na vyžiadanie",
-      "White Label (299 €/mes) — dostupné na vyžiadanie",
+      "CRM Sync — cenu vám pošleme na vyžiadanie",
+      "White Label — cenu vám pošleme na vyžiadanie",
       "Leads Engine — roadmap / čoskoro (nie je v self-serve checkout)",
       "Market Intelligence — roadmap / čoskoro",
       "Protocol AI modul — roadmap / čoskoro",
@@ -109,20 +111,26 @@ export const metadata = {
 };
 
 export default function TermsPage() {
-  // W2-D: v2 variant (NÁVRH, čaká na odobrenie) len pri zapnutom PRICING_V2_ENABLED; vypnutý = pôvodný text.
-  const catalog = getPricingV2CatalogIfEnabled();
-  const programs = catalog ? buildTermsProgramsV2(catalog) : programOverview;
+  // v3 variant (NÁVRH, čaká na odobrenie) len pri zapnutom PRICING_V2_ENABLED; vypnutý = pôvodný text (bez súm).
+  // PR1 §4: sumy sa ukážu LEN pri zapnutom PRICING_PUBLIC_ENABLED, inak „Cenu vám pošleme na vyžiadanie“.
+  const v2On = isPricingV2Enabled();
+  const publicCatalog = getPublicPricingCatalog();
+  const programs = publicCatalog
+    ? buildTermsProgramsV2(publicCatalog)
+    : v2On
+      ? buildTermsProgramsOnRequest()
+      : programOverview;
   return (
     <LegalPageShell
       title="VOP / Terms"
       subtitle={
-        catalog
+        v2On
           ? TERMS_V2_SUBTITLE
           : "Všeobecné obchodné podmienky pre používanie Revolis.AI. Posledná aktualizácia: 2. júna 2026."
       }
     >
       <div className="space-y-6 text-sm text-slate-200">
-        {catalog && (
+        {v2On && (
           <section className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 font-semibold text-amber-200">
             {TERMS_V2_DRAFT_BANNER}
           </section>
@@ -151,12 +159,12 @@ export default function TermsPage() {
 
         <section id="programy" className="rounded-xl border border-violet-500/25 bg-violet-500/5 p-4">
           <h2 className="text-lg font-semibold text-white">
-            {catalog ? TERMS_V2_PROGRAMS_TITLE : "Kapitola: Podrobný prehľad 4 programov"}
+            {v2On ? TERMS_V2_PROGRAMS_TITLE : "Kapitola: Podrobný prehľad 4 programov"}
           </h2>
           <p className="mt-2 text-slate-300">
-            {catalog
+            {v2On
               ? TERMS_V2_PROGRAMS_INTRO
-              : "Nižšie je orientačný prehľad seatov a modulov podľa L99 stratégie. Záväzný rozsah služieb, limity a SLA vždy určuje aktuálny objednávkový formulár, VOP a prípadné enterprise annexy."}
+              : "Nižšie je orientačný prehľad seatov a modulov. Záväzný rozsah služieb, limity a SLA vždy určuje aktuálny objednávkový formulár, VOP a prípadné enterprise annexy."}
           </p>
           <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
             {programs.map((program) => (
@@ -204,11 +212,11 @@ export default function TermsPage() {
           </p>
         </section>
 
-        {catalog && (
+        {v2On && (
           <section>
             <h2 className="text-lg font-semibold text-white">5. Platby, kredity a zrušenie (návrh)</h2>
             <ul className="mt-2 space-y-2 text-slate-300">
-              {buildTermsPaymentsClausesV2(catalog).map((clause) => (
+              {buildTermsPaymentsClausesV2(PRICING_V2_VAT_PERCENT_DEFAULT).map((clause) => (
                 <li key={clause.title}>
                   <strong>{clause.title}:</strong> {clause.text}
                 </li>

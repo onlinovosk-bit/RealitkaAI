@@ -1,8 +1,10 @@
 import { okResponse } from "@/lib/api-response";
+import { isAnnualPromoActive } from "@/lib/pricing-v2";
 import { isPricingV2Enabled, isPricingV2PlansOnly, buildPricingV2Catalog } from "@/lib/pricing-v2";
 import {
   missingPricingV2PriceEnvKeys,
   missingPricingV2YearlyPriceEnvKeys,
+  resolveAnnualPromoCouponId,
   type PricingV2ConfigPayload,
 } from "@/lib/pricing-v2-contract";
 import {
@@ -37,8 +39,11 @@ function buildPricingV2ConfigPayload(): PricingV2ConfigPayload {
     // Režim „len plány“: balíky sa do odpovede nedostanú vôbec (nielen skryté kartou).
     catalog: plansOnly ? { ...catalog, packs: [] } : catalog,
     plansOnly,
-    // Ročné platenie sa ponúka až keď existujú všetky 4 ročné ceny plánov (mesačný predaj tým nie je dotknutý).
-    yearlyAvailable: missingPricingV2YearlyPriceEnvKeys().length === 0,
+    // Ročné platenie sa ponúka až keď existuje ročná cena licencie a (do konca akcie) aj kupón 9/12,
+    // aby zákazník nezaplatil 12 z 12 mesiacov za ponuku 9 z 12. Mesačný predaj tým nie je dotknutý.
+    yearlyAvailable:
+      missingPricingV2YearlyPriceEnvKeys().length === 0 &&
+      (!isAnnualPromoActive() || resolveAnnualPromoCouponId("year") !== null),
   };
 }
 

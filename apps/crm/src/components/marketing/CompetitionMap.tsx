@@ -5,7 +5,7 @@ import { Shield, Loader2 } from "lucide-react";
 import Link from "next/link";
 import type { CompetitionSector } from "@/types/intelligence-hub";
 import { SLATE_HORIZON, WORKDESK_CARD, WORKDESK_LOCKED } from "@/lib/slate-horizon-theme";
-import { usePricingV2Catalog } from "@/components/marketing/pricing-v2-context";
+import { usePricingHidden, usePricingV2Catalog } from "@/components/marketing/pricing-v2-context";
 
 const DEMO_SECTORS: CompetitionSector[] = [
   { name: "Sekčov", district: "Prešov – Sekčov", competitorCount: 4, heatScore: 80, isDemo: true, trend: "rising" },
@@ -29,7 +29,10 @@ export function CompetitionMap({ isProtocolActive, onUpgrade }: Props) {
   const [sectors, setSectors] = useState<CompetitionSector[]>([]);
   const [loading, setLoading] = useState(true);
   // W2-D: v2 ponuka neukazuje legacy plán ani cenu (449 €); bez providera ostáva pôvodný text.
-  const isV2 = usePricingV2Catalog() !== null;
+  // Verejný web (bez providera) nesmie ukázať žiadnu sumu: rovnaký text ako vo v2.
+  const hasV2Catalog = usePricingV2Catalog() !== null;
+  const pricingHidden = usePricingHidden();
+  const isV2 = hasV2Catalog || pricingHidden;
 
   useEffect(() => {
     const t = setTimeout(() => {

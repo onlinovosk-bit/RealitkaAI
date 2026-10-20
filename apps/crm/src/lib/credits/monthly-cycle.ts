@@ -47,7 +47,8 @@ export type MonthlyCycleResult = {
  * Idempotencia: ledger keys bránia double-expire/double-grant. Retry po partial
  * fail (expire error → grant OK) NESMIE znova expirovať — grant-engine odmietne
  * expire, ak už existuje current-period grant. Agentúry s expire error sa v tom
- * istom behu negrantujú; cyklus vráti ok:false aby cron retryoval.
+ * istom behu negrantujú. Hard fail grantu (RPC/DB) tiež vráti ok:false — inak by
+ * cron ACK-ol 200 a agentúra prišla o celý mesačný grant bez retry.
  *
  * Audit: docs/audit/2026-08-02-profit-leak-audit.md — nález E1
  */
@@ -121,14 +122,21 @@ export async function runMonthlyCreditCycle(): Promise<MonthlyCycleResult> {
 
   let grantedTotal = 0;
   let grantSkipped = 0;
+  let grantFailed = 0;
   for (const row of (toGrant ?? []) as AgencyCreditRow[]) {
     if (expireFailedAgencyIds.has(row.id)) {
       grantSkipped += 1;
       continue;
     }
     const result = await grantMonthlyCreditsForAgency(row, grantPeriodKey);
-    if (result.skipped) grantSkipped += 1;
-    else grantedTotal += result.granted;
+    if (result.error) {
+      grantFailed += 1;
+      grantSkipped += 1;
+    } else if (result.skipped) {
+      grantSkipped += 1;
+    } else {
+      grantedTotal += result.granted;
+    }
   }
 
   const expireSummary = {
@@ -148,6 +156,17 @@ export async function runMonthlyCreditCycle(): Promise<MonthlyCycleResult> {
     return {
       ok: false,
       error: `expire_failed:${expireFailedAgencyIds.size}`,
+      expire: expireSummary,
+      grant: grantSummary,
+    };
+  }
+
+  // Hard grant failure (RPC/DB) must fail the cycle — otherwise cron ACKs 200 and
+  // the agency quietly misses the whole month's credits (idempotent retry is safe).
+  if (grantFailed > 0) {
+    return {
+      ok: false,
+      error: `grant_failed:${grantFailed}`,
       expire: expireSummary,
       grant: grantSummary,
     };
