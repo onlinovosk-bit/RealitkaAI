@@ -1,3 +1,19 @@
+## Session 2026-10-20 (GO PROD-MIGRACIE — zápis na PROD)
+### Dokončené
+- Migrácia `20261020050000` aplikovaná na PROD. Dôkaz nie je text funkcie, ale volanie: `compute_bri_score` → 12 aj na druhé volanie (vetva `ON CONFLICT`, ktorá predtým padala), `compute_bri_score_v2` → 16. `lead_scores` 0 → 2 riadky, `bri_score_history` 2 záznamy.
+- Migrácia `20260617120000` aplikovaná okrem `DROP INDEX`: `profiles.import_*` (5 stĺpcov), `uq_profiles_uc_import_source`, `import_jobs_source_check` + `uc`/`realvia-json`, `idx_properties_tenant_source_unique` založený.
+- Mapa všetkých ciest pred zápisom (tabuľky, funkcie, RLS × anon/authenticated, volajúci v kóde) + pre-flight na agregátoch: `docs/reports/2026-10-20-prod-migracie-bri-a-source-id.md`.
+### Rozpracované / Pending
+- **`DROP INDEX IF EXISTS public.idx_properties_source_id_unique;`** — jediný zostávajúci krok, blokuje bezpečnostná brána MCP (deštruktívny príkaz, potvrdenie sa do session nedostane; 60 s timeout a rollback, overené 3×). Founder v Supabase SQL editore. Kým sa nespustí, dve agentúry nemôžu mať tú istú inzerátovú id.
+- `20260617120000` zámerne NEzapísaná v `schema_migrations` — ledger nemá tvrdiť viac, než je pravda. Po `DROP INDEX` zapísať.
+- `realvia_schema_health()` hlási kľúč podľa starého názvu indexu; nikto ju nevolá (0 volajúcich) → zastaralý signál, nie porucha.
+- Skill `gdpr-advisor` z direktívy 5 stále neexistuje (`GO GDPR-ADVISOR`).
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-20-prod-migracie-bri-a-source-id.md`: mapa ciest, pre-flight, dôkaz pred/po, zostávajúci krok.
+- `docs/STATUS.md`: blok SESSION 7/8 (8. je blokovaný `DROP INDEX`).
+### Ďalší krok
+Founder spustí `DROP INDEX IF EXISTS public.idx_properties_source_id_unique;` v SQL editore; potom zapísať `20260617120000` do ledgera.
+
 ## Session 2026-10-20 (speed / time-saving VP — CI ratchet)
 ### Dokončené
 - `POST /api/ai/listing-from-photos` volá `incrementUsageMetric({ metric: "ai_openai_tokens", delta: input+output })` — Code Contract Guard na `91d02da7` padol (1 nové porušenie vs baseline 523).
