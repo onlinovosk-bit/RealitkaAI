@@ -1,3 +1,10 @@
+import { MAX_IMPORT_ROWS, parseCsvText, type ParsedCsv } from "@/lib/universal-import/csv-parse";
+import {
+  mapContactFromRow,
+  mappedContactToLeadInsert,
+  validateMappedContact,
+} from "@/lib/universal-import/map-contact";
+import type { ColumnMapping, MappedContact } from "@/lib/universal-import/types";
 import { createClient } from "@/lib/supabase/server";
 import * as activitiesStore from "./activities-store";
 
@@ -268,56 +275,108 @@ export async function syncEmailInbox(
 }
 
 // ─── Portal CSV Import ────────────────────────────────────────────────────────
+//
+// BOD 5 (zadanie foundera 2026-10-15) — rozsah importu.
+//
+// Pôvodná verzia mala tri chyby, ktoré spolu znamenali, že cez túto cestu
+// neprišiel na PROD ani jeden lead (dotaz 2026-10-15: `source = 'Portal Import'`
+// = 0 riadkov za celý čas, pri 523 leadoch celkovo):
+//
+//   1. INSERT neposielal `agency_id`. Zápis ide session klientom, takže ho RLS
+//      odmietne — a funkcia chybu preložila na `{ imported: 0, errors: N }`,
+//      čiže porucha vyzerala ako „zlý súbor".
+//   2. Riadky delila cez `line.split(",")`. Hodnota v úvodzovkách s čiarkou
+//      („Bratislava, Staré Mesto") ticho rozhodila celý riadok.
+//   3. Jeden INSERT pre všetky riadky: jeden chybný riadok zahodil import celý.
+//
+// Teraz sa používa ten istý parser a ten istý tvar vkladaného riadku ako
+// v sprievodcovi importom (`lib/universal-import/`), aby sa dve cesty
+// nerozchádzali.
+
+export type PortalImportResult = {
+  imported: number;
+  errors: number;
+  /** Prvých 20 chýb s číslom riadku — bez nich sa import nedá opraviť. */
+  errorRows: Array<{ row: number; reason: string }>;
+};
+
+const PORTAL_IMPORT_SOURCE = "Portal Import";
+const PORTAL_IMPORT_ERROR_SAMPLE = 20;
 
 export async function importPortalLeadsFromCsv(
-  csv: string
-): Promise<{ imported: number; errors: number }> {
-  if (!csv?.trim()) return { imported: 0, errors: 0 };
+  csv: string,
+  agencyId: string,
+): Promise<PortalImportResult> {
+  const empty: PortalImportResult = { imported: 0, errors: 0, errorRows: [] };
+  if (!csv?.trim()) return empty;
+  if (!agencyId) {
+    // Bez kancelárie sa nedá zapísať nič — a tichý zápis „niekam" je horší
+    // než chyba. Toto je presne to miesto, kde predtým vznikali nuly.
+    return { imported: 0, errors: 0, errorRows: [{ row: 0, reason: "chýba agency_id" }] };
+  }
 
-  const lines = csv.trim().split(/\r?\n/);
-  if (lines.length < 2) return { imported: 0, errors: 0 };
+  let parsed: ParsedCsv;
+  try {
+    parsed = parseCsvText(csv);
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : "CSV sa nepodarilo prečítať";
+    return { imported: 0, errors: 0, errorRows: [{ row: 0, reason }] };
+  }
 
-  // First line is header
-  const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
-  const nameIdx     = headers.indexOf("name");
-  const emailIdx    = headers.indexOf("email");
-  const phoneIdx    = headers.indexOf("phone");
-  const locationIdx = headers.indexOf("location");
-  const budgetIdx   = headers.indexOf("budget");
+  if (parsed.rows.length === 0) return empty;
+  if (parsed.rows.length > MAX_IMPORT_ROWS) {
+    return {
+      imported: 0,
+      errors: 0,
+      errorRows: [{ row: 0, reason: `Súbor má ${parsed.rows.length} riadkov, limit je ${MAX_IMPORT_ROWS}.` }],
+    };
+  }
 
-  if (nameIdx === -1) return { imported: 0, errors: lines.length - 1 };
+  // Hlavičky sa mapujú na tie isté cieľové polia ako v sprievodcovi.
+  const mapping: ColumnMapping = {};
+  for (const header of parsed.headers) {
+    const key = header.trim().toLowerCase();
+    if (key === "name" || key === "meno") mapping[header] = "contact_name";
+    else if (key === "email" || key === "e-mail") mapping[header] = "email";
+    else if (key === "phone" || key === "telefon" || key === "telefón") mapping[header] = "phone";
+    else if (key === "location" || key === "lokalita") mapping[header] = "address";
+    else if (key === "budget" || key === "rozpocet" || key === "rozpočet") mapping[header] = "budget";
+  }
 
   const supabase = await createClient();
-  const rows = lines.slice(1).map((line) => {
-    const cols = line.split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
+  const errorRows: PortalImportResult["errorRows"] = [];
+  const inserts: Record<string, unknown>[] = [];
+
+  parsed.rows.forEach((row, index) => {
+    // +2: riadok 1 je hlavička, čísla sa počítajú ako v tabuľkovom editore.
+    const lineNumber = index + 2;
+    const mapped = mapContactFromRow(row, mapping);
+    const skip = validateMappedContact(mapped);
+    if (skip) {
+      if (errorRows.length < PORTAL_IMPORT_ERROR_SAMPLE) {
+        errorRows.push({ row: lineNumber, reason: skip });
+      }
+      return;
+    }
+    inserts.push(mappedContactToLeadInsert(mapped as MappedContact, agencyId, PORTAL_IMPORT_SOURCE));
+  });
+
+  if (inserts.length === 0) {
+    return { imported: 0, errors: parsed.rows.length, errorRows };
+  }
+
+  const { error } = await supabase.from("leads").insert(inserts);
+  if (error) {
     return {
-      name:     cols[nameIdx]     ?? "",
-      email:    cols[emailIdx]    ?? "",
-      phone:    cols[phoneIdx]    ?? "",
-      location: cols[locationIdx] ?? "",
-      budget:   cols[budgetIdx]   ?? "",
+      imported: 0,
+      errors: parsed.rows.length,
+      errorRows: [{ row: 0, reason: error.message }, ...errorRows].slice(0, PORTAL_IMPORT_ERROR_SAMPLE),
     };
-  }).filter((r) => r.name);
+  }
 
-  if (rows.length === 0) return { imported: 0, errors: 0 };
-
-  const { error } = await supabase.from("leads").insert(
-    rows.map((r) => ({
-      id:             crypto.randomUUID(),
-      name:           r.name,
-      email:          r.email,
-      phone:          r.phone,
-      location:       r.location,
-      budget:         r.budget,
-      source:         "Portal Import",
-      status:         "Nový",
-      score:          50,
-      assigned_agent: "Nepriradený",
-      last_contact:   "Práve importovaný",
-      property_type:  "Byt",
-    }))
-  );
-
-  if (error) return { imported: 0, errors: rows.length };
-  return { imported: rows.length, errors: 0 };
+  return {
+    imported: inserts.length,
+    errors: parsed.rows.length - inserts.length,
+    errorRows,
+  };
 }

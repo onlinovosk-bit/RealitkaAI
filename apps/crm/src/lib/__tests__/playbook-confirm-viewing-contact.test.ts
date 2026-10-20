@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const getCurrentUserMock = vi.fn();
+const getCurrentProfileMock = vi.fn();
 const getLeadMock = vi.fn();
 const sendMessageMock = vi.fn();
 const readDemoModeMock = vi.fn();
@@ -8,6 +9,10 @@ const createClientMock = vi.fn();
 
 vi.mock("@/lib/auth", () => ({
   getCurrentUser: () => getCurrentUserMock(),
+  getCurrentProfile: () => getCurrentProfileMock(),
+}));
+vi.mock("@/lib/ai-action-audit", () => ({
+  logAiAction: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock("@/lib/leads-store", () => ({
   getLead: (...args: unknown[]) => getLeadMock(...args),
@@ -41,6 +46,7 @@ describe("POST /api/playbook/confirm-viewing — never confirms to a fixture con
   beforeEach(() => {
     vi.clearAllMocks();
     getCurrentUserMock.mockResolvedValue({ id: "user-1" });
+    getCurrentProfileMock.mockResolvedValue({ id: "user-1", agency_id: "agency-1" });
     createClientMock.mockResolvedValue(SCOPED);
     readDemoModeMock.mockResolvedValue(false);
     sendMessageMock.mockResolvedValue({ ok: true });

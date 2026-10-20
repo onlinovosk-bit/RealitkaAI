@@ -9,6 +9,17 @@ function signingSecret(): string {
   );
 }
 
+/**
+ * Fail-closed: v produkcii bez skutočného secretu by token podpísaný verejne
+ * známym dev reťazcom prešiel overením. Mimo produkcie ostáva dev fallback.
+ */
+function hasRealSigningSecret(): boolean {
+  if (process.env.NODE_ENV !== "production") return true;
+  return Boolean(
+    process.env.STARTER_PACK_DOWNLOAD_SECRET || process.env.STRIPE_WEBHOOK_SECRET,
+  );
+}
+
 /** Podpísaný token pre download link v emaile (stripe session id). */
 export function createStarterPackDownloadToken(stripeSessionId: string): string {
   const sig = createHmac("sha256", signingSecret())
@@ -20,6 +31,7 @@ export function createStarterPackDownloadToken(stripeSessionId: string): string 
 }
 
 export function verifyStarterPackDownloadToken(token: string): string | null {
+  if (!hasRealSigningSecret()) return null;
   const [payload, sig] = token.split(".");
   if (!payload || !sig) return null;
 

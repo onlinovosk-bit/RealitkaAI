@@ -20,7 +20,8 @@ import {
   PRICING_V2_CHECKOUT_TYPE_CREDITS,
   PRICING_V2_CHECKOUT_TYPE_PLAN,
 } from "@/lib/pricing-v2-contract";
-import { planPriceIdOf } from "@/lib/pricing-v2-plan";
+import { resolvePricingV2BandResult } from "@/lib/pricing-v2";
+import { planItemOf } from "@/lib/pricing-v2-plan";
 
 /**
  * Seat / credit top-up / starter-pack checkouts are fulfilled by
@@ -414,13 +415,20 @@ export function __resetBillingStatusMemoForTests() {
   billingStatusMemo.clear();
 }
 
-function emptyBillingStatus() {
+/**
+ * Prazdny stav. `lookupFailed` rozlisuje "Stripe povedal, ze nic nema" od
+ * "na Stripe sme sa nedokazali spytat". Bez toho rozlisenia vracia vypadok
+ * Stripe presne ten isty tvar ako zruseny ucet — a brana v `saas-ops.ts` by
+ * z vypadku urobila zistenie o klientovi (viz TrialGraceState.state="unknown").
+ */
+function emptyBillingStatus(lookupFailed = false) {
   return {
     hasCustomer: false,
     hasSubscription: false,
     customer: null,
     subscription: null,
     invoices: [],
+    lookupFailed,
   };
 }
 
@@ -431,7 +439,8 @@ type CurrentBillingStatus =
 export async function getCurrentBillingStatus(): Promise<CurrentBillingStatus> {
   const stripe = getStripe();
   if (!stripe) {
-    return emptyBillingStatus();
+    // Bez kluca sa nedalo spytat. Nie je to zistenie "klient nema predplatne".
+    return emptyBillingStatus(true);
   }
 
   const { getCurrentUser } = await loadAuthHelpers();
@@ -459,7 +468,7 @@ export async function getCurrentBillingStatus(): Promise<CurrentBillingStatus> {
       "[billing] getCurrentBillingStatus zlyhal — fail-open na default plan:",
       error
     );
-    return emptyBillingStatus();
+    return emptyBillingStatus(true);
   });
   billingStatusMemo.set(memoKey, { at: Date.now(), promise });
   return promise;
@@ -511,6 +520,8 @@ async function fetchCurrentBillingStatusUncached(stripe: Stripe) {
             productId: String(item.price.product),
             interval: item.price.recurring?.interval || null,
             amount: item.price.unit_amount || 0,
+            // Cenník v3: quantity licencie = počet maklérov (z neho sa odvodzuje pásmo).
+            quantity: item.quantity ?? null,
           })),
         }
       : null,
@@ -522,6 +533,8 @@ async function fetchCurrentBillingStatusUncached(stripe: Stripe) {
       hostedInvoiceUrl: invoice.hosted_invoice_url ?? null,
       created: invoice.created,
     })),
+    // Stripe odpovedal. Nevedomost je iba tam, kde sa volanie nepodarilo.
+    lookupFailed: false,
   };
 }
 
@@ -709,7 +722,9 @@ function resolveLegacyAddonPlanKey(priceId: string): ResolvedBillingPlan | null 
 }
 
 export function resolvePlanKeyFromStripePriceId(
-  priceId: string | null | undefined
+  priceId: string | null | undefined,
+  /** Cenník v3: quantity položky licencie (počet maklérov); určuje pásmo a tým plán. */
+  quantity?: number | null,
 ): ResolvedBillingPlan {
   // Missing / blank price is unknown — never invent a free downgrade here.
   // Explicit free writes go through syncAccountTier({ forceFree: true }).
@@ -732,11 +747,14 @@ export function resolvePlanKeyFromStripePriceId(
   const legacyAddon = resolveLegacyAddonPlanKey(priceId);
   if (legacyAddon) return legacyAddon;
 
-  // Cenník v2: pásmo je platený plán (rovnaké hodnoty ako legacy seat tier); balík kreditov
-  // a kredit plán neurčujú, takže „unknown“ bez hlučného varovania pre známu v2 cenu.
+  // Cenník v3: licencia je platený plán, pásmo vyplýva z quantity (rovnaké hodnoty ako legacy seat tier);
+  // balík kreditov a kredit plán neurčujú, takže „unknown“ bez hlučného varovania pre známu cenu.
+  // Licencia bez známej quantity je „unknown“ (tier ostáva nezmenený), nikdy free.
   const v2Role = resolvePricingV2PriceRole(priceId);
   if (v2Role) {
-    return v2Role.kind === "band" ? PRICING_V2_BAND_ACCOUNT_TIER[v2Role.bandId] : "unknown";
+    if (v2Role.kind !== "seat") return "unknown";
+    const band = typeof quantity === "number" ? resolvePricingV2BandResult(quantity) : null;
+    return band?.ok ? PRICING_V2_BAND_ACCOUNT_TIER[band.band.id] : "unknown";
   }
 
   const message = `Unknown Stripe price id — leaving tier unchanged: ${priceId}`;
@@ -749,8 +767,12 @@ export function resolvePlanKeyFromStripePriceId(
 export async function getCurrentPlanKey(): Promise<ResolvedBillingPlan> {
   const status = await getCurrentBillingStatus();
   // V2 predplatné nesie pásmo aj voliteľný balík; plán určuje pásmo (poradie položiek Stripe negarantuje).
-  const priceId = planPriceIdOf(status.subscription?.items);
-  const key = resolvePlanKeyFromStripePriceId(priceId);
+  const planItem = planItemOf(status.subscription?.items);
+  const key = resolvePlanKeyFromStripePriceId(planItem?.priceId, planItem?.quantity);
+  // Platiaci v3 zákazník bez čitateľnej quantity nesmie spadnúť na free (display/gates).
+  if (key === "unknown" && resolvePricingV2PriceRole(planItem?.priceId)?.kind === "seat") {
+    return PRICING_V2_BAND_ACCOUNT_TIER.start;
+  }
   // Display / fail-open: no recognizable paid price → free for UI & gates.
   // Webhook sync uses resolvePlanKeyFromStripePriceId + syncAccountTier no-op
   // so unknown prices never overwrite a paid tier.

@@ -9,6 +9,7 @@
 
 import type Anthropic from "@anthropic-ai/sdk";
 import { CLAUDE_HAIKU, callClaude, extractJson } from "@/lib/ai/claude";
+import { cachedSystem } from "@/lib/ai/prompt-cache";
 import {
   DEMAND_CONTRACT_VERSION,
   emptyDemand,
@@ -81,7 +82,7 @@ export async function extractDemand(
         model: CLAUDE_HAIKU,
         max_tokens: 1500,
         temperature: 0,
-        system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
+        system: cachedSystem(SYSTEM_PROMPT, CLAUDE_HAIKU),
         messages: [{ role: "user", content: `Text správy:\n"""\n${text}\n"""` }],
       },
       "demand-extract",

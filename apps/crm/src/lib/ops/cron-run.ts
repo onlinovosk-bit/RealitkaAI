@@ -29,19 +29,36 @@ export interface CronRunRecord {
 /**
  * Odvodí stav behu z čísel, aby ho každý cron nepomenúvaval po svojom.
  *
- *   nič na vstupe            → empty
- *   nič sa nezapísalo        → failed
- *   zapísalo sa, ale nie všetko → partial
- *   inak                     → ok
+ *   nič na vstupe                  → empty
+ *   bolo čo zvážiť, nič netreba    → empty   (NIE failed — viď nižšie)
+ *   skúsilo sa a všetko padlo      → failed
+ *   zapísalo sa, ale nie všetko    → partial
+ *   inak                           → ok
+ *
+ * CRON-TRUTH-01. Pôvodné pravidlo znelo „written === 0 → failed" a tým hlásilo
+ * zlyhanie aj behu, ktorý kandidátov zvážil a legitímne nemal čo robiť.
+ * Zmerané 2026-10-19 v PROD: `follow-up-sweep` mal 3 z 3 behov `failed`
+ * s detailom `{"planned": 0, "stale_days": 5, "cooldown_days": 7}` — teda
+ * cooldown vyradil všetkých kandidátov, čo je správanie podľa zadania, nie porucha.
+ *
+ * Falošná červená nie je neškodná: v tých istých 14 dňoch mal `recompute-bri`
+ * 3 skutočné pády na `compute_bri_score` a utopili sa v nej. Preto `failed`
+ * odteraz vyžaduje, aby sa niečo naozaj pokazilo (`failed > 0`).
+ *
+ * Prečo `empty` a nie nový stav `noop`: `cron_runs.status` má v PROD CHECK
+ * `IN ('ok','empty','partial','failed')`, takže nový stav = migrácia = founder GO.
+ * `empty` znamená „nič na výstupe", čo tento prípad vystihuje; dôvod nesie
+ * `detail` (napr. `planned: 0` a prahy), takže rozlíšiť sa to dá.
  */
 export function deriveCronStatus(
   eligible: number,
   written:  number,
   failed:   number,
 ): CronRunStatus {
-  if (eligible === 0)            return 'empty'
-  if (written  === 0)            return 'failed'
-  if (failed   >  0)             return 'partial'
+  if (eligible === 0)                      return 'empty'
+  if (written  === 0 && failed === 0)      return 'empty'
+  if (written  === 0)                      return 'failed'
+  if (failed   >  0)                       return 'partial'
   return 'ok'
 }
 
@@ -216,6 +233,70 @@ export async function recordUnauthorizedCronRun(
   } catch (err) {
     console.error(
       `[cron_runs] 401 zápis pre ${job} vyhodil výnimku:`,
+      err instanceof Error ? err.message : String(err),
+    )
+    return false
+  }
+}
+
+
+// ================================================================
+// GMAIL-PULL-PLAN-01 — „beží, ale je vypnutý" nesmie vyzerať ako „nebeží"
+//
+// Cron, ktorý sa pre chýbajúcu konfiguráciu iba preskočí, doteraz nezapísal
+// nič. Pri dennom rozvrhu to bolo jedno; pri hodinovom je to rozdiel medzi
+// „Vercel to nespúšťa" a „spúšťa a chýba mu refresh token" — a to sú dve
+// úplne odlišné opravy. Zapisovať každý preskočený beh by ale `cron_runs`
+// zaplavilo (24 riadkov denne na jeden job), takže sa zapisuje najviac raz
+// za okno a riadok nesie dôvod.
+// ================================================================
+
+/** Ako často nanajvýš zapísať preskočený beh toho istého jobu s tým istým dôvodom. */
+export const SKIPPED_CRON_MIN_INTERVAL_MS = 12 * 60 * 60 * 1000
+
+/**
+ * Zapíše, že beh sa legitímne preskočil (napr. vlajka vypnutá, chýba
+ * konfigurácia). Vracia `true`, keď riadok vznikol, `false` keď sa preskočil
+ * kvôli stropu alebo sa zápis nepodaril.
+ *
+ * Fail-soft ako zvyšok tohto súboru: denník nesmie zhodiť cron.
+ */
+export async function recordSkippedCronRun(
+  client:   SupabaseClient,
+  job:      string,
+  reason:   string,
+  opts:     { minIntervalMs?: number; startedAt?: Date } = {},
+): Promise<boolean> {
+  const windowMs = opts.minIntervalMs ?? SKIPPED_CRON_MIN_INTERVAL_MS
+
+  try {
+    const sinceIso = new Date(Date.now() - windowMs).toISOString()
+    const { data: recent, error: lookupErr } = await client
+      .from('cron_runs')
+      .select('id')
+      .eq('job', job)
+      .eq('detail->>skipped', reason)
+      .gte('started_at', sinceIso)
+      .limit(1)
+      .maybeSingle()
+
+    // Nevedieť, či už riadok je, nie je dôvod zapísať druhý.
+    if (lookupErr) {
+      console.error(`[cron_runs] lookup preskočeného behu ${job} zlyhal:`, lookupErr.message)
+      return false
+    }
+    if (recent) return false
+
+    const error = await recordCronRun(client, {
+      job,
+      status:    'empty',
+      detail:    { skipped: reason },
+      startedAt: opts.startedAt,
+    })
+    return error === null
+  } catch (err) {
+    console.error(
+      `[cron_runs] zápis preskočeného behu ${job} vyhodil výnimku:`,
       err instanceof Error ? err.message : String(err),
     )
     return false

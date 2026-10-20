@@ -2,6 +2,7 @@
  * W1 — batch Haiku triage (10–20 leadov). Výstup uložený ako ai_priority + ai_reason (SK).
  */
 import { callClaude, CLAUDE_HAIKU, extractJson } from "@/lib/ai/claude";
+import { cachedSystem } from "@/lib/ai/prompt-cache";
 import { normalizeAiPriority, type AiPrioritySk } from "@/lib/workflows/lead-ai-priority";
 
 export const TRIAGE_BATCH_SIZE = 18;
@@ -83,9 +84,10 @@ function lowFallback(leadId: string, reason: string): LeadTriageOutput {
 async function triageChunk(leads: TriageLeadInput[]): Promise<LeadTriageOutput[]> {
   if (leads.length === 0) return [];
 
+  // BOD 9 (PII): meno sa neposiela. Priorita sa počíta zo stavu, skóre,
+  // poznámky a zdroja; meno na ňu nemá vplyv a identifikuje človeka.
   const compact = leads.map((l) => ({
     id: l.id,
-    name: l.name,
     status: l.status,
     score: l.score,
     last_contact: (l.last_contact ?? "").slice(0, 120),
@@ -96,7 +98,7 @@ async function triageChunk(leads: TriageLeadInput[]): Promise<LeadTriageOutput[]
   const response = await callClaude({
     model: CLAUDE_HAIKU,
     max_tokens: Math.min(1200, 80 * leads.length + 120),
-    system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
+    system: cachedSystem(SYSTEM, CLAUDE_HAIKU),
     messages: [
       {
         role: "user",

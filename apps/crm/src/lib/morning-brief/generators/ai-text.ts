@@ -2,6 +2,8 @@
 // Revolis.AI — Morning Brief AI Text Generator
 // ================================================================
 import { callClaude, CLAUDE_HAIKU } from '@/lib/ai/claude'
+import { cachedSystem } from '@/lib/ai/prompt-cache'
+import { firstNameOnly } from '@/lib/privacy/minimize'
 import type { GatheredData }        from '../gather'
 import type {
   BriefContentSource,
@@ -63,20 +65,21 @@ export async function generateBriefText(
     callClaude({
       model:      CLAUDE_HAIKU,
       max_tokens: 300,
-      system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
+      system: cachedSystem(system, CLAUDE_HAIKU),
       messages: [{
         role:    'user',
-        content: `Napíš ranný brief pre makléra ${data.ownerName}.\n\nDÁTA:\n${context}\n\nDÔLEŽITÉ: Použij konkrétne meno "${top?.full_name ?? 'kontakt'}" a číslo skóre ${top?.bri_score ?? 0}. Odporúčanú akciu zaciľ presne — volanie pred 10:00, správu večer, atď.`,
+        content: `Napíš ranný brief pre makléra ${firstNameOnly(data.ownerName) || 'makléra'}.\n\nDÁTA:\n${context}\n\nDÔLEŽITÉ: Použij konkrétne meno "${firstNameOnly(top?.full_name) || 'kontakt'}" a číslo skóre ${top?.bri_score ?? 0}. Odporúčanú akciu zaciľ presne — volanie pred 10:00, správu večer, atď.`,
       }],
     }, 'brief-text'),
 
     callClaude({
       model:      CLAUDE_HAIKU,
       max_tokens: 80,
-      system: [{ type: 'text', text: SYSTEM_SUBJECT, cache_control: { type: 'ephemeral' } }],
+      system: cachedSystem(SYSTEM_SUBJECT, CLAUDE_HAIKU),
       messages: [{
         role:    'user',
-        content: `Meno: ${top?.full_name ?? 'Lead'}, BRI: ${top?.bri_score ?? 0}, Trajectory: ${(top as any)?.trajectory ?? 'stable'}`,
+        // BOD 9 (PII): do predmetu stačí krstné meno; priezvisko von nejde.
+        content: `Meno: ${firstNameOnly(top?.full_name) || 'Lead'}, BRI: ${top?.bri_score ?? 0}, Trajectory: ${(top as any)?.trajectory ?? 'stable'}`,
       }],
     }, 'brief-subject'),
   ]).then(([briefMsg, subjectMsg]) => {
@@ -139,9 +142,12 @@ function buildContext(data: GatheredData): string {
   const top   = hotLeads[0]
   const lines: string[] = []
 
-  lines.push(`TOP LEAD: ${top?.full_name ?? 'Neznámy'} | BRI: ${top?.bri_score ?? 0}/100 | Trajectory: ${(top as any)?.trajectory ?? 'stable'}`)
+  // BOD 9 (PII): mená leadov idú von iba ako krstné. Adresy nehnuteľností
+  // (LV zmeny, arbitráž) zostávajú — sú to inzerované objekty, nie bydliská,
+  // a bez nich maklér nevie, o ktorú nehnuteľnosť ide.
+  lines.push(`TOP LEAD: ${firstNameOnly(top?.full_name) || 'Neznámy'} | BRI: ${top?.bri_score ?? 0}/100 | Trajectory: ${(top as any)?.trajectory ?? 'stable'}`)
   lines.push(`Dôvod skóre: recency=${top?.recency_score ?? 0}, engagement=${top?.engagement_score ?? 0}, source=${top?.source_score ?? 0}`)
-  if (hotLeads.length > 1) lines.push(`2. LEAD: ${hotLeads[1]?.full_name ?? 'Neznámy'} | BRI: ${hotLeads[1]?.bri_score ?? 0}`)
+  if (hotLeads.length > 1) lines.push(`2. LEAD: ${firstNameOnly(hotLeads[1]?.full_name) || 'Neznámy'} | BRI: ${hotLeads[1]?.bri_score ?? 0}`)
 
   lines.push(`\nNOČNÉ ZMENY (posledných 10 hodín):`)
   lines.push(`- Nové dopyty: ${overnight.newLeads}`)
@@ -150,7 +156,7 @@ function buildContext(data: GatheredData): string {
   lines.push(`- Arbitráž: ${overnight.arbitrage.length}`)
   lines.push(`- Poklesy cien: ${overnight.priceDrops.length}`)
 
-  if (overnight.replies[0])   lines.push(`  Odpoveď od: ${overnight.replies[0].leadName} (${overnight.replies[0].repliedAt.slice(11, 16)})`)
+  if (overnight.replies[0])   lines.push(`  Odpoveď od: ${firstNameOnly(overnight.replies[0].leadName) || 'kontakt'} (${overnight.replies[0].repliedAt.slice(11, 16)})`)
   if (overnight.lvChanges[0]) lines.push(`  LV zmena: ${overnight.lvChanges[0].address} (${overnight.lvChanges[0].changeType})`)
   if (overnight.arbitrage[0]) {
     const a = overnight.arbitrage[0]
