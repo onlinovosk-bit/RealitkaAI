@@ -56,13 +56,17 @@ token nie je nikde v gite ani v logoch.
 - `cron_runs`: počty a kód chyby (napr. `oauth_refresh_failed:invalid_grant`). Žiadny obsah.
 - Obsah správy ide ďalej **rovnakou cestou ako dnes** (`/api/acquire/email` → `leads`); retencia leadov sa nemení.
 
+- `agency_gmail_inbound_oauth` (GMAIL-CONNECT): `agency_id`, kto súhlasil (`granted_by_profile_id`), Gmail účet, **šifrovaný** refresh token,
+  povolené rozsahy (databáza odmietne čokoľvek okrem čítania), čas súhlasu, stav. Deny-all pre klientske roly. Pri odpojení sa ciphertext
+  maže a zostane len stopa (kto/kedy). Súhlas v Google okne je zároveň zaznamenaný ako doklad pokynu (čl. 28 ods. 3 písm. a).
+
 ## 5. Pred zapnutím u zákazníka (nesplnené)
 
 - [ ] Dodatok k DPA: nový účel „načítanie označených správ z Gmailu zákazníka" + Google ako zdroj. (Zákazník podpisuje.)
 - [ ] Záznam o spracovateľských činnostiach doplniť o tento tok.
 - [ ] V zozname subprocesorov chýba Anthropic (triáž tela dopytu) — existujúca medzera z #740, tento tok ju nezväčšuje, ale zvýrazňuje.
 - [ ] Zákazník si vytvorí filter sám (alebo s nami na hovore) — **bez filtra pull nič nečíta** (správne správanie).
-- [ ] Pilot-limit: token je v premennej prostredia (jeden tenant). Pre viac zákazníkov treba šifrovanú tabuľku z návrhu §8.
+- [x] Token je od GMAIL-CONNECT uložený šifrovane (AES-256-GCM) v `agency_gmail_inbound_oauth`, kľúč mimo databázy, stav `revoked` po odpojení. Zostáva: záloha kľúča a postup rotácie kľúča.
 
 ## 6. Google režim aplikácie (neoverené — skontrolovať v Cloud Console)
 

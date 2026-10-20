@@ -4,11 +4,26 @@ import FeatureGateBanner from "@/components/shared/feature-gate-banner";
 import CalendarSyncPanel from "@/components/integrations/calendar-sync-panel";
 import EmailSyncPanel from "@/components/integrations/email-sync-panel";
 import PortalImportPanel from "@/components/integrations/portal-import-panel";
+import GmailInboundPanel from "@/components/integrations/gmail-inbound-panel";
 import { requireRole } from "@/lib/permissions";
+import { readConnectConfig } from "@/lib/inbound/gmail-connect";
+import { getConnectionStatus } from "@/lib/inbound/gmail-connect-store";
 import { getFeatureGateState } from "@/lib/feature-gating";
 
-export default async function IntegrationsPage() {
-  await requireRole(["owner", "manager"]);
+export default async function IntegrationsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ gmail?: string }>;
+}) {
+  const profile = await requireRole(["owner", "manager"]);
+  // Príjem dopytov je jadro produktu, nie voliteľný modul: karta sa zobrazí aj keď je zvyšok
+  // Integrácií zamknutý plánom. Stav sa číta pre agentúru prihláseného profilu, nikdy z parametra.
+  const gmailStatus = profile?.agency_id ? await getConnectionStatus(profile.agency_id) : null;
+  const gmailConfigured = !("error" in readConnectConfig(process.env, ""));
+  const gmailNotice = (await searchParams)?.gmail ?? null;
+  const gmailPanel = (
+    <GmailInboundPanel status={gmailStatus} notice={gmailNotice} configured={gmailConfigured} />
+  );
 
   const gate = await getFeatureGateState("integrations");
 
@@ -22,6 +37,7 @@ export default async function IntegrationsPage() {
           title="Integrations sú zamknuté"
           description={gate.reason || "Integrations nie sú dostupné pre aktuálny plán."}
         />
+        <div className="mt-6">{gmailPanel}</div>
       </ModuleShell>
     );
   }
@@ -32,6 +48,8 @@ export default async function IntegrationsPage() {
       description="Calendar sync, email inbox sync a import portálových príležitostí."
     >
       <FeatureGateBanner description="Integrations sú aktivované v tvojom pláne." title="Integrations sú aktívne" />
+
+      <div className="mt-6">{gmailPanel}</div>
 
       <section className="mt-6 mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">

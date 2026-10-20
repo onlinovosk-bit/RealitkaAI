@@ -1,3 +1,65 @@
+## Session 2026-10-20 (GO PROD-MIGRACIE — uzavreté)
+### Dokončené
+- Obe migrácie sú v PROD a obe sú v ledgeri: `20261020050000` (BRI) a `20260617120000` (`uc_export_mapper`).
+- Septembrová príčina dokázateľne preč: dve agentúry s tou istou `source_id` prejdú, duplicita v rámci jednej agentúry stále padá. Merané v PROD transakciou s ROLLBACK — `properties` 164 pred aj po, 0 testovacích riadkov.
+- BRI počíta: `compute_bri_score` 12, `_v2` 16, `lead_scores` 0 → 2 riadky.
+### Rozpracované / Pending
+- `realvia_schema_health()` hlási kľúč podľa starého názvu indexu → odteraz `false` pri správnej schéme. Nikto ju nevolá; zastaralý signál, nie porucha.
+- Skill `gdpr-advisor` z direktívy 5 neexistuje (`GO GDPR-ADVISOR`).
+- Mŕtvy kód — mazanie blokuje harness.
+- Stripe krok C: 0 %, váha 30.
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-20-prod-migracie-bri-a-source-id.md`: §8 uzavretie + dôkaz cross-tenant.
+- `docs/STATUS.md`: míľnik 8 odškrtnutý, 8/8.
+### Ďalší krok
+`GO STRIPE-C` — jediný blok na 0 % s váhou 30; podľa Prime Directive má prednosť pred všetkým ostatným otvoreným.
+
+## Session 2026-10-20 (CLOSE PROD MIGRATION 20260617120000 — preflight)
+### Dokončené
+- Read-only preflight v PROD: starý index preč, tenantový unique existuje, všetky DDL migrácie `20260617120000` potvrdené; remote história obsahuje `20261020050000`, nie `20260617120000` (`docs/reports/2026-10-20-prod-migracie-bri-a-source-id.md` §7).
+- Návrh izolovaného testu tenantového indexu (5 prípadov), zatiaľ nespustený.
+### Rozpracované / Pending
+- `supabase migration repair 20260617120000 --status applied --linked` — nevykonané: CLI/link/token tu nie sú. Spúšťa founder lokálne.
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-20-prod-migracie-bri-a-source-id.md`: §7 dohrávka.
+- `docs/STATUS.md`: míľnik 8 upresnený (zostáva otvorený).
+- `memory/decisions.md`, `memory/session-summary.md`: PREPEND.
+### Ďalší krok
+Founder: `supabase link --project-ref ypgajkhqtbriqqmyawyv`, potom `migration list --linked`, `migration repair 20260617120000 --status applied --linked`, `migration list --linked`; výstup poslať.
+
+## Session 2026-10-20 (GO PROD-MIGRACIE — zápis na PROD)
+### Dokončené
+- Migrácia `20261020050000` aplikovaná na PROD. Dôkaz nie je text funkcie, ale volanie: `compute_bri_score` → 12 aj na druhé volanie (vetva `ON CONFLICT`, ktorá predtým padala), `compute_bri_score_v2` → 16. `lead_scores` 0 → 2 riadky, `bri_score_history` 2 záznamy.
+- Migrácia `20260617120000` aplikovaná okrem `DROP INDEX`: `profiles.import_*` (5 stĺpcov), `uq_profiles_uc_import_source`, `import_jobs_source_check` + `uc`/`realvia-json`, `idx_properties_tenant_source_unique` založený.
+- Mapa všetkých ciest pred zápisom (tabuľky, funkcie, RLS × anon/authenticated, volajúci v kóde) + pre-flight na agregátoch: `docs/reports/2026-10-20-prod-migracie-bri-a-source-id.md`.
+### Rozpracované / Pending
+- **`DROP INDEX IF EXISTS public.idx_properties_source_id_unique;`** — jediný zostávajúci krok, blokuje bezpečnostná brána MCP (deštruktívny príkaz, potvrdenie sa do session nedostane; 60 s timeout a rollback, overené 3×). Founder v Supabase SQL editore. Kým sa nespustí, dve agentúry nemôžu mať tú istú inzerátovú id.
+- `20260617120000` zámerne NEzapísaná v `schema_migrations` — ledger nemá tvrdiť viac, než je pravda. Po `DROP INDEX` zapísať.
+- `realvia_schema_health()` hlási kľúč podľa starého názvu indexu; nikto ju nevolá (0 volajúcich) → zastaralý signál, nie porucha.
+- Skill `gdpr-advisor` z direktívy 5 stále neexistuje (`GO GDPR-ADVISOR`).
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-20-prod-migracie-bri-a-source-id.md`: mapa ciest, pre-flight, dôkaz pred/po, zostávajúci krok.
+- `docs/STATUS.md`: blok SESSION 7/8 (8. je blokovaný `DROP INDEX`).
+### Ďalší krok
+Founder spustí `DROP INDEX IF EXISTS public.idx_properties_source_id_unique;` v SQL editore; potom zapísať `20260617120000` do ledgera.
+
+## Session 2026-10-20 (GO STRIPE-C — blokátor nájdený)
+### Dokončené
+- Zmeraný blokátor platieb: vo Vercel Production chýba `STRIPE_PRICE_V3_SEAT_MONTHLY` → checkout 503. Osem `STRIPE_PRICE_V2_*` v produkcii je mŕtvych (kód ich nečíta, cenník prešiel na v3).
+- Zmeraný stav platieb: 7 agentúr, 0 so `stripe_subscription_id`. Jediné `active` je ručný `manual_plan`. Spor `DEC-20260925-001` uzavretý: cez Stripe platí 0.
+- Overené, že kód je zelený (69/69) → blokátor je konfigurácia, nie kód.
+- Opravené zastarané dokumenty: riadok Stripe v `docs/STATUS.md` („0 z 10 cien", „chýba webhook secret" — oboje neplatí) a plán `docs/plans/2026-10-16-stripe-krok-c-plan.md`.
+### Rozpracované / Pending
+- Founder: vytvoriť `revolis_v3_licence_month` v LIVE Stripe, pridať `STRIPE_PRICE_V3_SEAT_MONTHLY` do Vercelu, redeploy, poslať `GET /api/billing/checkout-config`.
+- Nezmerané: hodnota `PRICING_V2_ENABLED` (nebola potrebná, nečítal som ju), aktívnosť legacy cien v Stripe, registrácia webhook endpointu a jeho 7 udalostí.
+- `GO GDPR-ADVISOR`; mŕtvy kód (harness blokuje).
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-20-stripe-krok-c-blokator.md`: nový, celý rozpis s dôkazmi.
+- `docs/STATUS.md`: riadok Stripe prepísaný na zmeraný blokátor, krok 1 konkretizovaný.
+- `docs/plans/2026-10-16-stripe-krok-c-plan.md`: hlavička s opravou zoznamu premenných.
+### Ďalší krok
+Founder vytvorí cenu a pridá `STRIPE_PRICE_V3_SEAT_MONTHLY`; potom testovací nákup end-to-end.
+
 ## Session 2026-10-20 (speed / time-saving VP — CI ratchet)
 ### Dokončené
 - `POST /api/ai/listing-from-photos` volá `incrementUsageMetric({ metric: "ai_openai_tokens", delta: input+output })` — Code Contract Guard na `91d02da7` padol (1 nové porušenie vs baseline 523).
@@ -138,6 +200,20 @@ GO na read-only mapu + balík pre zostávajúce B nálezy.
 - Vlna 1 (už v `main`): viď PR #836–#841.
 ### Ďalší krok
 Stripe krok C zostáva blokátor č. 1. Z vĺn: rozhodnutie o WP5-FG-0 (merať, nestavať) a o `GO VERIFY-PROD` pre balíky WP-6.
+
+## Session 2026-10-05 (GMAIL-CONNECT)
+### Dokončené
+- Migrácia `agency_gmail_inbound_seen` aplikovaná v PROD (overené). Dual-run kontrola: nezačal (0 behov, secrets chýbajú); 1. 10. nešlo o stratený dopyt (Nestor Capital, 26,7 MB príloha).
+- GMAIL-CONNECT: `gmail-connect.ts`, `gmail-connect-store.ts`, trasy `integrations/gmail-inbound/*`, karta v Integráciách, pull z DB po agentúrach, migrácia `20261005100000`, 2 strážcovia, 13 mutácií.
+- PR #813 (draft): Dodatok č. 1 k DPA (návrh). Gmail koncept pre Smolka prepracovaný (body 1 a 2 pre neprogramátora), neodoslaný.
+### Rozpracované / Pending
+- Aplikovať migráciu `20261005100100` v PROD (GO). Google redirect URI + env (`GMAIL_INBOUND_STATE_SECRET`, `GMAIL_INBOUND_TOKEN_KEY`) + GitHub secrets.
+- Rozhodnúť spúšťač (GitHub beží každé 3–4,5 h): Vercel Pro alebo Cloudflare cron.
+- Overiť, kto je `owner` profil agentúry Smolko; ak nie Smolko, treba pozvánkový odkaz.
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/inbound/gmail-connect*.ts`, `apps/crm/src/app/api/integrations/gmail-inbound/*`, `apps/crm/src/lib/inbound/gmail-pull.ts`, `apps/crm/supabase/migrations/20261005100100_agency_gmail_inbound_oauth.sql`.
+### Ďalší krok
+GO na migráciu v PROD a rozhodnutie o spúšťači.
 ## Session 2026-10-20 (preflight audit dodávky + tri opravy na PROD-ceste)
 ### Dokončené
 - `docs/reports/2026-10-18-vlna-a-realvia-zlyhania.md`, `…-vlna-b-mrtvy-kod-a-fantomy.md` — vlny A/B prepísané z meraných dát (#882).
