@@ -41,15 +41,16 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: VLNY-AB — reporty vlny A (Realvia zlyhania) a vlny B (mŕtvy kód / fantómy) z vlastného overenia v PROD + oprava čísla v matici (draft PR)
+Cieľ: PREFLIGHT AUDIT dodávky (Phase Zero) + CRON-TRUTH-01 — `cron_runs` prestane hlásiť falošnú červenú (draft PR)
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] 1 — Agregát zlyhaní premeraný v PROD v tomto turne: 1 543 / 256 / 1 287 = 83,41 %, identita `ok+fail = processed`
-- [x] 2 — Mesačný aj denný rozpad premeraný; nájdená a opravená MOJA chyba, že agregát „jún – dnes 38,1 %" zakrýval september (89 zlyhaní, 58,9 %)
-- [x] 3 — Príčina: `meta` prázdne v 0 z 1 077 riadkov, 5 textov chyby na 253 riadkov fronty → per-attempt príčina nie je uložená nikde
-- [x] 4 — Retry-slučka ako príčina VYVRÁTENÁ počtami aj časmi (733 ≠ 1 287; 322 zlyhaní po zavretí oboch poison riadkov)
-- [x] 5 — Vlna B overená: `event_store`/`LeadService` reálny mŕtvy kód · `outreach_messages` fantóm (0 výskytov) · nav oprávnenia už opravené 2026-10-05 (`d03cc47`)
-- [x] 6 — Riadok Realvia v `capability-truth-matrix.md` opravený + PREPEND do `memory/decisions.md`
+- [x] 1 — Read-only preflight: repo, vetva, strom (0 zmien), 24 otvorených PR s mergeability a CI
+- [x] 2 — Tok PR zmeraný: 800 / 728 zmergovaných / 24 otvorených → hypotéza „PR sa hromadia" vyvrátená
+- [x] 3 — Zmeraný skutočný stav PROD: 51 behov cronov / 1 ok, 0 Stripe, 0 outbound, 1 event, 138 vs 78 migrácií
+- [x] 4 — Nový P1: `compute_bri_score` padá na chýbajúcom constraint pre `ON CONFLICT` (3 z 3 behov)
+- [x] 5 — Bezpečnostné „nálezy" overené a 3 zo 4 vyvrátené (RLS fail-closed, obe SECURITY DEFINER funkcie čisté)
+- [x] 6 — CRON-TRUTH-01 dodané: `failed` vyžaduje `failed > 0`; 25/25 testov, regresia dokázaná v oboch smeroch
 - [ ] 7 — Draft PR (bez merge)
+- [ ] 8 — Oprava `compute_bri_score` migráciou (čaká na GO)
 <!-- SESSION:END -->
 
 ## Čo potrebujem od teba (zoradené podľa dopadu)

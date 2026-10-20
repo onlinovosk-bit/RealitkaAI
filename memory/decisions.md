@@ -1,5 +1,16 @@
 # Critical Decisions Log
 
+## 2026-10-20 — PREFLIGHT AUDIT + CRON-TRUTH-01: PR sa nehromadia, hromadí sa medzera merge→účinok (BUILD, draft)
+**GO:** founder poslal REVOLIS MASTER META-PROMPT v2.0 — Phase Zero read-only preflight, potom jedna úloha s kontraktom. Preflight nezmenil v repozitári nič (`git status` 0).
+**Hypotéza foundera je z polovice VYVRÁTENÁ (ZMERANÉ, GitHub REST):** 800 PR za 5 mesiacov, **728 zmergovaných**, 48 zavretých bez merge, **24 otvorených** (3 %). Merge rate kopíruje tempo otvárania → PR nie sú úzke hrdlo. Z 24 otvorených je 13 `dirty`, 3 s červeným CI, tri najstaršie z 11. 6. 2026.
+**Čo sa naozaj hromadí (ZMERANÉ, Supabase):** medzera medzi mergom a účinkom. Za 14 dní **51 behov cronov, 1 `ok`**. PROD: 7 agentúr, **0 so Stripe predplatným, 0 s trialom, 0 self-serve**, 524 leadov (1 za 14 dní), **0 `outbound_messages`**, **1 `events`**. Migrácie **138 v repe vs 78 aplikovaných**, pričom najnovšia aplikovaná je → aplikovalo sa výberovo.
+**Nový P1 nález (ZMERANÉ):** `compute_bri_score` robí `ON CONFLICT (profile_id, lead_id)`, ale `lead_scores` má len `UNIQUE (lead_id)` + `PRIMARY KEY (id)` → funkcia padá zakaždým, 3 z 3 pokusov. Oprava = migrácia, čaká na GO.
+**Čo NIE JE nález (overené, aby sa to netiahlo):** 36× `rls_enabled_no_policy` je INFO a **fail-closed**; `profile_agencies_for_auth()` filtruje cez `auth.uid()` (pre anon prázdno); `get_valuation_tenant(slug)` vracia zámerne verejný branding. Ani jedna z tých „bezpečnostných" položiek nie je diera. Reálny WARN: vypnutá ochrana proti uniknutým heslám.
+**CRON-TRUTH-01 (dodané):** `deriveCronStatus` vracalo `failed` vždy pri `written === 0 && eligible > 0` — teda aj behu, ktorý kandidátov zvážil a legitímne nemal čo robiť (`follow-up-sweep`, `planned: 0`, cooldown 7 dní). Falošná červená nie je neškodná: utopili sa v nej 3 skutočné pády `recompute-bri`. `failed` odteraz vyžaduje `failed > 0`. Nový stav `noop` by znamenal migráciu (`cron_runs.status` má CHECK na štyri hodnoty), preto `empty` + dôvod v `detail`.
+**Dôkaz:** 6 nových testov + 2 existujúce suity nezmenené (25/25), regresia dokázaná v oboch smeroch (po vypnutí riadku test padol, po obnovení prešiel), `prepush-gate.sh` VŠETKO PREŠLO.
+**Pravidlo, ktoré z toho platí:** merge nie je koniec. Zelené CI, zmergovaný PR a nasadený build sú tri rôzne veci a ani jedna z nich nie je dôkaz, že to u zákazníka funguje. Jediný dôkaz je riadok v PROD.
+**Otvorené s GO bránou:** `merguj 885` · `GO SOURCE-ID-INDEX` · oprava `compute_bri_score` (migrácia) · povolenie zmazať mŕtvy kód · Stripe krok C, `RESEND_API_KEY`, 6× `GOOGLE_GMAIL_INBOUND_*`.
+
 ## 2026-10-18 — VLNY-AB: reporty z overených nálezov, nie z výstupu swarmu (BUILD, draft)
 **GO:** founder zvolil variant **A** — „zastaviť vlny a reporty napíšem z toho, čo mám; nosné tvrdenia si overím sám priamo v PROD".
 **Čo som premeral sám v tom istom turne** (PROD `ypgajkhqtbriqqmyawyv`, iba čítanie):
