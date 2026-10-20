@@ -1,3 +1,21 @@
+## Session 2026-10-20 (marketing navy + gold paleta)
+### Dokončené
+- RAU route: AUTO-SAFE CONTENT revolis. PR #878 už merged — SEO súbory netknuté.
+- Tokeny `apps/marketing/public/palette.css`; aplikované na `/`, `/demo`, `/balik`, landing-v2.
+- Contrast AA nameraný (headline 16.58, CTA 9.50). Vitest 60/60, `next build --webpack` zelený.
+- Before/after screenshoty desktop+mobile v `/opt/cursor/artifacts/{before,after}/`.
+- Report: `docs/reports/2026-10-20-marketing-gohouse-palette.md`. Draft PR, bez merge.
+### Rozpracované / Pending
+- Merge len na founder GO. Preview pre `cursor/*` je vypnutý.
+### Kľúčové súbory zmenené
+- `apps/marketing/public/palette.css`: zdroj tokenov.
+- `apps/marketing/public/index.html`: kampaň `/` remapovaná na tokeny (copy/ceny/CTA/SEO bez zmeny).
+- `apps/marketing/app/{globals,landing-v2,demo/demo,balik/balik}.css`: spotreba tokenov.
+- `apps/marketing/__tests__/palette.test.ts`: AA + no-pilot + CTA guard.
+### Ďalší krok
+Founder review draft PR; merge len na GO.
+RAU route: AUTO-SAFE CONTENT revolis.
+
 ## Session 2026-10-19 (REALVIA-PRICINY)
 ### Dokončené
 - #882 zmergované (squash `060c5f4`), obsah overený priamo na `main`: `83,41` v matici = 1, staré tvrdenie „1 287 zlyhalo (45 %)" = 0, oba reporty prítomné, `session-summary.md` 3 847 riadkov (nič zmazané). #864 zavreté ako **nahradené**, s komentárom prečo.

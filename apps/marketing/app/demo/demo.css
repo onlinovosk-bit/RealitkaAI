@@ -1,15 +1,16 @@
 .demo-page {
-  --demo-brand: #0ea5e9;
-  --demo-brand-deep: #0284c7;
-  --demo-ink: #0f172a;
-  --demo-muted: #64748b;
-  --demo-line: #e2e8f0;
-  --demo-bg: #f8fafc;
-  --demo-soft: #eff6ff;
-  --demo-green: #047857;
-  --demo-cta: linear-gradient(90deg, #0ea5e9, #38bdf8);
-  --demo-shadow: 0 8px 32px rgba(15, 23, 42, 0.06);
-  background: linear-gradient(180deg, var(--demo-bg), #fff);
+  --demo-brand: var(--rev-gold);
+  --demo-brand-deep: var(--rev-gold-hi);
+  --demo-ink: var(--rev-text);
+  --demo-muted: var(--rev-muted);
+  --demo-line: var(--rev-line);
+  --demo-bg: var(--rev-bg);
+  --demo-soft: var(--rev-surface);
+  --demo-green: var(--rev-good);
+  --demo-cta: var(--rev-cta-fill);
+  --demo-shadow: 0 8px 32px rgba(10, 16, 32, 0.45);
+  background: var(--rev-bg);
+  background-image: var(--rev-hero-glow);
   color: var(--demo-ink);
   min-height: 100vh;
 }
@@ -23,7 +24,7 @@
   justify-content: space-between;
   gap: 16px;
   padding: 14px 24px;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(10, 16, 32, 0.86);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--demo-line);
 }
@@ -129,7 +130,7 @@
 }
 
 .demo-card {
-  background: #fff;
+  background: var(--rev-surface);
   border: 1px solid var(--demo-line);
   border-radius: 20px;
   padding: 24px;
@@ -152,7 +153,7 @@
 }
 
 .demo-pain-card {
-  background: #fff;
+  background: var(--rev-surface);
   border: 1px solid var(--demo-line);
   border-radius: 16px;
   padding: 24px;
@@ -192,7 +193,7 @@
   padding: 24px;
   border-radius: 16px;
   background: var(--demo-soft);
-  border: 1px solid #bfdbfe;
+  border: 1px solid var(--rev-line-strong);
 }
 
 .demo-solution-item h3 {
@@ -210,7 +211,7 @@
 
 .demo-mock {
   border: 1px solid var(--demo-line);
-  background: #fff;
+  background: var(--rev-surface);
   border-radius: 18px;
   padding: 20px;
   margin-top: 28px;
@@ -232,7 +233,7 @@
   font-weight: 700;
   background: var(--demo-soft);
   color: var(--demo-brand-deep);
-  border: 1px solid #bfdbfe;
+  border: 1px solid var(--rev-line-strong);
 }
 
 .demo-bar-wrap {
@@ -246,7 +247,7 @@
 .demo-bar-col {
   width: 16%;
   border-radius: 4px 4px 0 0;
-  background: #cbd5e1;
+  background: var(--rev-surface-2);
 }
 
 .demo-bar-col.hi {
@@ -287,8 +288,8 @@
   margin-top: 48px;
   padding: 40px 32px;
   border-radius: 24px;
-  background: var(--demo-ink);
-  color: #fff;
+  background: var(--rev-surface);
+  color: var(--rev-text);
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -303,7 +304,7 @@
   width: 600px;
   height: 300px;
   border-radius: 50%;
-  background: radial-gradient(ellipse, rgba(14, 165, 233, 0.2), transparent 70%);
+  background: radial-gradient(ellipse, var(--rev-gold-dim), transparent 70%);
   pointer-events: none;
 }
 
@@ -317,7 +318,7 @@
 
 .demo-cta-band p {
   font-size: 15px;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--rev-muted);
   margin: 0 auto 28px;
   max-width: 480px;
   position: relative;
@@ -340,12 +341,12 @@
   border: 0;
   border-radius: 12px;
   background: var(--demo-cta);
-  color: #fff;
+  color: var(--rev-ink);
   font-size: 14px;
   font-weight: 800;
   cursor: pointer;
   text-decoration: none;
-  box-shadow: 0 8px 24px rgba(14, 165, 233, 0.3);
+  box-shadow: var(--rev-cta-glow);
   transition: transform 0.2s;
 }
 
@@ -359,10 +360,10 @@
   justify-content: center;
   min-height: 48px;
   padding: 0 28px;
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid var(--rev-text);
   border-radius: 12px;
   background: transparent;
-  color: #fff;
+  color: var(--rev-text);
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
@@ -372,12 +373,12 @@
 
 .demo-btn-secondary:hover {
   border-color: var(--demo-brand);
-  background: rgba(14, 165, 233, 0.08);
+  background: var(--rev-gold-dim);
 }
 
 .demo-micro {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--rev-muted);
   margin-top: 16px;
   position: relative;
 }
@@ -392,7 +393,7 @@
 
 .demo-faq {
   border: 1px solid var(--demo-line);
-  background: #fff;
+  background: var(--rev-surface);
   border-radius: 14px;
   padding: 18px 20px;
   box-shadow: var(--demo-shadow);

@@ -1,5 +1,11 @@
 # Critical Decisions Log
 
+## 2026-10-20 — www.revolis.ai navy + gold paleta (BUILD, draft)
+**GO:** zadanie Cloud Agent — recolor len `apps/marketing`, draft PR, nemergovať. **RAU:** AUTO-SAFE CONTENT.
+**Ústava v2:** vizuál existujúceho webu, nie nová featura. Timing OK (kampaň `/` beží). Q1 neplatí ako veto — nálada predajnej stránky.
+**Rozhodnutie:** paleta centralizovaná v `public/palette.css` (CSS premenné; Tailwind v marketingu nie je). `app.revolis.ai` a SEO súbory (#878) netknuté. Slovo pilot nezavádzať.
+**Výstup:** `docs/reports/2026-10-20-marketing-gohouse-palette.md`.
+
 ## 2026-10-19 — REALVIA-PRICINY: príčina sa zapisuje bez migrácie + zmeraný rozpor schémy v PROD (BUILD, draft)
 **GO:** founder „merguj 882 a zavri 864" + „GO aj na ďalších 8 krokov v poradí". #882 zmergované (squash `060c5f4`), #864 zavreté ako nahradené.
 **Dve veci, v ktorých som sa mýlil a opravujem ich:**

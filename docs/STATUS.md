@@ -41,16 +41,13 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: REALVIA-PRICINY — príčina zlyhania sa zapisuje do metrík + zmeraný rozpor schémy `properties.source_id` v PROD (draft PR)
+Cieľ: Recolor www.revolis.ai (apps/marketing) na navy + gold paletu — draft PR, bez merge
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] 1 — #882 zmergované (`060c5f4`), obsah overený na `main`; #864 zavreté ako nahradené
-- [x] 2 — Príčina sa zapisuje BEZ migrácie: `meta` je jsonb, worker tam písal natvrdo `{}` → `buildMetricsMeta` + `tallyRealviaFailures`
-- [x] 3 — 13 unit testov + 6 verifikačných pinov zelených; pin na `meta: {}` dokázaný v oboch smeroch
-- [x] 4 — ZMERANÉ v PROD: globálny `idx_properties_source_id_unique` platí, tenantový neexistuje, `20260617120000` nie je aplikovaná
-- [x] 5 — Zmeraná príčina septembrových zlyhaní zapísaná do matice + report
-- [x] 6 — Z matice odstránený zastaraný duplicitný riadok „Gmail pull", ktorý si protirečil
-- [ ] 7 — Zmazanie mŕtveho kódu (zablokoval harness, potrebuje povolenie foundera)
-- [ ] 8 — Aplikovať `20260617120000` na PROD (čaká na GO)
+- [x] 1 — Tokeny v `public/palette.css` + WCAG AA namerané (headline 16.58, muted 9.27, gold CTA 9.50)
+- [x] 2 — Paleta aplikovaná na `/` (`public/index.html`), `/demo`, `/balik` a landing-v2; copy/ceny/CTA/SEO nedotknuté
+- [x] 3 — `npx vitest run` 60/60 + `next build --webpack` zelený v tomto turne
+- [x] 4 — Before/after screenshoty desktop+mobile pre `/`, `/demo`, `/balik`
+- [x] 5 — Draft PR (bez merge)
 <!-- SESSION:END -->
 
 ## Čo potrebujem od teba (zoradené podľa dopadu)

@@ -1,0 +1,38 @@
+/**
+ * Revolis marketing palette — one source of truth for www.revolis.ai.
+ * Mood copied from a dark navy + warm gold reference; layout/copy/logo are ours.
+ *
+ * This app does not use Tailwind. These :root custom properties are the theme
+ * tokens. Import from Next CSS (`@import '../public/palette.css'`) and from
+ * the static campaign page (`<link href="/palette.css">`).
+ *
+ * Contrast (WCAG 2.1 AA, measured in apps/marketing/__tests__/palette.test.ts):
+ *   #F5EFE6 on #0A1020 = 16.58  (headlines)
+ *   #B8C0CC on #121C30 =  9.27  (body on cards)
+ *   #D9B26A on #0A1020 =  9.50  (gold labels / highlights)
+ *   #0A1020 on #D9B26A =  9.50  (primary CTA text on gold)
+ *   #5DCAA5 on #0A1020 =  9.44  (success / checks)
+ */
+:root {
+  --rev-bg: #0A1020;
+  --rev-bg-mid: #0F1A2E;
+  --rev-surface: #121C30;
+  --rev-surface-2: #162238;
+  --rev-line: rgba(245, 239, 230, 0.12);
+  --rev-line-strong: rgba(245, 239, 230, 0.22);
+  --rev-text: #F5EFE6;
+  --rev-muted: #B8C0CC;
+  --rev-ink: #0A1020;
+  --rev-gold: #D9B26A;
+  --rev-gold-hi: #E2BC78;
+  --rev-gold-dim: rgba(217, 178, 106, 0.16);
+  --rev-gold-glow: rgba(217, 178, 106, 0.38);
+  --rev-good: #5DCAA5;
+  --rev-good-dim: rgba(93, 202, 165, 0.12);
+  --rev-good-line: rgba(93, 202, 165, 0.35);
+  --rev-bad: #F87171;
+  --rev-cta-fill: linear-gradient(180deg, #E2BC78 0%, #D9B26A 100%);
+  --rev-cta-fill-hover: linear-gradient(180deg, #E8C98A 0%, #E2BC78 100%);
+  --rev-cta-glow: 0 10px 28px rgba(217, 178, 106, 0.32);
+  --rev-hero-glow: radial-gradient(ellipse 80% 55% at 50% -10%, rgba(217, 178, 106, 0.12), transparent 58%);
+}

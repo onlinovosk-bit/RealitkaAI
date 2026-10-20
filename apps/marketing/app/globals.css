@@ -1,3 +1,5 @@
+@import '../public/palette.css';
+
 @property --arc { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
 :root {
   --bg: #F8FAFC;
@@ -20,10 +22,10 @@
 * { margin:0; padding:0; box-sizing:border-box; }
 html { scroll-behavior:smooth; }
 #pricing { scroll-margin-top: 88px; }
-body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; overflow-x:hidden; }
+body { background:var(--rev-bg); color:var(--rev-text); font-family:'Inter',-apple-system,sans-serif; overflow-x:hidden; }
 ::-webkit-scrollbar { width:6px; }
-::-webkit-scrollbar-track { background:var(--bg2); }
-::-webkit-scrollbar-thumb { background:var(--cyan); border-radius:3px; }
+::-webkit-scrollbar-track { background:var(--rev-bg-mid); }
+::-webkit-scrollbar-thumb { background:var(--rev-gold); border-radius:3px; }
 
 nav {
   position:fixed; top:0; left:0; right:0; z-index:100;
@@ -65,10 +67,10 @@ nav {
 
 h1 {
   font-size: clamp(42px,7vw,88px); font-weight:900; line-height:1.02;
-  letter-spacing:-.04em; color:var(--dark); margin-bottom:28px;
+  letter-spacing:-.04em; color:var(--rev-text); margin-bottom:28px;
   animation: fadeUp .7s ease both;
 }
-h1 em { font-style:normal; color:var(--cyan); }
+h1 em { font-style:normal; color:var(--rev-gold); }
 @keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:none} }
 
 .hero-sub {
