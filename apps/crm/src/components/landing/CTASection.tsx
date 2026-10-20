@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCtaAbVariant } from "./CtaAbProvider";
+import { GUARANTEE_TEXT } from "@/components/marketing/guarantee-copy";
 import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
 
 export function CTASection() {
@@ -18,7 +19,7 @@ export function CTASection() {
         {label}
       </Link>
       <p className="text-xs" style={{ color: SLATE_HORIZON.muted }}>
-        Bez kreditnej karty · 30-dňová garancia vrátenia
+        Bez kreditnej karty · {GUARANTEE_TEXT}
       </p>
     </div>
   );

@@ -7,7 +7,7 @@ import { useState } from "react";
 import { AlertTriangle, Flame, Zap } from "lucide-react";
 import { SLATE_HORIZON, SLATE_HORIZON_BADGES, WORKDESK_INNER_ROW, WORKDESK_PANEL } from "@/lib/slate-horizon-theme";
 import type { PricingV2Catalog } from "@/lib/pricing-v2";
-import { formatEurFromCents } from "@/components/marketing/pricing-v2-copy";
+import { unlockCtaLabelV2 } from "@/components/marketing/pricing-v2-copy";
 import { usePricingV2Catalog } from "@/components/marketing/pricing-v2-context";
 
 interface AiInsightsPanelProps {
@@ -232,8 +232,8 @@ export default function AiInsightsPanel({
             feature="príležitostí"
             titleOverride="+6 ďalších príležitostí"
             ctaLabel={
-              cheapestV2Band
-                ? `Odomknúť ďalšie príležitosti — plány od ${formatEurFromCents(cheapestV2Band.netCents)} mesačne bez DPH`
+              pricingV2 && cheapestV2Band
+                ? unlockCtaLabelV2(pricingV2)
                 : "Odomknúť Market Vision od 199 € mesačne"
             }
           />

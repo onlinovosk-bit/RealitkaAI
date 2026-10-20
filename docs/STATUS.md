@@ -4,6 +4,8 @@
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-05, 07:55 UTC** (FAIL-OPEN-SWEEP + TRIAL-GATE-CLOSED variant A: po vypršaní trialu je účet read-only, nie otvorený; hlavička prepočítaná z tabuľky 53 % → 51 %).
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 08:30 UTC** (EVENTS-WIRE + CRON-ALIVE, zatiaľ nezmergované).
 
+> **2026-10-16 (víkend, bez prepočtu tabuľky):** vážené **≈ 51 %** ostáva meranie z **2026-10-05**. **ZMERANÉ** `git rev-list --count origin/main --since=2026-10-05` na `9168d583` = **34** commitov. SESSION blok nižšie už má body 1, 2, 3, 4, 5, 9 a 10 odškrtnuté s PR na main (#851, #852, #855, #856, #858, #857, #854). Predaj / platby ostáva **0 %**, lebo live Stripe katalóg je v tomto behu **NEZMERANÉ** (žiaden live kľúč, `scripts/ops/stripe-verify-prices.sh` sa nespúšťal). Tabuľka sa neprepočítava, kým nie je živý nákup.
+>
 > **2026-10-08 SIGNUP-PROD:** migrácie SIGNUP-ARCH a pricing v2 stĺpce sú **aplikované na PROD** (dôkaz v `docs/architecture/2026-10-06-self-serve-signup.md`). Zavreté 2 nové cesty (zápis billing/trial stĺpcov agentúry z prehliadača; zhoda neoverený e-mail → tenant). Tabuľka nižšie sa NEPREPOČÍTAVA, kým nie je aj živý nákup (váha Predaj/platby 30).
 >
 > **2026-10-06 SIGNUP-ARCH:** kód + migrácia + TEST dôkaz (guard, bootstrap, hardening) pripravené, **na PROD neaplikované → tabuľka nižšie sa NEMENÍ** (percentá rastú až s PROD dôkazom: živé ceny + webhook → „Predaj/platby"; aplikovaná migrácia → „Tenantová izolácia" a „Schéma + nasadenie"). Pozri `docs/architecture/2026-10-06-self-serve-signup.md`.
@@ -39,18 +41,15 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: 10 bodov zadania 2026-10-15 — body 1, 2, 6 a 10 do pondelka 19. 10.
+Cieľ: VLNY-AB — reporty vlny A (Realvia zlyhania) a vlny B (mŕtvy kód / fantómy) z vlastného overenia v PROD + oprava čísla v matici (draft PR)
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] 1 — AI návrhy odpovedí za 30 dní zmerané na PROD (3 / 0 / 0), PR #851 zmergovaný
-- [x] 2 — UI nastavení ranného briefu, PR #852 zmergovaný (doručovanie blokuje `RESEND_API_KEY`)
-- [ ] 6 — follow-up sweep: PR #853 founder 16. 10. zavrel bez mergu, na `main` nie je nič; sweep zostáva nepozorovateľný
-- [x] 10 — trial bez karty overený, ceny pripravené pre live, PR #854 zmergovaný (live skript spúšťa founder)
-- [x] 3 — plánovač Gmail pull v repozitári (denne 08:20 UTC + stopa pri vypnutí), PR #855 zmergovaný
-- [x] 4 — plánovač Realvia fronty (denne 11:50 UTC + denník), PR #856 zmergovaný; export čaká na dodávateľa
-- [x] 5 — rozsah importu zmapovaný, portálový import opravený, PR #858 zmergovaný
-- [ ] 7 — D1 extrakcia dopytu na PROD (čaká na korpus, gold labels a LIA od foundera)
-- [ ] 8 — D4 `DEMAND_MATCHING_ENABLED` (v kóde netreba nič, čaká na bod 7)
-- [x] 9 — 12 živých miest MINIMIZE opravených, PR #857 zmergovaný
+- [x] 1 — Agregát zlyhaní premeraný v PROD v tomto turne: 1 543 / 256 / 1 287 = 83,41 %, identita `ok+fail = processed`
+- [x] 2 — Mesačný aj denný rozpad premeraný; nájdená a opravená MOJA chyba, že agregát „jún – dnes 38,1 %" zakrýval september (89 zlyhaní, 58,9 %)
+- [x] 3 — Príčina: `meta` prázdne v 0 z 1 077 riadkov, 5 textov chyby na 253 riadkov fronty → per-attempt príčina nie je uložená nikde
+- [x] 4 — Retry-slučka ako príčina VYVRÁTENÁ počtami aj časmi (733 ≠ 1 287; 322 zlyhaní po zavretí oboch poison riadkov)
+- [x] 5 — Vlna B overená: `event_store`/`LeadService` reálny mŕtvy kód · `outreach_messages` fantóm (0 výskytov) · nav oprávnenia už opravené 2026-10-05 (`d03cc47`)
+- [x] 6 — Riadok Realvia v `capability-truth-matrix.md` opravený + PREPEND do `memory/decisions.md`
+- [ ] 7 — Draft PR (bez merge)
 <!-- SESSION:END -->
 
 ## Čo potrebujem od teba (zoradené podľa dopadu)

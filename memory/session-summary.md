@@ -1,3 +1,42 @@
+## Session 2026-10-18 (VLNY-AB — reporty z overených nálezov)
+### Dokončené
+- Vlna A premeraná mnou v PROD v tomto turne: `realvia_metrics` 1 077 riadkov, processed 1 543, ok 256, fail 1 287, `ok+fail = 1543`, **83,41 %**.
+- Mesačný + denný rozpad: máj 92,5 % (1 189) · jún 36,0 % (9) · júl/aug 0 % · **sep 58,9 % (89)** · **okt 16 pokusov / 0 fail**. Opravená MOJA chyba z #864: agregát „jún – dnes 38,1 %" zakrýval september.
+- Príčina zlyhaní NIE JE zistená a per-attempt sa nemá kde uložiť: `meta` neprázdne v **0 z 1 077** riadkov metrík, texty chyby iba pre **5 z 253** riadkov fronty.
+- Retry-slučka ako príčina **vyvrátená**: 518+215 = 733 retry ≠ 1 287 zlyhaní; oba poison riadky `completed` 2026-05-23 14:45, ale 322 májových zlyhaní prišlo 26.–28. 5.; september má iný text chyby (`idx_properties_source_id_unique`).
+- Vlna B overená `grep`om + `to_regclass`: `event_store` reálny mŕtvy kód (`EventStore.ts` píše do neexistujúcej tabuľky; jediný konzument `LeadService` nikto neimportuje) · `outreach_messages` **fantóm** (0 výskytov v repozitári, 0 v PROD) · navigačné oprávnenia **už opravené** 2026-10-05 (`d03cc47`, #817).
+- Riadok Realvia v `capability-truth-matrix.md` opravený (83,41 %, rozpad, „príčina nie je zistená", bez kauzálneho príbehu).
+### Rozpracované / Pending
+- Draft PR tejto steny (bez merge) — čaká na „merguj N".
+- **#864 je starší, konfliktný (`dirty`) draft tej istej opravy. Nahrádza ho tento PR → odporúčam zavrieť.**
+- Samostatné steny s GO: export z Realvie od dodávateľa · stĺpec s príčinou v `realvia_metrics` (migrácia) · pin na `idx_properties_source_id_unique` · zmazanie `LeadService`/`EventStore`/`002_event_store.sql`.
+- Stále na founderovi: `RESEND_API_KEY`, šesť `GOOGLE_GMAIL_INBOUND_*`, Stripe live katalóg → `STRIPE_PRICE_V2_*` → `PRICING_V2_ENABLED`, jeden reálny `.xlsx` export na dôkaz parsera v PROD.
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-18-vlna-a-realvia-zlyhania.md`: nový — zmeraný obraz zlyhaní + prečo retry-slučka nie je príčina.
+- `docs/reports/2026-10-18-vlna-b-mrtvy-kod-a-fantomy.md`: nový — 1 reálny nález, 1 fantóm, 1 už opravené + cena metódy (87 agentov, 729,5 k tokenov).
+- `docs/architecture/capability-truth-matrix.md`: riadok Realvia — 45 % → 83,41 % so rozpadom a bez kauzality.
+- `memory/decisions.md`: PREPEND záznam VLNY-AB vrátane pravidla „výstup swarmu je hypotéza, nie zistenie".
+- `docs/STATUS.md`: blok SESSION prepnutý na cieľ VLNY-AB.
+### Ďalší krok
+Export z Realvie od dodávateľa je jediný krok, ktorý odblokuje príčinu a stojí nás 0 h — všetko ostatné je hádanie nad 5 textami chyby.
+
+## Session 2026-10-17 (www.revolis.ai SEO)
+### Dokončené
+- RAU route: GO_REQUIRED BUILD revolis (slovo „merge“ v zadaní; merge nerobím).
+- Apex→www 307 overený naživo (`server: Vercel`); v repe host redirect nie je.
+- Canonical + og:url na `/`, `/demo`, `/balik`; `robots.ts` + `sitemap.ts` (len www `/` `/demo` `/balik`).
+- Testy 48/48, `next build` (15.5.15) zelený, lokálny smoke 200 na robots/sitemap + canonical tagy.
+- Report: `docs/reports/2026-10-17-marketing-www-seo.md`.
+### Rozpracované / Pending
+- Draft PR (bez merge). 308/301 na apexe ostáva manuálny krok vo Vercel Domains projektu `revolis-marketing`.
+- Preview deploy pre `cursor/*` je v `apps/marketing/vercel.json` vypnutý.
+### Kľúčové súbory zmenené
+- `apps/marketing/lib/site.ts`: kanonický origin www.
+- `apps/marketing/app/{layout,demo/page,balik/layout,robots,sitemap}.tsx?ts`: metadata + robots + sitemap.
+- `apps/marketing/__tests__/seo.test.ts`: unit testy.
+### Ďalší krok
+Founder: review draft PR; po merge zmeniť Vercel Domains 307→308. RAU route: GO_REQUIRED BUILD revolis.
+
 ## Session 2026-10-16 (10 bodov zadania 2026-10-15)
 ### Dokončené
 - **Bod 1** — AI návrhy odpovedí za 30 dní zmerané na PROD (3 vytvorené / 0 schválených / 0 odoslaných), PR #851 zmergovaný (`515a8b5b`).

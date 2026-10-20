@@ -1,8 +1,9 @@
 import { Handshake, Lock, Shield, Zap } from "lucide-react";
+import { GUARANTEE_TEXT } from "@/components/marketing/guarantee-copy";
 import { SLATE_HORIZON, WORKDESK_CARD } from "@/lib/slate-horizon-theme";
 
 const items = [
-  { Icon: Shield, text: "100% garancia vrátenia do 30 dní — bez otázok" },
+  { Icon: Shield, text: GUARANTEE_TEXT },
   { Icon: Lock, text: "GDPR compliant · Dáta zostávajú na EU serveroch" },
   { Icon: Zap, text: "Nasadenie do 1 dňa · Bez IT oddelenia" },
   { Icon: Handshake, text: "Zrušenie kedykoľvek · Bez záväzkov" },

@@ -127,6 +127,18 @@ describe('/api/events nepretypováva telo', () => {
   })
 })
 
+describe('vznik leadu z e-mailu zapisuje lead_created', () => {
+  const route = read('src/app/api/acquire/email/route.ts')
+
+  it('volá existujúci logEvent service-role klientom a pád zápisu nekončí 500', () => {
+    expect(route).toContain("from \"@/lib/events/log-event\"")
+    expect(route).toContain('eventType: "lead_created"')
+    expect(route).toContain('client: supa')
+    expect(route).toContain('resolveProfileForLead')
+    expect(route).toContain('lead_created event failed')
+  })
+})
+
 describe('slovník je runtime zdroj, nie len typ', () => {
   const types = read('src/types/events.ts')
 
