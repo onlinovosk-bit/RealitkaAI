@@ -1,3 +1,9 @@
+## 2026-10-20 — GO COACH-ONLY: Prompt Coach sa spúšťa len príkazom „GO COACH", nie automaticky (BUILD)
+**GO:** founder: Prompt Coach sa v Grok Botovi úplne zacyklil; chce ho spúšťať iba príkazom „GO COACH", nie pri každom prompte, a rovnako aj v repe.
+**Čo:** hook `working-agreement.sh` vloží blok COACH len ak správa začína „GO COACH" (nezáleží na veľkosti písmen); pri iných správach nikdy. Blok COACH v `memory/working-agreement.md` prepísaný: „GO COACH" = vrátiť iba hodnotenie formy a vylepšený prompt, zadanie NEVYKONÁVAŤ; vylepšený prompt nesmie začínať „GO COACH" (štrukturálna ochrana proti cyklu). Pôvodná automatika a značka `[COACH-PROMPT-OK]` sú tým obsolétne (zostáva v histórii).
+**Mimo repa:** nové prompty pre Grok, ChatGPT a Gemini dostal founder v chate.
+**Rollback:** revert commitu.
+
 ## 2026-10-20 — GO COACH-LOOP-FIX: schválený prompt od coacha sa vykoná, neaudituje sa znova (BUILD)
 **GO:** founder „GO COACH-LOOP-FIX". Problém: Grok sa zacyklil — vložený prompt od Coacha bral ako nové zadanie a vytvoril ďalší vylepšený prompt.
 **Príčina:** pravidlo „pri každom novom zadaní pridaj Prompt-coach" nerozlišovalo prompt, ktorý coach sám vytvoril. Zdroj: vložený prepis a súbor od foundera (správanie Groka som nevidel).
