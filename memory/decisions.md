@@ -1,5 +1,27 @@
 # Critical Decisions Log
 
+## 2026-10-18 — VLNY-AB: reporty z overených nálezov, nie z výstupu swarmu (BUILD, draft)
+**GO:** founder zvolil variant **A** — „zastaviť vlny a reporty napíšem z toho, čo mám; nosné tvrdenia si overím sám priamo v PROD".
+**Čo som premeral sám v tom istom turne** (PROD `ypgajkhqtbriqqmyawyv`, iba čítanie):
+- `realvia_metrics`: 1 077 riadkov, processed **1 543**, ok **256**, fail **1 287**, `ok+fail = 1543`, **83,41 %**, 2026-05-21 → 2026-10-14.
+- Mesačne: máj 92,5 % (1 189 fail) · jún 36,0 % (9) · júl 0 % · aug 0 % · **sep 58,9 % (89)** · **okt 16 pokusov / 0 fail**.
+- `realvia_metrics.meta` neprázdne v **0 z 1 077** riadkov → per-attempt príčina nie je uložená NIKDE.
+- `realvia_processing_queue`: 253 riadkov, **5** s textom chyby, **2** nad `max_retries`, max `retry_count` **518**, 0 pending, 1 failed.
+- `to_regclass`: `events` ✅ `outbound_messages` ✅ `event_store` ❌ `outreach_messages` ❌.
+**Čo som opravil na SEBE (druhýkrát v tej istej veci):** v #864 som napísal „jún – dnes 38,1 %" ako jeden riadok. Ten agregát **zakrýval september** (89 zlyhaní, 58,9 %). Máj + september nesú 1 278 z 1 287 zlyhaní; september je samostatná novšia udalosť, nie dozvuk mája. Prvá chyba bolo dvojité započítanie (45 %), druhá bol priveľmi hrubý agregát — oba razy to vyzeralo ako meranie.
+**Čo NEOBSTÁLO:** retry-slučka ako *príčina*. Obstál bug (518 a 215 pri `max_retries = 3`), nie kauzalita: 518+215 = **733** retry nepokryje **1 287** zlyhaní, oba poison riadky sú `completed` s `processed_at` 2026-05-23 14:45, ale **322 májových zlyhaní prišlo 26.–28. 5.**, a september má iný text chyby (`idx_properties_source_id_unique`). Do matice preto ide len zmerané, bez príbehu.
+**Vlna B — z troch „chýbajúcich tabuliek" obstala jedna:** (1) `event_store` REÁLNE: `EventStore.ts` píše do tabuľky, ktorá v PROD nie je; nepadá to len preto, že jeho jediný konzument `LeadService` **nikto neimportuje** → mŕtvy kód. (2) `outreach_messages` **FANTÓM**: 0 výskytov v celom repozitári, 0 v PROD. (3) navigačné oprávnenia **UŽ OPRAVENÉ** 2026-10-05 (`d03cc47`, #817): `UNKNOWN_TEAM_PERMISSIONS` 7× `false`, 3 miesta v `AppSidebar`, 4 v `/api/nav/permissions`, pin `trial-gate-closed.test.ts:94`.
+**Cena metódy:** vlny A+B = **87 agentov, 729,5 k tokenov, 1 h 56 min**. Môj odhad vopred bol „2 orchestrátori + 4–6 workerov" — **rádový omyl, môj**. Výnos po overení: 1 reálny nález, 1 fantóm, 1 trinásť dní staré opravené, 1 vyvrátený kauzálny príbeh, 1 oprava môjho agregátu.
+**Pravidlo, ktoré z toho platí:** výstup swarmu je **hypotéza so smerom**, nie zistenie. Nosné tvrdenie premerať sám; 1–2 workeri na zúženie priestoru sú lacnejší než 87 agentov na nálezy, ktoré aj tak overujem jeden po druhom.
+**Výstup:** `docs/reports/2026-10-18-vlna-a-realvia-zlyhania.md`, `docs/reports/2026-10-18-vlna-b-mrtvy-kod-a-fantomy.md`, oprava riadku Realvia v `capability-truth-matrix.md`. **#864 je starší a konfliktný (`dirty`) draft tej istej opravy — nahrádza ho tento PR, odporúčam ho zavrieť.**
+**Otvorené (každé samostatná stena s GO):** export z Realvie od dodávateľa · stĺpec s príčinou v `realvia_metrics` (migrácia) · pin na `idx_properties_source_id_unique` · zmazanie `LeadService`/`EventStore`/`002_event_store.sql`.
+
+## 2026-10-17 — www.revolis.ai SEO (canonical, robots, sitemap) (BUILD, draft)
+**GO:** zadanie Cloud Agent — jeden draft PR, nemergovať. **RAU:** GO_REQUIRED kvôli slovu merge; merge nerobím.
+**Ústava v2:** oprava indexácie existujúceho webu (GSC), nie nová featura pre klienta. Timing OK. Q1 neplatí ako veto — bez www canonical Google indexuje apex.
+**Rozhodnutie:** BUILD na vetve. Apex 308 nehádzať do next.config — 307 ide z Vercel Domains (`server: Vercel`, 0 host redirectov v repe). Sitemap len overené 200 URL na www (`/`, `/demo`, `/balik`). `app.revolis.ai` nedotknuté.
+**Výstup:** `docs/reports/2026-10-17-marketing-www-seo.md`.
+
 ## 2026-10-16 — Vercel Hobby plán obmedzuje crony na raz denne (ZMERANÉ, nie odhad)
 **Ako sa to zistilo:** uvažoval som, že keďže na PROD preukázateľne beží ≥ 5 rôznych cronov, účet nemôže byť Hobby (Hobby má strop 2 crony), a naplánoval som oba nové crony hodinovo. Vercel odmietol **oba buildy**: „Hobby accounts are limited to daily cron jobs. This cron expression (20 * * * *) would run more than once per day."
 **Záver (merané z chyby buildu, nie z dokumentácie):** počet cronov sa NEvynucuje (v `vercel.json` ich je 19), vynucuje sa **frekvencia**. Sub-denný výraz zhodí **celé nasadenie**, nie len ten jeden cron.

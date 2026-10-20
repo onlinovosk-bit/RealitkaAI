@@ -43,7 +43,23 @@ type CheckoutConfig = {
     priceEur: number;
     featured?: boolean;
   }>;
+  /** Názvy env premenných (nikdy hodnoty `price_…`). Staršie API ich nemusí poslať. */
+  missingPriceEnvKeys?: {
+    seat?: string[];
+    topup?: string[];
+  };
 };
+
+const PRICE_ENV_NAME = /^STRIPE_PRICE_[A-Z0-9_]+$/;
+
+/** Len názvy premenných z checkout-config. Hodnotu Price ID sem nikdy nedávame. */
+function listedMissingPriceEnvKeys(config: CheckoutConfig | null): string[] {
+  const raw = [
+    ...(config?.missingPriceEnvKeys?.seat ?? []),
+    ...(config?.missingPriceEnvKeys?.topup ?? []),
+  ];
+  return raw.filter((name) => PRICE_ENV_NAME.test(name));
+}
 
 export default function UpgradePage() {
   const [config, setConfig] = useState<CheckoutConfig | null>(null);
@@ -131,6 +147,7 @@ export default function UpgradePage() {
   );
 
   const unavailable = !loading && !config?.checkoutAvailable && !pricingV2;
+  const missingPriceEnvNames = unavailable ? listedMissingPriceEnvKeys(config) : [];
 
   return (
     <div
@@ -163,9 +180,17 @@ export default function UpgradePage() {
         >
           <h2 className="text-lg font-semibold mb-2">Checkout momentálne nedostupný</h2>
           <p className="text-sm">
-            Stripe ceny pre seat alebo top-up balíčky nie sú nakonfigurované v tomto prostredí.
-            Kontaktujte podporu alebo skúste neskôr.
+            Checkout sa nedá spustiť, lebo v tomto prostredí chýbajú Stripe Price ID
+            pre seat alebo top-up balíčky. Hodnoty sa do stránky nedostanú — nastavujú sa
+            mimo aplikácie.
           </p>
+          {missingPriceEnvNames.length > 0 && (
+            <ul data-testid="missing-price-env" className="mt-3 list-disc pl-5 text-sm font-mono">
+              {missingPriceEnvNames.map((name) => (
+                <li key={name}>{name}</li>
+              ))}
+            </ul>
+          )}
           <Link
             href="/billing"
             className="mt-4 inline-block text-sm font-medium underline"

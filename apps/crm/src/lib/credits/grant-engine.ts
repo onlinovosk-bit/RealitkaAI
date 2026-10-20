@@ -7,7 +7,7 @@ import {
   applyMonthlyGrantCredits,
   expireGrantCreditsAtomic,
 } from "@/lib/credits/mutate-credits";
-import { monthlyOfficeGrantCredits, PRICING_V2_BAND_IDS, type PricingV2BandId } from "@/lib/pricing-v2";
+import { monthlyOfficeGrantCredits, resolvePricingV2BandResult, PRICING_V2_BAND_IDS, type PricingV2BandId } from "@/lib/pricing-v2";
 import { PRICING_V2_AGENCY_MODEL } from "@/lib/pricing-v2-contract";
 import {
   COCKPIT_PRODUCTS,
@@ -32,6 +32,8 @@ export type AgencyCreditRow = {
    */
   pricing_model?: string | null;
   pricing_band?: string | null;
+  /** Cenník v3: počet maklérov (= quantity licencie). Pásmo grantu sa odvodzuje z neho. */
+  licensed_users?: number | null;
   pack_credits?: number | null;
   subscription_status?: string | null;
 };
@@ -52,9 +54,22 @@ function seatTierFromAccountTier(accountTier: string | null): SeatTier {
 }
 
 /**
+ * Pásmo pre grant (v3): odvodené z `licensed_users` (1 / 2–5 / 6–10 / 11+). Ak `licensed_users` chýba
+ * (riadok bez tohto stĺpca), použije sa uložené `pricing_band`. Neplatná hodnota = null (grant 0).
+ */
+function grantBandOf(agency: AgencyCreditRow): PricingV2BandId | null {
+  if (agency.licensed_users !== null && agency.licensed_users !== undefined) {
+    const r = resolvePricingV2BandResult(agency.licensed_users);
+    return r.ok ? r.band.id : null;
+  }
+  const band = agency.pricing_band;
+  return band && (PRICING_V2_BAND_IDS as readonly string[]).includes(band) ? (band as PricingV2BandId) : null;
+}
+
+/**
  * Mesačný grant agentúry v kreditoch (čistá funkcia, bez DB).
  *
- * v2: kredity pásma + pack_credits, a to LEN pri subscription_status = 'active'.
+ * v2/v3: kredity pásma (z licensed_users) + pack_credits, a to LEN pri subscription_status = 'active'.
  * Neznáme pásmo alebo iný pricing_model než v2 = 0 (fail-closed), nikdy nie legacy seat výpočet:
  * v2 agentúra má seats = povolení používatelia a legacy výpočet by jej dal „team“ grant × seaty.
  * Legacy (pricing_model NULL/chýba): výpočet nezmenený, subscription_status sa neskúma.
@@ -63,11 +78,11 @@ export function monthlyGrantAmountForAgency(agency: AgencyCreditRow): number {
   if (agency.pricing_model !== null && agency.pricing_model !== undefined) {
     if (agency.pricing_model !== PRICING_V2_AGENCY_MODEL) return 0;
     if (agency.subscription_status !== "active") return 0;
-    const band = agency.pricing_band;
-    if (!band || !(PRICING_V2_BAND_IDS as readonly string[]).includes(band)) return 0;
+    const band = grantBandOf(agency);
+    if (!band) return 0;
     const pack = agency.pack_credits ?? 0;
     if (!Number.isSafeInteger(pack) || pack < 0) return 0;
-    return monthlyOfficeGrantCredits(band as PricingV2BandId) + pack;
+    return monthlyOfficeGrantCredits(band) + pack;
   }
 
   return monthlyAgencyGrantCredits({

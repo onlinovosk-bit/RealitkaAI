@@ -51,7 +51,7 @@ vi.mock("@/lib/supabase/admin", () => ({
 
 import { syncAgencyBillingLifecycle } from "@/lib/billing-lifecycle";
 
-const V2_TEAM_PRICE = "price_1V2teamAbcdefg";
+const V3_SEAT_PRICE = "price_1V3seatMonthly01";
 const SEAT_TEAM_PRICE = "price_1SeatTeamAbcdef";
 
 function v2Agency(over: Partial<Agency> = {}): Agency {
@@ -68,12 +68,12 @@ function v2Agency(over: Partial<Agency> = {}): Agency {
     pricing_model: "v2",
     pricing_band: "team",
     licensed_users: 4,
-    pack_credits: 60,
+    pack_credits: 50,
     ...over,
   };
 }
 
-function stripeWith(status: string, priceId = V2_TEAM_PRICE, quantity = 1) {
+function stripeWith(status: string, priceId = V3_SEAT_PRICE, quantity = 4) {
   return {
     subscriptions: {
       retrieve: async () =>
@@ -95,12 +95,12 @@ function subEvent(type: string): Stripe.Event {
 
 beforeEach(() => {
   agencies = [v2Agency()];
-  vi.stubEnv("STRIPE_PRICE_V2_TEAM", V2_TEAM_PRICE);
+  vi.stubEnv("STRIPE_PRICE_V3_SEAT_MONTHLY", V3_SEAT_PRICE);
   vi.stubEnv("STRIPE_PRICE_TEAM_SEAT", SEAT_TEAM_PRICE);
 });
 
 describe("lifecycle × cenník v2", () => {
-  it("aktívne v2 predplatné (quantity 1) nezmení počet povolených používateľov ani tier", async () => {
+  it("aktívne v3 predplatné (quantity 4) nezmení počet povolených používateľov ani tier", async () => {
     const result = await syncAgencyBillingLifecycle(subEvent("customer.subscription.updated"), {
       stripe: stripeWith("active"),
     });
@@ -111,7 +111,7 @@ describe("lifecycle × cenník v2", () => {
       account_tier: "pro",
       pricing_model: "v2",
       pricing_band: "team",
-      pack_credits: 60,
+      pack_credits: 50,
       subscription_status: "active",
     });
   });

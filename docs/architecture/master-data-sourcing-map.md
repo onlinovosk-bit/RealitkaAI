@@ -51,11 +51,16 @@ portálový import kontaktov.
 **Legálnosť:** najjednoduchší prípad v celej mape — prevádzkovateľom je
 kancelária, my sme sprostredkovateľ. Nič sa nezbiera, nič sa nescrapuje;
 zákazník nám dáva to, čo už legálne má. Žiadna nová brána GDPR.
-**Rozsah k 2026-10-15 (zmerané, bod 5):**
-- formát: **iba CSV** (UTF-8, fallback windows-1250). `xlsx` a `vcf` boli
-  v zozname zdrojov ako štítky bez parsera — používateľ si vybral Excel
-  a formulár mu .xlsx neprijal. Odteraz sú vypnuté a povedia, čo urobiť.
-  Realvia JSON má vlastnú cestu.
+**Rozsah k 2026-10-16 (zmerané, bod 5 + XLSX-IMPORT):**
+- formát: **CSV** (UTF-8, fallback windows-1250) **a `.xlsx`**. Formát sa
+  rozoznáva z obsahu súboru (ZIP podpis `PK\x03\x04`), nie z výberu
+  v rozbaľovacom zozname — export z Realvie uložený ako Excel predtým skončil
+  nezrozumiteľnou chybou o hlavičkách. `.xlsx` číta vlastný parser
+  (`xlsx-parse.ts`, ZIP cez `node:zlib`, XML cez `fast-xml-parser`); žiadna
+  nová npm závislosť, lebo jediná rozšírená knižnica `xlsx` má na registri
+  poslednú verziu z 2022 s neopravenou prototype-pollution dierou.
+  `vcf` parser stále nemá a je vypnutý s vysvetlením; Realvia JSON má vlastnú
+  cestu.
 - limit: **2000 riadkov**, **10 MB** na súbor (strop sa kontroluje pred
   načítaním do pamäte).
 - deduplikácia: podľa **e-mailu**, v dávke aj proti databáze v rámci
@@ -66,8 +71,9 @@ zákazník nám dáva to, čo už legálne má. Žiadna nová brána GDPR.
 9. 6. 2026), cez portálový import **0 leadov za celý čas** — ten do zápisu
 neposielal `agency_id`, takže ho RLS zakaždým odmietol (opravené v bode 5).
 Z 523 leadov na PROD je 439 z jednorazového importu Realvie.
-**Otvorené:** XLSX parser (makléri žijú v Exceli), deduplikácia podľa
-telefónu, zjednotenie dvoch ciest do jednej.
+**Otvorené:** deduplikácia podľa telefónu, zjednotenie dvoch ciest do jednej,
+vCard (.vcf). Na PROD zatiaľ **ani jeden .xlsx import neprebehol** — parser je
+overený na fixtures, nie na zákazníkovom súbore.
 
 ## ZHLUK 2 — KATASTER: GEOMETRIA (parcely)
 **Featury:** Zmena v okolí (mapový základ), Bod zlomu (mapový základ),

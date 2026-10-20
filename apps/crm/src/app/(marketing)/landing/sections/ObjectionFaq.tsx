@@ -1,8 +1,17 @@
 'use client';
 import { useState } from 'react';
 import type { PricingV2Catalog } from '@/lib/pricing-v2';
-import { formatEurFromCents, usersRangeLabel } from '@/components/marketing/pricing-v2-copy';
+import { formatEurFromCents } from '@/components/marketing/pricing-v2-copy';
+import { GUARANTEE_TEXT, PRICE_ON_REQUEST_TEXT } from '@/components/marketing/guarantee-copy';
 
+const GUARANTEE_QUESTION = 'Môžem to vyskúšať bez záväzku?';
+const COST_QUESTION = 'Oplatí sa to finančne?';
+const SMALL_OFFICE_QUESTION = 'Funguje to aj pre malú kanceláriu alebo samostatného makléra?';
+
+/**
+ * Základné FAQ bez akejkoľvek sumy (PR1 §4: kým je PRICING_PUBLIC_ENABLED vypnuté, verejný web nesmie ukázať cenu).
+ * Ani v texte o provízii nie je znak „€“, aby test „žiadna suma“ platil aj pre celé FAQ.
+ */
 const faq = [
   {
     q: 'Čo ak nemáme čas na zavedenie nového systému?',
@@ -17,49 +26,45 @@ const faq = [
     a: 'Štandardne do 1 dňa: registrácia, úvodné nastavenie, import príležitostí, zapnutie automatizácie a prvé výkonové reporty.',
   },
   {
-    q: 'Oplatí sa to finančne?',
-    a: '<strong><em>Revolis.AI nestojí ani zlomok jedného strateného obchodu.</em></strong> Priemerná maklérska provízia na Slovensku je 2 000 – 4 000 €. Mesačné predplatné Starter stojí 49 €. Stačí uzatvoriť o jeden obchod viac za rok — a systém sa zaplatí mnohonásobne.',
+    q: COST_QUESTION,
+    a: `<strong><em>Revolis.AI nestojí ani zlomok jedného strateného obchodu.</em></strong> Provízia za jeden obchod sa na Slovensku počíta v tisíckach eur. Stačí uzatvoriť o jeden obchod viac za rok — a systém sa zaplatí mnohonásobne. ${PRICE_ON_REQUEST_TEXT}.`,
   },
   {
-    q: 'Môžem to vyskúšať bez záväzku?',
-    a: 'Áno. Každý plán má 30-dňovú garanciu vrátenia peňazí. Ak nebudeš spokojný, vrátime ti celú sumu bez otázok.',
+    q: GUARANTEE_QUESTION,
+    a: `Áno. ${GUARANTEE_TEXT}.`,
   },
   {
     q: 'Čo ak mám záujemcov z viacerých portálov naraz?',
     a: 'Revolis.AI automaticky stiahne príležitosti z Nehnuteľnosti.sk, Reality.sk, TopReality.sk a ďalších. Všetko na jednom mieste, nič sa nestratí.',
   },
   {
-    q: 'Funguje to aj pre malú kanceláriu alebo samostatného makléra?',
-    a: 'Áno — Starter plán je navrhnutý práve pre samostatných maklérov a kancelárie do 3 ľudí. Veľkosť tímu nehrá rolu, výsledky sú viditeľné od prvého týždňa.',
+    q: SMALL_OFFICE_QUESTION,
+    a: 'Áno — Revolis.AI je navrhnutý pre samostatných maklérov aj pre celé kancelárie. Veľkosť tímu nehrá rolu, cena sa riadi počtom maklérov a výsledky sú viditeľné od prvého týždňa.',
   },
 ];
 
 /**
- * Cenník v2 (W3-fix): variant FAQ bez starých cien a bez garancie (garancia nie je pre v2 rozhodnutá, viď
- * docs/pricing/w2d-copy-and-legal-review.md). Všetky sumy idú z katalógu (`buildPricingV2Catalog`).
+ * Cenník v3 (PR1): variant FAQ s cenami z katalógu (`buildPricingV2Catalog`). Používa sa len pri zapnutom
+ * PRICING_PUBLIC_ENABLED; inak server pošle `null` a platí základné FAQ vyššie.
  */
 function buildFaqV2(catalog: PricingV2Catalog): typeof faq {
   const cheapest = [...catalog.bands].sort((a, b) => a.netCents - b.netCents)[0];
-  const solo = catalog.bands.find((b) => b.minUsers === 1);
-  const team = catalog.bands.find((b) => b.minUsers > 1);
-  const price = `${formatEurFromCents(cheapest.netCents)} mesačne bez DPH (${formatEurFromCents(cheapest.grossCents)} s DPH ${String(catalog.vatPercent).replace('.', ',')}\u00a0%)`;
-  return faq
-    .filter((item) => item.q !== 'Môžem to vyskúšať bez záväzku?')
-    .map((item) => {
-      if (item.q === 'Oplatí sa to finančne?') {
-        return {
-          q: item.q,
-          a: `<strong><em>Jeden obchod navyše za rok pokryje cenu systému mnohonásobne.</em></strong> Priemerná maklérska provízia na Slovensku je 2 000 – 4 000 €. Plány pre celú kanceláriu začínajú na ${price}.`,
-        };
-      }
-      if (item.q === 'Funguje to aj pre malú kanceláriu alebo samostatného makléra?' && solo && team) {
-        return {
-          q: item.q,
-          a: `Áno — plán ${solo.label} je pre ${usersRangeLabel(solo)}, plán ${team.label} pre ${usersRangeLabel(team)}. Platíte jeden paušál za celú kanceláriu, nie za každého makléra zvlášť. Výsledky sú viditeľné od prvého týždňa.`,
-        };
-      }
-      return item;
-    });
+  const price = `${formatEurFromCents(cheapest.netCents)} mesačne bez DPH pri ročnej platbe (${formatEurFromCents(cheapest.grossCents)} s DPH ${String(catalog.vatPercent).replace('.', ',')}\u00a0%)`;
+  return faq.map((item) => {
+    if (item.q === COST_QUESTION) {
+      return {
+        q: item.q,
+        a: `<strong><em>Jeden obchod navyše za rok pokryje cenu systému mnohonásobne.</em></strong> Priemerná maklérska provízia na Slovensku je 2 000 – 4 000 €. Cena sa riadi počtom maklérov a začína na ${price}.`,
+      };
+    }
+    if (item.q === SMALL_OFFICE_QUESTION) {
+      return {
+        q: item.q,
+        a: 'Áno — pásmo sa nastaví samo podľa počtu maklérov (1 / 2–5 / 6–10 / 11 a viac). Výsledky sú viditeľné od prvého týždňa.',
+      };
+    }
+    return item;
+  });
 }
 
 export default function ObjectionFaq({ pricingV2 = null }: { pricingV2?: PricingV2Catalog | null } = {}) {

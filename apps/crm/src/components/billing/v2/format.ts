@@ -8,7 +8,7 @@ export function formatEurCents(cents: number): string {
 }
 
 export function formatUserRange(minUsers: number, maxUsers: number | null): string {
-  if (maxUsers === null) return `${minUsers} a viac používateľov`;
-  if (minUsers === maxUsers) return minUsers === 1 ? "1 používateľ" : `${minUsers} používatelia`;
-  return `${minUsers}–${maxUsers} používateľov`;
+  if (maxUsers === null) return `${minUsers} a viac maklérov`;
+  if (minUsers === maxUsers) return minUsers === 1 ? "1 maklér" : `${minUsers} makléri`;
+  return `${minUsers}–${maxUsers} maklérov`;
 }
