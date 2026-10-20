@@ -1,10 +1,26 @@
+import { timingSafeEqual } from "crypto";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { syncLeadToHubSpot } from "@/lib/hubspot/sync";
 
+function apiKeyMatches(provided: string | null, expected: string): boolean {
+  if (provided === null) return false;
+  const a = Buffer.from(provided);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
+}
+
 export async function POST(request: Request) {
-  const apiKey = process.env.DEMO_CAPTURE_API_KEY;
-  if (apiKey && request.headers.get("x-api-key") !== apiKey) {
+  const expected = process.env.DEMO_CAPTURE_API_KEY;
+  if (!expected) {
+    return NextResponse.json(
+      { ok: false, error: "Service unavailable" },
+      { status: 503 },
+    );
+  }
+
+  if (!apiKeyMatches(request.headers.get("x-api-key"), expected)) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
