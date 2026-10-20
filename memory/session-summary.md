@@ -16,6 +16,28 @@
 Founder review draft PR; merge len na GO.
 RAU route: AUTO-SAFE CONTENT revolis.
 
+## Session 2026-10-19 (REALVIA-PRICINY)
+### Dokončené
+- #882 zmergované (squash `060c5f4`), obsah overený priamo na `main`: `83,41` v matici = 1, staré tvrdenie „1 287 zlyhalo (45 %)" = 0, oba reporty prítomné, `session-summary.md` 3 847 riadkov (nič zmazané). #864 zavreté ako **nahradené**, s komentárom prečo.
+- **Príčina zlyhania sa zapisuje BEZ migrácie.** Mýlil som sa, že treba stĺpec: `realvia_metrics.meta` je `jsonb` a existuje — worker tam písal natvrdo `meta: {}`. Nové: `failureKinds.ts` (uzavretá množina 7 druhov), `tallyRealviaFailures(results)` v dávke, `buildMetricsMeta` v `metrics.ts`.
+- 13 unit testov + 6 verifikačných pinov zelených. Pin „worker už nepíše `meta: {}`" dokázaný **v oboch smeroch** (po dočasnom vrátení literálu padol, po obnovení prešiel).
+- **ZMERANÉ v PROD:** `idx_properties_source_id_unique` je UNIQUE na `properties.source_id` SAMOTNOM a platí; `idx_properties_tenant_source_unique` neexistuje; `20260617120000` nie je v `schema_migrations`. **Dve agentúry nemôžu mať tú istú inzerátovú id** → zmeraná príčina septembrovej chyby `duplicate key`.
+- **ZMERANÉ:** 138 migrácií v repe vs 78 v `schema_migrations`; najnovšia aplikovaná je, chýbajú veci v strede → aplikovalo sa výberovo.
+- Z matice odstránený zastaraný duplicitný riadok „Gmail pull" („chýba plánovač v repozitári"), ktorý si protirečil s riadkom pod ním.
+### Rozpracované / Pending
+- **Zmazanie mŕtveho kódu zablokoval harness** (`[Irreversible Local Destruction]` na `git rm`): `LeadService.ts`, `EventStore.ts`, `002_event_store.sql` + osirené `LeadsRepository.ts`, `SupabaseLeadsRepository.ts`. Nič sa nezmazalo. Potrebuje povolenie foundera.
+- **Aplikovať `20260617120000` na PROD — čaká na GO.** Pre-flight: unique na `source_id` implikuje unique na trojici, takže index nemôže naraziť na dáta; migrácia je inak aditívna (`ADD COLUMN`, `IF NOT EXISTS`), bez `DROP COLUMN`.
+- Stále na founderovi: `RESEND_API_KEY`, šesť `GOOGLE_GMAIL_INBOUND_*`, Stripe live katalóg → `STRIPE_PRICE_V2_*` → `PRICING_V2_ENABLED`, export z Realvie.
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/realvia/failureKinds.ts`: nový — klasifikácia zlyhaní na 7 stabilných druhov + `tallyRealviaFailures`.
+- `apps/crm/src/lib/realvia/metrics.ts`: `meta: {}` → `buildMetricsMeta(row)`, nové pole `failures`.
+- `apps/crm/src/lib/realvia/processQueue.ts`: dávka posiela spočítané druhy zlyhaní do metrík.
+- `apps/crm/tests/verification/realvia-failure-cause.verification.test.ts`: nový — 6 pinov vrátane „žiadna novšia migrácia nezaloží globálny unique na `properties (source_id)`".
+- `docs/reports/2026-10-19-properties-source-id-globalny-unique.md`: nový — zmeraný rozpor schémy + pre-flight.
+- `docs/architecture/capability-truth-matrix.md`: riadok Realvia doplnený o zmeranú septembrovú príčinu; zmazaný protirečivý riadok Gmail pull.
+### Ďalší krok
+Rozhodnutie foundera: aplikovať `20260617120000` na PROD (odblokuje import tej istej inzerátovej id pre druhú agentúru), alebo len samotný index ako minimálna migrácia.
+
 ## Session 2026-10-20 (PREFLIGHT AUDIT + CRON-TRUTH-01)
 ### Dokončené
 - Phase Zero read-only preflight podľa META-PROMPT v2.0; pracovný strom nedotknutý.
