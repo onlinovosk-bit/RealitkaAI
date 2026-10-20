@@ -41,13 +41,15 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: www.revolis.ai SEO — trvalý apex redirect, canonical/og:url, robots, sitemap (draft PR)
+Cieľ: VLNY-AB — reporty vlny A (Realvia zlyhania) a vlny B (mŕtvy kód / fantómy) z vlastného overenia v PROD + oprava čísla v matici (draft PR)
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] 1 — Apex→www 307 overený na živej doméne (`server: Vercel`); v repe (next.config / middleware / vercel.json) host redirect nie je
-- [x] 2 — Canonical + og:url na marketingových stránkach (`/`, `/demo`, `/balik`)
-- [x] 3 — robots.ts + sitemap.ts len pre existujúce verejné URL na www
-- [x] 4 — Testy 48/48 + lokálny build + smoke robots/sitemap/canonical
-- [ ] 5 — Draft PR (bez merge) + report v docs/reports
+- [x] 1 — Agregát zlyhaní premeraný v PROD v tomto turne: 1 543 / 256 / 1 287 = 83,41 %, identita `ok+fail = processed`
+- [x] 2 — Mesačný aj denný rozpad premeraný; nájdená a opravená MOJA chyba, že agregát „jún – dnes 38,1 %" zakrýval september (89 zlyhaní, 58,9 %)
+- [x] 3 — Príčina: `meta` prázdne v 0 z 1 077 riadkov, 5 textov chyby na 253 riadkov fronty → per-attempt príčina nie je uložená nikde
+- [x] 4 — Retry-slučka ako príčina VYVRÁTENÁ počtami aj časmi (733 ≠ 1 287; 322 zlyhaní po zavretí oboch poison riadkov)
+- [x] 5 — Vlna B overená: `event_store`/`LeadService` reálny mŕtvy kód · `outreach_messages` fantóm (0 výskytov) · nav oprávnenia už opravené 2026-10-05 (`d03cc47`)
+- [x] 6 — Riadok Realvia v `capability-truth-matrix.md` opravený + PREPEND do `memory/decisions.md`
+- [ ] 7 — Draft PR (bez merge)
 <!-- SESSION:END -->
 
 ## Čo potrebujem od teba (zoradené podľa dopadu)

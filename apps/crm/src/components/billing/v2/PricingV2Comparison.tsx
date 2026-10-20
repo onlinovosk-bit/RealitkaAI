@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { SLATE_HORIZON, WORKDESK_CARD } from "@/lib/slate-horizon-theme";
 import type { PricingV2ConfigPayload } from "@/lib/pricing-v2-contract";
+import { ANNUAL_PROMO_HEADLINE, GUARANTEE_TEXT } from "@/components/marketing/guarantee-copy";
+import { isAnnualPromoActive } from "@/lib/pricing-v2";
 import { formatEurCents, formatUserRange } from "./format";
 
-/** Porovnanie pásiem cenníka v2 (len z katalógu); nákup je na stránke upgrade. */
+/** Porovnanie pásiem cenníka v3 (len z katalógu, len pri PRICING_V2_ENABLED); nákup je na stránke upgrade. */
 export default function PricingV2Comparison({ config }: { config: PricingV2ConfigPayload }) {
   const catalog = config.catalog;
   if (!catalog) return null;
@@ -16,8 +18,13 @@ export default function PricingV2Comparison({ config }: { config: PricingV2Confi
           Porovnanie programov
         </h1>
         <p style={{ color: SLATE_HORIZON.muted }}>
-          Jedna mesačná cena za celú kanceláriu. Ceny sú bez DPH, konečná suma s {catalog.vatPercent} % DPH je pri každej cene.
+          Cena podľa počtu maklérov; pásmo sa nastaví samo. Ceny sú bez DPH, konečná suma s {catalog.vatPercent} % DPH je pri každej cene.
         </p>
+        {isAnnualPromoActive() && (
+          <p data-testid="compare-promo" className="mt-2 text-sm font-semibold" style={{ color: SLATE_HORIZON.brandDeep }}>
+            {ANNUAL_PROMO_HEADLINE}
+          </p>
+        )}
       </header>
       <div className="grid gap-4 md:grid-cols-4">
         {catalog.bands.map((band) => (
@@ -34,7 +41,7 @@ export default function PricingV2Comparison({ config }: { config: PricingV2Confi
             <div className="text-2xl font-bold" style={{ color: SLATE_HORIZON.brandDeep }}>
               {band.isFromPrice ? "od " : ""}
               {formatEurCents(band.netCents)}
-              <span className="text-sm font-normal" style={{ color: SLATE_HORIZON.muted }}> bez DPH / mes.</span>
+              <span className="text-sm font-normal" style={{ color: SLATE_HORIZON.muted }}> bez DPH / mes. pri ročnej platbe</span>
             </div>
             <div className="text-sm" style={{ color: SLATE_HORIZON.ink }}>
               {band.isFromPrice ? "od " : ""}
@@ -42,7 +49,11 @@ export default function PricingV2Comparison({ config }: { config: PricingV2Confi
             </div>
             <div data-testid={`compare-${band.id}-annual`} className="text-xs mt-1" style={{ color: SLATE_HORIZON.muted }}>
               Ročne {band.isFromPrice ? "od " : ""}
-              {formatEurCents(band.annual.netCents)} bez DPH ({formatEurCents(band.annual.grossCents)} s DPH), 12 × mesačná cena
+              {formatEurCents(band.annual.netCents)} bez DPH ({formatEurCents(band.annual.grossCents)} s DPH), 12 × mesačná cena pri ročnej platbe
+            </div>
+            <div data-testid={`compare-${band.id}-monthly`} className="text-xs mt-1" style={{ color: SLATE_HORIZON.muted }}>
+              Pri mesačnej platbe (+20 %) {band.isFromPrice ? "od " : ""}
+              {formatEurCents(band.monthly.netCents)} bez DPH ({formatEurCents(band.monthly.grossCents)} s DPH) mesačne
             </div>
             <p className="text-sm mt-3" style={{ color: SLATE_HORIZON.ink }}>
               {band.monthlyCredits} kreditov mesačne pre celú kanceláriu
@@ -50,12 +61,15 @@ export default function PricingV2Comparison({ config }: { config: PricingV2Confi
           </div>
         ))}
       </div>
+      <p data-testid="compare-guarantee" className="mt-6 text-sm font-medium" style={{ color: SLATE_HORIZON.greenDark }}>
+        {GUARANTEE_TEXT}
+      </p>
       <Link
         href="/upgrade"
         className="mt-8 inline-flex rounded-md px-6 py-2.5 text-sm font-semibold text-white"
         style={{ background: SLATE_HORIZON.topbarGradient }}
       >
-        Vybrať pásmo a objednať
+        Vybrať počet maklérov a objednať
       </Link>
     </div>
   );
