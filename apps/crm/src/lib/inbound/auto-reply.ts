@@ -6,13 +6,14 @@ import { callClaude, CLAUDE_HAIKU, extractJson } from '@/lib/ai/claude'
 import { cachedSystem } from '@/lib/ai/prompt-cache'
 import { withAiTimeout }                          from '@/lib/ai/fallback'
 import type { AiFailure }                         from '@/lib/ai/ai-failure'
+import { AGENT_PLACEHOLDER, NAME_PLACEHOLDER, restoreName } from '@/lib/privacy/minimize'
 
 /**
  * Bump whenever SYSTEM or the user template below changes. Stamped on every
  * draft and its `ai_action_audit` row so a draft can be traced to its prompt
  * (Agentic System Blueprint §11).
  */
-export const AUTO_REPLY_PROMPT_VERSION = 'inbound-autoreply-v1'
+export const AUTO_REPLY_PROMPT_VERSION = 'inbound-autoreply-v2'
 
 export interface AutoReplyInput {
   leadName:     string
@@ -58,18 +59,26 @@ export async function generateAutoReply(
     messages: [{
       role:    'user',
       content: `Nový lead:
-- Meno: ${data.leadName}
+- Meno: ${NAME_PLACEHOLDER}
 - Záujem: ${data.propertyType ?? 'nehnuteľnosť'} v ${data.location ?? 'neuvedená lokalita'}
 - Rozpočet: ${data.budget ?? 'neuvedený'}
 - Správa: ${data.message ?? '(žiadna)'}
 - Zdroj: ${data.source}
 
-Napíš odpoveď v mene makléra ${data.agentName ?? 'Revolis.AI tímu'}.
+Napíš odpoveď v mene makléra ${AGENT_PLACEHOLDER}.
+Oslovenie klienta napíš presne ako ${NAME_PLACEHOLDER}, podpis presne ako ${AGENT_PLACEHOLDER} — doplníme ich my.
 JSON: { "subject": "predmet emailu SK", "body": "text emailu SK, max 4 vety" }`,
     }],
   }, 'auto-reply').then(resp => {
     const raw = resp.content[0].type === 'text' ? resp.content[0].text : ''
-    return extractJson<AutoReplyResult>(raw)
+    const parsed = extractJson<AutoReplyResult>(raw)
+    // Meno klienta ani makléra prompt neopustilo — dosádzame ich tu, lokálne.
+    const agent = data.agentName ?? 'Revolis.AI tím'
+    return {
+      ...parsed,
+      subject: restoreName(restoreName(parsed.subject ?? '', data.leadName), agent, AGENT_PLACEHOLDER),
+      body:    restoreName(restoreName(parsed.body ?? '', data.leadName), agent, AGENT_PLACEHOLDER),
+    }
   })
 
   let failure: AiFailure | undefined

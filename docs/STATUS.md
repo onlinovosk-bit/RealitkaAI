@@ -4,6 +4,8 @@
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-05, 07:55 UTC** (FAIL-OPEN-SWEEP + TRIAL-GATE-CLOSED variant A: po vypršaní trialu je účet read-only, nie otvorený; hlavička prepočítaná z tabuľky 53 % → 51 %).
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 08:30 UTC** (EVENTS-WIRE + CRON-ALIVE, zatiaľ nezmergované).
 
+> **2026-10-16 (víkend, bez prepočtu tabuľky):** vážené **≈ 51 %** ostáva meranie z **2026-10-05**. **ZMERANÉ** `git rev-list --count origin/main --since=2026-10-05` na `9168d583` = **34** commitov. SESSION blok nižšie už má body 1, 2, 3, 4, 5, 9 a 10 odškrtnuté s PR na main (#851, #852, #855, #856, #858, #857, #854). Predaj / platby ostáva **0 %**, lebo live Stripe katalóg je v tomto behu **NEZMERANÉ** (žiaden live kľúč, `scripts/ops/stripe-verify-prices.sh` sa nespúšťal). Tabuľka sa neprepočítava, kým nie je živý nákup.
+>
 > **2026-10-08 SIGNUP-PROD:** migrácie SIGNUP-ARCH a pricing v2 stĺpce sú **aplikované na PROD** (dôkaz v `docs/architecture/2026-10-06-self-serve-signup.md`). Zavreté 2 nové cesty (zápis billing/trial stĺpcov agentúry z prehliadača; zhoda neoverený e-mail → tenant). Tabuľka nižšie sa NEPREPOČÍTAVA, kým nie je aj živý nákup (váha Predaj/platby 30).
 >
 > **2026-10-06 SIGNUP-ARCH:** kód + migrácia + TEST dôkaz (guard, bootstrap, hardening) pripravené, **na PROD neaplikované → tabuľka nižšie sa NEMENÍ** (percentá rastú až s PROD dôkazom: živé ceny + webhook → „Predaj/platby"; aplikovaná migrácia → „Tenantová izolácia" a „Schéma + nasadenie"). Pozri `docs/architecture/2026-10-06-self-serve-signup.md`.
@@ -39,15 +41,14 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: Anthropic prompt cache — jeden PR, bez merge/deploy
+Cieľ: Preflight audit dodávky + tri opravy na PROD-ceste (Realvia príčiny, pravda v cron_runs, BRI ON CONFLICT)
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] Inventúra všetkých Anthropic/Claude call sites
-- [x] Helper + min. dĺžka (Sonnet 1024, Haiku 4.5 4096)
-- [x] Cache na listing Sonnet (sync + stream)
-- [x] Preskočené krátke Haiku / fetch personalize
-- [x] usage.cache_* v existujúcich logoch
-- [x] Testy + lint/build zelené
-- [x] Report + jeden PR (nemergovať)
+- [x] 1 — Vlny A/B: reporty z meraných dát, nie z agentov (#882 zmergovaný)
+- [x] 2 — Realvia: druh zlyhania ide do `realvia_metrics.meta` bez migrácie (#885 → `26eafd9`)
+- [x] 3 — Preflight audit dodávky A–J, read-only, merané v PROD (`docs/reports/2026-10-20-preflight-audit-dodavky.md`)
+- [x] 4 — CRON-TRUTH-01: `cron_runs` už nehlási `failed` pri legitímnom „nič na výstupe" (#888 → `d25c101`)
+- [x] 5 — BRI-ONCONFLICT: obe skórovacie funkcie cielia na existujúci kľúč (#889 → `5ab3da4`; migrácia NEAPLIKOVANÁ na PROD, čaká na GO)
+- [x] 6 — Zápis do memory (PREPEND, `+9 −0` a `+19 −0`) + tento blok SESSION
 <!-- SESSION:END -->
 
 ## Čo potrebujem od teba (zoradené podľa dopadu)

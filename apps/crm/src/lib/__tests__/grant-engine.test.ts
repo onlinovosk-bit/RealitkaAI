@@ -131,12 +131,16 @@ describe("grant-engine", () => {
     expect(mockUpdate).not.toHaveBeenCalled();
   });
 
-  it("grantMonthlyCreditsForAgency treats an RPC failure as a skip", async () => {
+  it("grantMonthlyCreditsForAgency surfaces an RPC failure as a hard error (cron must retry)", async () => {
     applyMonthlyGrantCreditsMock.mockResolvedValueOnce({ ok: false, error: "agency_not_found" });
 
     const result = await grantMonthlyCreditsForAgency(agency(), "202606");
 
-    expect(result).toEqual({ granted: 0, skipped: true });
+    expect(result).toEqual({
+      granted: 0,
+      skipped: true,
+      error: "agency_not_found",
+    });
   });
 
   it("expireGrantCreditsForAgency expires through the RPC without a stale balance", async () => {

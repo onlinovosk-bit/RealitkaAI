@@ -47,6 +47,10 @@ const SECRET_SIGNALS = [
   /\bcreateHmac\b/,
   /\bverify\w*(?:Signature|Webhook)\w*\b/,
   /\bCRON_SECRET\b/,
+  // Manuálne overené (WP-10): brána žije v zdieľanej knižnici, nie v trase.
+  /\bhandleUcImportPost\b/, // lib/uc/import-handler.ts: user/pass -> resolveAgencyIdFromRealsoftCredentials
+  /\bvalidateRequest\b/, // lib/realvia/validate.ts: IP allowlist + identifikator/secret, fail-closed v produkcii
+  /\bverifyStarterPackDownloadToken\b/, // lib/starter-pack/download-token.ts: HMAC token
 ];
 const SESSION_SIGNALS = [
   /\bgetUser\b/,

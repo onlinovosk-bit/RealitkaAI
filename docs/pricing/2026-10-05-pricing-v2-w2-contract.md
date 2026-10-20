@@ -41,3 +41,38 @@ Vynucovanie limitu používateľov pri pozvánkach (`licensed_users` sa len evid
 
 ## Otvorené rozhodnutia foundera (nezastavujú W2)
 Základ DPH u AIRAmax; ktoré funkcie Owner Cockpitu patria do nových plánov (v2 ho nepredáva samostatne); onboarding 99 € vs. 0 €; politika pri minutí kreditov.
+
+---
+
+## Dodatok v3 (GO foundera 2026-10-19, PR1 „Cenník v3“)
+
+Tento dodatok **prepisuje** ceny, pásma a Stripe kľúče vyššie; zvyšok kontraktu (metadáta, chybové kódy, marker `pricing_model='v2'`, tvar `checkout-config`) platí. Súbory `pricing-v2.ts` a `pricing-v2-contract.ts` sa upravujú **na mieste** (žiadny paralelný v3 modul), `PRICING_VERSION = "v3"`. Nová migrácia DB nie je potrebná.
+
+**Ceny (centy, bez DPH, `tax_behavior=exclusive`).** Základ = mesačná suma pri ročnej fakturácii, `n` = počet maklérov:
+
+| Pásmo | Maklérov | Základ mesačne |
+|---|---|---|
+| `start` | 1 | 2500 |
+| `team` | 2–5 | 6500 spolu |
+| `office` | 6–10 | 6500 + 900 × (n − 5) |
+| `network` | 11+ | 11000 + 600 × (n − 10) pre n ≤ 20; 17000 + 500 × (n − 20) pre n > 20 |
+
+Mesačná platba bez záväzku = základ × 1,2 (presne v centoch); ročná = 12 × základ. Pásmo sa odvodí z počtu: `resolvePricingV2Band(n)` (vyhodí `RangeError` pri neplatnom `n`; `resolvePricingV2BandResult(n)` vracia `{ ok, band }` bez výnimky). Grant kreditov kancelárie ostáva 25 / 60 / 120 / 175 (otvorená otázka foundera).
+
+**Akcia 9/12:** do `PRICING_V3_PROMO_UNTIL = "2026-12-31T22:59:59Z"` je prvý ročný rok 9 z 12 mesiacov (`annualPromoNetCents = 9 × základ`, `isAnnualPromoActive(now)`). V Stripe to rieši kupón `STRIPE_COUPON_V3_ANNUAL_PROMO` (`percent_off=25`, `duration=once`, `redeem_by` = termín); server ho pridá cez `discounts` len pri `interval=year` a pred termínom (`resolveAnnualPromoCouponId`). `allow_promotion_codes` sa nezapína.
+
+**Stripe model:** jeden produkt „Revolis licencia“, dve ceny `billing_scheme=tiered`, `tiers_mode=graduated`, quantity = počet maklérov (`PRICING_V3_SEAT_TIERS`, simulácia `graduatedTierNetCents`; `flat_amount` sa pripočíta raz, keď množstvo zasiahne tier):
+
+| `up_to` | ročná `flat_amount` / `unit_amount` | mesačná `flat_amount` / `unit_amount` |
+|---|---|---|
+| 1 | 30000 / 0 | 3000 / 0 |
+| 5 | 48000 / 0 | 4800 / 0 |
+| 10 | 0 / 10800 | 0 / 1080 |
+| 20 | 0 / 7200 | 0 / 720 |
+| inf (`null`) | 0 / 6000 | 0 / 600 |
+
+**Balíky kreditov** (mesačné opakované, samostatný produkt, kupón sa na ne nevzťahuje, s ročným plánom sa nemiešajú): 50 / 100 / 150 / 200 / 250 / 300 kreditov za 2600 / 5100 / 7400 / 9400 / 11400 / 13100 centov. Samostatný kredit `PRICING_V2_CREDIT_NET_CENTS = 75`. Staré veľkosti 60/120/180/240 parser odmieta.
+
+**Env názvy (len názvy, nikdy hodnoty):** `STRIPE_PRICE_V3_SEAT_MONTHLY`, `STRIPE_PRICE_V3_SEAT_YEARLY`, `STRIPE_COUPON_V3_ANNUAL_PROMO`, `STRIPE_PRICE_V3_PACK_50|100|150|200|250|300`, `STRIPE_PRICE_V3_CREDIT`. Nahrádzajú `STRIPE_PRICE_V2_*` (odstránené: `PRICING_V2_BAND_PRICE_ENV`, `PRICING_V2_BAND_YEARLY_PRICE_ENV`). Nové kľúče v kóde: `PRICING_V3_SEAT_PRICE_ENV` (`{ month, year }`), `PRICING_V3_ANNUAL_PROMO_COUPON_ENV`.
+
+**Verejné ceny:** `isPricingPublicEnabled()` (`PRICING_PUBLIC_ENABLED`, predvolene vypnuté, zapína len `true` / `1` / `on`) žije v `pricing-v2-contract.ts`. Pri vypnutom prepínači marketing nezobrazí žiadnu sumu.

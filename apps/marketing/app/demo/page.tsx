@@ -28,6 +28,7 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'sk_SK',
     siteName: 'Revolis.AI',
+    url: '/demo',
   },
   twitter: {
     card: 'summary_large_image',

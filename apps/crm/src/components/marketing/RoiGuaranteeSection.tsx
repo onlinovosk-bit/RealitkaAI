@@ -1,13 +1,14 @@
 "use client";
 import { useState, useCallback } from "react";
 import { Shield, CheckCircle, Loader2 } from "lucide-react";
+import { GUARANTEE_TEXT } from "@/components/marketing/guarantee-copy";
 
 type FormState = "idle" | "submitting" | "success" | "error";
 
 const GUARANTEES = [
-  "Ak AI Asistent nepomôže uzatvoriť aspoň 1 obchod navyše za 30 dní",
-  "Vrátime 100% zaplatenej sumy bez otázok",
-  "Stačí napísať dôvod – zvyšok riešime my",
+  GUARANTEE_TEXT,
+  "Žiadosť o vrátenie stačí poslať cez formulár alebo e-mailom",
+  "Vrátenie vybavíme my – nemusíte nič dokazovať",
 ];
 
 export default function RoiGuaranteeSection() {
@@ -74,10 +75,10 @@ export default function RoiGuaranteeSection() {
         </div>
         <div>
           <h2 className="text-2xl font-black text-white mb-1">
-            100% ROI Garancia
+            Garancia vrátenia peňazí
           </h2>
           <p className="text-sm" style={{ color: "#64748B" }}>
-            Ak nie ste spokojní do 30 dní – vrátime každý cent + 50€ navyše.
+            {GUARANTEE_TEXT}.
           </p>
         </div>
       </div>
