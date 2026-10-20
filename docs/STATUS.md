@@ -41,16 +41,13 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: PREFLIGHT AUDIT dodávky (Phase Zero) + CRON-TRUTH-01 — `cron_runs` prestane hlásiť falošnú červenú (draft PR)
+Cieľ: Recolor www.revolis.ai (apps/marketing) na navy + gold paletu — draft PR, bez merge
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] 1 — Read-only preflight: repo, vetva, strom (0 zmien), 24 otvorených PR s mergeability a CI
-- [x] 2 — Tok PR zmeraný: 800 / 728 zmergovaných / 24 otvorených → hypotéza „PR sa hromadia" vyvrátená
-- [x] 3 — Zmeraný skutočný stav PROD: 51 behov cronov / 1 ok, 0 Stripe, 0 outbound, 1 event, 138 vs 78 migrácií
-- [x] 4 — Nový P1: `compute_bri_score` padá na chýbajúcom constraint pre `ON CONFLICT` (3 z 3 behov)
-- [x] 5 — Bezpečnostné „nálezy" overené a 3 zo 4 vyvrátené (RLS fail-closed, obe SECURITY DEFINER funkcie čisté)
-- [x] 6 — CRON-TRUTH-01 dodané: `failed` vyžaduje `failed > 0`; 25/25 testov, regresia dokázaná v oboch smeroch
-- [ ] 7 — Draft PR (bez merge)
-- [ ] 8 — Oprava `compute_bri_score` migráciou (čaká na GO)
+- [x] 1 — Tokeny v `public/palette.css` + WCAG AA namerané (headline 16.58, muted 9.27, gold CTA 9.50)
+- [x] 2 — Paleta aplikovaná na `/` (`public/index.html`), `/demo`, `/balik` a landing-v2; copy/ceny/CTA/SEO nedotknuté
+- [x] 3 — `npx vitest run` 60/60 + `next build --webpack` zelený v tomto turne
+- [x] 4 — Before/after screenshoty desktop+mobile pre `/`, `/demo`, `/balik`
+- [x] 5 — Draft PR (bez merge)
 <!-- SESSION:END -->
 
 ## Čo potrebujem od teba (zoradené podľa dopadu)

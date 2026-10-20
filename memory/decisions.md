@@ -1,5 +1,11 @@
 # Critical Decisions Log
 
+## 2026-10-20 — www.revolis.ai navy + gold paleta (BUILD, draft)
+**GO:** zadanie Cloud Agent — recolor len `apps/marketing`, draft PR, nemergovať. **RAU:** AUTO-SAFE CONTENT.
+**Ústava v2:** vizuál existujúceho webu, nie nová featura. Timing OK (kampaň `/` beží). Q1 neplatí ako veto — nálada predajnej stránky.
+**Rozhodnutie:** paleta centralizovaná v `public/palette.css` (CSS premenné; Tailwind v marketingu nie je). `app.revolis.ai` a SEO súbory (#878) netknuté. Slovo pilot nezavádzať.
+**Výstup:** `docs/reports/2026-10-20-marketing-gohouse-palette.md`.
+
 ## 2026-10-20 — PREFLIGHT AUDIT + CRON-TRUTH-01: PR sa nehromadia, hromadí sa medzera merge→účinok (BUILD, draft)
 **GO:** founder poslal REVOLIS MASTER META-PROMPT v2.0 — Phase Zero read-only preflight, potom jedna úloha s kontraktom. Preflight nezmenil v repozitári nič (`git status` 0).
 **Hypotéza foundera je z polovice VYVRÁTENÁ (ZMERANÉ, GitHub REST):** 800 PR za 5 mesiacov, **728 zmergovaných**, 48 zavretých bez merge, **24 otvorených** (3 %). Merge rate kopíruje tempo otvárania → PR nie sú úzke hrdlo. Z 24 otvorených je 13 `dirty`, 3 s červeným CI, tri najstaršie z 11. 6. 2026.
