@@ -86,6 +86,25 @@ describe("runMonthlyCreditCycle", () => {
     expect(result.ok).toBe(true);
     expect(grantMock).toHaveBeenCalledTimes(2);
   });
+
+  it("returns ok:false when a grant hard-fails so cron retries (no silent month wipe)", async () => {
+    expireMock.mockResolvedValue({ expired: 0, skipped: true });
+    grantMock
+      .mockResolvedValueOnce({
+        granted: 0,
+        skipped: true,
+        error: "apply_monthly_grant_credits timeout",
+      })
+      .mockResolvedValueOnce({ granted: 50, skipped: false });
+
+    const result = await runMonthlyCreditCycle();
+
+    expect(result.ok).toBe(false);
+    expect(result.error).toBe("grant_failed:1");
+    expect(result.grant.grantedTotal).toBe(50);
+    expect(result.grant.skipped).toBe(1);
+    expect(grantMock).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe("runMonthlyCreditCycle — pricing v2 (kritérium 6)", () => {

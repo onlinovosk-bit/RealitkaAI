@@ -2,6 +2,7 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { LANDING_AI_ASSISTANT_NAME } from '@/app/(marketing)/landing/landing-ai-label';
+import { GUARANTEE_TEXT } from '@/components/marketing/guarantee-copy';
 import { RadiantSpriteIcon, type RadiantIconKey } from '@/components/shared/radiant-sprite-icon';
 
 export default function PreviewSection() {
@@ -47,7 +48,7 @@ export default function PreviewSection() {
             >
               Spustiť úvodné nastavenie do 30 sekúnd
             </Link>
-            <p className="text-xs text-slate-500">100 % garancia vrátenia poplatku prvých 30 dní.</p>
+            <p className="text-xs text-slate-500">{GUARANTEE_TEXT}</p>
           </motion.div>
 
           {/* RIGHT */}

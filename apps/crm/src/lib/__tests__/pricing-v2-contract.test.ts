@@ -1,18 +1,24 @@
 import { describe, expect, it } from "vitest";
 import {
   PRICING_V2_BAND_ACCOUNT_TIER,
-  PRICING_V2_BAND_PRICE_ENV,
   PRICING_V2_CREDIT_PRICE_ENV,
   PRICING_V2_PACK_PRICE_ENV,
+  PRICING_V3_ANNUAL_PROMO_COUPON_ENV,
+  PRICING_V3_SEAT_MONTHLY_PRICE_ENV,
+  PRICING_V3_SEAT_PRICE_ENV,
+  PRICING_V3_SEAT_YEARLY_PRICE_ENV,
   buildPricingV2PlanMetadata,
+  isPricingPublicEnabled,
   missingPricingV2PriceEnvKeys,
   missingPricingV2YearlyPriceEnvKeys,
-  PRICING_V2_BAND_YEARLY_PRICE_ENV,
   parsePricingV2CheckoutRequest,
   readPricingV2CreditsMetadata,
   readPricingV2PlanMetadata,
+  resolveAnnualPromoCouponId,
 } from "@/lib/pricing-v2-contract";
-import { PRICING_V2_BAND_IDS, PRICING_V2_MONTHLY_PACKS } from "@/lib/pricing-v2";
+import { PRICING_V2_MONTHLY_PACKS } from "@/lib/pricing-v2";
+
+const FAKE_PRICE = "price_1Abcdefgh12345";
 
 describe("pricing-v2-contract: požiadavka na checkout", () => {
   it("plán bez balíka a s balíkom", () => {
@@ -20,9 +26,9 @@ describe("pricing-v2-contract: požiadavka na checkout", () => {
       ok: true,
       value: { checkoutType: "pricing_v2", users: 4, packCredits: null, interval: "month" },
     });
-    expect(parsePricingV2CheckoutRequest({ checkoutType: "pricing_v2", users: 26, packCredits: 180 })).toEqual({
+    expect(parsePricingV2CheckoutRequest({ checkoutType: "pricing_v2", users: 26, packCredits: 150 })).toEqual({
       ok: true,
-      value: { checkoutType: "pricing_v2", users: 26, packCredits: 180, interval: "month" },
+      value: { checkoutType: "pricing_v2", users: 26, packCredits: 150, interval: "month" },
     });
     expect(parsePricingV2CheckoutRequest({ checkoutType: "pricing_v2", users: 2, packCredits: 0 })).toEqual({
       ok: true,
@@ -37,7 +43,7 @@ describe("pricing-v2-contract: požiadavka na checkout", () => {
         reason: "invalid_user_count",
       });
     }
-    for (const packCredits of [50, 77, -60, "60", Number.NaN, true]) {
+    for (const packCredits of [60, 120, 180, 240, 77, -50, "50", Number.NaN, true]) {
       expect(parsePricingV2CheckoutRequest({ checkoutType: "pricing_v2", users: 3, packCredits })).toEqual({
         ok: false,
         reason: "invalid_pack",
@@ -69,14 +75,14 @@ describe("pricing-v2-contract: metadáta checkoutu", () => {
   const base = { agencyId: "a-1", authUserId: "u-1", profileId: "p-1" };
 
   it("round-trip: build → read dá pôvodné hodnoty", () => {
-    const meta = buildPricingV2PlanMetadata({ ...base, users: 7, packCredits: 120 });
-    expect(meta).toMatchObject({ checkoutType: "pricing_v2", bandId: "office", users: "7", packCredits: "120" });
+    const meta = buildPricingV2PlanMetadata({ ...base, users: 7, packCredits: 100 });
+    expect(meta).toMatchObject({ checkoutType: "pricing_v2", bandId: "office", users: "7", packCredits: "100" });
     expect(readPricingV2PlanMetadata(meta)).toEqual({
       agencyId: "a-1",
       authUserId: "u-1",
       bandId: "office",
       users: 7,
-      packCredits: 120,
+      packCredits: 100,
       interval: "month",
     });
     const noPack = buildPricingV2PlanMetadata({ ...base, users: 1, packCredits: null });
@@ -90,11 +96,13 @@ describe("pricing-v2-contract: metadáta checkoutu", () => {
   });
 
   it("webhook odmietne sfalšované alebo poškodené metadáta (fail-closed)", () => {
-    const ok = buildPricingV2PlanMetadata({ ...base, users: 3, packCredits: 60 });
+    const ok = buildPricingV2PlanMetadata({ ...base, users: 3, packCredits: 50 });
     expect(readPricingV2PlanMetadata({ ...ok, bandId: "office" })).toBeNull(); // pásmo nesedí s počtom
     expect(readPricingV2PlanMetadata({ ...ok, users: "0" })).toBeNull();
     expect(readPricingV2PlanMetadata({ ...ok, users: "abc" })).toBeNull();
     expect(readPricingV2PlanMetadata({ ...ok, packCredits: "77" })).toBeNull();
+    expect(readPricingV2PlanMetadata({ ...ok, packCredits: "60" })).toBeNull(); // stará veľkosť
+    expect(readPricingV2PlanMetadata({ ...ok, bandId: "team", users: "6" })).toBeNull(); // 6 je už Kancelária
     expect(readPricingV2PlanMetadata({ ...ok, agencyId: "" })).toBeNull();
     expect(readPricingV2PlanMetadata({ ...ok, checkoutType: "seat" })).toBeNull();
     expect(readPricingV2PlanMetadata(null)).toBeNull();
@@ -114,38 +122,55 @@ describe("pricing-v2-contract: metadáta checkoutu", () => {
 });
 
 describe("pricing-v2-contract: Stripe price kľúče a mapovanie", () => {
-  it("každé pásmo a každý balík má vlastný unikátny kľúč a žiadny nekoliduje so seat kľúčmi", () => {
+  it("env názvy v3 sú presne podľa zadania a navzájom unikátne", () => {
+    expect(PRICING_V3_SEAT_MONTHLY_PRICE_ENV).toBe("STRIPE_PRICE_V3_SEAT_MONTHLY");
+    expect(PRICING_V3_SEAT_YEARLY_PRICE_ENV).toBe("STRIPE_PRICE_V3_SEAT_YEARLY");
+    expect(PRICING_V3_ANNUAL_PROMO_COUPON_ENV).toBe("STRIPE_COUPON_V3_ANNUAL_PROMO");
+    expect(PRICING_V3_SEAT_PRICE_ENV).toEqual({ month: "STRIPE_PRICE_V3_SEAT_MONTHLY", year: "STRIPE_PRICE_V3_SEAT_YEARLY" });
+    expect(PRICING_V2_PACK_PRICE_ENV).toEqual({
+      50: "STRIPE_PRICE_V3_PACK_50",
+      100: "STRIPE_PRICE_V3_PACK_100",
+      150: "STRIPE_PRICE_V3_PACK_150",
+      200: "STRIPE_PRICE_V3_PACK_200",
+      250: "STRIPE_PRICE_V3_PACK_250",
+      300: "STRIPE_PRICE_V3_PACK_300",
+    });
+    expect(PRICING_V2_CREDIT_PRICE_ENV).toBe("STRIPE_PRICE_V3_CREDIT");
     const names = [
-      ...PRICING_V2_BAND_IDS.map((id) => PRICING_V2_BAND_PRICE_ENV[id]),
+      PRICING_V3_SEAT_MONTHLY_PRICE_ENV,
+      PRICING_V3_SEAT_YEARLY_PRICE_ENV,
+      PRICING_V3_ANNUAL_PROMO_COUPON_ENV,
       ...PRICING_V2_MONTHLY_PACKS.map((p) => PRICING_V2_PACK_PRICE_ENV[p.credits]),
       PRICING_V2_CREDIT_PRICE_ENV,
     ];
-    expect(names.every((n) => typeof n === "string" && n.startsWith("STRIPE_PRICE_V2_"))).toBe(true);
     expect(new Set(names).size).toBe(names.length);
-    expect(names).toHaveLength(4 + 5 + 1);
+    expect(names).toHaveLength(2 + 1 + 6 + 1);
+    expect(names.some((n) => n.startsWith("STRIPE_PRICE_V2_"))).toBe(false);
   });
 
   it("chýbajúce a placeholder ceny sa nahlásia názvom; platné nie", () => {
     const full = { PRICING_V2_PLANS_ONLY: "false" };
     const all = missingPricingV2PriceEnvKeys(full);
-    expect(all).toHaveLength(10);
+    expect(all).toEqual([
+      "STRIPE_PRICE_V3_SEAT_MONTHLY",
+      "STRIPE_PRICE_V3_PACK_50",
+      "STRIPE_PRICE_V3_PACK_100",
+      "STRIPE_PRICE_V3_PACK_150",
+      "STRIPE_PRICE_V3_PACK_200",
+      "STRIPE_PRICE_V3_PACK_250",
+      "STRIPE_PRICE_V3_PACK_300",
+      "STRIPE_PRICE_V3_CREDIT",
+    ]);
     const env: Record<string, string> = { ...full };
-    for (const n of all) env[n] = "price_1Abcdefgh12345";
+    for (const n of all) env[n] = FAKE_PRICE;
     expect(missingPricingV2PriceEnvKeys(env)).toEqual([]);
-    expect(missingPricingV2PriceEnvKeys({ ...env, STRIPE_PRICE_V2_TEAM: "price_xxx" })).toEqual(["STRIPE_PRICE_V2_TEAM"]);
-    expect(missingPricingV2PriceEnvKeys({ ...env, STRIPE_PRICE_V2_PACK_60: "" })).toEqual(["STRIPE_PRICE_V2_PACK_60"]);
+    expect(missingPricingV2PriceEnvKeys({ ...env, STRIPE_PRICE_V3_SEAT_MONTHLY: "price_xxx" })).toEqual(["STRIPE_PRICE_V3_SEAT_MONTHLY"]);
+    expect(missingPricingV2PriceEnvKeys({ ...env, STRIPE_PRICE_V3_PACK_50: "" })).toEqual(["STRIPE_PRICE_V3_PACK_50"]);
   });
 
-  it("režim „len plány“ (predvolený): vyžadujú sa iba 4 ceny plánov, balíky a kredit nie", () => {
-    const planOnly = missingPricingV2PriceEnvKeys({});
-    expect(planOnly).toEqual([
-      "STRIPE_PRICE_V2_START",
-      "STRIPE_PRICE_V2_TEAM",
-      "STRIPE_PRICE_V2_OFFICE",
-      "STRIPE_PRICE_V2_NETWORK",
-    ]);
-    const env = Object.fromEntries(planOnly.map((n) => [n, "price_1Abcdefgh12345"]));
-    expect(missingPricingV2PriceEnvKeys(env)).toEqual([]);
+  it("režim „len plány“ (predvolený): vyžaduje sa iba mesačná cena licencie, balíky a kredit nie", () => {
+    expect(missingPricingV2PriceEnvKeys({})).toEqual(["STRIPE_PRICE_V3_SEAT_MONTHLY"]);
+    expect(missingPricingV2PriceEnvKeys({ STRIPE_PRICE_V3_SEAT_MONTHLY: FAKE_PRICE })).toEqual([]);
   });
 
   it("pásmo → account_tier zhodné s legacy seat tiermi", () => {
@@ -170,7 +195,7 @@ describe("pricing-v2-contract: ročné platenie", () => {
         reason: "invalid_interval",
       });
     }
-    expect(parsePricingV2CheckoutRequest({ checkoutType: "pricing_v2", users: 3, interval: "year", packCredits: 60 })).toEqual({
+    expect(parsePricingV2CheckoutRequest({ checkoutType: "pricing_v2", users: 3, interval: "year", packCredits: 50 })).toEqual({
       ok: false,
       reason: "invalid_pack",
     });
@@ -184,19 +209,84 @@ describe("pricing-v2-contract: ročné platenie", () => {
     const { interval: _omit, ...legacySession } = meta;
     expect(readPricingV2PlanMetadata(legacySession)?.interval).toBe("month");
     expect(readPricingV2PlanMetadata({ ...meta, interval: "quarter" })).toBeNull();
-    expect(readPricingV2PlanMetadata({ ...meta, interval: "year", packCredits: "60" })).toBeNull();
+    expect(readPricingV2PlanMetadata({ ...meta, interval: "year", packCredits: "50" })).toBeNull();
   });
 
-  it("ročné ceny plánov: 4 env kľúče a chýbajúce sa hlásia samostatne od mesačných", () => {
-    expect(missingPricingV2YearlyPriceEnvKeys({})).toEqual([
-      "STRIPE_PRICE_V2_START_YEARLY",
-      "STRIPE_PRICE_V2_TEAM_YEARLY",
-      "STRIPE_PRICE_V2_OFFICE_YEARLY",
-      "STRIPE_PRICE_V2_NETWORK_YEARLY",
-    ]);
-    const env = Object.fromEntries(Object.values(PRICING_V2_BAND_YEARLY_PRICE_ENV).map((n) => [n, "price_1Abcdefgh12345"]));
-    expect(missingPricingV2YearlyPriceEnvKeys(env)).toEqual([]);
-    // mesačný predaj nie je dotknutý chýbajúcimi ročnými cenami
-    expect(missingPricingV2PriceEnvKeys({})).not.toContain("STRIPE_PRICE_V2_START_YEARLY");
+  it("ročná cena licencie: 1 env kľúč, hlási sa samostatne od mesačnej", () => {
+    expect(missingPricingV2YearlyPriceEnvKeys({})).toEqual(["STRIPE_PRICE_V3_SEAT_YEARLY"]);
+    expect(missingPricingV2YearlyPriceEnvKeys({ STRIPE_PRICE_V3_SEAT_YEARLY: FAKE_PRICE })).toEqual([]);
+    // mesačný predaj nie je dotknutý chýbajúcou ročnou cenou
+    expect(missingPricingV2PriceEnvKeys({})).not.toContain("STRIPE_PRICE_V3_SEAT_YEARLY");
+  });
+});
+
+describe("pricing-v2-contract: balíky kreditov (parser)", () => {
+  it("prijme len 50/100/150/200/250/300", () => {
+    for (const packCredits of [50, 100, 150, 200, 250, 300]) {
+      const r = parsePricingV2CheckoutRequest({ checkoutType: "pricing_v2", users: 3, packCredits });
+      expect(r).toEqual({ ok: true, value: { checkoutType: "pricing_v2", users: 3, packCredits, interval: "month" } });
+    }
+  });
+
+  it("odmietne staré veľkosti 60/120/180/240", () => {
+    for (const packCredits of [60, 120, 180, 240]) {
+      expect(parsePricingV2CheckoutRequest({ checkoutType: "pricing_v2", users: 3, packCredits })).toEqual({
+        ok: false,
+        reason: "invalid_pack",
+      });
+    }
+  });
+
+  it("samostatný kredit: suma sa počíta po 0,75 € (presnosť na cent)", () => {
+    expect(parsePricingV2CheckoutRequest({ checkoutType: "pricing_v2_credits", credits: 100 }).ok).toBe(true);
+    expect(parsePricingV2CheckoutRequest({ checkoutType: "pricing_v2_credits", credits: Math.floor(Number.MAX_SAFE_INTEGER / 75) + 1 })).toEqual({
+      ok: false,
+      reason: "invalid_credits",
+    });
+  });
+});
+
+describe("pricing-v2-contract: pásmo z počtu maklérov (1 / 2–5 / 6–10 / 11+)", () => {
+  const base = { agencyId: "a-1", authUserId: "u-1", profileId: "p-1" };
+  it("metadáta nesú pásmo odvodené z počtu", () => {
+    const expected: Array<[number, string]> = [[1, "start"], [2, "team"], [5, "team"], [6, "office"], [10, "office"], [11, "network"], [50, "network"]];
+    for (const [users, bandId] of expected) {
+      expect(buildPricingV2PlanMetadata({ ...base, users, packCredits: null }).bandId).toBe(bandId);
+    }
+  });
+});
+
+describe("pricing-v2-contract: PRICING_PUBLIC_ENABLED", () => {
+  it("predvolene vypnuté; zapína len true / 1 / on (rovnaká sémantika ako PRICING_V2_ENABLED)", () => {
+    expect(isPricingPublicEnabled({})).toBe(false);
+    expect(isPricingPublicEnabled({ PRICING_PUBLIC_ENABLED: "" })).toBe(false);
+    for (const raw of ["false", "0", "off", "yes", "enabled", "2", "true;"]) {
+      expect(isPricingPublicEnabled({ PRICING_PUBLIC_ENABLED: raw })).toBe(false);
+    }
+    for (const raw of ["true", "TRUE", " 1 ", " On "]) {
+      expect(isPricingPublicEnabled({ PRICING_PUBLIC_ENABLED: raw })).toBe(true);
+    }
+  });
+});
+
+describe("pricing-v2-contract: kupón akcie 9/12", () => {
+  const env = { STRIPE_COUPON_V3_ANNUAL_PROMO: "FAKE_COUPON_ID" };
+  const before = new Date("2026-11-15T10:00:00Z");
+
+  it("ročná platba pred termínom dostane kupón", () => {
+    expect(resolveAnnualPromoCouponId("year", before, env)).toBe("FAKE_COUPON_ID");
+    expect(resolveAnnualPromoCouponId("year", new Date("2026-12-31T22:59:59Z"), env)).toBe("FAKE_COUPON_ID");
+  });
+
+  it("po termíne ani pri mesačnej platbe kupón nie je", () => {
+    expect(resolveAnnualPromoCouponId("year", new Date("2026-12-31T22:59:59.001Z"), env)).toBeNull();
+    expect(resolveAnnualPromoCouponId("year", new Date("2027-03-01T00:00:00Z"), env)).toBeNull();
+    expect(resolveAnnualPromoCouponId("month", before, env)).toBeNull();
+  });
+
+  it("chýbajúce alebo placeholder env kupón nepridá", () => {
+    expect(resolveAnnualPromoCouponId("year", before, {})).toBeNull();
+    expect(resolveAnnualPromoCouponId("year", before, { STRIPE_COUPON_V3_ANNUAL_PROMO: "  " })).toBeNull();
+    expect(resolveAnnualPromoCouponId("year", before, { STRIPE_COUPON_V3_ANNUAL_PROMO: "coupon_xxx" })).toBeNull();
   });
 });

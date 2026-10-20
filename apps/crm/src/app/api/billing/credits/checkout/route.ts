@@ -8,16 +8,18 @@ import {
   PRICING_V2_MAX_CREDITS_PER_PURCHASE,
   createPricingV2CheckoutSession,
   missingPricingV2PriceEnvKeysForRequest,
+  parsePricingV3CheckoutBody,
 } from "@/lib/credits-billing-v2";
 import { isPricingV2Enabled, isPricingV2PlansOnly } from "@/lib/pricing-v2";
 import {
   PRICING_V2_CHECKOUT_TYPE_CREDITS,
   PRICING_V2_ERROR_CODES,
-  parsePricingV2CheckoutRequest,
 } from "@/lib/pricing-v2-contract";
 import {
   areSeatCheckoutPricesConfigured,
   areTopupCheckoutPricesConfigured,
+  missingSeatPriceEnvKeys,
+  missingTopupPriceEnvKeys,
 } from "@/lib/program-tier-pricing";
 
 export async function POST(request: Request) {
@@ -25,8 +27,8 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as Record<string, unknown>;
 
-    // Cenník v2 (pricing_v2 / pricing_v2_credits). Iné typy idú legacy cestou nižšie, nezmenené.
-    const v2 = parsePricingV2CheckoutRequest(body);
+    // Cenník v3 (pricing_v2 = plán `{ seats, interval }` / pricing_v2_credits). Iné typy idú legacy cestou nižšie, nezmenené.
+    const v2 = parsePricingV3CheckoutBody(body);
     if (v2.ok || v2.reason !== "not_pricing_v2") {
       isV2Request = true;
       if (!isPricingV2Enabled()) {
@@ -85,7 +87,9 @@ export async function POST(request: Request) {
 
     if (parsed.type === "topup" && parsed.topupPackage) {
       if (!areTopupCheckoutPricesConfigured()) {
-        return errorResponse("Top-up checkout nie je dostupný — chýbajú Stripe ceny.", 503);
+        return errorResponse("Top-up checkout nie je dostupný — chýbajú Stripe ceny.", 503, {
+          missingPriceEnvKeys: missingTopupPriceEnvKeys(),
+        });
       }
       const result = await createTopupCheckoutSession(parsed.topupPackage);
       if (!result?.url) {
@@ -96,7 +100,9 @@ export async function POST(request: Request) {
 
     if (parsed.type === "seat" && parsed.seatTier) {
       if (!areSeatCheckoutPricesConfigured()) {
-        return errorResponse("Seat checkout nie je dostupný — chýbajú Stripe ceny.", 503);
+        return errorResponse("Seat checkout nie je dostupný — chýbajú Stripe ceny.", 503, {
+          missingPriceEnvKeys: missingSeatPriceEnvKeys(),
+        });
       }
       const result = await createSeatCheckoutSession({
         seatTier: parsed.seatTier,

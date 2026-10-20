@@ -20,20 +20,18 @@ vi.mock("@/lib/supabase/admin", () => ({
 
 import { resolvePlanKeyFromStripePriceId } from "@/lib/billing-store";
 
-const V2 = {
-  STRIPE_PRICE_V2_START: "price_1V2startAbcdefg",
-  STRIPE_PRICE_V2_TEAM: "price_1V2teamAbcdefgh",
-  STRIPE_PRICE_V2_OFFICE: "price_1V2officeAbcdef",
-  STRIPE_PRICE_V2_NETWORK: "price_1V2networkAbcde",
-  STRIPE_PRICE_V2_PACK_60: "price_1V2pack60Abcdef",
-  STRIPE_PRICE_V2_CREDIT: "price_1V2creditAbcdef",
+const V3 = {
+  STRIPE_PRICE_V3_SEAT_MONTHLY: "price_1V3seatMonthly01",
+  STRIPE_PRICE_V3_SEAT_YEARLY: "price_1V3seatYearly001",
+  STRIPE_PRICE_V3_PACK_50: "price_1V3pack50Abcdef",
+  STRIPE_PRICE_V3_CREDIT: "price_1V3creditAbcdef",
 };
 
 beforeEach(() => {
   vi.spyOn(console, "warn").mockImplementation(() => {});
   vi.spyOn(console, "info").mockImplementation(() => {});
   vi.spyOn(console, "log").mockImplementation(() => {});
-  for (const [k, v] of Object.entries(V2)) vi.stubEnv(k, v);
+  for (const [k, v] of Object.entries(V3)) vi.stubEnv(k, v);
   vi.stubEnv("STRIPE_PRICE_STARTER", "price_1LegacyStarterAb");
   vi.stubEnv("STRIPE_PRICE_PRO", "price_1LegacyProAbcdef");
 });
@@ -43,17 +41,33 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("resolvePlanKeyFromStripePriceId × cenník v2", () => {
-  it("v2 pásma dávajú plán rovnaký ako legacy seat tier: start → starter, team → pro, office a network → enterprise", () => {
-    expect(resolvePlanKeyFromStripePriceId(V2.STRIPE_PRICE_V2_START)).toBe("starter");
-    expect(resolvePlanKeyFromStripePriceId(V2.STRIPE_PRICE_V2_TEAM)).toBe("pro");
-    expect(resolvePlanKeyFromStripePriceId(V2.STRIPE_PRICE_V2_OFFICE)).toBe("enterprise");
-    expect(resolvePlanKeyFromStripePriceId(V2.STRIPE_PRICE_V2_NETWORK)).toBe("enterprise");
+describe("resolvePlanKeyFromStripePriceId × cenník v3", () => {
+  it("licencia dáva plán podľa quantity (pásmo 1 / 2–5 / 6–10 / 11+), rovnako ako legacy seat tier", () => {
+    const at = (q: number | null | undefined, id = V3.STRIPE_PRICE_V3_SEAT_MONTHLY) => resolvePlanKeyFromStripePriceId(id, q);
+    expect(at(1)).toBe("starter");
+    expect(at(2)).toBe("pro");
+    expect(at(5)).toBe("pro");
+    expect(at(6)).toBe("enterprise");
+    expect(at(10)).toBe("enterprise");
+    expect(at(11)).toBe("enterprise");
+    expect(at(60)).toBe("enterprise");
+  });
+
+  it("ročná cena licencie dáva rovnaký plán ako mesačná", () => {
+    expect(resolvePlanKeyFromStripePriceId(V3.STRIPE_PRICE_V3_SEAT_YEARLY, 1)).toBe("starter");
+    expect(resolvePlanKeyFromStripePriceId(V3.STRIPE_PRICE_V3_SEAT_YEARLY, 3)).toBe("pro");
+  });
+
+  it("licencia bez čitateľnej quantity je unknown (tier sa nezmení), nikdy free", () => {
+    for (const q of [undefined, null, 0, -1, 1.5]) {
+      expect(resolvePlanKeyFromStripePriceId(V3.STRIPE_PRICE_V3_SEAT_MONTHLY, q)).toBe("unknown");
+    }
+    expect(console.warn).not.toHaveBeenCalled();
   });
 
   it("balík kreditov a kredit plán neurčujú (unknown), a bez hlučného varovania", () => {
-    expect(resolvePlanKeyFromStripePriceId(V2.STRIPE_PRICE_V2_PACK_60)).toBe("unknown");
-    expect(resolvePlanKeyFromStripePriceId(V2.STRIPE_PRICE_V2_CREDIT)).toBe("unknown");
+    expect(resolvePlanKeyFromStripePriceId(V3.STRIPE_PRICE_V3_PACK_50, 5)).toBe("unknown");
+    expect(resolvePlanKeyFromStripePriceId(V3.STRIPE_PRICE_V3_CREDIT, 5)).toBe("unknown");
     expect(console.warn).not.toHaveBeenCalled();
   });
 

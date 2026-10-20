@@ -29,7 +29,7 @@ export type PricingV2BandView = {
   id: string
   label: string
   usersLabel: string
-  /** napr. „60 €“ alebo „od 349 €“ */
+  /** napr. „65 €“ alebo „od 74 €“ */
   netLabel: string
   /** napr. „73,80 € s DPH“ */
   grossLabel: string
@@ -39,7 +39,7 @@ export type PricingV2BandView = {
   /** napr. „Ročne 300 € bez DPH (369 € s DPH)“; Sieť s predponou „od“ */
   annualLabel: string
   isFromPrice: boolean
-  /** adresa CTA: registrácia v CRM (alebo demo pri objemovom pásme Sieť) */
+  /** adresa CTA: registrácia v CRM (alebo demo pri „od“ pásmach Kancelária a Sieť) */
   ctaHref: string
   ctaLabel: string
   /** true = CTA vedie na demo (Calendly), nie do registrácie */
