@@ -15,7 +15,6 @@ describe('collectRequestHeaders', () => {
     const headers = collectRequestHeaders(
       makeRequest({
         'x-revolis-secret': 'top-secret',
-        authorization: 'Bearer abc',
         authorization: 'Bearer cron-secret',
         'x-vercel-oidc-token': 'oidc-token',
         'x-vercel-proxy-signature': 'proxy-signature',

@@ -47,13 +47,24 @@ export function extractClientIP(request: NextRequest): string {
  * `headers_json` v `realvia_webhook_logs` ich ukladali v čitateľnej podobe pri
  * KAŽDOM doručení. Prefixová kontrola, nie zoznam presných mien: keby Realvia
  * pridala `identifikator3`, zoznam by ticho prestal stačiť.
+ *
+ * Presné mená nižšie sú z #850 (Vercel proxy hlavičky). Podmienky sú zlúčené
+ * zámerne do JEDNEJ funkcie: pri mergi `main` do tejto vetvy git zlepil dve
+ * nezávislé verzie redakcie do jedného tela, takže časť podmienok bola
+ * nedosiahnuteľná. Jedno miesto, jeden zoznam.
  */
 function isSensitiveHeaderName(lower: string): boolean {
   return (
     lower === 'authorization' ||
+    lower === 'forwarded' ||
+    lower === 'x-vercel-oidc-token' ||
+    lower === 'x-vercel-proxy-signature' ||
+    lower === 'x-vercel-proxy-signature-ts' ||
+    lower === 'x-vercel-sc-headers' ||
     lower.startsWith('identifikator') ||
     lower.includes('password') ||
     lower.includes('secret') ||
+    lower.includes('signature') ||
     lower.includes('token') ||
     lower.includes('api-key') ||
     lower.includes('apikey')
@@ -65,24 +76,6 @@ export function collectRequestHeaders(request: NextRequest): Record<string, stri
   const headersMap: Record<string, string> = {};
   request.headers.forEach((value, key) => {
     headersMap[key] = isSensitiveHeaderName(key.toLowerCase()) ? '[REDACTED]' : value;
-    const lower = key.toLowerCase();
-    if (
-      lower === 'x-revolis-secret' ||
-      lower === 'authorization' ||
-      lower === 'forwarded' ||
-      lower === 'x-vercel-oidc-token' ||
-      lower === 'x-vercel-proxy-signature' ||
-      lower === 'x-vercel-proxy-signature-ts' ||
-      lower === 'x-vercel-sc-headers' ||
-      lower.includes('password') ||
-      lower.includes('secret') ||
-      lower.includes('signature') ||
-      lower.includes('token')
-    ) {
-      headersMap[key] = '[REDACTED]';
-    } else {
-      headersMap[key] = value;
-    }
   });
   return headersMap;
 }

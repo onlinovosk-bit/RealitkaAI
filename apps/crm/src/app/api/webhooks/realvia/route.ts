@@ -164,35 +164,7 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * Operátorská autentifikácia pre diagnostiku — rovnaká ako cron
- * (`Authorization: Bearer $CRON_SECRET`). Chýbajúci secret je chyba
- * konfigurácie, nie povolenie: bez neho sa diagnostika neotvorí.
- */
-function isOperatorAuthorized(request: NextRequest): boolean {
-  const cronSecret = process.env.CRON_SECRET?.trim();
-  if (!cronSecret) return false;
-  return request.headers.get('authorization') === `Bearer ${cronSecret}`;
-}
-
-/**
  * Health check — GET returns endpoint status.
- *
- * `?dump=headers` a `?diag=config` sú OBE za `CRON_SECRET`. `dump=headers`
- * vracia len hlavičky volajúceho (nie Realviine), takže sám prihlasovacie údaje
- * neprezradí — ale vracal Vercel metadáta nášho nasadenia (deployment URL,
- * región, ray id) komukoľvek na internete. Diagnostika nie je verejná služba.
- */
-export async function GET(request: NextRequest) {
-  const dumpHeaders = request.nextUrl.searchParams.get('dump') === 'headers';
-  const diagConfig = request.nextUrl.searchParams.get('diag') === 'config';
-
-  if (dumpHeaders || diagConfig) {
-    if (!isOperatorAuthorized(request)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-  }
-
-  if (dumpHeaders) {
  * Diagnostic views require cron authorization.
  */
 export async function GET(request: NextRequest) {
@@ -209,7 +181,6 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  if (diagConfig) {
   /** Operator checklist — same auth as cron (`Authorization: Bearer $CRON_SECRET`). No secrets in body. */
   if (request.nextUrl.searchParams.get('diag') === 'config') {
     if (!hasCronAuthorization(request)) {
