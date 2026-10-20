@@ -78,7 +78,7 @@ if [ "$event" = "prompt" ]; then
   user_prompt=""
   if [ ! -t 0 ]; then user_prompt="$(cat 2>/dev/null | jq -r '.prompt // empty' 2>/dev/null)"; fi
   case "$user_prompt" in
-    *"SYSTEM NOTIFICATION"*|"<system-reminder>"*|"") ;; # automatické prebudenie alebo prázdne: žiadna rutina
+    *"SYSTEM NOTIFICATION"*|*"NOT USER INPUT"*|*"task-notification"*|*"queued-remote-notifications"*|*"unread notification"*|*"ReadNotifications"*|"<system-reminder>"*|"") ;; # automatické prebudenie alebo prázdne: žiadna rutina
     *)
       if printf '%s' "$user_prompt" | grep -qiE 'migr[aá]ci|migration|drop (index|table|constraint)|\bddl\b|ledger|schema_migrations|prod z[aá]pis|db push'; then
         m="$(block MIGRACIA)"; [ -n "$m" ] && text="$text"$'\n'"$m"
