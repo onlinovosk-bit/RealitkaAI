@@ -4,6 +4,7 @@ import { useState } from "react";
 import { SLATE_HORIZON, WORKDESK_CARD } from "@/lib/slate-horizon-theme";
 import {
   annualPromoNetCents,
+  illustrativeAnnualMonthlyNetCents,
   isAnnualPromoActive,
   licenseNetCents,
   priceFromNetCents,
@@ -74,7 +75,10 @@ export default function PricingV2Plans({ config, initialUsers = 1, navigate = de
   const chargedNet = validUsers ? (promoActive ? annualPromoNetCents(users) : regularNet) : null;
   const charged = chargedNet === null ? null : priceFromNetCents(chargedNet, vat);
   const regular = regularNet === null ? null : priceFromNetCents(regularNet, vat);
-  const baseMonthly = validUsers ? priceFromNetCents(licenseNetCents(users, "year") / 12, vat) : null;
+  const yearNet = validUsers ? licenseNetCents(users, "year") : null;
+  const annualMonthlyIsExact = yearNet !== null && yearNet % 12 === 0;
+  // Od 21. makléra ročná suma nie je deliteľná 12. `illustrativeAnnualMonthlyNetCents` je len text, nie položka faktúry.
+  const baseMonthly = yearNet === null ? null : priceFromNetCents(illustrativeAnnualMonthlyNetCents(users), vat);
 
   const per = yearly ? "rok" : "mes.";
   const cardAmount = (band: (typeof catalog.bands)[number]) => (yearly ? band : band.monthly);
@@ -310,7 +314,9 @@ export default function PricingV2Plans({ config, initialUsers = 1, navigate = de
             )}
             {yearly && (
               <p data-testid="selected-base-monthly" className="text-xs mt-1" style={{ color: SLATE_HORIZON.muted }}>
-                Bežná cena pri ročnej platbe: {formatEurCents(baseMonthly.netCents)} bez DPH mesačne.
+                {annualMonthlyIsExact
+                  ? `Bežná cena pri ročnej platbe: ${formatEurCents(baseMonthly.netCents)} bez DPH mesačne.`
+                  : `Orientačne ${formatEurCents(baseMonthly.netCents)} bez DPH mesačne pri ročnej platbe. Fakturovaná je ročná suma.`}
               </p>
             )}
             {selectedPack && (
