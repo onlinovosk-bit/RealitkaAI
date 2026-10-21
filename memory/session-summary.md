@@ -1,3 +1,16 @@
+## Session 2026-10-21 (REVERSE ENGINEERING & SYSTEM DISCOVERY v1.0)
+### Dokončené
+- `docs/discovery/2026-10-21/`: ARCHITECTURE, DATA_FLOWS, INTEGRATIONS, FINDINGS (29 nálezov, 3× P1), OPEN_QUESTIONS (31 otázok). Iba čítanie; žiadna zmena kódu, PROD ani env.
+### Rozpracované / Pending
+- Q-01: živé `curl -i` na `/api/resend-webhook` bez cookie (potvrdí/vyvráti F-02).
+- Stripe krok C: founder pošle ID cien/kupónu, 7. webhook udalosť, A/B/C pre 21+; env + redeploy len na GO.
+- Skill `gdpr-advisor` chýba (podmienka steny doručiteľnosti).
+- Pricing testy po #908 nespustené (NOT_VERIFIED).
+### Kľúčové súbory zmenené
+- `docs/discovery/2026-10-21/*.md` (5 nových), `docs/STATUS.md` (SESSION blok), `memory/decisions.md`, `memory/session-summary.md`.
+### Ďalší krok
+Q-01 (read-only), potom GO na stenu „doručiteľnosť a odhlásenie".
+
 ---
 ## Session 2026-10-21 (CROSS-AGENT ENGINEERING v1.0)
 ### Dokončené

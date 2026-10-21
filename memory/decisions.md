@@ -1,3 +1,11 @@
+## 2026-10-21 — Revolis reverse engineering & system discovery v1.0 (VALIDATE → report, bez kódu)
+**GO:** founder zadanie „REVOLIS REVERSE ENGINEERING & SYSTEM DISCOVERY v1.0" (iba čítanie, 5 výstupov). Prime Directive: nepriamy — pred ďalšou stenou vieme, čo v systéme reálne beží a čo len existuje v kóde; priamy dopad na platiaceho klienta má F-01/F-02 (doručiteľnosť a odhlásenie) a F-03/F-13 (platba musí mať účinok).
+**Čo:** `docs/discovery/2026-10-21/{ARCHITECTURE,DATA_FLOWS,INTEGRATIONS,FINDINGS,OPEN_QUESTIONS}.md` na HEAD `a04bc5e`. 29 nálezov: 3× P1 (F-01 outbound bez odhlásenia/potlačenia/bounce, F-02 proxy 401 na Resend webhook + tracking + unsubscribe — statika, živé UNKNOWN, F-03 gating no-op + kredity default-off/fail-open), 12× P2, 14× P3. 31 otvorených otázok.
+**Zmerané:** PROD Supabase: 7 agentúr, 0 so `stripe_subscription_id`, 142 tabuliek v `public` všetky s RLS zapnutým (kvalita policies nemeraná). Značky CONFIRMED / CONFIRMED-D (delegované, v turne neoverené) / INFERRED / UNKNOWN.
+**Nerobené / NOT_VERIFIED:** žiadny zápis do PROD, env ani nasadenia; testy po #908 nespustené; hodnoty PROD env, bežiace crony, Stripe Live, Resend DNS, branch protection neoverené (OPEN_QUESTIONS Q-01…Q-31).
+**BUILD/BACKLOG:** BUILD (read-only report). Ďalšia stena „doručiteľnosť a odhlásenie" = VALIDATE → BUILD až po Q-01 a `gdpr-advisor` (skill chýba). Stripe krok C ostáva priorita #1 (čaká na founderove ID).
+**Rollback:** revert PR (iba dokumenty).
+
 ## 2026-10-21 — Cenník v3: Team bez skoku 1→2 (GO B) (BUILD)
 **GO:** founder „GO B" po zistení, že 2 makléri (65 €) platia viac na hlavu než 1 (25 €) a lacnejšie vyjdú dve licencie Start (50 €). Cenu určuje founder; Prime Directive: odstraňuje dôvod nekúpiť Team (priamy dopad nemeraný).
 **Čo:** licencia = 1 → 25 €, 2 → 50 €, 3–5 → 65 € (strop), 6+ bez zmeny (9 / 6 / 5 € za makléra). Mesačná platba = základ × 1,2 (2 makléri 60 €), ročná 9/12 promo: 2 makléri 450 € namiesto 600 €. Stripe graduated tiery majú 6 stupňov (year: 30000 / +30000 / +18000 flat; month: 3000 / +3000 / +1800). Team pásmo = „od 50 €", ostáva self-serve (demo-only len Kancelária a Sieť, nové pole `priceOnRequest`). ROI kalkulačka počíta Team konzervatívne na strope 65 €.
