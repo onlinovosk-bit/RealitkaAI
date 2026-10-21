@@ -39,6 +39,8 @@ export type PricingV2BandView = {
   /** napr. „Ročne 300 € bez DPH (369 € s DPH)“; Sieť s predponou „od“ */
   annualLabel: string
   isFromPrice: boolean
+  /** cenu dojednáme na deme (Kancelária, Sieť); Team má „od“ cenu, ale ostáva self-serve */
+  priceOnRequest: boolean
   /** adresa CTA: registrácia v CRM (alebo demo pri „od“ pásmach Kancelária a Sieť) */
   ctaHref: string
   ctaLabel: string
@@ -134,7 +136,9 @@ export function buildPricingV2View(
     crmUrl,
     bands: catalog.bands.map((b) => {
       // Bez zapnutého signupu vedie každé pásmo na demo; registrácia v CRM až po zapnutí (Stripe + funnel pripravené).
-      const ctaIsDemo = b.isFromPrice || !signupEnabled
+      // Team má „od“ cenu (2 makléri 50 €, 3–5 65 €), ale ostáva self-serve; demo-only sú len Kancelária a Sieť.
+      const demoOnly = b.isFromPrice && b.id !== 'team'
+      const ctaIsDemo = demoOnly || !signupEnabled
       return {
         id: b.id,
         label: b.label,
@@ -145,9 +149,10 @@ export function buildPricingV2View(
         features: V2_BAND_FEATURES[b.id] ?? [],
         annualLabel: `Ročne ${b.isFromPrice ? 'od ' : ''}${formatEurCents(b.annual.netCents)} bez DPH (${b.isFromPrice ? 'od ' : ''}${formatEurCents(b.annual.grossCents)} s DPH)`,
         isFromPrice: b.isFromPrice,
+        priceOnRequest: demoOnly,
         ctaIsDemo,
         ctaHref: ctaIsDemo ? `${CALENDLY_DEMO_URL}?utm_content=pricing_v2_${b.id}` : buildRegisterUrl(crmUrl, { plan: b.id }),
-        ctaLabel: b.isFromPrice ? 'Dohodnúť cenu na deme →' : ctaIsDemo ? 'Rezervovať demo →' : 'Založiť kanceláriu →',
+        ctaLabel: demoOnly ? 'Dohodnúť cenu na deme →' : ctaIsDemo ? 'Rezervovať demo →' : 'Založiť kanceláriu →',
       }
     }),
     plansOnly,

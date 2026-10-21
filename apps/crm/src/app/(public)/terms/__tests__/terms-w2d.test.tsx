@@ -54,7 +54,7 @@ describe("VOP: zapnuté V2 aj PRICING_PUBLIC_ENABLED (NÁVRH, cenník v3)", () =
   it("ukáže pásma s čistou aj konečnou cenou z katalógu", () => {
     const t = render();
     expect(t).toContain("Start — 1 maklér (25 € mesačne bez DPH pri ročnej platbe; 30,75 € s DPH 23 %)");
-    expect(t).toContain("Team — 2–5 maklérov (65 € mesačne bez DPH pri ročnej platbe; 79,95 € s DPH 23 %)");
+    expect(t).toContain("Team — 2–5 maklérov (od 50 € mesačne bez DPH pri ročnej platbe; od 61,50 € s DPH 23 %)");
     expect(t).toContain("Kancelária — 6–10 maklérov (od 74 € mesačne bez DPH pri ročnej platbe; od 91,02 € s DPH 23 %)");
     expect(t).toContain("Sieť — 11 a viac maklérov (od 116 € mesačne bez DPH pri ročnej platbe; od 142,68 € s DPH 23 %)");
     expect(t).toContain("50 kreditov mesačne navyše: 26 € mesačne bez DPH (31,98 € s DPH 23 %)");

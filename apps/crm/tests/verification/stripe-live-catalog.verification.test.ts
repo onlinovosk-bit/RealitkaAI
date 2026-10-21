@@ -30,8 +30,8 @@ describe("stripe_live_catalog.py — plan bez siete (DRY-RUN je predvolený)", (
 
   it("plan nesie tiers licencie, kupon, baliky a kredit presne podla cennika v3", () => {
     const out = run().stdout;
-    expect(out).toContain("licence_year | Revolis licencia | tiered graduated (do 1: flat 300.00; do 5: flat 480.00; do 10: 108.00/ks; do 20: 72.00/ks; do inf: 60.00/ks)");
-    expect(out).toContain("licence_month | Revolis licencia | tiered graduated (do 1: flat 30.00; do 5: flat 48.00; do 10: 10.80/ks; do 20: 7.20/ks; do inf: 6.00/ks)");
+    expect(out).toContain("licence_year | Revolis licencia | tiered graduated (do 1: flat 300.00; do 2: flat 300.00; do 5: flat 180.00; do 10: 108.00/ks; do 20: 72.00/ks; do inf: 60.00/ks)");
+    expect(out).toContain("licence_month | Revolis licencia | tiered graduated (do 1: flat 30.00; do 2: flat 30.00; do 5: flat 18.00; do 10: 10.80/ks; do 20: 7.20/ks; do inf: 6.00/ks)");
     expect(out).toContain("annual_promo | kupon | -25 % duration=once redeem_by=2026-12-31T22:59:59Z (1798757999)");
     const packs: Array<[number, string]> = [[50, "26.00"], [100, "51.00"], [150, "74.00"], [200, "94.00"], [250, "114.00"], [300, "131.00"]];
     for (const [credits, eur] of packs) expect(out).toContain(`credits_${credits}_month | Revolis balíky kreditov | ${eur}`);
