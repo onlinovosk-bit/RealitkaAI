@@ -146,8 +146,8 @@ describe("scripts/ops/stripe-v2 katalóg vs kód (cenník v3)", () => {
   it("testovací skript prejde vlastnou validáciou (bez siete) a vypíše tiers, kupón a balíky", () => {
     const res = spawnSync("python3", [join(DIR, "stripe_test_catalog.py")], { encoding: "utf8" });
     expect(res.status, res.stderr).toBe(0);
-    expect(res.stdout).toContain("licence_year | do 1: flat 300.00; do 5: flat 480.00; do 10: 108.00/ks; do 20: 72.00/ks; do inf: 60.00/ks");
-    expect(res.stdout).toContain("licence_month | do 1: flat 30.00; do 5: flat 48.00; do 10: 10.80/ks; do 20: 7.20/ks; do inf: 6.00/ks");
+    expect(res.stdout).toContain("licence_year | do 1: flat 300.00; do 2: flat 300.00; do 5: flat 180.00; do 10: 108.00/ks; do 20: 72.00/ks; do inf: 60.00/ks");
+    expect(res.stdout).toContain("licence_month | do 1: flat 30.00; do 2: flat 30.00; do 5: flat 18.00; do 10: 10.80/ks; do 20: 7.20/ks; do inf: 6.00/ks");
     expect(res.stdout).toContain("Kupon annual_promo: -25 %, duration=once, redeem_by=2026-12-31T22:59:59Z (1798757999)");
     expect(res.stdout).toContain("credits_50_month | 26.00 | 31.98 | 50 |");
     expect(res.stdout).toContain("credit_unit_one_time | 0.75 | 0.92 | 1 |");

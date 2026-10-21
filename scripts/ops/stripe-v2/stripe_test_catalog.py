@@ -36,8 +36,8 @@ assert PROMO_REDEEM_BY == 1798757999
 # zhodu strazi apps/crm/tests/verification/stripe-v2-catalog.verification.test.ts.
 # Tvar: (up_to, flat_amount, unit_amount); up_to "inf" = bez hornej hranice.
 SEAT_TIERS = {
-    "month": [(1, 3000, 0), (5, 4800, 0), (10, 0, 1080), (20, 0, 720), ("inf", 0, 600)],
-    "year": [(1, 30000, 0), (5, 48000, 0), (10, 0, 10800), (20, 0, 7200), ("inf", 0, 6000)],
+    "month": [(1, 3000, 0), (2, 3000, 0), (5, 1800, 0), (10, 0, 1080), (20, 0, 720), ("inf", 0, 600)],
+    "year": [(1, 30000, 0), (2, 30000, 0), (5, 18000, 0), (10, 0, 10800), (20, 0, 7200), ("inf", 0, 6000)],
 }
 # sku -> (suma v centoch | None pre tiered, kredity | None)
 EXPECTED = {

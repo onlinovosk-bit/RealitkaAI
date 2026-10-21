@@ -43,12 +43,12 @@ function freezeList<T extends object>(items: T[]): readonly T[] {
 }
 
 /**
- * Pásma v3 (1 / 2–5 / 6–10 / 11+). Mesačný grant kreditov kancelárie ostáva 25 / 60 / 120 / 175
+ * Pásma v3 (1 / 2–5 / 6–10 / 11+). `netCents` = základ pri `minUsers`: Team od 50 € (2 makléri), 3–5 maklérov 65 € (strop). Mesačný grant kreditov kancelárie ostáva 25 / 60 / 120 / 175
  * (v3 ho nemení; otvorená otázka pre foundera).
  */
 export const PRICING_V2_BANDS: readonly PricingV2Band[] = freezeList<PricingV2Band>([
   { id: "start", label: "Start", minUsers: 1, maxUsers: 1, netCents: 2500, isFromPrice: false, monthlyCredits: 25 },
-  { id: "team", label: "Team", minUsers: 2, maxUsers: 5, netCents: 6500, isFromPrice: false, monthlyCredits: 60 },
+  { id: "team", label: "Team", minUsers: 2, maxUsers: 5, netCents: 5000, isFromPrice: true, monthlyCredits: 60 },
   { id: "office", label: "Kancelária", minUsers: 6, maxUsers: 10, netCents: 7400, isFromPrice: true, monthlyCredits: 120 },
   { id: "network", label: "Sieť", minUsers: 11, maxUsers: null, netCents: 11600, isFromPrice: true, monthlyCredits: 175 },
 ]);
@@ -96,12 +96,16 @@ export function annualNetCents(monthlyNetCents: number): number {
   return annual;
 }
 
-/** Základ: mesačná cena pri ročnej fakturácii pre `n` maklérov (v centoch bez DPH). */
+/**
+ * Základ: mesačná cena pri ročnej fakturácii pre `n` maklérov (v centoch bez DPH).
+ * 1 = 25 €, 2 = 50 €, 3–5 = 65 € (strop Team), potom 9 / 6 / 5 € za makléra.
+ */
 export function licenseBaseMonthlyNetCents(n: number): number {
   assertUsers(n);
   let base: number;
   if (n === 1) base = 2500;
-  else if (n <= 5) base = 6500;
+  else if (n === 2) base = 5000; // 2 × 25 €: bez skoku na hranici 1→2
+  else if (n <= 5) base = 6500; // strop Team
   else if (n <= 10) base = 6500 + 900 * (n - 5);
   else if (n <= 20) base = 11000 + 600 * (n - 10);
   else base = 17000 + 500 * (n - 20);
@@ -150,14 +154,16 @@ export const PRICING_V3_SEAT_TIERS: {
 } = Object.freeze({
   year: Object.freeze([
     Object.freeze({ up_to: 1, flat_amount: 30000, unit_amount: 0 }),
-    Object.freeze({ up_to: 5, flat_amount: 48000, unit_amount: 0 }),
+    Object.freeze({ up_to: 2, flat_amount: 30000, unit_amount: 0 }),
+    Object.freeze({ up_to: 5, flat_amount: 18000, unit_amount: 0 }),
     Object.freeze({ up_to: 10, flat_amount: 0, unit_amount: 10800 }),
     Object.freeze({ up_to: 20, flat_amount: 0, unit_amount: 7200 }),
     Object.freeze({ up_to: null, flat_amount: 0, unit_amount: 6000 }),
   ]),
   month: Object.freeze([
     Object.freeze({ up_to: 1, flat_amount: 3000, unit_amount: 0 }),
-    Object.freeze({ up_to: 5, flat_amount: 4800, unit_amount: 0 }),
+    Object.freeze({ up_to: 2, flat_amount: 3000, unit_amount: 0 }),
+    Object.freeze({ up_to: 5, flat_amount: 1800, unit_amount: 0 }),
     Object.freeze({ up_to: 10, flat_amount: 0, unit_amount: 1080 }),
     Object.freeze({ up_to: 20, flat_amount: 0, unit_amount: 720 }),
     Object.freeze({ up_to: null, flat_amount: 0, unit_amount: 600 }),

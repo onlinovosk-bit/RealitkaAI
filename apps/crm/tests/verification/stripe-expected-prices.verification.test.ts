@@ -204,14 +204,16 @@ describe("cenník v3: tiers, kupón, balíky, kredit v manifeste", () => {
     // Spec §2 doslova (nie z kódu): flat_amount sa pripočíta raz, keď množstvo zasiahne tier.
     expect(year.tiers).toEqual([
       { up_to: 1, flat_amount: 30000, unit_amount: 0 },
-      { up_to: 5, flat_amount: 48000, unit_amount: 0 },
+      { up_to: 2, flat_amount: 30000, unit_amount: 0 },
+      { up_to: 5, flat_amount: 18000, unit_amount: 0 },
       { up_to: 10, flat_amount: 0, unit_amount: 10800 },
       { up_to: 20, flat_amount: 0, unit_amount: 7200 },
       { up_to: "inf", flat_amount: 0, unit_amount: 6000 },
     ]);
     expect(month.tiers).toEqual([
       { up_to: 1, flat_amount: 3000, unit_amount: 0 },
-      { up_to: 5, flat_amount: 4800, unit_amount: 0 },
+      { up_to: 2, flat_amount: 3000, unit_amount: 0 },
+      { up_to: 5, flat_amount: 1800, unit_amount: 0 },
       { up_to: 10, flat_amount: 0, unit_amount: 1080 },
       { up_to: 20, flat_amount: 0, unit_amount: 720 },
       { up_to: "inf", flat_amount: 0, unit_amount: 600 },
@@ -244,7 +246,7 @@ describe("cenník v3: tiers, kupón, balíky, kredit v manifeste", () => {
   });
 
   it("kontrolné body zo špecifikácie (základ × 12 ročne, × 1,2 mesačne)", () => {
-    const base: Record<number, number> = { 1: 2500, 3: 6500, 5: 6500, 6: 7400, 7: 8300, 10: 11000, 11: 11600, 20: 17000, 21: 17500, 30: 22000 };
+    const base: Record<number, number> = { 1: 2500, 2: 5000, 3: 6500, 5: 6500, 6: 7400, 7: 8300, 10: 11000, 11: 11600, 20: 17000, 21: 17500, 30: 22000 };
     for (const [n, b] of Object.entries(base)) {
       expect(simulateGraduated(licence("year").tiers!, Number(n)), `year n=${n}`).toBe(b * 12);
       expect(simulateGraduated(licence("month").tiers!, Number(n)), `month n=${n}`).toBe((b * 12) / 10);

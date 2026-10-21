@@ -10,6 +10,7 @@ import { SLATE_HORIZON, WORKDESK_CARD } from "@/lib/slate-horizon-theme";
 import { DEMO } from "@/lib/demo-slate-styles";
 import { trackRevenueTelemetry } from "@/lib/analytics/revenue-telemetry";
 import { usePricingHidden, usePricingV2Catalog } from "@/components/marketing/pricing-v2-context";
+import { licenseBaseMonthlyNetCents } from "@/lib/pricing-v2";
 import { PRICE_ON_REQUEST_TEXT } from "@/components/marketing/guarantee-copy";
 
 // ─── ROI Calculator ───────────────────────────────────────────────────────
@@ -32,7 +33,8 @@ export function RoiCalculator() {
   const planCosts: Record<typeof plan, number> = v2Ready
     ? {
         starter: v2Bands[0]!.netCents / 100,
-        pro: v2Bands[1]!.netCents / 100,
+        // Team: konzervatívne cena na strope pásma (3–5 maklérov), nie „od“ cena pre 2 maklérov
+        pro: licenseBaseMonthlyNetCents(v2Bands[1]!.maxUsers ?? v2Bands[1]!.minUsers) / 100,
         enterprise: v2Bands[2]!.netCents / 100,
       }
     : {

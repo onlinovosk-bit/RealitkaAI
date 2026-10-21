@@ -84,7 +84,8 @@ describe("PricingV2Plans — pásmo a ceny (mesačná platba, +20 %)", () => {
   // [počet, pásmo, čistá mesačná (základ × 1,2), konečná s 23 % DPH] — nezávislý oracle zo spec §1
   const CASES: Array<[string, string, string, string]> = [
     ["1", "start", "30,00 €", "36,90 €"],
-    ["2", "team", "78,00 €", "95,94 €"],
+    ["2", "team", "60,00 €", "73,80 €"],
+    ["3", "team", "78,00 €", "95,94 €"],
     ["5", "team", "78,00 €", "95,94 €"],
     ["6", "office", "88,80 €", "109,22 €"],
     ["10", "office", "132,00 €", "162,36 €"],
@@ -106,7 +107,7 @@ describe("PricingV2Plans — pásmo a ceny (mesačná platba, +20 %)", () => {
     render(<PricingV2Plans config={v2Config()} />);
     expect(screen.getByTestId("band-start-net").textContent).toBe("30,00 €");
     expect(screen.getByTestId("band-start-gross").textContent).toBe("36,90 €");
-    expect(screen.getByTestId("band-team-gross").textContent).toBe("95,94 €");
+    expect(screen.getByTestId("band-team-gross").textContent).toBe("od 73,80 €");
     expect(screen.getByTestId("band-office-net").textContent).toBe("od 88,80 €");
     expect(screen.getByTestId("band-network-net").textContent).toBe("od 139,20 €");
     expect(screen.getByTestId("band-network-gross").textContent).toBe("od 171,22 €");
@@ -165,7 +166,7 @@ describe("PricingV2Plans — stepper počtu maklérov a živý prepočet", () =>
     await user.click(screen.getByTestId("seats-inc"));
     expect(input.value).toBe("2");
     expect(screen.getByTestId("selected-band-label").textContent).toBe("Team");
-    expect(screen.getByTestId("selected-net").textContent).toBe("78,00 €");
+    expect(screen.getByTestId("selected-net").textContent).toBe("60,00 €"); // 2 makléri = 2 × 25 € × 1,2
 
     for (let i = 0; i < 4; i++) await user.click(screen.getByTestId("seats-inc")); // 6
     expect(input.value).toBe("6");
@@ -244,7 +245,7 @@ describe("PricingV2Plans — CTA a chyby checkoutu", () => {
     expect(navigate).not.toHaveBeenCalled();
     // po chybe sa dá znova skúsiť a ceny ostávajú
     expect((screen.getByRole("button", { name: /Pokračovať k objednávke/ }) as HTMLButtonElement).disabled).toBe(false);
-    expect(screen.getByTestId("band-team-gross").textContent).toBe("95,94 €");
+    expect(screen.getByTestId("band-team-gross").textContent).toBe("od 73,80 €");
   });
 
   it("503 bez code (iba status) sa tiež ukáže ako nedostupné; sieťová chyba je zrozumiteľná", async () => {
@@ -279,7 +280,7 @@ describe("ročné platenie a akcia 9/12 — UI", () => {
     render(<PricingV2Plans config={v2Config()} now={PROMO_NOW} />);
     expect(screen.queryByTestId("interval-year")).toBeNull();
     expect(screen.queryByTestId("promo-note")).toBeNull();
-    expect(screen.getByTestId("band-team-net").textContent).toBe("78,00 €");
+    expect(screen.getByTestId("band-team-net").textContent).toBe("od 60,00 €");
   });
 
   it("prepínač má popisy „Ročne“ a „Mesačne (+20 %)“, predvolene je ročne", () => {
@@ -308,8 +309,8 @@ describe("ročné platenie a akcia 9/12 — UI", () => {
     render(<PricingV2Plans config={yearlyConfig()} now={PROMO_NOW} />);
     expect(screen.getByTestId("band-start-net").textContent).toBe("25,00 €");
     expect(screen.getByTestId("band-start-gross").textContent).toBe("30,75 €");
-    expect(screen.getByTestId("band-team-net").textContent).toBe("65,00 €");
-    expect(screen.getByTestId("band-team-gross").textContent).toBe("79,95 €");
+    expect(screen.getByTestId("band-team-net").textContent).toBe("od 50,00 €");
+    expect(screen.getByTestId("band-team-gross").textContent).toBe("od 61,50 €");
     expect(screen.getByTestId("band-office-net").textContent).toBe("od 74,00 €");
     expect(screen.getByTestId("band-network-net").textContent).toBe("od 116,00 €");
   });
@@ -370,10 +371,10 @@ describe("ročné platenie a akcia 9/12 — UI", () => {
 
   it("porovnanie ukazuje ročnú aj mesačnú cenu každého pásma, garanciu a kredity 25 / 60 / 120 / 175", () => {
     render(<PricingV2Comparison config={v2Config()} />);
-    expect(screen.getByTestId("compare-team-annual").textContent).toContain("780,00 €");
-    expect(screen.getByTestId("compare-team-annual").textContent).toContain("959,40 €");
-    expect(screen.getByTestId("compare-team-monthly").textContent).toContain("78,00 €");
-    expect(screen.getByTestId("compare-team-monthly").textContent).toContain("95,94 €");
+    expect(screen.getByTestId("compare-team-annual").textContent).toContain("600,00 €");
+    expect(screen.getByTestId("compare-team-annual").textContent).toContain("738,00 €");
+    expect(screen.getByTestId("compare-team-monthly").textContent).toContain("60,00 €");
+    expect(screen.getByTestId("compare-team-monthly").textContent).toContain("73,80 €");
     expect(screen.getByTestId("compare-guarantee").textContent).toBe("100 % vrátenie peňazí do 30 dní – bez otázok");
     expect(screen.getByTestId("compare-start").textContent).toContain("25 kreditov mesačne pre celú kanceláriu");
     expect(screen.getByTestId("compare-team").textContent).toContain("60 kreditov mesačne pre celú kanceláriu");
@@ -545,8 +546,8 @@ describe("Zapnutý prepínač — obrazovky", () => {
     mockFetch({ configBody: ON_BODY });
     render(<ProgramComparisonSwitch />);
     expect(await screen.findByTestId("pricing-v2-comparison")).toBeTruthy();
-    expect(screen.getByTestId("compare-team").textContent).toContain("65,00 €");
-    expect(screen.getByTestId("compare-team").textContent).toContain("79,95 €");
+    expect(screen.getByTestId("compare-team").textContent).toContain("50,00 €");
+    expect(screen.getByTestId("compare-team").textContent).toContain("61,50 €");
     expect(document.body.textContent).not.toMatch(/PROTOCOL AUTHORITY|Owner Cockpit|449/);
   });
 

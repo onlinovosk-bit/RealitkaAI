@@ -30,6 +30,7 @@ import {
 /** Kontrolné body zo zadania: n → základ (mesačne pri ročnej fakturácii). */
 const CHECKPOINTS: Array<[number, number]> = [
   [1, 2500],
+  [2, 5000],
   [3, 6500],
   [5, 6500],
   [6, 7400],
@@ -60,7 +61,7 @@ describe("pricing-v2: licencia podľa počtu maklérov", () => {
 
   it("mesačná platba = základ × 1,2 presne v centoch na všetkých kontrolných bodoch", () => {
     const expected: Record<number, number> = {
-      1: 3000, 3: 7800, 5: 7800, 6: 8880, 7: 9960, 10: 13200, 11: 13920, 20: 20400, 21: 21000, 30: 26400, 50: 38400,
+      1: 3000, 2: 6000, 3: 7800, 5: 7800, 6: 8880, 7: 9960, 10: 13200, 11: 13920, 20: 20400, 21: 21000, 30: 26400, 50: 38400,
     };
     for (const [n, base] of CHECKPOINTS) {
       expect(licenseNetCents(n, "month")).toBe(expected[n]);
@@ -81,7 +82,7 @@ describe("pricing-v2: licencia podľa počtu maklérov", () => {
     for (const interval of ["month", "year"] as const) {
       for (let n = 2; n <= 200; n++) {
         const prev = licenseNetCents(n - 1, interval);
-        if (n >= 6 || n === 2) expect(licenseNetCents(n, interval)).toBeGreaterThan(prev);
+        if (n >= 6 || n <= 3) expect(licenseNetCents(n, interval)).toBeGreaterThan(prev);
         else expect(licenseNetCents(n, interval)).toBe(prev);
       }
     }
@@ -100,14 +101,16 @@ describe("pricing-v2: Stripe graduated tiery = vzorec", () => {
   it("tiery presne podľa zadania", () => {
     expect(PRICING_V3_SEAT_TIERS.year).toEqual([
       { up_to: 1, flat_amount: 30000, unit_amount: 0 },
-      { up_to: 5, flat_amount: 48000, unit_amount: 0 },
+      { up_to: 2, flat_amount: 30000, unit_amount: 0 },
+      { up_to: 5, flat_amount: 18000, unit_amount: 0 },
       { up_to: 10, flat_amount: 0, unit_amount: 10800 },
       { up_to: 20, flat_amount: 0, unit_amount: 7200 },
       { up_to: null, flat_amount: 0, unit_amount: 6000 },
     ]);
     expect(PRICING_V3_SEAT_TIERS.month).toEqual([
       { up_to: 1, flat_amount: 3000, unit_amount: 0 },
-      { up_to: 5, flat_amount: 4800, unit_amount: 0 },
+      { up_to: 2, flat_amount: 3000, unit_amount: 0 },
+      { up_to: 5, flat_amount: 1800, unit_amount: 0 },
       { up_to: 10, flat_amount: 0, unit_amount: 1080 },
       { up_to: 20, flat_amount: 0, unit_amount: 720 },
       { up_to: null, flat_amount: 0, unit_amount: 600 },
@@ -199,13 +202,13 @@ describe("pricing-v2: ceny a DPH", () => {
   });
 
   it("konečná cena základu pásiem s 23 % DPH na cent", () => {
-    expect(PRICING_V2_BANDS.map((b) => priceFromNetCents(b.netCents).grossCents)).toEqual([3075, 7995, 9102, 14268]);
+    expect(PRICING_V2_BANDS.map((b) => priceFromNetCents(b.netCents).grossCents)).toEqual([3075, 6150, 9102, 14268]);
   });
 
   it("pri inej sadzbe DPH sa čistá cena nemení a konečná sa prepočíta (0 % a 20 %)", () => {
     const nets = PRICING_V2_BANDS.map((b) => b.netCents);
-    expect(nets.map((n) => priceFromNetCents(n, 0).grossCents)).toEqual([2500, 6500, 7400, 11600]);
-    expect(nets.map((n) => priceFromNetCents(n, 20).grossCents)).toEqual([3000, 7800, 8880, 13920]);
+    expect(nets.map((n) => priceFromNetCents(n, 0).grossCents)).toEqual([2500, 5000, 7400, 11600]);
+    expect(nets.map((n) => priceFromNetCents(n, 20).grossCents)).toEqual([3000, 6000, 8880, 13920]);
     for (const vat of [0, 20, 23]) {
       for (const n of nets) expect(priceFromNetCents(n, vat).netCents).toBe(n);
     }
@@ -285,14 +288,14 @@ describe("pricing-v2: katalóg (API kontrakt)", () => {
     expect(c.creditUnit).toEqual({ netCents: 75, vatCents: 17, grossCents: 92 });
     expect(c.bands.map((b) => [b.id, b.netCents, b.grossCents])).toEqual([
       ["start", 2500, 3075],
-      ["team", 6500, 7995],
+      ["team", 5000, 6150],
       ["office", 7400, 9102],
       ["network", 11600, 14268],
     ]);
-    expect(c.bands.map((b) => b.isFromPrice)).toEqual([false, false, true, true]);
+    expect(c.bands.map((b) => b.isFromPrice)).toEqual([false, true, true, true]);
     expect(c.bands.map((b) => b.seat.extraSeatBaseMonthlyNetCents)).toEqual([null, null, 900, 600]);
-    expect(c.bands.map((b) => b.annual.netCents)).toEqual([30000, 78000, 88800, 139200]);
-    expect(c.bands.map((b) => b.monthly.netCents)).toEqual([3000, 7800, 8880, 13920]);
+    expect(c.bands.map((b) => b.annual.netCents)).toEqual([30000, 60000, 88800, 139200]);
+    expect(c.bands.map((b) => b.monthly.netCents)).toEqual([3000, 6000, 8880, 13920]);
     expect(c.packs.map((p) => [p.credits, p.netCents, p.grossCents])).toEqual([
       [50, 2600, 3198],
       [100, 5100, 6273],
@@ -312,9 +315,9 @@ describe("pricing-v2: katalóg (API kontrakt)", () => {
   it("katalóg pri 0 % a 20 % DPH má nezmenený základ a prepočítanú konečnú cenu", () => {
     const zero = buildPricingV2Catalog(0);
     const twenty = buildPricingV2Catalog(20);
-    expect(zero.bands.map((b) => b.grossCents)).toEqual([2500, 6500, 7400, 11600]);
-    expect(twenty.bands.map((b) => b.grossCents)).toEqual([3000, 7800, 8880, 13920]);
-    expect(twenty.bands.map((b) => b.netCents)).toEqual([2500, 6500, 7400, 11600]);
+    expect(zero.bands.map((b) => b.grossCents)).toEqual([2500, 5000, 7400, 11600]);
+    expect(twenty.bands.map((b) => b.grossCents)).toEqual([3000, 6000, 8880, 13920]);
+    expect(twenty.bands.map((b) => b.netCents)).toEqual([2500, 5000, 7400, 11600]);
     expect(twenty.creditUnit.grossCents).toBe(90);
   });
 
@@ -388,7 +391,7 @@ describe("isPricingV2PlansOnly (fail-closed)", () => {
 
 describe("pricing-v2: ročný základ", () => {
   it("annualNetCents = 12 × mesačný", () => {
-    expect(PRICING_V2_BANDS.map((b) => annualNetCents(b.netCents))).toEqual([30000, 78000, 88800, 139200]);
+    expect(PRICING_V2_BANDS.map((b) => annualNetCents(b.netCents))).toEqual([30000, 60000, 88800, 139200]);
   });
 
   it("neplatný základ a nebezpečne veľké číslo sa odmietnu", () => {

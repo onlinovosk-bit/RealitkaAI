@@ -67,10 +67,10 @@ afterEach(() => {
 })
 
 // Nezávislé očakávanie cenníka v3 (PR #884), ručne spočítané: základ = mesačná cena pri ročnej fakturácii
-// pre začiatok pásma (1 / 2 / 6 / 11 maklérov): 25 / 65 / 65+9=74 / 110+6=116 €; konečná = bez DPH x 1,23 na cent.
+// pre začiatok pásma (1 / 2 / 6 / 11 maklérov): 25 / 2×25=50 / 65+9=74 / 110+6=116 € (Team 3–5 maklérov: strop 65 €); konečná = bez DPH x 1,23 na cent.
 const EXPECTED_BANDS = [
   { label: 'Start', net: '25 €', gross: '30,75 € s DPH' },
-  { label: 'Team', net: '65 €', gross: '79,95 € s DPH' },
+  { label: 'Team', net: 'od 50 €', gross: 'od 61,50 € s DPH' },
   { label: 'Kancelária', net: 'od 74 €', gross: 'od 91,02 € s DPH' },
   { label: 'Sieť', net: 'od 116 €', gross: 'od 142,68 € s DPH' },
 ]
@@ -140,12 +140,12 @@ describe('ročné platenie na webe (12 × základ, bez zľavy; akcia 9/12 sa na 
     const view = buildPricingV2View(buildPricingV2Catalog())
     expect(view.bands.map((b) => norm(b.annualLabel))).toEqual([
       'Ročne 300 € bez DPH (369 € s DPH)',
-      'Ročne 780 € bez DPH (959,40 € s DPH)',
+      'Ročne od 600 € bez DPH (od 738 € s DPH)',
       'Ročne od 888 € bez DPH (od 1092,24 € s DPH)',
       'Ročne od 1392 € bez DPH (od 1712,16 € s DPH)',
     ])
     const html = norm(renderToStaticMarkup(<PricingSectionV2 view={view} />))
-    expect(html).toContain('Ročne 780 € bez DPH (959,40 € s DPH)')
+    expect(html).toContain('Ročne od 600 € bez DPH (od 738 € s DPH)')
     expect(html).not.toContain('Ušetríte')
     expect(html).not.toMatch(/zľav/i)
   })
@@ -309,8 +309,8 @@ describe('LeadCaptureModal vo v2', () => {
       expect(out).not.toContain('Prejsť na platbu')
       expect(out).toContain('bez DPH')
     }
-    expect(html('pricing-v2-team')).toContain('65 €')
-    expect(html('pricing-v2-team')).toContain('79,95 € s DPH')
+    expect(html('pricing-v2-team')).toContain('od 50 €')
+    expect(html('pricing-v2-team')).toContain('od 61,50 € s DPH')
     expect(html('pricing-smart-start')).toContain('25 €')
   })
 
