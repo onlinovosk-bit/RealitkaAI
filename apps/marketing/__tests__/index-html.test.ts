@@ -101,4 +101,15 @@ describe('public/index.html — kampaň cenník v3', () => {
     // kalkulačka mesačne počíta z ročnej ceny × 1,2
     expect(html).toContain('r.p*1.2*100')
   })
+
+  it('výber plánu: 4 karty sú voliteľné (radio), n určuje vybraný plán a kalkulačku', () => {
+    expect(html).toContain('id="planGrid"')
+    for (const [plan, n] of [['start', '1'], ['team', '3'], ['office', '6'], ['network', '11']]) {
+      expect(html).toContain(`data-plan="${plan}" data-n="${n}" role="radio" tabindex="0"`)
+    }
+    expect((html.match(/<div class="pick">/g) ?? []).length).toBe(4)
+    // rozsahy plánov musia sedieť s cenníkom v3: 1 / 2–5 / 6–10 / 11+
+    expect(html).toContain('function planKey(n){ return n<=1?"start":n<=5?"team":n<=10?"office":"network"; }')
+    expect(html).toContain('addEventListener("click",function(){ selectPlan(card); })')
+  })
 })
