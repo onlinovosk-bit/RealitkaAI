@@ -1,3 +1,16 @@
+---
+## Session 2026-10-21 (CROSS-AGENT ENGINEERING v1.0)
+### Dokončené
+- `scripts/ci/revolis-verify.mjs`, `scripts/ci/lib/verify-core.mjs`: completion + plan-lint, 27 testov v `scripts/ci/__tests__/revolis-verify.test.mjs`, 8 mutácií.
+- Skills `revolis-verify-completion`, `revolis-review-plan`; adaptéry `AGENTS.md`, `.cursor/rules/revolis-cross-agent.mdc`; kontrakt s auditom `docs/architecture/cross-agent-engineering-contract.md`.
+- Zapojené do `scripts/ci/prepush-gate.sh` a CI (`saas-grade-pipeline.yml`, krok Test CI helper scripts).
+### Rozpracované / Pending
+- P1: identita nasadenia v `/api/healthz`, meranie ceny modelov, základná línia metrík (nič z toho nie je urobené).
+### Kľúčové súbory zmenené
+- viď vyššie; aplikácia ani PROD sa nemenili.
+### Ďalší krok
+Draft PR na review; merge až na GO foundera.
+
 ## Session 2026-10-21 (GO STRUCTURE-FIRST-1)
 ### Dokončené
 - `CLAUDE.md`: Initialization číta `memory/INDEX.md` + prvý záznam session-summary, nie celý `/memory`; opis hookov zosúladený.
