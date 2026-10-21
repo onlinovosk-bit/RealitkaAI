@@ -85,4 +85,20 @@ describe('public/index.html — kampaň cenník v3', () => {
     expect(html).toContain('Cena sa riadi počtom maklérov v tíme')
     expect(html).not.toMatch(/asistentka a back office sú zadarmo/)
   })
+
+  it('prepínač ročne/mesačne: mesačné ceny = ročné × 1,2 a sú v kóde stránky', () => {
+    expect(html).toContain('id="billToggle"')
+    expect(html).toContain('id="billYear"')
+    expect(html).toContain('id="billMonth"')
+    // karty: mesačná cena bez záväzku = ročná základná cena × 1,2
+    for (const [yearly, monthly] of [['25', '30'], ['65', '78'], ['74', '88,80'], ['116', '139,20']]) {
+      expect(Math.round(Number(yearly) * 1.2 * 100) / 100).toBe(Number(monthly.replace(',', '.')))
+      expect(html).toContain(`${monthly} € <small>/ mesiac</small>`)
+    }
+    // príklady pre Kanceláriu a Sieť (mesačne): 7 = 99,60; 10 = 132; 20 = 204; 30 = 264
+    expect(html).toContain('7 maklérov = 99,60 €, 10 maklérov = 132 €')
+    expect(html).toContain('20 maklérov = 204 €, 30 maklérov = 264 €')
+    // kalkulačka mesačne počíta z ročnej ceny × 1,2
+    expect(html).toContain('r.p*1.2*100')
+  })
 })

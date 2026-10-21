@@ -122,6 +122,11 @@ footer{padding:30px 0;color:var(--mut);font-size:13px;text-align:center;border-t
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.btn,.sticky{transition:none}}
 .formula{color:var(--txt);font-size:14px;font-weight:600;margin-top:6px}
 .ex{color:var(--p2);font-size:13px;margin-top:4px}
+.billtoggle{display:flex;justify-content:center;flex-wrap:wrap;gap:6px;margin:0 auto 22px;padding:5px;max-width:520px;background:var(--rev-surface-2);border:1px solid var(--line);border-radius:999px}
+.billtoggle button{flex:1 1 200px;appearance:none;border:0;background:transparent;color:var(--mut);font:inherit;font-weight:700;padding:10px 16px;border-radius:999px;cursor:pointer;line-height:1.25}
+.billtoggle button small{display:block;font-weight:500;font-size:12px}
+.billtoggle button[aria-checked="true"]{background:var(--p);color:#1a1405}
+.billtoggle button:focus-visible{outline:2px solid var(--p);outline-offset:2px}
 .promo{max-width:760px;margin:0 auto 28px;text-align:center;background:var(--rev-gold-dim);border:1px solid var(--rev-line-strong);border-radius:12px;padding:12px 18px;font-size:15px}
 .calc,.credits{max-width:760px;margin:28px auto 0}
 .calc-l{display:block;margin:10px 0 6px;color:var(--mut)}
@@ -277,24 +282,28 @@ footer{padding:30px 0;color:var(--mut);font-size:13px;text-align:center;border-t
         <div><b class="cd-s">00</b><small>sek.</small></div>
       </div>
     </div>
-    <p class="onb" style="margin:-14px auto 26px">Ceny sú mesačne pri ročnej platbe. Cena sa riadi počtom maklérov v tíme – majiteľ, asistentka a back office sa do počtu nerátajú.</p>
-    <div class="promo">🎁 <strong>Akcia do 31. 12. 2026:</strong> pri ročnej platbe máte 3 mesiace zadarmo – prvý rok platíte len 9 z 12 mesiacov. Od 2. roka platí bežná ročná cena.</div>
+    <p class="onb" style="margin:-14px auto 26px" data-m="Ceny sú mesačne pri mesačnej platbe bez záväzku (o 20 % viac ako pri ročnej). Cena sa riadi počtom maklérov v tíme – majiteľ, asistentka a back office sa do počtu nerátajú.">Ceny sú mesačne pri ročnej platbe. Cena sa riadi počtom maklérov v tíme – majiteľ, asistentka a back office sa do počtu nerátajú.</p>
+    <div class="billtoggle" role="radiogroup" aria-label="Spôsob platby" id="billToggle">
+      <button type="button" role="radio" aria-checked="true" id="billYear">Ročne<small>3 mesiace zadarmo v 1. roku</small></button>
+      <button type="button" role="radio" aria-checked="false" id="billMonth">Mesačne<small>bez záväzku, +20 %</small></button>
+    </div>
+    <div class="promo" id="promoBox" data-m="Mesačná platba je bez ročného záväzku a stojí o 20 % viac ako pri ročnej platbe. Akcia – 3 mesiace zadarmo – platí len pri ročnej platbe.">🎁 <strong>Akcia do 31. 12. 2026:</strong> pri ročnej platbe máte 3 mesiace zadarmo – prvý rok platíte len 9 z 12 mesiacov. Od 2. roka platí bežná ročná cena.</div>
     <div class="grid g4">
-      <div class="card plan"><h3>Start</h3><div class="amt">25 € <small>/ mesiac</small></div><div class="vat">bez DPH · pri ročnej platbe</div><div class="save">🎁 1. rok 225 € namiesto 300 € – zľava 75 €</div><p>Pre samostatného makléra</p><ul><li>1 maklér</li><li>Majiteľ, asistentka a back office zadarmo</li><li class="fhead">Všetky funkcie:</li><li>AI texty inzerátov z parametrov nehnuteľnosti</li><li>AI triáž a priorita dopytov</li><li>Evidencia leadov a kontaktov</li><li>Evidencia nehnuteľností</li><li>Príjem dopytov z e-mailov realitných portálov</li></ul></div>
-      <div class="card plan hot"><span class="tag">Najčastejšia voľba</span><h3>Team</h3><div class="amt">65 € <small>/ mesiac</small></div><div class="vat">bez DPH · pri ročnej platbe</div><div class="save">🎁 1. rok 585 € namiesto 780 € – zľava 195 €</div><p>Pre menší tím</p><p class="formula">spolu za celý tím</p><ul><li>2–5 maklérov</li><li>Viac maklérov v jednom účte</li><li>Majiteľ, asistentka a back office zadarmo</li><li class="fhead">Všetky funkcie:</li><li>AI texty inzerátov z parametrov nehnuteľnosti</li><li>AI triáž a priorita dopytov</li><li>Evidencia leadov a kontaktov</li><li>Evidencia nehnuteľností</li><li>Príjem dopytov z e-mailov realitných portálov</li></ul></div>
-      <div class="card plan"><h3>Kancelária</h3><div class="amt"><small>od</small> 74 € <small>/ mesiac</small></div><div class="vat">bez DPH · pri ročnej platbe</div><div class="save">🎁 1. rok od 666 € namiesto 888 € – zľava od 222 €</div><p>Pre realitnú kanceláriu</p><p class="formula">65 € + 9 € za každého makléra nad 5</p><p class="ex">Príklad: 7 maklérov = 83 €, 10 maklérov = 110 €</p><ul><li>6–10 maklérov</li><li>Viac maklérov v jednom účte</li><li>Majiteľ, asistentka a back office zadarmo</li><li class="fhead">Všetky funkcie:</li><li>AI texty inzerátov z parametrov nehnuteľnosti</li><li>AI triáž a priorita dopytov</li><li>Evidencia leadov a kontaktov</li><li>Evidencia nehnuteľností</li><li>Príjem dopytov z e-mailov realitných portálov</li></ul></div>
-      <div class="card plan"><h3>Sieť</h3><div class="amt"><small>od</small> 116 € <small>/ mesiac</small></div><div class="vat">bez DPH · pri ročnej platbe</div><div class="save">🎁 1. rok od 1 044 € namiesto 1 392 € – zľava od 348 €</div><p>Pre siete a franšízy</p><p class="formula">110 € + 6 € za makléra (11.–20.), potom + 5 € za každého ďalšieho</p><p class="ex">Príklad: 20 maklérov = 170 €, 30 maklérov = 220 €</p><ul><li>11 a viac maklérov</li><li>Viac maklérov v jednom účte</li><li>Majiteľ, asistentka a back office zadarmo</li><li class="fhead">Všetky funkcie:</li><li>AI texty inzerátov z parametrov nehnuteľnosti</li><li>AI triáž a priorita dopytov</li><li>Evidencia leadov a kontaktov</li><li>Evidencia nehnuteľností</li><li>Príjem dopytov z e-mailov realitných portálov</li></ul></div>
+      <div class="card plan"><h3>Start</h3><div class="amt" data-m="30 € <small>/ mesiac</small>">25 € <small>/ mesiac</small></div><div class="vat" data-m="bez DPH · mesačne, bez záväzku">bez DPH · pri ročnej platbe</div><div class="save" data-m="">🎁 1. rok 225 € namiesto 300 € – zľava 75 €</div><p>Pre samostatného makléra</p><ul><li>1 maklér</li><li>Majiteľ, asistentka a back office zadarmo</li><li class="fhead">Všetky funkcie:</li><li>AI texty inzerátov z parametrov nehnuteľnosti</li><li>AI triáž a priorita dopytov</li><li>Evidencia leadov a kontaktov</li><li>Evidencia nehnuteľností</li><li>Príjem dopytov z e-mailov realitných portálov</li></ul></div>
+      <div class="card plan hot"><span class="tag">Najčastejšia voľba</span><h3>Team</h3><div class="amt" data-m="78 € <small>/ mesiac</small>">65 € <small>/ mesiac</small></div><div class="vat" data-m="bez DPH · mesačne, bez záväzku">bez DPH · pri ročnej platbe</div><div class="save" data-m="">🎁 1. rok 585 € namiesto 780 € – zľava 195 €</div><p>Pre menší tím</p><p class="formula">spolu za celý tím</p><ul><li>2–5 maklérov</li><li>Viac maklérov v jednom účte</li><li>Majiteľ, asistentka a back office zadarmo</li><li class="fhead">Všetky funkcie:</li><li>AI texty inzerátov z parametrov nehnuteľnosti</li><li>AI triáž a priorita dopytov</li><li>Evidencia leadov a kontaktov</li><li>Evidencia nehnuteľností</li><li>Príjem dopytov z e-mailov realitných portálov</li></ul></div>
+      <div class="card plan"><h3>Kancelária</h3><div class="amt" data-m="<small>od</small> 88,80 € <small>/ mesiac</small>"><small>od</small> 74 € <small>/ mesiac</small></div><div class="vat" data-m="bez DPH · mesačne, bez záväzku">bez DPH · pri ročnej platbe</div><div class="save" data-m="">🎁 1. rok od 666 € namiesto 888 € – zľava od 222 €</div><p>Pre realitnú kanceláriu</p><p class="formula" data-m="78 € + 10,80 € za každého makléra nad 5">65 € + 9 € za každého makléra nad 5</p><p class="ex" data-m="Príklad: 7 maklérov = 99,60 €, 10 maklérov = 132 €">Príklad: 7 maklérov = 83 €, 10 maklérov = 110 €</p><ul><li>6–10 maklérov</li><li>Viac maklérov v jednom účte</li><li>Majiteľ, asistentka a back office zadarmo</li><li class="fhead">Všetky funkcie:</li><li>AI texty inzerátov z parametrov nehnuteľnosti</li><li>AI triáž a priorita dopytov</li><li>Evidencia leadov a kontaktov</li><li>Evidencia nehnuteľností</li><li>Príjem dopytov z e-mailov realitných portálov</li></ul></div>
+      <div class="card plan"><h3>Sieť</h3><div class="amt" data-m="<small>od</small> 139,20 € <small>/ mesiac</small>"><small>od</small> 116 € <small>/ mesiac</small></div><div class="vat" data-m="bez DPH · mesačne, bez záväzku">bez DPH · pri ročnej platbe</div><div class="save" data-m="">🎁 1. rok od 1 044 € namiesto 1 392 € – zľava od 348 €</div><p>Pre siete a franšízy</p><p class="formula" data-m="132 € + 7,20 € za makléra (11.–20.), potom + 6 € za každého ďalšieho">110 € + 6 € za makléra (11.–20.), potom + 5 € za každého ďalšieho</p><p class="ex" data-m="Príklad: 20 maklérov = 204 €, 30 maklérov = 264 €">Príklad: 20 maklérov = 170 €, 30 maklérov = 220 €</p><ul><li>11 a viac maklérov</li><li>Viac maklérov v jednom účte</li><li>Majiteľ, asistentka a back office zadarmo</li><li class="fhead">Všetky funkcie:</li><li>AI texty inzerátov z parametrov nehnuteľnosti</li><li>AI triáž a priorita dopytov</li><li>Evidencia leadov a kontaktov</li><li>Evidencia nehnuteľností</li><li>Príjem dopytov z e-mailov realitných portálov</li></ul></div>
     </div>
 
     <div class="calc card" id="calc">
       <h3>Koľko zaplatíte?</h3>
       <label for="calcN" class="calc-l">Počet maklérov: <strong id="calcNOut">3</strong></label>
       <input type="range" id="calcN" min="1" max="50" value="3" aria-describedby="calcRes">
-      <div class="calc-t"><span class="billbadge">Ročná platba – zľava 3 mesiace zdarma</span></div>
+      <div class="calc-t"><span class="billbadge" id="calcBadge" data-m="Mesačná platba – bez záväzku (+20 %)">Ročná platba – zľava 3 mesiace zdarma</span></div>
       <div class="calc-r" id="calcRes" aria-live="polite">
         <div><small>Plán</small><b id="calcPlan">Team</b></div>
-        <div><small>Mesačne bez DPH, pri ročnej platbe</small><b id="calcPrice">65 €</b></div>
-        <div id="calcYearBox"><small>Prvý rok platíte 9 z 12 mesiacov</small><b id="calcYear">585 €</b></div>
+        <div><small data-m="Mesačne bez DPH, pri mesačnej platbe">Mesačne bez DPH, pri ročnej platbe</small><b id="calcPrice">65 €</b></div>
+        <div id="calcYearBox"><small data-m="Za 12 mesiacov">Prvý rok platíte 9 z 12 mesiacov</small><b id="calcYear">585 €</b></div>
         <div id="calcSaveBox" class="save-box"><small>🎁 Ušetríte v 1. roku</small><b id="calcSave">195 €</b></div>
       </div>
     </div>
@@ -418,6 +427,7 @@ footer{padding:30px 0;color:var(--mut);font-size:13px;text-align:center;border-t
     return {plan:"Sieť",p:170+5*(n-20)};
   }
   var eur=function(v){ var r=Math.round(v*100)/100; return (r%1===0?String(r):r.toFixed(2).replace(".",",")).replace(/\B(?=(\d{3})+(?!\d))/g,"\u00a0")+" €"; };
+  var billing="year";
   var calcN=$("calcN");
   function calc(){
     if(!calcN) return;
@@ -425,11 +435,41 @@ footer{padding:30px 0;color:var(--mut);font-size:13px;text-align:center;border-t
     $("calcNOut").textContent=n;
     $("calcPlan").textContent=r.plan;
     $("calcPrice").textContent=eur(r.p);
-    $("calcYear").textContent=eur(r.p*9);$("calcSave").textContent=eur(r.p*3);
+    if(billing==="month"){
+      var pm=Math.round(r.p*1.2*100)/100;   // mesačná platba bez záväzku = ročná cena + 20 %
+      $("calcPrice").textContent=eur(pm);
+      $("calcYear").textContent=eur(pm*12);
+      $("calcSaveBox").hidden=true;
+    }else{
+      $("calcYear").textContent=eur(r.p*9);$("calcSave").textContent=eur(r.p*3);
+      $("calcSaveBox").hidden=false;
+    }
   }
   if(calcN){
     calcN.addEventListener("input",calc);
     calc();
+  }
+
+  // 5) Prepínač platby: ročne (predvolené) / mesačne bez záväzku (+20 %)
+  function applyBilling(mode){
+    billing=mode;
+    all("[data-m]").forEach(function(el){
+      if(!el.hasAttribute("data-y")) el.setAttribute("data-y",el.innerHTML);
+      var m=el.getAttribute("data-m");
+      if(el.classList.contains("save")){ el.hidden=(mode==="month"); return; }
+      el.innerHTML=(mode==="month")?m:el.getAttribute("data-y");
+    });
+    var by=$("billYear"), bm=$("billMonth");
+    if(by&&bm){
+      by.setAttribute("aria-checked",mode==="year"?"true":"false");
+      bm.setAttribute("aria-checked",mode==="month"?"true":"false");
+    }
+    calc();
+  }
+  var bY=$("billYear"), bM=$("billMonth");
+  if(bY&&bM){
+    bY.addEventListener("click",function(){ applyBilling("year"); });
+    bM.addEventListener("click",function(){ applyBilling("month"); });
   }
 })();
 </script>
