@@ -33,7 +33,9 @@
     "prospect:test": "npm run test --prefix apps/crm -- --config ../../scripts/prospecting/vitest.config.ts",
     "seed:test-campaigns": "npx tsx scripts/seed-test-campaigns.ts",
     "control-contract:test": "node --test packages/control-contract/tests/*.test.ts",
-    "control-contract:typecheck": "tsc -p packages/control-contract/tsconfig.json --noEmit"
+    "control-contract:typecheck": "tsc -p packages/control-contract/tsconfig.json --noEmit",
+    "mcp:build": "npm run build --workspace=packages/mcp-shared",
+    "mcp:onlinovo": "npm run mcp:build --silent && tsx packages/mcp-onlinovo/src/server.ts"
   },
   "dependencies": {
     "cheerio": "^1.2.0",

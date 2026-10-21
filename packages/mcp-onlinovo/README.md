@@ -14,16 +14,27 @@ Env: see `.env.example`. Never put tokens in git.
 
 Ruflo/Cursor client config is ONL-MCP-004 (`.cursor/mcp.json`).
 
-## Claude Code: iba lokálne (user scope), nie v projektovom `.mcp.json`
+## Claude Code: iba lokálne (scope `local`), nie v projektovom `.mcp.json`
 
 Projektový `.mcp.json` je prázdny od 2026-10-21 (STRUCTURE-FIRST-1). Cloud session ho načíta a:
-- `onlinovo` padá na `ERR_MODULE_NOT_FOUND … @revolis/mcp-shared/dist/index.js` (balík nie je zbuilovaný),
+- `onlinovo` padal na `ERR_MODULE_NOT_FOUND … @revolis/mcp-shared/dist/index.js` (balík nebol zbuilovaný),
 - `ruflo` nabieha cez lokálnu cestu `C:/RealitkaAI`, v cloude `CONNECT_TIMEOUT`.
 
-Lokálne na počítači foundera (raz; overiť `claude mcp list`):
+Lokálne na počítači foundera, **z koreňa repa** (scope `local` je viazaný na projekt, preto relatívne cesty fungujú;
+`--scope user` s relatívnou cestou mimo koreňa repa nenabehne). Raz:
 
 ```bash
-claude mcp add --scope user ruflo -e CLAUDE_FLOW_CWD=C:/RealitkaAI -- npx -y ruflo@latest mcp start
-npm run build --workspace=packages/mcp-shared
-claude mcp add --scope user onlinovo -e ONLINOVO_SHOP_ADAPTER=fixture -e CLAUDE_FLOW_CWD=C:/RealitkaAI -- npx tsx packages/mcp-onlinovo/src/server.ts
+npm ci
+claude mcp add --scope local ruflo -e CLAUDE_FLOW_CWD=C:/RealitkaAI -- npx -y ruflo@latest mcp start
+claude mcp add --scope local onlinovo -- npm run --silent mcp:onlinovo
+claude mcp list
 ```
+
+`npm run mcp:onlinovo` najprv zbuilduje `packages/mcp-shared` (`npm run mcp:build`), potom spustí server.
+Adapter je predvolene `fixture` (`src/resolve-adapter.ts`), premenná sa nastavovať nemusí. `--silent` je nutné:
+bez neho by npm vypísal hlavičku skriptu na stdout a rozbil by protokol MCP.
+
+Smoke test (potrebuje zbuilovaný `mcp-shared`): `npm run mcp:build && npm run smoke --workspace=packages/mcp-onlinovo`.
+
+Cursor číta `.cursor/mcp.json`, kde je cesta `${workspaceFolder}` (podporované podľa dokumentácie Cursora,
+sekcia „Config interpolation"), takže nezávisí od `C:/RealitkaAI`.
