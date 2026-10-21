@@ -69,7 +69,7 @@ describe("Billing stránka: zapnutý prepínač", () => {
 
   it.each([
     ["start", "Start", "25 €", "30,75 € s DPH 23 %"],
-    ["team", "Team", "65 €", "79,95 € s DPH 23 %"],
+    ["team", "Team", "od 50 €", "od 61,50 € s DPH 23 %"],
     ["office", "Kancelária", "od 74 €", "od 91,02 € s DPH 23 %"],
     ["network", "Sieť", "od 116 €", "od 142,68 € s DPH 23 %"],
   ] as const)("v2 zákazník (%s) vidí pásmo a cenu z katalógu (čistá aj s DPH), nie legacy cenu", async (bandId, label, net, gross) => {

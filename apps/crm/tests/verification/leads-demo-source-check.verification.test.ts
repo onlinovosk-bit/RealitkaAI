@@ -53,10 +53,12 @@ function zdrojeRoute(zdroj: string): string[] {
   return m ? [...m[1].matchAll(/["']([^"']+)["']/g)].map((x) => x[1]) : []
 }
 
-/** `source`, ktorý klient posiela v tele `fetch("/api/demo/capture-lead", …)`. */
+const CAPTURE_FETCH = /fetch\(\s*["']\/api\/demo\/(?:capture-lead|public-capture)["']/
+
+/** `source`, ktorý klient posiela v tele `fetch` na capture-lead alebo public-capture. */
 function zdrojeKlienta(zdroj: string): string[] {
   const out: string[] = []
-  for (const m of bezKomentarov(zdroj).matchAll(/fetch\(\s*["']\/api\/demo\/capture-lead["'][\s\S]*?source:\s*["']([^"']+)["']/g)) {
+  for (const m of bezKomentarov(zdroj).matchAll(/fetch\(\s*["']\/api\/demo\/(?:capture-lead|public-capture)["'][\s\S]*?source:\s*["']([^"']+)["']/g)) {
     out.push(m[1])
   }
   return out
@@ -73,7 +75,7 @@ function suboryKlientov(dir = SRC_DIR): string[] {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
     const p = join(dir, e.name)
     if (e.isDirectory()) out.push(...suboryKlientov(p))
-    else if (/\.tsx?$/.test(e.name) && /fetch\(\s*["']\/api\/demo\/capture-lead["']/.test(readFileSync(p, 'utf8'))) out.push(p)
+    else if (/\.tsx?$/.test(e.name) && CAPTURE_FETCH.test(readFileSync(p, 'utf8'))) out.push(p)
   }
   return out
 }
@@ -139,6 +141,9 @@ describe('[verification] leads_demo source: parser sa nemýli (umelé vstupy)', 
     expect(
       zdrojeKlienta(`await fetch("/api/demo/capture-lead", { method: "POST", body: JSON.stringify({ email, source: "hero" }) })`),
     ).toEqual(['hero'])
+    expect(
+      zdrojeKlienta(`await fetch("/api/demo/public-capture", { method: "POST", body: JSON.stringify({ email, source: "ai_odhadca" }) })`),
+    ).toEqual(['ai_odhadca'])
     expect(zdrojeKlienta(`fetch("/api/iny", { body: { source: "x" } })`)).toEqual([])
   })
 })
@@ -176,5 +181,20 @@ describe('[verification] leads_demo source: reálne repo', () => {
     expect(Object.values(nepovolene).every((v) => v.length === 0), JSON.stringify(nepovolene)).toBe(true)
     // Súbor, z ktorého parser nič nevyčítal, by prešiel „naprázdno".
     expect(subory.filter((f) => zdrojeKlienta(readFileSync(f, 'utf8')).length === 0)).toEqual([])
+  })
+
+  it('klient formulára neposiela x-api-key ani DEMO_CAPTURE_API_KEY', () => {
+    const subory = suboryKlientov().filter((f) => f !== ROUTE)
+    expect(subory.length).toBeGreaterThan(0)
+    for (const f of subory) {
+      const src = readFileSync(f, 'utf8')
+      expect(src, f).not.toContain('x-api-key')
+      expect(src, f).not.toContain('DEMO_CAPTURE_API_KEY')
+    }
+  })
+
+  it('proxy pustí /api/demo/public-capture bez session', () => {
+    const proxy = readFileSync(join(SRC_DIR, 'proxy.ts'), 'utf8')
+    expect(proxy).toContain('"/api/demo/public-capture"')
   })
 })
