@@ -11,6 +11,10 @@ const baseMetrics = (): HeartbeatMetrics => ({
   maxAiTriageAt: "2026-07-08T10:00:00.000Z",
   realviaLastWebhookAt: "2026-07-08T09:00:00.000Z",
   realviaWebhookTotal: 10,
+  realviaQueuePending: 0,
+  realviaQueueFailed: 0,
+  realviaLastWorkerRunAt: "2026-07-08T11:55:00.000Z",
+  realviaPropertiesUpdated24h: 12,
   inboundMailboxCount: 1,
   sellerRescueLastNotifAt: "2026-07-08T06:00:00.000Z",
   sellerRescueLastTaskAt: "2026-07-08T06:00:00.000Z",
@@ -102,5 +106,76 @@ describe("evaluateHeartbeatSignals", () => {
       now,
     );
     expect(signals.some((s) => s.id === "seller_rescue_silent_48h")).toBe(true);
+  });
+
+  // ── Realvia worker a front rady (REALVIA-SEC-01) ──────────────────────────
+  // Doteraz heartbeat merel iba PRÍTOK webhookov. Tieto testy držia, že vidí aj
+  // ich SPRACOVANIE: prítok môže byť zelený a properties sa pritom neaktualizujú.
+
+  it("failed job je critical — vyčerpal opakovania a sám sa nepohne", () => {
+    const signals = evaluateHeartbeatSignals(
+      { ...baseMetrics(), realviaQueueFailed: 1 },
+      now,
+    );
+    const signal = signals.find((s) => s.id === "realvia_queue_failed_jobs");
+    expect(signal?.severity).toBe("critical");
+    expect(signal?.evidence.realviaQueueFailed).toBe(1);
+  });
+
+  it("worker mimo + front čaká = critical", () => {
+    const signals = evaluateHeartbeatSignals(
+      {
+        ...baseMetrics(),
+        realviaQueuePending: 7,
+        realviaLastWorkerRunAt: "2026-07-08T08:00:00.000Z", // 4 h dozadu
+      },
+      now,
+    );
+    const signal = signals.find((s) => s.id === "realvia_worker_stale_2h");
+    expect(signal?.severity).toBe("critical");
+    expect(signal?.evidence.realviaQueuePending).toBe(7);
+  });
+
+  it("worker nikdy nebežal a front čaká = tiež critical", () => {
+    // `null` nesmie prejsť ako „v poriadku" — to je presne tá zámena
+    // „nevieme" vs. „netreba", ktorá tento projekt už raz stála mesiace.
+    const signals = evaluateHeartbeatSignals(
+      { ...baseMetrics(), realviaQueuePending: 3, realviaLastWorkerRunAt: null },
+      now,
+    );
+    expect(signals.some((s) => s.id === "realvia_worker_stale_2h")).toBe(true);
+  });
+
+  it("prázdny front nehlási mŕtveho workera", () => {
+    // Bez čakajúcej práce je ticho správny stav, nie porucha. Bez tejto brány
+    // by heartbeat pípal každú noc, keď Realvia nepošle nič.
+    const signals = evaluateHeartbeatSignals(
+      { ...baseMetrics(), realviaQueuePending: 0, realviaLastWorkerRunAt: null },
+      now,
+    );
+    expect(signals.some((s) => s.id === "realvia_worker_stale_2h")).toBe(false);
+  });
+
+  it("tenant bez Realvie nedostane ani jeden realvia signál", () => {
+    const signals = evaluateHeartbeatSignals(
+      {
+        ...baseMetrics(),
+        realviaWebhookTotal: 0,
+        realviaLastWebhookAt: null,
+        realviaQueuePending: 5,
+        realviaQueueFailed: 2,
+        realviaLastWorkerRunAt: null,
+      },
+      now,
+    );
+    expect(signals.some((s) => s.id.startsWith("realvia_"))).toBe(false);
+  });
+
+  it("zdravý worker a čistý front nehlásia nič", () => {
+    const signals = evaluateHeartbeatSignals(
+      { ...baseMetrics(), realviaQueuePending: 2, realviaQueueFailed: 0 },
+      now,
+    );
+    expect(signals.some((s) => s.id.startsWith("realvia_"))).toBe(false);
   });
 });
