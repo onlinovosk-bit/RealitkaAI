@@ -50,3 +50,7 @@ Vetva je nad `a04bc5eb` (#908). `vitest` v `apps/crm`: 5 súborov, 161 testov, v
 `python3 scripts/ops/stripe-v2/stripe_test_catalog.py` skončil 0 a vypísal ročný tier `do 30: flat 0.03 + 53.33/ks` a riadok `30 | 250.00 | 2573.33`.
 
 `python3 scripts/ops/stripe-v2/stripe_live_catalog.py` bez argumentov je DRY-RUN.
+
+## CI
+
+Prvý beh na `4e17b1de` spadol v `checkout-config` (očakával 6 tierov, A+ ich má 8). Oprava je `a14e711c`. Beh [39594555578](https://github.com/onlinovosk-bit/RealitkaAI/actions/runs/39594555578): Lint, test, build success, vrátane Playwright smoke na ephemeral DB. Samostatný workflow Preview — Playwright smoke bol skipped (žiadny deployment). Tento odsek je doplnený ďalším commitom; zelený beh kódu je ten uvedený.
