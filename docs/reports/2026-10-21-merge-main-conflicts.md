@@ -7,7 +7,7 @@ Dátum: 2026-10-21. Vetva: `cursor/api-cost-governor-v1-0b41`. PR: #847 (ostáva
 - `git fetch origin main` posunul `origin/main` na `ddea820c` (`fix(F2): public form capture without exposing the API key (#896)`).
 - `git merge origin/main` skončil s konfliktom iba v dvoch súboroch: `memory/decisions.md`, `memory/session-summary.md`. Oba konflikty boli jeden blok na začiatku súboru (obe strany pridávali navrch).
 - Zvyšok stromu sa spojil automaticky, vrátane `docs/STATUS.md`. Po merge sa `docs/STATUS.md` zhoduje s `origin/main` (vetva ho od posledného spoločného merge nemenila).
-- Značky `<<<<<<<` po spojení v týchto dvoch súboroch nie sú.
+- Po spojení v týchto dvoch súboroch nie je žiadny neuzavretý konfliktový blok.
 - `git diff --numstat origin/main -- memory/decisions.md memory/session-summary.md` pred doplnením tohto záznamu: `19 0` a `50 0`. Z `main` sa nič nezmazalo.
 
 ## Jednoduché konflikty (opravené)
