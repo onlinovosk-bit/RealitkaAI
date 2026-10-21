@@ -1,3 +1,21 @@
+## Session 2026-10-21 (GO STRUCTURE-FIRST-1)
+### Dokončené
+- `CLAUDE.md`: Initialization číta `memory/INDEX.md` + prvý záznam session-summary, nie celý `/memory`; opis hookov zosúladený.
+- `memory/INDEX.md` (nový), blok `TURN` v `memory/working-agreement.md`, `.claude/hooks/working-agreement.sh` (prompt = TURN + krátky POSTUP), `.claude/settings.json` (`autoCompactWindow: 200000`, bez WALL-RULES/progress.sh pri prompte).
+- Hook bajty na správu: 4 884 → 1 561 B (zmerané).
+- Skilly `.claude/skills/{merge-gate,prod-migration,wall-close}/SKILL.md`.
+- `.mcp.json` prázdny (ruflo + onlinovo len lokálne); test `packages/mcp-onlinovo/src/ruflo-config.test.ts` upravený, README s príkazmi pre user scope.
+### Rozpracované / Pending
+- Podiel Messages po zmene nemeraný — porovnať Context panel v ďalšej session.
+- Founder: pridať ruflo/onlinovo do user scope lokálne; `STRIPE_PRICE_V3_SEAT_MONTHLY` (Stripe krok C).
+- `docs/STATUS.md` tabuľka blokov je stará (2026-10-02) — prepočítať pred uvedením čísla produktu.
+### Kľúčové súbory zmenené
+- `CLAUDE.md`, `memory/INDEX.md`, `memory/working-agreement.md`, `.claude/settings.json`, `.claude/hooks/working-agreement.sh`, `.mcp.json`, `.claude/skills/*`
+### Ďalší krok
+Stripe krok C: founder vytvorí LIVE cenu a nastaví `STRIPE_PRICE_V3_SEAT_MONTHLY` vo Vercel Production + redeploy.
+
+---
+
 ## Session 2026-10-20 (GO PROD-MIGRACIE — uzavreté)
 ### Dokončené
 - Obe migrácie sú v PROD a obe sú v ledgeri: `20261020050000` (BRI) a `20260617120000` (`uc_export_mapper`).
