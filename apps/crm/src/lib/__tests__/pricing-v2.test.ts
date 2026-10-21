@@ -12,6 +12,7 @@ import {
   buildPricingV2Catalog,
   graduatedTierNetCents,
   grossCentsFromNet,
+  illustrativeAnnualMonthlyNetCents,
   isAnnualPromoActive,
   isPricingV2Enabled,
   isPricingV2Interval,
@@ -27,7 +28,7 @@ import {
   resolvePricingV2BandResult,
 } from "@/lib/pricing-v2";
 
-/** Kontrolné body zo zadania: n → základ (mesačne pri ročnej fakturácii). */
+/** Kontrolné body 1–20: n → základ (mesačne pri ročnej fakturácii). Od 21. základ nie je celé číslo. */
 const CHECKPOINTS: Array<[number, number]> = [
   [1, 2500],
   [2, 5000],
@@ -38,10 +39,21 @@ const CHECKPOINTS: Array<[number, number]> = [
   [10, 11000],
   [11, 11600],
   [20, 17000],
-  [21, 17500],
-  [30, 22000],
-  [50, 32000],
 ];
+
+/**
+ * AIRAmax.com 21. 10. 2026. Čísla sú základ pri ročnej fakturácii v centoch bez DPH
+ * (1 = 29 €, 2–5 = 69 €, +9 € pri 6–10, +6 € pri 11–25, +4 € pri 26–50, +3 € od 51).
+ * Mesačná platba bez záväzku = základ × 1,2. Porovnanie je bez kupónu.
+ */
+function airamaxBaseMonthlyNetCents(n: number): number {
+  if (n === 1) return 2900;
+  if (n <= 5) return 6900;
+  if (n <= 10) return 6900 + 900 * (n - 5);
+  if (n <= 25) return 11400 + 600 * (n - 10);
+  if (n <= 50) return 20400 + 400 * (n - 25);
+  return 30400 + 300 * (n - 50);
+}
 
 describe("pricing-v2: verzia", () => {
   it("cenník je v3 a termín akcie je 31. 12. 2026 22:59:59Z", () => {
@@ -61,7 +73,7 @@ describe("pricing-v2: licencia podľa počtu maklérov", () => {
 
   it("mesačná platba = základ × 1,2 presne v centoch na všetkých kontrolných bodoch", () => {
     const expected: Record<number, number> = {
-      1: 3000, 2: 6000, 3: 7800, 5: 7800, 6: 8880, 7: 9960, 10: 13200, 11: 13920, 20: 20400, 21: 21000, 30: 26400, 50: 38400,
+      1: 3000, 2: 6000, 3: 7800, 5: 7800, 6: 8880, 7: 9960, 10: 13200, 11: 13920, 20: 20400,
     };
     for (const [n, base] of CHECKPOINTS) {
       expect(licenseNetCents(n, "month")).toBe(expected[n]);
@@ -69,13 +81,44 @@ describe("pricing-v2: licencia podľa počtu maklérov", () => {
     }
   });
 
-  it("prírastky: +1080 / +720 / +600 mesačne za makléra nad 5 / 10 / 20", () => {
+  it("prírastky: +1080 / +720 do 20; od 21. tarifa A+ (4,60 / 4,80 / 3,60 € mesačne)", () => {
     expect(licenseNetCents(6, "month") - licenseNetCents(5, "month")).toBe(1080);
     expect(licenseNetCents(10, "month") - licenseNetCents(9, "month")).toBe(1080);
     expect(licenseNetCents(11, "month") - licenseNetCents(10, "month")).toBe(720);
     expect(licenseNetCents(20, "month") - licenseNetCents(19, "month")).toBe(720);
-    expect(licenseNetCents(21, "month") - licenseNetCents(20, "month")).toBe(600);
-    expect(licenseNetCents(60, "month") - licenseNetCents(59, "month")).toBe(600);
+    expect(licenseNetCents(21, "month") - licenseNetCents(20, "month")).toBe(460);
+    expect(licenseNetCents(30, "month") - licenseNetCents(29, "month")).toBe(460);
+    expect(licenseNetCents(31, "month") - licenseNetCents(30, "month")).toBe(480);
+    expect(licenseNetCents(50, "month") - licenseNetCents(49, "month")).toBe(480);
+    expect(licenseNetCents(51, "month") - licenseNetCents(50, "month")).toBe(360);
+    expect(licenseNetCents(100, "month") - licenseNetCents(99, "month")).toBe(360);
+  });
+
+  it("kontrolné body A+ (variant Andreja 2026-10-21)", () => {
+    expect(licenseNetCents(30, "month")).toBe(25000);
+    expect(licenseNetCents(50, "month")).toBe(34600);
+    expect(licenseNetCents(100, "month")).toBe(52600);
+    expect(licenseNetCents(30, "year")).toBe(257333);
+    expect(licenseNetCents(100, "year")).toBe(533333);
+    expect(annualPromoNetCents(30)).toBe(193000);
+    expect(illustrativeAnnualMonthlyNetCents(30)).toBe(21444);
+    expect(licenseNetCents(30, "year") % 12).not.toBe(0);
+  });
+
+  it("od 21. makléra základ (mesačne pri ročnej fakturácii) nie je celé číslo a funkcia to povie", () => {
+    expect(() => licenseBaseMonthlyNetCents(21)).toThrow(RangeError);
+    expect(() => licenseBaseMonthlyNetCents(30)).toThrow(RangeError);
+  });
+
+  it("Revolis je pri počte 1–200 lacnejší ako AIRAmax (airamax.com 21. 10. 2026), obe obdobia, bez kupónu", () => {
+    for (let n = 1; n <= 200; n++) {
+      const airaBase = airamaxBaseMonthlyNetCents(n);
+      const airaMonth = (airaBase * (100 + 20)) / 100;
+      const airaYear = airaBase * 12;
+      expect(Number.isInteger(airaMonth), `AIRAmax mesačne n=${n}`).toBe(true);
+      expect(licenseNetCents(n, "month"), `month n=${n}`).toBeLessThan(airaMonth);
+      expect(licenseNetCents(n, "year"), `year n=${n}`).toBeLessThan(airaYear);
+    }
   });
 
   it("cena s počtom maklérov nikdy neklesá (1..200) a od 6. makléra rastie", () => {
@@ -105,7 +148,9 @@ describe("pricing-v2: Stripe graduated tiery = vzorec", () => {
       { up_to: 5, flat_amount: 18000, unit_amount: 0 },
       { up_to: 10, flat_amount: 0, unit_amount: 10800 },
       { up_to: 20, flat_amount: 0, unit_amount: 7200 },
-      { up_to: null, flat_amount: 0, unit_amount: 6000 },
+      { up_to: 30, flat_amount: 3, unit_amount: 5333 },
+      { up_to: 50, flat_amount: 0, unit_amount: 4800 },
+      { up_to: null, flat_amount: 0, unit_amount: 3600 },
     ]);
     expect(PRICING_V3_SEAT_TIERS.month).toEqual([
       { up_to: 1, flat_amount: 3000, unit_amount: 0 },
@@ -113,12 +158,14 @@ describe("pricing-v2: Stripe graduated tiery = vzorec", () => {
       { up_to: 5, flat_amount: 1800, unit_amount: 0 },
       { up_to: 10, flat_amount: 0, unit_amount: 1080 },
       { up_to: 20, flat_amount: 0, unit_amount: 720 },
-      { up_to: null, flat_amount: 0, unit_amount: 600 },
+      { up_to: 30, flat_amount: 0, unit_amount: 460 },
+      { up_to: 50, flat_amount: 0, unit_amount: 480 },
+      { up_to: null, flat_amount: 0, unit_amount: 360 },
     ]);
   });
 
-  it("simulácia graduated = licenseNetCents pre n = 1..60, ročne aj mesačne", () => {
-    for (let n = 1; n <= 60; n++) {
+  it("simulácia graduated = licenseNetCents pre n = 1..200, ročne aj mesačne", () => {
+    for (let n = 1; n <= 200; n++) {
       expect(graduatedTierNetCents(PRICING_V3_SEAT_TIERS.year, n)).toBe(licenseNetCents(n, "year"));
       expect(graduatedTierNetCents(PRICING_V3_SEAT_TIERS.month, n)).toBe(licenseNetCents(n, "month"));
     }
@@ -135,12 +182,17 @@ describe("pricing-v2: Stripe graduated tiery = vzorec", () => {
 });
 
 describe("pricing-v2: akcia 9 z 12 pri ročnej platbe", () => {
-  it("prvá ročná faktúra = 9 × základ = 75 % z bežnej ročnej ceny", () => {
+  it("pri 1–20 je prvá ročná faktúra = 9 × základ = 75 % z bežnej ročnej ceny", () => {
     expect(PRICING_V2_ANNUAL_MONTHS).toBe(12);
     for (const [n, base] of CHECKPOINTS) {
       expect(annualPromoNetCents(n)).toBe(9 * base);
       expect(annualPromoNetCents(n) * 4).toBe(licenseNetCents(n, "year") * 3);
     }
+  });
+
+  it("od 21. je akcia −25 % z ročnej graduated sumy, zaokrúhlené na cent (30 maklérov = 1 930,00 €)", () => {
+    expect(annualPromoNetCents(30)).toBe(193000);
+    expect(licenseNetCents(30, "year") - annualPromoNetCents(30)).toBe(64333);
   });
 
   it("isAnnualPromoActive: platí do termínu vrátane, po ňom nie", () => {

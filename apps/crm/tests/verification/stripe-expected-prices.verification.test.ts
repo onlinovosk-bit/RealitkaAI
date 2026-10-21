@@ -208,7 +208,9 @@ describe("cenník v3: tiers, kupón, balíky, kredit v manifeste", () => {
       { up_to: 5, flat_amount: 18000, unit_amount: 0 },
       { up_to: 10, flat_amount: 0, unit_amount: 10800 },
       { up_to: 20, flat_amount: 0, unit_amount: 7200 },
-      { up_to: "inf", flat_amount: 0, unit_amount: 6000 },
+      { up_to: 30, flat_amount: 3, unit_amount: 5333 },
+      { up_to: 50, flat_amount: 0, unit_amount: 4800 },
+      { up_to: "inf", flat_amount: 0, unit_amount: 3600 },
     ]);
     expect(month.tiers).toEqual([
       { up_to: 1, flat_amount: 3000, unit_amount: 0 },
@@ -216,7 +218,9 @@ describe("cenník v3: tiers, kupón, balíky, kredit v manifeste", () => {
       { up_to: 5, flat_amount: 1800, unit_amount: 0 },
       { up_to: 10, flat_amount: 0, unit_amount: 1080 },
       { up_to: 20, flat_amount: 0, unit_amount: 720 },
-      { up_to: "inf", flat_amount: 0, unit_amount: 600 },
+      { up_to: 30, flat_amount: 0, unit_amount: 460 },
+      { up_to: 50, flat_amount: 0, unit_amount: 480 },
+      { up_to: "inf", flat_amount: 0, unit_amount: 360 },
     ]);
   });
 
@@ -234,10 +238,10 @@ describe("cenník v3: tiers, kupón, balíky, kredit v manifeste", () => {
     return total;
   }
 
-  it("graduated výpočet z tiers v JSON = licenseNetCents(n, interval) pre n = 1…60, ročne aj mesačne", () => {
+  it("graduated výpočet z tiers v JSON = licenseNetCents(n, interval) pre n = 1…200, ročne aj mesačne", () => {
     const tiers = { year: licence("year").tiers!, month: licence("month").tiers! };
     for (const interval of ["year", "month"] as const) {
-      for (let n = 1; n <= 60; n++) {
+      for (let n = 1; n <= 200; n++) {
         expect(simulateGraduated(tiers[interval], n), `${interval} n=${n}`).toBe(licenseNetCents(n, interval));
         // nadácia (graduatedTierNetCents nad PRICING_V3_SEAT_TIERS) sa nesmie rozísť s JSON
         expect(graduatedTierNetCents(PRICING_V3_SEAT_TIERS[interval], n), `${interval} n=${n} (kód)`).toBe(licenseNetCents(n, interval));
@@ -245,12 +249,19 @@ describe("cenník v3: tiers, kupón, balíky, kredit v manifeste", () => {
     }
   });
 
-  it("kontrolné body zo špecifikácie (základ × 12 ročne, × 1,2 mesačne)", () => {
-    const base: Record<number, number> = { 1: 2500, 2: 5000, 3: 6500, 5: 6500, 6: 7400, 7: 8300, 10: 11000, 11: 11600, 20: 17000, 21: 17500, 30: 22000 };
+  it("kontrolné body 1–20 (základ × 12 ročne, × 1,2 mesačne) a A+ od 21.", () => {
+    const base: Record<number, number> = { 1: 2500, 2: 5000, 3: 6500, 5: 6500, 6: 7400, 7: 8300, 10: 11000, 11: 11600, 20: 17000 };
     for (const [n, b] of Object.entries(base)) {
       expect(simulateGraduated(licence("year").tiers!, Number(n)), `year n=${n}`).toBe(b * 12);
       expect(simulateGraduated(licence("month").tiers!, Number(n)), `month n=${n}`).toBe((b * 12) / 10);
     }
+    expect(simulateGraduated(licence("month").tiers!, 30)).toBe(25000);
+    expect(simulateGraduated(licence("month").tiers!, 50)).toBe(34600);
+    expect(simulateGraduated(licence("month").tiers!, 100)).toBe(52600);
+    expect(simulateGraduated(licence("year").tiers!, 30)).toBe(257333);
+    expect(simulateGraduated(licence("year").tiers!, 100)).toBe(533333);
+    const year30 = simulateGraduated(licence("year").tiers!, 30);
+    expect(year30 - Math.round((year30 * 25) / 100)).toBe(193000);
   });
 
   it("kupón akcie 9/12: 25 %, jedenkrát, do 31. 12. 2026 22:59:59Z, len na produkt licencie, env názov z kontraktu", () => {
@@ -705,7 +716,8 @@ describe("stripe_verify_prices.py (offline, --fixture)", () => {
   it("--spec is offline, lists tiers and the coupon, and needs no key", () => {
     const res = spawnSync("python3", [SCRIPT, "--spec"], { encoding: "utf8", env: scriptEnv() });
     expect(res.status, res.stderr).toBe(0);
-    expect(res.stdout).toContain("tier up_to=inf  flat_amount=     0  unit_amount=  6000");
+    expect(res.stdout).toContain("tier up_to=inf  flat_amount=     0  unit_amount=  3600");
+    expect(res.stdout).toContain("tier up_to= 30  flat_amount=     3  unit_amount=  5333");
     expect(res.stdout).toContain("tier up_to=  1  flat_amount=  3000  unit_amount=     0");
     expect(res.stdout).toContain("kupon -25 % duration=once redeem_by=2026-12-31T22:59:59Z (1798757999)");
   });

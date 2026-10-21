@@ -90,7 +90,7 @@ describe("PricingV2Plans — pásmo a ceny (mesačná platba, +20 %)", () => {
     ["6", "office", "88,80 €", "109,22 €"],
     ["10", "office", "132,00 €", "162,36 €"],
     ["11", "network", "139,20 €", "171,22 €"],
-    ["50", "network", "384,00 €", "472,32 €"],
+    ["50", "network", "346,00 €", "425,58 €"],
   ];
 
   it.each(CASES)("%s maklérov -> pásmo %s, čistá %s, konečná %s", async (n, band, net, gross) => {
@@ -193,13 +193,12 @@ describe("PricingV2Plans — stepper počtu maklérov a živý prepočet", () =>
     expect(screen.getByTestId("selected-band-label").textContent).toBe("Sieť");
   });
 
-  it("počet nad 50 sa počíta rovnakým vzorcom (50 -> 32000 základ)", async () => {
+  it("počet nad 50 ide tarifou A+ (50 = 3 533,33 € ročne, 51 = +36 €)", async () => {
     render(<PricingV2Plans config={v2Config({ yearlyAvailable: true })} now={AFTER_PROMO} />);
     await setUsers("50");
-    // ročne: 12 × 320 € = 3840 €
-    expect(screen.getByTestId("selected-net").textContent).toBe("3840,00 €");
+    expect(screen.getByTestId("selected-net").textContent).toBe("3533,33 €");
     await setUsers("51");
-    expect(screen.getByTestId("selected-net").textContent).toBe("3900,00 €");
+    expect(screen.getByTestId("selected-net").textContent).toBe("3569,33 €");
   });
 });
 
@@ -558,8 +557,8 @@ describe("Zapnutý prepínač — obrazovky", () => {
     expect(screen.getByTestId("pricing-v2-credits")).toBeTruthy();
     expect(document.body.textContent).not.toMatch(/Owner Cockpit|Seat program|Pokračovať do Stripe/);
     await setUsers("26");
-    // 26 maklérov: základ 20000, mesačne ×1,2 = 24000 -> s DPH 295,20 €
-    expect(screen.getByTestId("selected-gross").textContent).toBe("295,20 €");
+    // 26 maklérov, tarifa A+: 231,60 € bez DPH -> s DPH 284,87 €
+    expect(screen.getByTestId("selected-gross").textContent).toBe("284,87 €");
     await userEvent.setup().click(screen.getByRole("button", { name: /Pokračovať k objednávke/ }));
     await waitFor(() => expect(checkoutCalls()).toHaveLength(1));
     expect(JSON.parse(String(checkoutCalls()[0].init?.body))).toEqual({ checkoutType: "pricing_v2", seats: 26, packCredits: null, interval: "month" });
