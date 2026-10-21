@@ -1,3 +1,9 @@
+## 2026-10-21 — Gmail reconnect∩markError ciphertext guard
+- BUILD: bind markPulled/markError to pull-start ciphertext (beyond #902 revoked-only).
+- Dôkaz: vitest 47/47; report docs/reports/2026-10-21-gmail-reconnect-markerror-race.md.
+- Merge: founder GO.
+---
+
 ## 2026-10-21 — Cenník v3: Team bez skoku 1→2 (GO B) (BUILD)
 **GO:** founder „GO B" po zistení, že 2 makléri (65 €) platia viac na hlavu než 1 (25 €) a lacnejšie vyjdú dve licencie Start (50 €). Cenu určuje founder; Prime Directive: odstraňuje dôvod nekúpiť Team (priamy dopad nemeraný).
 **Čo:** licencia = 1 → 25 €, 2 → 50 €, 3–5 → 65 € (strop), 6+ bez zmeny (9 / 6 / 5 € za makléra). Mesačná platba = základ × 1,2 (2 makléri 60 €), ročná 9/12 promo: 2 makléri 450 € namiesto 600 €. Stripe graduated tiery majú 6 stupňov (year: 30000 / +30000 / +18000 flat; month: 3000 / +3000 / +1800). Team pásmo = „od 50 €", ostáva self-serve (demo-only len Kancelária a Sieť, nové pole `priceOnRequest`). ROI kalkulačka počíta Team konzervatívne na strope 65 €.

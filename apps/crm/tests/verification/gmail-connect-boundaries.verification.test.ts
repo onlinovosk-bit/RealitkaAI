@@ -89,4 +89,17 @@ describe("[verification] Gmail connect — trasy", () => {
     expect(src).toContain("await pullWithConfig(cfg,");
     expect(src).toContain('error: "missing_token_key"');
   });
+
+  it("markPulled/markError viažu update na ciphertext behu (reconnect počas pullu nevypne nový token)", () => {
+    const store = read("src/lib/inbound/gmail-connect-store.ts");
+    expect(store).toMatch(/export async function markPulled\([\s\S]*expectedCiphertext\?:/);
+    expect(store).toMatch(/export async function markError\([\s\S]*expectedCiphertext\?:/);
+    expect(store).toContain('.eq("refresh_token_ciphertext", expectedCiphertext)');
+    expect(store).toContain('.neq("status", "revoked")');
+    expect(store).toContain('.neq("refresh_token_ciphertext", "")');
+    const pull = read("src/lib/inbound/gmail-pull.ts");
+    expect(pull).toContain("ciphertextByAgency");
+    expect(pull).toContain("startedCiphertext");
+  });
 });
+

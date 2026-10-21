@@ -1,3 +1,18 @@
+## Session 2026-10-21 (CRITICAL hunt Gmail reconnect∩markError)
+### Dokončené
+- HIGH: reconnect počas Gmail pull → markError vypol nový token; fix ciphertext guard (`0a9cf5a2`), report `docs/reports/2026-10-21-gmail-reconnect-markerror-race.md`.
+- Cleared #872/#816/#888/#887 at critical bar; skipped #902.
+- Vitest 47/47 PASS na gmail connect/pull/boundaries.
+### Rozpracované / Pending
+- Orchestrátor: otvoriť PR + Slack (subagent nemá open_git_pr/send_slack).
+- Merge až na founder GO; zvážiť súbeh s #902.
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/inbound/gmail-connect-store.ts`: markPulled/markError + expectedCiphertext.
+- `apps/crm/src/lib/inbound/gmail-pull.ts`: predanie ciphertextu z začiatku behu.
+### Ďalší krok
+GO: otvoriť/merge PR ciphertext guard (a/alebo zlúčiť s #902).
+---
+
 ---
 ## Session 2026-10-21 (CROSS-AGENT ENGINEERING v1.0)
 ### Dokončené

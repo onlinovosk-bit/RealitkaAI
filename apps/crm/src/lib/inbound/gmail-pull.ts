@@ -416,8 +416,14 @@ export async function runGmailInboundPullAll(deps: {
   loadMailbox?: (agencyId: string) => Promise<InboundMailbox | null>;
   seenStore?: SeenStore;
   loadConnections?: () => Promise<ActiveConnection[]>;
-  onPulled?: (agencyId: string) => Promise<void>;
-  onError?: (agencyId: string, code: string, disable: boolean) => Promise<void>;
+  /** Druhý arg = ciphertext, s ktorým beh začal (ochrana pred reconnect race). */
+  onPulled?: (agencyId: string, expectedCiphertext?: string) => Promise<void>;
+  onError?: (
+    agencyId: string,
+    code: string,
+    disable: boolean,
+    expectedCiphertext?: string,
+  ) => Promise<void>;
 }): Promise<PullAllResult> {
   const env = deps.env ?? process.env;
   const base = readPullBase(env);
@@ -438,11 +444,14 @@ export async function runGmailInboundPullAll(deps: {
   }
 
   const jobs: GmailInboundConfig[] = [];
+  /** Ciphertext z DB v čase štartu behu — predáva sa do markPulled/markError. */
+  const ciphertextByAgency = new Map<string, string>();
   const errors: string[] = [];
   if (connections.length > 0) {
     const key = Buffer.from(env.GMAIL_INBOUND_TOKEN_KEY?.trim() ?? "", "base64");
     if (key.length !== 32) return { ok: false, error: "missing_token_key" };
     for (const c of connections) {
+      ciphertextByAgency.set(c.agencyId, c.ciphertext);
       try {
         jobs.push({
           clientId: base.clientId,
@@ -455,7 +464,9 @@ export async function runGmailInboundPullAll(deps: {
         });
       } catch {
         errors.push(`${c.agencyId.slice(0, 8)}:token_undecryptable`);
-        await (deps.onError ?? markError)(c.agencyId, "token_undecryptable", true).catch(() => undefined);
+        await (deps.onError ?? markError)(c.agencyId, "token_undecryptable", true, c.ciphertext).catch(
+          () => undefined,
+        );
       }
     }
   }
@@ -468,12 +479,18 @@ export async function runGmailInboundPullAll(deps: {
     total.agencies += 1;
     const r = await pullWithConfig(cfg, { env, fetch: deps.fetch, loadMailbox: deps.loadMailbox, store });
     const short = cfg.agencyId.slice(0, 8);
-    const isDb = connections.some((c) => c.agencyId === cfg.agencyId);
+    const startedCiphertext = ciphertextByAgency.get(cfg.agencyId);
+    const isDb = startedCiphertext !== undefined;
     if (!r.ok) {
       errors.push(`${short}:${r.error}`);
       // invalid_grant = token vypršal/odvolaný: pripojenie sa vypne, aby sa nezúfalo opakovalo.
+      // Ciphertext z začiatku behu: po reconnect sa nový token nevypne starým invalid_grant.
       const dead = r.error.includes("invalid_grant");
-      if (isDb) await (deps.onError ?? markError)(cfg.agencyId, r.error, dead).catch(() => undefined);
+      if (isDb) {
+        await (deps.onError ?? markError)(cfg.agencyId, r.error, dead, startedCiphertext).catch(
+          () => undefined,
+        );
+      }
       continue;
     }
     total.pulled += r.pulled;
@@ -481,7 +498,9 @@ export async function runGmailInboundPullAll(deps: {
     total.alreadySeen += r.alreadySeen ?? 0;
     total.outsideLabel += r.outsideLabel ?? 0;
     for (const e of r.errors) errors.push(`${short}:${e}`);
-    if (isDb) await (deps.onPulled ?? markPulled)(cfg.agencyId).catch(() => undefined);
+    if (isDb) {
+      await (deps.onPulled ?? markPulled)(cfg.agencyId, startedCiphertext).catch(() => undefined);
+    }
   }
   if (jobs.length === 0) {
     return { ok: true, skipped: errors.length ? undefined : "no_connections", ...total, errors };
