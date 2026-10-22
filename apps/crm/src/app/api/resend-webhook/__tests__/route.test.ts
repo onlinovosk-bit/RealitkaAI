@@ -12,6 +12,7 @@
 // ================================================================
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { signStandardWebhook } from '@/lib/webhooks/standard-webhooks'
+import { hashEmail } from '@/lib/email/suppression'
 
 const mockRecord = vi.fn()
 const mockStoreReply = vi.fn()
@@ -27,6 +28,12 @@ vi.mock('@/lib/email-tracking', () => ({
 
 vi.mock('@/lib/supabase/server', () => ({
   createAdminClient: () => mockAdmin(),
+}))
+
+const mockServiceRole = vi.fn()
+
+vi.mock('@/lib/supabase/admin', () => ({
+  createServiceRoleClient: () => mockServiceRole(),
 }))
 
 const SECRET = 'whsec_cmV2b2xpcy10ZXN0LWtleS0wMTIzNDU2Nzg5'
@@ -57,12 +64,24 @@ function opened(leadId: string | null) {
   }
 }
 
+const upsert = vi.fn()
+
+function bounced(type: string | undefined, to: unknown = ['jan@example.com']) {
+  return {
+    type: 'email.bounced',
+    created_at: '2026-10-22T08:00:00.000Z',
+    data: { to, ...(type ? { bounce: { type } } : {}) },
+  }
+}
+
 let warn: ReturnType<typeof vi.spyOn>
 
 beforeEach(() => {
   vi.clearAllMocks()
   process.env.RESEND_WEBHOOK_SECRET = SECRET
   mockAdmin.mockReturnValue(ADMIN)
+  upsert.mockResolvedValue({ error: null })
+  mockServiceRole.mockReturnValue({ from: (table: string) => ({ upsert: (...a: unknown[]) => upsert(table, ...a) }) })
   mockRecord.mockResolvedValue({ recorded: true, reason: null })
   warn = vi.spyOn(console, 'error').mockImplementation(() => {})
 })
@@ -167,6 +186,87 @@ describe('POST /api/resend-webhook', () => {
       leadId: 'abc-123',
       content: 'mám záujem',
       receivedAt: '2026-09-30T21:00:00Z',
+    })
+  })
+
+  describe('doručiteľnosť — potlačenie adries (EMAIL-SUPPRESSION-01)', () => {
+    const row = (email: string, reason: string) => [
+      'email_suppressions',
+      { email_hash: hashEmail(email), scope_key: 'global', reason, source: 'resend-webhook' },
+      { onConflict: 'email_hash,scope_key,reason', ignoreDuplicates: true },
+    ]
+
+    it('tvrdý bounce zapíše globálne potlačenie pre každého adresáta', async () => {
+      const { POST } = await import('@/app/api/resend-webhook/route')
+      const res = await POST(post(bounced('Permanent', ['Jan@Example.com', 'eva@example.com'])) as never)
+
+      expect(res.status).toBe(200)
+      await expect(res.json()).resolves.toEqual({
+        ok: true,
+        handled: 'email.bounced',
+        recorded: true,
+        count: 2,
+      })
+      expect(upsert).toHaveBeenCalledTimes(2)
+      expect(upsert).toHaveBeenCalledWith(...row('jan@example.com', 'hard_bounce'))
+      expect(upsert).toHaveBeenCalledWith(...row('eva@example.com', 'hard_bounce'))
+    })
+
+    it('mäkký bounce nezapisuje nič', async () => {
+      const { POST } = await import('@/app/api/resend-webhook/route')
+      for (const t of ['Transient', 'Undetermined', undefined]) {
+        const res = await POST(post(bounced(t)) as never)
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.recorded).toBe(false)
+        expect(body.reason).toContain('nie je tvrdý bounce')
+      }
+      expect(upsert).not.toHaveBeenCalled()
+    })
+
+    it('sťažnosť na spam → complaint, potlačenie u Resendu → suppressed', async () => {
+      const { POST } = await import('@/app/api/resend-webhook/route')
+      await POST(post({ type: 'email.complained', data: { to: ['a@example.com'] } }) as never)
+      await POST(post({ type: 'email.suppressed', data: { to: 'b@example.com' } }) as never)
+
+      expect(upsert).toHaveBeenCalledWith(...row('a@example.com', 'complaint'))
+      expect(upsert).toHaveBeenCalledWith(...row('b@example.com', 'suppressed'))
+    })
+
+    it('bez adresáta prizná, že nezapísalo', async () => {
+      const { POST } = await import('@/app/api/resend-webhook/route')
+      const res = await POST(post(bounced('Permanent', [])) as never)
+
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.recorded).toBe(false)
+      expect(body.reason).toBe('bez adresáta')
+      expect(upsert).not.toHaveBeenCalled()
+    })
+
+    it('bez service-role klienta vracia 503, aby Resend zopakoval', async () => {
+      mockServiceRole.mockReturnValue(null)
+      const { POST } = await import('@/app/api/resend-webhook/route')
+      const res = await POST(post(bounced('Permanent')) as never)
+
+      expect(res.status).toBe(503)
+      expect(upsert).not.toHaveBeenCalled()
+    })
+
+    it('zlyhaný zápis vracia 500, aby Resend zopakoval', async () => {
+      upsert.mockResolvedValue({ error: { message: 'boom' } })
+      const { POST } = await import('@/app/api/resend-webhook/route')
+      const res = await POST(post(bounced('Permanent')) as never)
+
+      expect(res.status).toBe(500)
+    })
+
+    it('nepodpísaný bounce dostane 401 a nič nezapíše', async () => {
+      const { POST } = await import('@/app/api/resend-webhook/route')
+      const res = await POST(post(bounced('Permanent'), { rawSig: 'v1,forged' }) as never)
+
+      expect(res.status).toBe(401)
+      expect(upsert).not.toHaveBeenCalled()
     })
   })
 })

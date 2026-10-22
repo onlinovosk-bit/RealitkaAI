@@ -37,6 +37,7 @@ Pri písaní Build Orderu mapuj akceptačné kritériá na súbory nižšie.
 | Realvia honest unknown mapping | `realvia-honest-unknown-mapping.verification.test.ts` | — |
 | Realvia agency-scoped source_id | `realvia-agency-scoped-source.verification.test.ts` | — |
 | Property Launch Pack V0 | `property-launch-pack-v0.verification.test.ts` | — |
+| Listing from photos V0 | `listing-from-photos-v0.verification.test.ts` | — |
 | Stealth recruiter (legal hold) | `stealth-recruiter.verification.test.ts` | `stealth-recruiter.smoke.spec.ts` |
 | Action Center V0 | `action-center-v0.verification.test.ts` (**ešte nie** — až implementačný PR) | existujúci outreach v `smoke.spec.ts` |
 | Pricing migration v2 | `billing-credits.verification.test.ts` (doplniť seat amount asserty v implementačnom PR), `stripe-v2-catalog.verification.test.ts` | `smoke.spec.ts` (billing/upgrade routes) |

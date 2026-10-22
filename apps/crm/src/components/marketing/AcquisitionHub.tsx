@@ -123,6 +123,7 @@ export function AiOdhadca() {
   const [error, setError]       = useState<string | null>(null);
   const [gdprConsent, setGdprConsent] = useState(false);
   const [gdprError, setGdprError]     = useState(false);
+  const [website, setWebsite]         = useState("");
 
   const calculate = useCallback(async () => {
     if (address.trim().length < 5) { setError("Zadajte platnú adresu."); return; }
@@ -143,9 +144,9 @@ export function AiOdhadca() {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError("Zadajte platný email."); return; }
     setError(null); setStatus("email_pending");
     try {
-      const res = await fetch("/api/demo/capture-lead", {
+      const res = await fetch("/api/demo/public-capture", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, address, source: "ai_odhadca", estimatedPrice: estimate?.estimatedPrice, gdprConsent: true }),
+        body: JSON.stringify({ email, address, source: "ai_odhadca", estimatedPrice: estimate?.estimatedPrice, gdprConsent: true, website }),
       });
       if (!res.ok) {
         const data = await res.json() as { error?: string };
@@ -156,7 +157,7 @@ export function AiOdhadca() {
         (window as unknown as { gtag: (...a: unknown[]) => void }).gtag("event", "demo_lead_captured", { source: "ai_odhadca", gdpr_consent: true });
       }
     } catch (err) { setError(err instanceof Error ? err.message : "Neznáma chyba."); setStatus("done"); }
-  }, [email, address, estimate, gdprConsent]);
+  }, [email, address, estimate, gdprConsent, website]);
 
   return (
     <Card accent="rgba(59,130,246,0.30)" tag="Lead Magnet" tagColor="#93C5FD">
@@ -208,13 +209,25 @@ export function AiOdhadca() {
         {status === "done" && !emailSent && (
           <div className="pt-1 space-y-2">
             <p className="text-xs mb-2" style={{ color: "#64748B" }}>Email pre stiahnutie AI Reportu:</p>
+            <div aria-hidden="true" style={{ position: "absolute", left: "-10000px" }}>
+              <label>
+                Web
+                <input
+                  name="website"
+                  value={website}
+                  onChange={e => setWebsite(e.target.value)}
+                  tabIndex={-1}
+                  autoComplete="off"
+                />
+              </label>
+            </div>
             <div className="flex gap-2">
               <input type="email" value={email} onChange={e => setEmail(e.target.value)}
                 placeholder="vas@email.sk"
                 className="flex-1 px-3 py-2.5 rounded-xl text-sm"
                 style={DEMO_INPUT_BRAND}
                 onKeyDown={e => { if (e.key === "Enter") void sendEmail(); }} />
-              <button onClick={() => void sendEmail()}
+              <button type="button" aria-label="Odoslať report" onClick={() => void sendEmail()}
                 className="px-3 py-2.5 rounded-xl font-bold transition-all hover:scale-105"
                 style={{ background: "#22C55E", color: "#050914" }}>
                 <ArrowRight size={15} />

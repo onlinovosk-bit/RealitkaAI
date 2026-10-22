@@ -1,11 +1,19 @@
 import type { Metadata } from 'next'
 import Script from 'next/script'
+import { MARKETING_SITE_ORIGIN } from '../lib/site'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Revolis — Získaj viac klientov. Uzatváraj viac obchodov. Bez chaosu.',
+  metadataBase: new URL(MARKETING_SITE_ORIGIN),
+  title: 'Revolis — Inzerát hotový za minúty. Dopyty v CRM samé.',
   description:
-    'Revolis každé ráno vyberie najdôležitejšie príležitosti a povie tvojmu tímu, komu volať ako prvému. Dopyty z portálov, skóre pripravenosti kúpy, denný plán. Rezervuj si demo.',
+    'Dopyty z portálových e-mailov sa uložia samé. AI pripraví text inzerátu z parametrov nehnuteľnosti. 14 dní zadarmo bez karty.',
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    url: '/',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

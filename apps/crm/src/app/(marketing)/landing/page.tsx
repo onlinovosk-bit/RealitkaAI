@@ -28,7 +28,8 @@ import { FounderDiscountSpotsProvider } from '@/components/shared/founder-discou
 import LegalFooter from '@/components/marketing/LegalFooter';
 import RoiGuaranteeSection from '@/components/marketing/RoiGuaranteeSection';
 import { SLATE_HORIZON } from '@/lib/slate-horizon-theme';
-import { getPricingV2CatalogIfEnabled } from '@/components/marketing/pricing-v2-copy';
+import { GUARANTEE_TEXT } from '@/components/marketing/guarantee-copy';
+import { getPublicPricingCatalog } from '@/components/marketing/public-pricing';
 
 // Self-hosted so the build does not depend on reaching Google Fonts. next/font/google
 // fetches the CSS at build time and then does `/\.(woff|woff2|eot|ttf|otf)$/.exec(url)[1]`
@@ -51,12 +52,13 @@ const inter = localFont({
 export const metadata = {
   title: 'Revolis.AI – Uzatváraj viac obchodov. Bez chaosu.',
   description:
-    'AI obchodný pomocník pre realitky. Prioritizuje príležitosti, nájde nehnuteľnosti a navrhne ďalší krok. 100 % garancia vrátenia poplatku prvých 30 dní.',
+    `AI obchodný pomocník pre realitky. Prioritizuje príležitosti, nájde nehnuteľnosti a navrhne ďalší krok. ${GUARANTEE_TEXT}.`,
 };
 
 export default function LandingPage() {
-  // W2-D: prepínač PRICING_V2_ENABLED sa číta na serveri; vypnutý = pôvodný FinalCTA (null).
-  const pricingV2 = getPricingV2CatalogIfEnabled();
+  // PR1 §4: verejný web ukáže sumy len pri zapnutom PRICING_PUBLIC_ENABLED (a PRICING_V2_ENABLED).
+  // Inak je to null: do klientskych komponentov sa nepošle žiadny cenový údaj.
+  const pricingV2 = getPublicPricingCatalog();
   return (
     <main
       className={`${inter.variable} min-h-screen overflow-x-hidden`}

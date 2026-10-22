@@ -5,6 +5,7 @@
 
 import { createServiceRoleClient } from '@/lib/supabase/admin';
 import { logError, logInfo } from '@/lib/logger';
+import { REALVIA_PROBE_TERMINAL_ERROR, planQueueFailure } from './queueRetry';
 import type { RealviaWebhookLogEntry } from './types';
 
 /**
@@ -124,6 +125,7 @@ export async function updateQueueJobStatus(
   jobId: string,
   status: 'processing' | 'completed' | 'failed',
   errorMessage?: string,
+  options?: { probe?: boolean },
 ): Promise<void> {
   const sb = createServiceRoleClient();
   if (!sb) return;
@@ -138,23 +140,26 @@ export async function updateQueueJobStatus(
       update.error_message = errorMessage;
     }
     if (status === 'failed') {
-      // Increment retry count and schedule next retry with exponential backoff
       const { data: job } = await sb
         .from('realvia_processing_queue')
         .select('retry_count, max_retries')
         .eq('id', jobId)
         .single();
 
-      if (job) {
-        const newRetryCount = (job.retry_count ?? 0) + 1;
-        update.retry_count = newRetryCount;
-
-        if (newRetryCount < (job.max_retries ?? 3)) {
-          // Exponential backoff: 30s, 2min, 8min
-          const delayMs = 30_000 * Math.pow(4, newRetryCount - 1);
-          update.next_retry_at = new Date(Date.now() + delayMs).toISOString();
-          update.status = 'pending'; // Re-queue for retry
+      const plan = planQueueFailure({
+        retryCount: job?.retry_count ?? 0,
+        maxRetries: job?.max_retries,
+      });
+      update.retry_count = plan.retryCount;
+      if (plan.terminal) {
+        update.status = 'failed';
+        update.next_retry_at = null;
+        if (options?.probe) {
+          update.error_message = REALVIA_PROBE_TERMINAL_ERROR;
         }
+      } else {
+        update.next_retry_at = new Date(Date.now() + (plan.delayMs ?? 30_000)).toISOString();
+        update.status = 'pending';
       }
     }
 
@@ -360,8 +365,9 @@ export async function enqueueReplayFailedQueueJobs(
   try {
     const { data, error } = await sb
       .from('realvia_processing_queue')
-      .select('webhook_log_id')
+      .select('webhook_log_id, error_message')
       .eq('status', 'failed')
+      .neq('error_message', REALVIA_PROBE_TERMINAL_ERROR)
       .order('created_at', { ascending: true })
       .limit(cappedLimit);
 

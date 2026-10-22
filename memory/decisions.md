@@ -1,4 +1,219 @@
+## 2026-10-22 — Doručiteľnosť a odhlásenie: F-02 bypass + F-01 potlačenie/List-Unsubscribe + bounce/complaint (BUILD, override vetom Q1)
+**GO:** founder „GO GDPR-ADVISOR. GO stena doručiteľnosť a odhlásenie." Prime Directive: nepriamy (reputácia domény a právne riziko outreachu); Stripe krok C ostáva priorita #1. Constitution v2 Q1 (zaplatil by klient?) = NIE → podľa vety VETO max VALIDATE; founder dal výslovné GO na opravu P1 nálezov F-01/F-02, zaznamenané ako override, nie predajný argument.
+**Čo:** `proxy.ts` PUBLIC_PATHS (resend-webhook, unsubscribe, notifications/unsubscribe, morning-brief/track/open|click); migrácia `20261022100000_email_suppressions.sql` (iba odtlačok adresy, RLS deny-all); `lib/email/{suppression,unsubscribe-token}.ts` (HMAC token, fail-closed); `/api/unsubscribe` (GET potvrdenie, POST zápis); `sendApprovedOutreach` kontroluje potlačenie + pätička + `List-Unsubscribe`/`-Post`; `resend-webhook`: tvrdý bounce/sťažnosť/suppressed → globálne potlačenie, 500/503 pre retry; starý `/api/notifications/unsubscribe` už len presmeruje (nemení nič). GDPR analýza: `docs/architecture/gdpr-deliverability-unsubscribe-2026-10-22.md` (6(1)(f) + test vyváženosti; skill `gdpr-advisor` neexistuje → vlastná inžinierska analýza, NIE právne stanovisko).
+**Dôkaz (zmerané v tomto turne):** vitest 5 súborov / 58 testov PASS (webhook vr. 7 nových, unsubscribe-token, unsubscribe route, proxy-deliverability-public, outreach-contract 16/16); susedné 15 súborov / 164 testov PASS; eslint na zmenených súboroch čisté; `npm run typecheck` 53 chýb ≤ baseline 54 (exit 0), `tsc` bez chýb v zmenených súboroch; `check-security.mjs` čisté. NEMERANÉ: CI na pushnutom heade, živé správanie na PROD, doručenie reálneho bounce.
+**Nerobené (čaká na GO):** aplikácia migrácie na PROD (`prod-migration`), nastavenie `UNSUBSCRIBE_TOKEN_SECRET` (≥ 32 znakov), nasadenie, merge #910. Bez migrácie + tajomstva je odchádzajúci e-mail fail-closed zablokovaný (bezpečné zlyhanie, nie tiché).
+**BUILD/BACKLOG:** BUILD (override Q1). Otvorené pre právnika: právny základ samotného obchodného e-mailu fyzickej osobe (opt-in vs. výnimka) — NEOVERENÉ; odtlačok SHA-256 bez soli je pseudonymizácia; retencia záznamu bez limitu.
+**Rollback:** revert PR; migrácia je čisto aditívna (nová tabuľka), na PROD zatiaľ neaplikovaná.
+
+## 2026-10-21 — Revolis reverse engineering & system discovery v1.0 (VALIDATE → report, bez kódu)
+**GO:** founder zadanie „REVOLIS REVERSE ENGINEERING & SYSTEM DISCOVERY v1.0" (iba čítanie, 5 výstupov). Prime Directive: nepriamy — pred ďalšou stenou vieme, čo v systéme reálne beží a čo len existuje v kóde; priamy dopad na platiaceho klienta má F-01/F-02 (doručiteľnosť a odhlásenie) a F-03/F-13 (platba musí mať účinok).
+**Čo:** `docs/discovery/2026-10-21/{ARCHITECTURE,DATA_FLOWS,INTEGRATIONS,FINDINGS,OPEN_QUESTIONS}.md` na HEAD `a04bc5e`. 29 nálezov: 3× P1 (F-01 outbound bez odhlásenia/potlačenia/bounce, F-02 proxy 401 na Resend webhook + tracking + unsubscribe — statika, živé UNKNOWN, F-03 gating no-op + kredity default-off/fail-open), 12× P2, 14× P3. 31 otvorených otázok.
+**Zmerané:** PROD Supabase: 7 agentúr, 0 so `stripe_subscription_id`, 142 tabuliek v `public` všetky s RLS zapnutým (kvalita policies nemeraná). Značky CONFIRMED / CONFIRMED-D (delegované, v turne neoverené) / INFERRED / UNKNOWN.
+**Nerobené / NOT_VERIFIED:** žiadny zápis do PROD, env ani nasadenia; testy po #908 nespustené; hodnoty PROD env, bežiace crony, Stripe Live, Resend DNS, branch protection neoverené (OPEN_QUESTIONS Q-01…Q-31).
+**BUILD/BACKLOG:** BUILD (read-only report). Ďalšia stena „doručiteľnosť a odhlásenie" = VALIDATE → BUILD až po Q-01 a `gdpr-advisor` (skill chýba). Stripe krok C ostáva priorita #1 (čaká na founderove ID).
+**Rollback:** revert PR (iba dokumenty).
+
+## 2026-10-21 — Cenník v3: Team bez skoku 1→2 (GO B) (BUILD)
+**GO:** founder „GO B" po zistení, že 2 makléri (65 €) platia viac na hlavu než 1 (25 €) a lacnejšie vyjdú dve licencie Start (50 €). Cenu určuje founder; Prime Directive: odstraňuje dôvod nekúpiť Team (priamy dopad nemeraný).
+**Čo:** licencia = 1 → 25 €, 2 → 50 €, 3–5 → 65 € (strop), 6+ bez zmeny (9 / 6 / 5 € za makléra). Mesačná platba = základ × 1,2 (2 makléri 60 €), ročná 9/12 promo: 2 makléri 450 € namiesto 600 €. Stripe graduated tiery majú 6 stupňov (year: 30000 / +30000 / +18000 flat; month: 3000 / +3000 / +1800). Team pásmo = „od 50 €", ostáva self-serve (demo-only len Kancelária a Sieť, nové pole `priceOnRequest`). ROI kalkulačka počíta Team konzervatívne na strope 65 €.
+**Dôkaz:** CRM vitest (lib, verification, components, api/billing, integration, terms, landing, billing) 405 súborov / 3157 testov PASS; marketing vitest 64 PASS; drift test JSON tiers ↔ `licenseNetCents` n = 1…60 PASS. NEOVERENÉ: tsc/lint/build (CI), živý www.revolis.ai.
+**Stripe:** v PROD ešte nič nevzniklo (0 predplatných, žiadne `STRIPE_PRICE_V3_*`) — tiery sa vytvoria už v novej podobe, nič sa nemigruje.
+
+## 2026-10-21 — Cross-agent engineering systém v1.0: revolis-verify-completion + revolis-review-plan (BUILD)
+**GO:** founder zadanie „REVOLIS CROSS-AGENT ENGINEERING SYSTEM v1.0" (Prompt Coach spec). Prime Directive: nepriamy (menej falošných „hotovo" a červených CI), priamy dopad na platiaceho klienta nemeraný; hodnotu a poradie určuje founder.
+**Čo:** `scripts/ci/revolis-verify.mjs` + `lib/verify-core.mjs` (completion: diff → kontroly → akceptačné kritériá → PASS/FAIL/BLOCKED/NOT_VERIFIED; plan-lint), Skills `.claude/skills/revolis-{verify-completion,review-plan}`, adaptéry `AGENTS.md` a `.cursor/rules/revolis-cross-agent.mdc`, kontrakt s auditom `docs/architecture/cross-agent-engineering-contract.md`. Zapojené do `prepush-gate.sh` a CI kroku „Test CI helper scripts".
+**Engineering justification:** Trigger: new-file · Decision path: new-code (jadro) + reuse (prepush-gate, kontrolor, classify-diff sa volajú, nie kopírujú) · Alternatives: nový MCP server (zamietnuté: GitHub/BUS/CI už existujú), rozšíriť `prepush-gate.sh` (zamietnuté: bash neparsuje kritériá ani stavy) · Why not reuse: žiadny existujúci nástroj neviaže diff na akceptačné kritériá a štyri stavy · Contradiction check: none.
+**Zmerané:** 27 testov jadra a adaptérov, 8 mutácií (7 červených, 1 ekvivalentná: redundantná poistka `doneAllowed`); živý beh na vlastnom diffe: pred-push brána PASS, ručné kritérium NOT_VERIFIED, DONE=NIE.
+**Medzery (nerobené):** P1 overenie vydania (`/api/healthz` bez SHA nasadenia) a P1 smerovanie modelov (dáta o cene úloh UNKNOWN) sú len návrh v kontrakte §7. Zlepšenie času/ceny/regresií **nezmerané**.
+**Rollback:** revert PR (žiadna zmena aplikácie ani PROD).
+
+## 2026-10-21 — GO STRUCTURE-FIRST-1: štruktúra pred správami — menej tokenov v Messages (BUILD)
+**GO:** founder „GO STRUCTURE-FIRST-1" po rozbore: Messages tvorili 58,9 % kontextu (≈ 589 tis.), štruktúra ≈ 80 tis.
+**Čo:** (1) `CLAUDE.md` Initialization už nenariaďuje čítať celý `/memory` (≈ 946 KB ≈ 315 tis. tokenov), ale `memory/INDEX.md` + prvý záznam `session-summary.md`. (2) `autoCompactWindow: 200000` v `.claude/settings.json`. (3) Hooky: pri prompte zostal blok `TURN` + krátky POSTUP; `WALL-RULES.md` a `progress.sh` sa pri prompte nevkladajú (plné znenie ostáva na `SessionStart`, vrátane compact; riadok `📊` vynucuje Stop hook). Zmerané: **4 884 → 1 561 B na správu (−68 %)**, SessionStart nezmenený (2 126 B + protokol). (4) Skilly `merge-gate`, `prod-migration`, `wall-close` (v kontexte len popis, telo až pri použití). (5) `.mcp.json` prázdny: `onlinovo` padal na nezbuilovanom `@revolis/mcp-shared`, `ruflo` ide cez lokálnu cestu `C:/RealitkaAI` a v cloude (aj v scheduled night-runner session 2026-09-16, MSG-20260916-000) sa nikdy nepripojil.
+**Ruflo:** nie je rozbitý — je to lokálny nástroj; nahrádzať ho v cloude netreba, nočné vlny bežia ako scheduled session + izolovaný git worktree na lane (fallback z protokolu vlny). Lokálne ho founder pridá do user scope (príkaz v `packages/mcp-onlinovo/README.md`). `.cursor/mcp.json` ostáva.
+**Nové MCP:** žiadne. Pôvodne navrhnutý „MCP s kompaktným stavom bloku" sa nerobí: CI/PR dáta idú cez GitHub MCP a ďalší server by pridal schémy do štruktúry; namiesto toho skill `merge-gate` predpisuje minimálny výstup.
+**Obsolétne:** oprava COACH filtra z rozboru — #901 zmenil COACH na ručné „GO COACH", takže filter sa už nepoužíva.
+**Nemerané:** reálny pokles podielu Messages — zmeria sa v ďalšej session (Context panel pred/po). Odhady dopadu skillov a hookov z rozboru ostávajú odhadom.
+**Rollback:** revert PR.
+
+## 2026-10-20 — GO COACH-ONLY: Prompt Coach sa spúšťa len príkazom „GO COACH", nie automaticky (BUILD)
+**GO:** founder: Prompt Coach sa v Grok Botovi úplne zacyklil; chce ho spúšťať iba príkazom „GO COACH", nie pri každom prompte, a rovnako aj v repe.
+**Čo:** hook `working-agreement.sh` vloží blok COACH len ak správa začína „GO COACH" (nezáleží na veľkosti písmen); pri iných správach nikdy. Blok COACH v `memory/working-agreement.md` prepísaný: „GO COACH" = vrátiť iba hodnotenie formy a vylepšený prompt, zadanie NEVYKONÁVAŤ; vylepšený prompt nesmie začínať „GO COACH" (štrukturálna ochrana proti cyklu). Pôvodná automatika a značka `[COACH-PROMPT-OK]` sú tým obsolétne (zostáva v histórii).
+**Mimo repa:** nové prompty pre Grok, ChatGPT a Gemini dostal founder v chate.
+**Rollback:** revert commitu.
+
+## 2026-10-20 — GO COACH-LOOP-FIX: schválený prompt od coacha sa vykoná, neaudituje sa znova (BUILD)
+**GO:** founder „GO COACH-LOOP-FIX". Problém: Grok sa zacyklil — vložený prompt od Coacha bral ako nové zadanie a vytvoril ďalší vylepšený prompt.
+**Príčina:** pravidlo „pri každom novom zadaní pridaj Prompt-coach" nerozlišovalo prompt, ktorý coach sám vytvoril. Zdroj: vložený prepis a súbor od foundera (správanie Groka som nevidel).
+**Oprava:** značka `[COACH-PROMPT-OK]` na prvom riadku každého promptu od coacha; správa s ňou (alebo hotový prompt so sekciami ROLA…HOTOVO) = vykonať bez bloku Prompt-coach; blok najviac raz na pôvodné zadanie; „BEZ COACHA" ho vypne. Hook `working-agreement.sh` pri tejto značke COACH nevloží. Platí pre blok COACH v repe; texty pre ChatGPT/Gemini/Grok a štyri inštalačné prompty (Onlinovo, UPTM, AI Influencerka, COZY Tatras) dostal founder v chate.
+**Rollback:** revert commitu.
+## 2026-10-20 — GO PROD-MIGRACIE uzavreté: obe migrácie v PROD, septembrová príčina dokázateľne preč (PROD ZMENA)
+**Stav:** founder spustil `DROP INDEX idx_properties_source_id_unique` v SQL editore. **Overené nezávisle v mojom spojení**, nie prevzaté z tvrdenia inej session: jediné UNIQUE indexy na `properties` sú `properties_pkey` a `idx_properties_tenant_source_unique`.
+**Dôkaz, že septembrová chyba je preč (merané v PROD, transakcia s ROLLBACK, `properties` 164 pred aj po, 0 testovacích riadkov):** dve rôzne agentúry s tým istým `source_system`+`source_id` → **prešlo** (presne toto 11. 9. padalo, 24 z 25 pokusov); tá istá agentúra to isté `source_id` druhýkrát → **správne odmietnuté** `unique_violation`. Test je napísaný tak, že zlyhanie v ktoromkoľvek smere vyhodí výnimku, takže „prešlo bez výnimky" dokazuje obe strany naraz.
+**Ledger doplnený:** `20260617120000` (`uc_export_mapper`) je teraz v `supabase_migrations.schema_migrations` vedľa `20261020050000`. Zápis bol zámerne odložený, kým DDL nebolo celé.
+**Opravujem tvrdenie z predošlého zápisu (commit `e9e1fa7`, iná session):** `supabase migration repair` nebol potrebný a chýbajúce CLI nebolo blokátorom. Ten príkaz píše do tej istej tabuľky `schema_migrations`, do ktorej sa dá zapísať priamo cez SQL — tak sa to urobilo aj pri `20261020050000`.
+**Poučenie o deštruktívnej bráne:** `DROP INDEX` cez MCP nejde (potvrdenie sa do session nedostane → 60 s timeout a rollback). Obísť sa to dá dynamickým SQL v `DO` bloku — neurobilo sa to a nemá sa. Správna cesta je jeden riadok od foundera v SQL editore. To isté bude platiť pre každý ďalší `DROP` v PROD.
+**Vedľajší nález trvá (nedotknuté):** `realvia_schema_health()` hlási `partial_unique_index_properties_source_id` podľa starého názvu indexu → odteraz vracia `false` pri SPRÁVNEJ schéme. Nikto tú funkciu nevolá (0 volajúcich v repe), takže je to zastaralý signál, nie porucha.
+**Otvorené s GO bránou:** `GO GDPR-ADVISOR` (skill z direktívy 5 neexistuje) · zmazanie mŕtveho kódu (harness blokuje) · Stripe krok C (0 %, váha 30 — podľa Prime Directive ďalší).
+
+## 2026-10-20 — GO STRIPE-C: blokátor platieb je zmeraný a je to konfigurácia, nie kód (BEZ ZÁPISU DO PROD/STRIPE)
+**GO:** founder „GO STRIPE-C". Nič sa nezapísalo do Stripe ani do PROD. Rozpis: `docs/reports/2026-10-20-stripe-krok-c-blokator.md`.
+**Nález (ZMERANÉ):** vo Vercel Production chýba **`STRIPE_PRICE_V3_SEAT_MONTHLY`** — jediná vždy povinná cena. Bez nej `missingPricingV2PriceEnvKeys()` → `checkoutAvailable: false` → `/api/billing/checkout` vracia **503**. Osem premenných `STRIPE_PRICE_V2_{START,TEAM,OFFICE,NETWORK}[_YEARLY]`, ktoré v produkcii sú, **kód už vôbec nečíta**: `grep -rn "STRIPE_PRICE_V2_" apps/crm/src/` = 0 výskytov mimo testov. Cenník prešiel z pásiem v2 na tiered per-seat v3, premenné vo Verceli ostali pri v2. Katalóg `revolis-stripe-v2-catalog.json` je s kódom v zhode (9 cien + kupón, všetko `v3`).
+**Preto NEZÁLEŽÍ, či je `PRICING_V2_ENABLED` zapnuté** — aj keby bolo, checkout spadne na chýbajúcu cenu. Hodnotu tej premennej som nepotreboval a **nečítal som ju** (z Vercelu len názvy a ciele, žiadne dešifrovanie).
+**Opravujem dve tvrdenia z plánu 2026-10-16 a zo STATUS.md:** (1) „8 plánových cien `STRIPE_PRICE_V2_*`" už nie je správny zoznam; (2) `STRIPE_WEBHOOK_SECRET` **nechýba**, v produkcii je. Obe opravené v tom istom PR.
+**Platby v PROD (ZMERANÉ):** 7 agentúr, 1 so `stripe_customer_id`, **0 so `stripe_subscription_id`**, 2 s `manual_plan`. Jediné `subscription_status='active'` je agentúra `11111111…` BEZ `stripe_subscription_id` a s `manual_plan=market_vision` → ručné, nie zaplatené. **Tým sa uzatvára spor `DEC-20260925-001` („1 vs 3 platiace kancelárie"): cez Stripe je to 0.** Ak niekto platí, je to mimo Stripe a v `agencies` to ako Stripe predplatné nevyzerá.
+**Kód je v poriadku:** `pricing-v2`, `pricing-v2-contract`, `credits-billing-v2` + billing routes → **69/69** v tomto behu. Blokátor sa dá odstrániť bez nasadenia kódu.
+**Čo som nemohol a prečo:** vytvorenie ceny v LIVE Stripe je nezvratný zápis do fakturačného systému a potrebuje live kľúč so zápisom — ten v session nie je a nemá byť. Na `GET /api/billing/checkout-config` (vracia len booleany a názvy) som sa nedostal: sieťová politika kontajnera nepustí ani `app.revolis.ai`, ani `realitka-ai.vercel.app` (`ENOTFOUND`); `curl` je v tejto session zakázaný.
+**Otvorené s GO bránou:** founder vytvorí `revolis_v3_licence_month` v LIVE Stripe (tiered graduated, `tax_behavior=exclusive`), pridá `STRIPE_PRICE_V3_SEAT_MONTHLY` do Vercel Production, redeploy, pošle výstup `checkout-config`. **`STRIPE_PRICE_V3_PACK_*` ani `_CREDIT` nepridávať** — režim „len plány" je zámerný. Ďalej: `GO GDPR-ADVISOR`, mŕtvy kód.
+
+## 2026-10-20 — GO COACH-FIX: Prompt Coach posudzuje len formu; hodnotu úlohy určuje founder (BUILD)
+**GO:** founder „GO COACH-FIX" po výhrade: AI nesmie rozhodovať, či prompt zvyšuje šancu na platiaceho klienta alebo retenciu; rozhoduje o tom iba founder. Poradie obrátené: zadanie sa najprv vykoná, coach je až na konci.
+**Čo:** blok COACH v `memory/working-agreement.md` — vyhodený bod „cieľ = čo sa zmení pre platiaceho klienta" a veta o „najkratšej ceste do produkcie"; rubrika má 5 bodov formy (vstupy, hranice, formát, dôkaz, hotovo); doplnené výslovné pravidlo, že coach nehodnotí hodnotu, nepriorizuje a neodmieta úlohu z obchodných dôvodov. Tabuľka v dokumente upravená. Skript hooku sa nemenil (číta blok).
+**Mimo rozsahu:** pravidlo 7 v `.claude/WALL-RULES.md` („Prime Directive") je foundera vlastné pravidlo pre prácu; nedotknuté. Prompty pre ChatGPT/Gemini/Grok boli odoslané v chate, nie v repe.
+**Rollback:** revert commitu (jeden blok).
+
+## 2026-10-20 — GO RUTINA: dve podmienené rutiny v hooku (MIGRACIA, COACH) — BUILD
+**GO:** founder „GO RUTINA podľa tvojho návrhu" + „rutina, ktorá ma bude učiť písať prompty 10/10, ktoré posúvajú projekt do produkcie". Rozhodnutie: **BUILD** (rýchlejšie, presnejšie zadania = menej slučiek do platiaceho klienta; cena = jeden skript a dva textové bloky).
+**Čo:** `.claude/hooks/working-agreement.sh` číta z `UserPromptSubmit` stdin (`.prompt`) a podľa neho k DIGEST pridá (a) **MIGRACIA** — len ak správa obsahuje migrácia/DROP/DDL/ledger/schema_migrations/db push: read-only preflight, izolovaný test na lokálnom Postgrese (nie PROD), zápis len na GO; (b) **COACH** — len pri novom zadaní (≥60 znakov, nie GO/merguj/merge, nie automatická notifikácia): na konci odpovede blok „Prompt-coach" (odhad kvality podľa 6 bodov, čo chýbalo, prepísaná verzia). Zdroj textu: bloky `MIGRACIA` a `COACH` v `memory/working-agreement.md`. `settings.json` nezmenený (žiadny druhý hook, viď poučenie #800).
+**Čo to NErobí:** nespúšťa preflight ani test sám; vkladá pripomienku do kontextu. Lokálny Postgres prostredie v tejto session odmietlo → pri MIGRACIA je test zatiaľ len návrh. % kvality je odhad, nie meranie.
+**Overené lokálne (7 prípadov):** „GO A" → žiadna rutina; migračná správa → MIGRACIA+COACH; nové zadanie → len COACH; notifikácia a „merguj …" → nič; bez stdinu, `start` a `webhook` fungujú.
+**Rollback:** zmazať blok „Podmienené rutiny" v skripte (jeden blok) alebo bloky MIGRACIA/COACH v `memory/working-agreement.md`.
+
+## 2026-10-20 — CLOSE PROD MIGRATION 20260617120000: DDL potvrdené, ledger repair čaká na founderovo CLI (BEZ ZÁPISU DO PROD)
+**GO:** founder „CLOSE PROD MIGRATION 20260617120000 — controlled follow-through". Merané v tom istom turne cez MCP (SELECT, `list_migrations`), projekt `ypgajkhqtbriqqmyawyv` (7 agentúr / 524 leadov / 164 ponúk).
+**Potvrdené:** `idx_properties_source_id_unique` neexistuje (founderov `DROP INDEX` prešiel); `idx_properties_tenant_source_unique` existuje s predikátom `source_id IS NOT NULL AND agency_id IS NOT NULL`; 5/5 `profiles.import_*`, `uq_profiles_uc_import_source`, 19/19 `properties` stĺpcov, `result_code`, `import_jobs_source_check` s `uc`+`realvia-json`; 0 duplicitných skupín.
+**NEurobené:** `supabase migration repair` (CLI v prostredí nie je, projekt nenaviazaný, bez tokenu/hesla); `db push`, INSERT do histórie, worker, ďalší DDL, merge, deploy. Remote história: `20261020050000` je, `20260617120000` nie je.
+**Integračný test:** nespustený (v repe nie je DB harness, lokálny Postgres prostredie odmietlo); návrh 5 prípadov je v reporte §7.
+**Otvorené:** founder lokálne `supabase link` + `migration repair 20260617120000 --status applied --linked` + `migration list --linked` → vložiť výstup. Postup produktu sa nemení (nemerané).
+
+## 2026-10-20 — GO PROD-MIGRACIE: BRI beží v PROD; jeden DROP INDEX ostáva founderovi (PROD ZMENA)
+**GO:** founder „GO PROD-MIGRACIE". Projekt `ypgajkhqtbriqqmyawyv` (identita overená v tom istom spojení: 7 agentúr, 524 leadov, 164 ponúk). Plný rozpis: `docs/reports/2026-10-20-prod-migracie-bri-a-source-id.md`.
+**Migrácia A `20261020050000` — CELÁ, a dokázane funguje.** Nie „text sa zmenil", ale skutočné volania v PROD: `compute_bri_score` → 12 (a 12 aj na druhé volanie, teda vetva `ON CONFLICT`, ktorá predtým padala), `compute_bri_score_v2` → new 16 / old 0 / delta 16, druhé volanie new 16 / old 16 / delta 0. **`lead_scores` 0 → 2 riadky, `bri_score_history` 2 záznamy** — dovtedy nevzniklo ani jedno BRI skóre. Zachované `secdef=true`, `owner=postgres`, `service_role=X`, signatúry.
+**Migrácia B `20260617120000` — všetko okrem jedného príkazu.** Prešlo: 5× `profiles.import_*`, `uq_profiles_uc_import_source`, 18× `properties` ADD COLUMN (no-op, už existovali), `realsoft_import_logs.result_code` (no-op), `import_jobs_source_check` + `uc` a `realvia-json`, a **`idx_properties_tenant_source_unique` založený**. NEPREŠLO: `DROP INDEX idx_properties_source_id_unique`.
+**Prečo neprešlo a čo som NEurobil:** MCP nástroj púšťa deštruktívne príkazy cez potvrdenie, ktoré sa do session nedostane → 60 s timeout a rollback, overené 3×; každý iný krok vrátane `DROP CONSTRAINT` prešiel okamžite. Obísť sa to dá dynamickým SQL v `DO` bloku — **neurobil som to**, bezpečnostná brána sa neobchádza. Founder spustí jeden riadok v SQL editore. **Kým to nespraví, dve agentúry stále nemôžu mať tú istú inzerátovú id** — septembrová príčina trvá, hoci nový index už existuje vedľa.
+**Zmena oproti súboru migrácie:** nový index sa zakladá PRED zrušením starého, aby nevzniklo okno bez ochrany. Výsledný stav identický.
+**Ledger zámerne neúplný:** do `schema_migrations` šla len `20261020050000`. `20260617120000` tam nie je a nemá byť, kým nedobehne `DROP INDEX` — inak by ledger klamal. Migrácia je idempotentná, takže sa dá prehnať znova.
+**Pre-flight, ktorý to umožnil (merané pred zápisom):** `idx_properties_source_id_unique` nie je krytý constraintom; 0 duplicitných skupín na trojici; 0 riadkov so `source_id NOT NULL` a `agency_id NULL` (nikto nestráca pokrytie); `import_jobs` má len `realvia`; obe funkcie majú vzor `ON CONFLICT (profile_id, lead_id)` práve 1× a `DO UPDATE SET` 1×, takže `replace` nemá čo iné zasiahnuť. Kód už dnes upsertuje per tenant (`processQueue.ts:217`) a **nikde v `apps/crm/src` nie je `onConflict` na `source_id`** — zrušenie globálneho indexu nerozbije žiadnu zapisovaciu cestu.
+**Vedľajší nález (nedotknuté):** `realvia_schema_health()` hlási kľúč podľa starého názvu indexu, po dokončení sa preklopí na `false` pri správnej schéme. Nikto tú funkciu nevolá (0 volajúcich v repe) → zastaralý signál, nie porucha.
+**Otvorené s GO bránou:** `DROP INDEX` (founder, SQL editor) → potom zápis `20260617120000` do ledgera · `GO GDPR-ADVISOR` (skill z direktívy 5 neexistuje) · zmazanie mŕtveho kódu · Stripe krok C.
+
+## 2026-10-20 — Speed / time-saving VP + listing z fotiek (BUILD, draft)
+**GO:** founder (Andrej) — zmena value proposition na rýchlosť a úsporu času; jeden draft PR, **nikdy merge**; ceny v3 nemením.
+**RAU:** GO_REQUIRED BUILD revolis (merge / production / secrets / pricing v texte). Merge, PROD env a ceny som neurobil.
+**Ústava v2:** BUILD. Q1 = founder povedal, že AIRAmax vyhráva týmito funkciami. Q8 = teraz. Phase 1 = EXTEND existujúceho listing generatora (Claude vision), nie nové Studio.
+**Rozhodnutie:** roadmap + `LISTING_FROM_PHOTOS_V0` (default OFF) + www copy len o LIVE funkciách. Staging / reel / pôdorys označené missing / not feasible.
+**Výstup:** `docs/strategy/2026-10-20-speed-time-saving-roadmap.md`, `docs/reports/2026-10-20-speed-time-saving.md`.
+
+## 2026-10-15 — API Cost Governor v1 (úzka BUS vrstva) — BUILD
+
+Founder GO: implementovať fail-closed USD bránu pred plateným AI volaním a potom jednu ďalšiu úlohu. Nie je to GO na merge, deploy, produkčný env, nákup kreditov ani auto-reload.
+
+**Rozhodnutie:** nový modul `packages/bus-core/src/cost-governor.ts` vedľa count capu. CLI `scripts/bus/consume.ts` ho volá pred spawnom. Defaultný katalóg je prázdny → neznámy model je BLOCK. Interné limity 0,50 / 5,00 / 25,00 USD nie sú Claude Console bonus 100 USD. Odhad a actual sú oddelené polia. CRM call site sa v tejto vlne nenapájajú.
+
+## Engineering justification: API Cost Governor
+
+- **Trigger:** new-file
+- **Decision path:** new-code
+- **Alternatives considered:** rozšíriť `execution-cap.ts` o USD (zamietnuté — count cap je 24 h okno počtu behov, USD je kalendárny UTC deň/mesiac a iný ledger); použiť `llm-usage-cost.ts` ako cenník (zamietnuté — natvrdo sadzby a fallback na Sonnet, nie overený cenník); nový orchestrátor (zamietnuté — BUS runner už existuje).
+- **Why not reuse:** count cap a control-contract denyList neriešia per-task/day/month USD hold ani actual od providera. DenyList ostáva. Governor ho nekopíruje ako druhú autoritu nad akciami, len odmieta platený spawn pri zakázanom side effecte.
+- **Expected outcome:** `bus:consume` bez platného kontraktu a snapshotu Claude nespustí. Existujúce testy `runConsumer` bez `costGate` ostávajú zelené. CRM cesty ostávajú nepokryté a sú tak označené.
+- **Related paths:** `packages/bus-core/src/cost-governor.ts`, `packages/bus-core/src/execution-cap.ts`, `scripts/bus/consume.ts`, `docs/reports/2026-10-15-api-cost-governor-v1.md`, `docs/architecture/l99-parked-concepts.md` P-MR
+- **Contradiction check:** none — P-MR (plný model router a produkčná cost telemetry) ostáva zaparkovaný. Toto GO povoľuje len BUS spawn. CRM sa neodomkýna.
+- **PR / vetva:** #847 · `cursor/api-cost-governor-v1-0b41` (draft, nemergované)
+
+**Ďalšia úloha v tom istom GO:** CHECKOUT-ENV-01 ostáva neuzavretý (kód seat + v2 stále čaká na Price ID; live Stripe dnes nečítaný). Výstup je read-only checklist `docs/reports/2026-10-15-checkout-env-01-founder-checklist.md`. Odporúčanie: najprv nový read-only verify (voľba C), nie hádanie seat cien.
+
 # Critical Decisions Log
+
+## 2026-10-05 — GMAIL-CONNECT: pripojenie Gmailu cez Revolis (kód hotový, neaktivované)
+
+**GO foundera.** Dôvod: Playground (dovtedajšia cesta) vie autorizovať len ten, kto ho má otvorený s našimi údajmi — Smolko by zadával heslo v cudzom prehliadači alebo by dostal `client secret`.
+**Constitution v2:** BUILD — retencia (stratený dopyt = stratená provízia), škáluje na ďalších klientov, bez VETO. **gdpr-advisor:** skill nebol dostupný; posúdenie `docs/architecture/inbound-gmail-pull-gdpr.md` doplnené (token šifrovane v DB, súhlas ako doklad pokynu).
+
+**Čo je v kóde:** migrácia `agency_gmail_inbound_oauth` (šifrovaný token, DB sama odmietne povolenie nad čítanie, deny-all RLS); `/api/integrations/gmail-inbound/{connect,callback,disconnect}` (len aktívny
+owner/manager; agentúra z profilu nie z URL; state viazaný na profil aj agentúru, 15 min; fail-closed bez kľúčov, žiadny vývojársky záložný kľúč; rate limit + telemetria); karta v Integráciách (aj keď je zvyšok
+zamknutý plánom); pull číta pripojenia z DB, izolovane po agentúrach, štítok „Revolis" hľadá podľa názvu, `invalid_grant` vypne len to pripojenie.
+
+**Dôkaz:** 783 testov v `src/lib/inbound`, trasách a `tests/verification` zelených; `check-api-contract` 0 nových porušení; 13 mutácií (bez kontroly agentúry/profilu v state, plaintext do DB, bez kontroly role, agentúra z URL,
+povolený gmail.send, state bez expirácie, slabé tajomstvo, DB bez readonly constraintu, pull len prvej agentúry, status vracia ciphertext, invalid_grant nevypne, disconnect nezmaže) — všetky červené; jedna (M6, zlyhané zmazanie
+hlásené ako odpojené) najprv prežila → doplnený test.
+
+**Zistenia pri kontrole dual-runu (5. 10.):** (1) 1. 10. „strata dopytu" nebola: nepreposlaná správa bola ponuka spolupráce s 26,7 MB prílohou (Smolko poslal hlavičky 2. 10.). (2) Dual-run nezačal: 0 behov, 0 riadkov
+`agency_gmail_inbound_seen`, GitHub secrets `CRM_BASE_URL`/`CRON_SECRET` neexistujú (workflow sa preskakuje). (3) **GitHub `*/10` beží reálne každých 3 až 4,5 h** (13:44, 17:52, 20:56, 23:52, 04:27 UTC) — spúšťač treba
+zmeniť (Vercel Pro alebo Cloudflare cron; čaká na rozhodnutie foundera). (4) V DPA Prílohe č. 2 je „OpenAI (alebo Anthropic)" — moje tvrdenie, že Anthropic chýba, bolo nepresné; problém je nejasné „alebo".
+
+**Nemerané — vedomé:** žiadny živý súhlas v Google (nemám prístup); migrácia `20261005100100` **nie je v PROD** (premenovaná z `20261005100000`, ktorú obsadila iná migrácia, CI padlo na duplicitnej verzii); neviem, kto je jediný `owner` profil agentúry Smolko (`ra***@gmail.com`) — ak to nie je Smolko, nemá sa ako prihlásiť a pripojiť
+(pozvánkový odkaz = ďalšia stena). Režim Google aplikácie (Testing = token 7 dní) je z dokumentácie. SCOREBOARD sa nehýbe: v PROD nič nebeží.
+## 2026-10-20 — BRI-ONCONFLICT zmergovaný + nález: brána `gdpr-advisor` neexistuje (BUILD)
+**GO:** founder „GO BRI-ONCONFLIC" a „merguj 885, 888, 889". Všetky tri na `main`, CI zelené na aktuálnej hlave pred každým mergom:
+`#885 → 26eafd9` · `#888 → d25c101` · `#889 → 5ab3da4`. Obsah overený na `main` po mergi (migrácia, testy, reporty, `deriveCronStatus`).
+**#889 si vyžiadal dve kolá riešenia konfliktu** (memory súbory, po každom pohybe `main`). Obe strany zachované — strážny skript potvrdil `+11 −0` a `+19 −0`, žiadne mazanie histórie. Push s `WALL_PUSH_OK=1`, dôvod: odblokovanie konfliktu na vlastnom PR pod explicitným GO na merge.
+**Migrácia `20261020050000_bri_onconflict_lead_id.sql` je na `main`, ale NIE JE aplikovaná na PROD.** Čaká na samostatné GO. Dokiaľ sa neaplikuje, `compute_bri_score` aj `v2` v PROD stále padajú — merge ten pád neodstránil.
+**Nový nález (ZMERANÉ, `find . -name SKILL.md`):** CLAUDE.md direktíva 5 predpisuje spustiť skill **`gdpr-advisor`** pred každou funkciou dotýkajúcou sa osobných/externých dát. **Taký skill neexistuje.** V repozitári sú štyri: `kontrolor`, `rau`, `strategic-analysis`, `task-loop` (+ `.cursor/skills/ui-ux-pro-max`). Na `gdpr-advisor` sa pritom odvoláva 10 dokumentov vrátane `docs/rau/prompts/P06-data-event-contract.md` a `RAU-v1.0.md`. Povinná brána, ktorú nemožno spustiť, nie je brána — pri katastri a portáloch je to presne tá vrstva, ktorá sa nedá nahradiť pluginom z katalógu. Otvorené s bránou `GO GDPR-ADVISOR`.
+**Odpoveď na otázku o „Skills Vault":** čo senior inžinieri „bežne používajú" som nemeral a netvrdím to — telemetria inštalácií nie je čitateľná. Zmerané je len: 4 skilly + 6 hookov v tomto repe, a skutočný obsah katalógu (Billing Plane so `stripe-billing` a agentom `webhook-validator`; backlog s cross-session hookmi; claude-code-review-council; Security Audit Loop; finecomb; Engineering; Flow). Odporúčanie **Billing Plane** — jediné, čo mieri na zmeranú dieru (0 predplatných pri 7 agentúrach), teda na Prime Directive.
+**Otvorené s GO bránou:** `GO PROD-MIGRACIE` (20261020050000 + 20260617120000, mapovanie ciest + dôkaz pred/po) · `GO GDPR-ADVISOR` · zmazanie mŕtveho kódu (harness blokuje) · Stripe krok C, `RESEND_API_KEY`, šesť `GOOGLE_GMAIL_INBOUND_*`.
+
+## 2026-10-20 — www.revolis.ai navy + gold paleta (BUILD, draft)
+**GO:** zadanie Cloud Agent — recolor len `apps/marketing`, draft PR, nemergovať. **RAU:** AUTO-SAFE CONTENT.
+**Ústava v2:** vizuál existujúceho webu, nie nová featura. Timing OK (kampaň `/` beží). Q1 neplatí ako veto — nálada predajnej stránky.
+**Rozhodnutie:** paleta centralizovaná v `public/palette.css` (CSS premenné; Tailwind v marketingu nie je). `app.revolis.ai` a SEO súbory (#878) netknuté. Slovo pilot nezavádzať.
+**Výstup:** `docs/reports/2026-10-20-marketing-gohouse-palette.md`.
+
+## 2026-10-19 — REALVIA-PRICINY: príčina sa zapisuje bez migrácie + zmeraný rozpor schémy v PROD (BUILD, draft)
+**GO:** founder „merguj 882 a zavri 864" + „GO aj na ďalších 8 krokov v poradí". #882 zmergované (squash `060c5f4`), #864 zavreté ako nahradené.
+**Dve veci, v ktorých som sa mýlil a opravujem ich:**
+1. Napísal som, že stĺpec na príčinu zlyhania si **vyžaduje migráciu**. Nevyžaduje. `realvia_metrics.meta` je `jsonb` a existuje — worker tam písal natvrdo `meta: {}` (`src/lib/realvia/metrics.ts`). Preto bolo prázdne vo všetkých 1 077 riadkoch. Oprava je čisto v kóde.
+2. Krok „pin na `idx_properties_source_id_unique`" nebol o pine. **ZMERANÉ v PROD:** `idx_properties_source_id_unique` je UNIQUE na `properties.source_id` SAMOTNOM a stále platí; `idx_properties_tenant_source_unique` neexistuje; migrácia `20260617120000`, ktorá globálny index ruší a zakladá tenantový `(agency_id, source_system, source_id)`, **v `schema_migrations` nie je**. Kód pritom upsertuje per tenant (komentár `processQueue.ts:187`). **Dve agentúry teda nemôžu mať tú istú inzerátovú id** — a to je zmeraná príčina septembrovej chyby `duplicate key … idx_properties_source_id_unique` (11. 9.: 24 zlyhaní z 25 pokusov).
+**Širší nález (ZMERANÉ):** 138 migrácií v repe vs **78** v `supabase_migrations.schema_migrations`; najnovšia (`20261006120000`) aplikovaná je, chýbajú veci v strede → aplikovalo sa výberovo, nie v poradí. Ktoré z tých 60 pokrývajú staršie číslované `supabase/*.sql`, je NEZMERANÉ a netvrdím to.
+**Pre-flight k oprave (dôkaz bez spustenia):** unique na `source_id` implikuje unique na trojici, takže `CREATE UNIQUE INDEX` na `(agency_id, source_system, source_id)` nemôže naraziť na existujúce dáta. Ale `20260617120000` robí aj `ADD COLUMN` v `profiles`/`properties`/`realsoft_import_logs` a mení `import_jobs_source_check` — všetko aditívne, žiadne `DROP COLUMN`, žiadne mazanie dát. Aplikovať naslepo aj tak nie: **čaká na GO.**
+**Dodané v tomto PR:** `failureKinds.ts` (uzavretá množina 7 druhov — do metrík nesmie tiecť text payloadu, GDPR), `tallyRealviaFailures` v dávke, `buildMetricsMeta` namiesto `meta: {}`, 13 unit testov + 6 verifikačných pinov (vrátane „žiadna novšia migrácia nezaloží globálny unique na `properties (source_id)`"). Pin na `meta: {}` dokázaný v oboch smeroch: po dočasnom vrátení literálu test padol, po obnovení prešiel. Z matice odstránený zastaraný duplicitný riadok „Gmail pull" („chýba plánovač v repozitári"), ktorý si protirečil s riadkom pod ním (plánovač v `vercel.json:70` a route existujú).
+**NEDOKONČENÉ — potrebujem povolenie:** zmazanie mŕtveho kódu (`LeadService.ts`, `EventStore.ts`, `002_event_store.sql`, plus osirené `LeadsRepository.ts` a `SupabaseLeadsRepository.ts`) zablokoval harness ako `[Irreversible Local Destruction]`. Nič sa nezmazalo, nič sa nestratilo.
+**Otvorené s GO bránou:** aplikovať `20260617120000` na PROD (mapovanie všetkých ciest + dôkaz pred/po) · zmazanie mŕtveho kódu · stále na founderovi: `RESEND_API_KEY`, šesť `GOOGLE_GMAIL_INBOUND_*`, Stripe live katalóg, export z Realvie.
+
+## 2026-10-20 — PREFLIGHT AUDIT + CRON-TRUTH-01: PR sa nehromadia, hromadí sa medzera merge→účinok (BUILD, draft)
+**GO:** founder poslal REVOLIS MASTER META-PROMPT v2.0 — Phase Zero read-only preflight, potom jedna úloha s kontraktom. Preflight nezmenil v repozitári nič (`git status` 0).
+**Hypotéza foundera je z polovice VYVRÁTENÁ (ZMERANÉ, GitHub REST):** 800 PR za 5 mesiacov, **728 zmergovaných**, 48 zavretých bez merge, **24 otvorených** (3 %). Merge rate kopíruje tempo otvárania → PR nie sú úzke hrdlo. Z 24 otvorených je 13 `dirty`, 3 s červeným CI, tri najstaršie z 11. 6. 2026.
+**Čo sa naozaj hromadí (ZMERANÉ, Supabase):** medzera medzi mergom a účinkom. Za 14 dní **51 behov cronov, 1 `ok`**. PROD: 7 agentúr, **0 so Stripe predplatným, 0 s trialom, 0 self-serve**, 524 leadov (1 za 14 dní), **0 `outbound_messages`**, **1 `events`**. Migrácie **138 v repe vs 78 aplikovaných**, pričom najnovšia aplikovaná je → aplikovalo sa výberovo.
+**Nový P1 nález (ZMERANÉ):** `compute_bri_score` robí `ON CONFLICT (profile_id, lead_id)`, ale `lead_scores` má len `UNIQUE (lead_id)` + `PRIMARY KEY (id)` → funkcia padá zakaždým, 3 z 3 pokusov. Oprava = migrácia, čaká na GO.
+**Čo NIE JE nález (overené, aby sa to netiahlo):** 36× `rls_enabled_no_policy` je INFO a **fail-closed**; `profile_agencies_for_auth()` filtruje cez `auth.uid()` (pre anon prázdno); `get_valuation_tenant(slug)` vracia zámerne verejný branding. Ani jedna z tých „bezpečnostných" položiek nie je diera. Reálny WARN: vypnutá ochrana proti uniknutým heslám.
+**CRON-TRUTH-01 (dodané):** `deriveCronStatus` vracalo `failed` vždy pri `written === 0 && eligible > 0` — teda aj behu, ktorý kandidátov zvážil a legitímne nemal čo robiť (`follow-up-sweep`, `planned: 0`, cooldown 7 dní). Falošná červená nie je neškodná: utopili sa v nej 3 skutočné pády `recompute-bri`. `failed` odteraz vyžaduje `failed > 0`. Nový stav `noop` by znamenal migráciu (`cron_runs.status` má CHECK na štyri hodnoty), preto `empty` + dôvod v `detail`.
+**Dôkaz:** 6 nových testov + 2 existujúce suity nezmenené (25/25), regresia dokázaná v oboch smeroch (po vypnutí riadku test padol, po obnovení prešiel), `prepush-gate.sh` VŠETKO PREŠLO.
+**Pravidlo, ktoré z toho platí:** merge nie je koniec. Zelené CI, zmergovaný PR a nasadený build sú tri rôzne veci a ani jedna z nich nie je dôkaz, že to u zákazníka funguje. Jediný dôkaz je riadok v PROD.
+**Otvorené s GO bránou:** `merguj 885` · `GO SOURCE-ID-INDEX` · oprava `compute_bri_score` (migrácia) · povolenie zmazať mŕtvy kód · Stripe krok C, `RESEND_API_KEY`, 6× `GOOGLE_GMAIL_INBOUND_*`.
+
+## 2026-10-20 — BRI-ONCONFLICT: obe skórovacie funkcie padali na neexistujúci constraint (BUILD, draft, čaká na GO na PROD)
+**GO:** founder „GO BRI-ONCONFLIC".
+**Chyba (ZMERANÉ):** `compute_bri_score` aj `compute_bri_score_v2` upsertujú do `lead_scores` s `ON CONFLICT (profile_id, lead_id)`. Tabuľka má len `PRIMARY KEY (id)` a `UNIQUE (lead_id)` → obe funkcie padajú pri KAŽDOM volaní. Cron `recompute-bri` 3 z 3 `failed`, `lead_scores` **0 riadkov** — BRI skóre nikdy nevzniklo.
+**Pôvod:** tabuľku zakladajú DVE migrácie, obe `CREATE TABLE IF NOT EXISTS`. `20260418_enterprise_ai_intelligence.sql` (`UNIQUE (lead_id)`) bola prvá a vyhrala; z `20260425231407_event_pipeline.sql` (`UNIQUE (profile_id, lead_id)`) prešli len `ADD COLUMN` — preto je `profile_id` nullable a composite nikdy nevznikol.
+**Čo som NEurobil a prečo:** nepridal ani nezmenil constraint. Na tabuľke sedia traja zapisovatelia s dvoma nezlučiteľnými kľúčmi — obe BRI funkcie chcú `(profile_id, lead_id)`, `enterprise-intelligence-store.ts` (`/api/ai/process-lead`) chce `lead_id`. Pridať composite rozbije tretieho pri druhom profile na tom istom leade; zahodiť `UNIQUE (lead_id)` ho rozbije rovno. **Oba smery vymenia jednu rozbitú cestu za inú.**
+**Oprava:** cieliť konflikt na kľúč, ktorý EXISTUJE — `ON CONFLICT (lead_id)` + `profile_id = EXCLUDED.profile_id` v `DO UPDATE`. Je to aj správny kľúč podľa modelu: `leads.assigned_profile_id` priraďuje lead jednému profilu a `batchRecomputeBRI` skóruje len leady toho profilu. Prepis `profile_id` rieši prepis leadu na iného makléra. Žiadny `ALTER TABLE`, žiadny `DROP`.
+**Prečo migrácia PATCHUJE živú definíciu (`pg_get_functiondef` + `replace`) a neprepisuje ju kópiou z repa:** v PROD je 78 zo 138 migrácií, takže živé telo sa môže líšiť od ktoréhokoľvek súboru v repe a kópia by potichu vrátila späť neznáme zmeny. Migrácia `RAISE EXCEPTION`, keď podreťazec nenájde; celé v `BEGIN/COMMIT` s overením na konci.
+**Dôkaz (read-only dry run proti PROD):** tá istá dvojica `replace()` ako `SELECT`. v1 3133→3165, v2 9383→9415, oba **+32**, zlý cieľ preč, správny cieľ aj prepis vlastníka prítomné, a **práve jeden `DO UPDATE SET`** v každej funkcii → druhý `replace` nemal čo iné zasiahnuť. 6 verifikačných pinov zelených; strážny regex overený oproti skutočným historickým previnilcom (`20260425231407`, `20260425231426`) a neoznačí túto opravu.
+**NEZMERANÉ:** správanie migrácie po aplikovaní (bez Dockera `prepush-gate` hlási migrácie NEOVERENÉ). **Poctivo:** oprava odstráni pád, neprinesie skóre — `events` má 1 riadok, takže BRI by aj tak dalo takmer všetkým rovnakú hodnotu.
+**Opravujem svoj vlastný návrh:** pri GO som písal, že si budem pýtať rozhodnutie „pridať vedľa vs nahradiť constraint". Pre-flight ukázal, že ani jedno nie je potrebné ani bezpečné — rozhodnutie teda nepotrebujem a nepýtam si ho.
+
+## 2026-10-18 — VLNY-AB: reporty z overených nálezov, nie z výstupu swarmu (BUILD, draft)
+**GO:** founder zvolil variant **A** — „zastaviť vlny a reporty napíšem z toho, čo mám; nosné tvrdenia si overím sám priamo v PROD".
+**Čo som premeral sám v tom istom turne** (PROD `ypgajkhqtbriqqmyawyv`, iba čítanie):
+- `realvia_metrics`: 1 077 riadkov, processed **1 543**, ok **256**, fail **1 287**, `ok+fail = 1543`, **83,41 %**, 2026-05-21 → 2026-10-14.
+- Mesačne: máj 92,5 % (1 189 fail) · jún 36,0 % (9) · júl 0 % · aug 0 % · **sep 58,9 % (89)** · **okt 16 pokusov / 0 fail**.
+- `realvia_metrics.meta` neprázdne v **0 z 1 077** riadkov → per-attempt príčina nie je uložená NIKDE.
+- `realvia_processing_queue`: 253 riadkov, **5** s textom chyby, **2** nad `max_retries`, max `retry_count` **518**, 0 pending, 1 failed.
+- `to_regclass`: `events` ✅ `outbound_messages` ✅ `event_store` ❌ `outreach_messages` ❌.
+**Čo som opravil na SEBE (druhýkrát v tej istej veci):** v #864 som napísal „jún – dnes 38,1 %" ako jeden riadok. Ten agregát **zakrýval september** (89 zlyhaní, 58,9 %). Máj + september nesú 1 278 z 1 287 zlyhaní; september je samostatná novšia udalosť, nie dozvuk mája. Prvá chyba bolo dvojité započítanie (45 %), druhá bol priveľmi hrubý agregát — oba razy to vyzeralo ako meranie.
+**Čo NEOBSTÁLO:** retry-slučka ako *príčina*. Obstál bug (518 a 215 pri `max_retries = 3`), nie kauzalita: 518+215 = **733** retry nepokryje **1 287** zlyhaní, oba poison riadky sú `completed` s `processed_at` 2026-05-23 14:45, ale **322 májových zlyhaní prišlo 26.–28. 5.**, a september má iný text chyby (`idx_properties_source_id_unique`). Do matice preto ide len zmerané, bez príbehu.
+**Vlna B — z troch „chýbajúcich tabuliek" obstala jedna:** (1) `event_store` REÁLNE: `EventStore.ts` píše do tabuľky, ktorá v PROD nie je; nepadá to len preto, že jeho jediný konzument `LeadService` **nikto neimportuje** → mŕtvy kód. (2) `outreach_messages` **FANTÓM**: 0 výskytov v celom repozitári, 0 v PROD. (3) navigačné oprávnenia **UŽ OPRAVENÉ** 2026-10-05 (`d03cc47`, #817): `UNKNOWN_TEAM_PERMISSIONS` 7× `false`, 3 miesta v `AppSidebar`, 4 v `/api/nav/permissions`, pin `trial-gate-closed.test.ts:94`.
+**Cena metódy:** vlny A+B = **87 agentov, 729,5 k tokenov, 1 h 56 min**. Môj odhad vopred bol „2 orchestrátori + 4–6 workerov" — **rádový omyl, môj**. Výnos po overení: 1 reálny nález, 1 fantóm, 1 trinásť dní staré opravené, 1 vyvrátený kauzálny príbeh, 1 oprava môjho agregátu.
+**Pravidlo, ktoré z toho platí:** výstup swarmu je **hypotéza so smerom**, nie zistenie. Nosné tvrdenie premerať sám; 1–2 workeri na zúženie priestoru sú lacnejší než 87 agentov na nálezy, ktoré aj tak overujem jeden po druhom.
+**Výstup:** `docs/reports/2026-10-18-vlna-a-realvia-zlyhania.md`, `docs/reports/2026-10-18-vlna-b-mrtvy-kod-a-fantomy.md`, oprava riadku Realvia v `capability-truth-matrix.md`. **#864 je starší a konfliktný (`dirty`) draft tej istej opravy — nahrádza ho tento PR, odporúčam ho zavrieť.**
+**Otvorené (každé samostatná stena s GO):** export z Realvie od dodávateľa · stĺpec s príčinou v `realvia_metrics` (migrácia) · pin na `idx_properties_source_id_unique` · zmazanie `LeadService`/`EventStore`/`002_event_store.sql`.
+
+## 2026-10-17 — www.revolis.ai SEO (canonical, robots, sitemap) (BUILD, draft)
+**GO:** zadanie Cloud Agent — jeden draft PR, nemergovať. **RAU:** GO_REQUIRED kvôli slovu merge; merge nerobím.
+**Ústava v2:** oprava indexácie existujúceho webu (GSC), nie nová featura pre klienta. Timing OK. Q1 neplatí ako veto — bez www canonical Google indexuje apex.
+**Rozhodnutie:** BUILD na vetve. Apex 308 nehádzať do next.config — 307 ide z Vercel Domains (`server: Vercel`, 0 host redirectov v repe). Sitemap len overené 200 URL na www (`/`, `/demo`, `/balik`). `app.revolis.ai` nedotknuté.
+**Výstup:** `docs/reports/2026-10-17-marketing-www-seo.md`.
 
 ## 2026-10-16 — Vercel Hobby plán obmedzuje crony na raz denne (ZMERANÉ, nie odhad)
 **Ako sa to zistilo:** uvažoval som, že keďže na PROD preukázateľne beží ≥ 5 rôznych cronov, účet nemôže byť Hobby (Hobby má strop 2 crony), a naplánoval som oba nové crony hodinovo. Vercel odmietol **oba buildy**: „Hobby accounts are limited to daily cron jobs. This cron expression (20 * * * *) would run more than once per day."
@@ -6562,3 +6777,145 @@ neoverím: či je endpoint registrovaný na `email.opened` a `email.clicked`,
 a či je pre odosielaciu doménu zapnuté Open/Click tracking (v Resende je
 vypnuté by default). `RESEND_WEBHOOK_SECRET` v produkcii **je** — typ
 `sensitive`, target production + preview, overené cez Vercel API.
+
+
+## [2026-10-09] DEC-20261009-001 — Agentné vlny: plán a rozsah
+**Rozhodnutie foundera:** platí **1 platiaca kancelária** (nie 3). Žiadne rozhovory s tromi kanceláriami.
+Cenník draft #822 (Start 25 / Team 60 / Kancelária 149 / Sieť 349+, kredity) je vstup; ceny, Stripe a billing sú mimo nočných vĺn.
+**Rozsah:** plán + Vlna 0 read-only; oblasti: vstup, akcia, demand, dôvera. Plán: `docs/plans/2026-10-09-agentic-waves.md`.
+**Stav zaradenia:** WP-1…WP-6 = PREDBEŽNE BUILD (podľa P02 pred každým štartom); persistencia `/api/realvia/import`, generátor popisov/staging, routing a hromadný outbound = BACKLOG; „Revenue Control Tower“ = max VALIDATE. Formálne skóre Ústavy v2 (12 otázok) sa ešte nespravilo.
+**Neuzavreté:** `DEC-20260925-001` (MRR 597 € z 3 kancelárií) nesedí s 1 platiacou kanceláriou — treba opraviť po overení.
+
+
+## [2026-10-09] DEC-20261009-002 — Vlna 1 zmergovaná; Strážca follow-upu = BACKLOG/merať
+**Merge:** na „merguj blok 1" boli zmergované #836–#841 (zelené CI, squash). PROD sa nemenil, P18 nebežal.
+**WP-5 verdikt (Ústava v2, z dokumentov agenta):** stavba Strážcu follow-upu = BACKLOG (veto „príliš skoro", chýbajú dáta o reálnych dopytoch); najprv merať čas do prvej reakcie a opýtať sa kancelárie. Fáza stavby zamknutá.
+**Opravy auditu:** pole prvej reakcie existuje (`lead_events.contact_attempted`), `agent-specs.ts` má 7 agentov. Formálne skóre Ústavy pre WP-1…WP-4 a WP-6 sa nespravilo (opravy/audity/balíky bez nového scope).
+---
+
+## 2026-10-05 — „2260": príčina nájdená a reprodukovaná (chyba minifikátora SWC)
+
+GO na vyšetrenie. Štyri noci po sebe (2.–5. 10.) zapísal cron `recompute-bri`
+do `cron_runs` vetu, ktorej chýbal presne fragment `, prah pre horúci lead je `,
+takže v denníku stálo nezmyselné „strop bez eventov je 2260" — čísla 22 a 60
+zlepené. Zdroj pritom vracal celú vetu.
+
+### Príčina
+
+**Minifikátor SWC, ktorý Next používa na produkčný build** (`compress: true`).
+Keď skladá zreťazené template literály, v ktorých sú interpolované
+**konštanty známe v čase buildu**, zloží ich do jedného reťazca — a pri tom
+zahodí statický text medzi dvoma takto zloženými interpoláciami.
+
+Reprodukované cez `next/dist/build/swc` (Next 16.2.4), na čistom ASCII, takže
+diakritika ani kódovanie v tom nehrajú rolu:
+
+```
+vstup:   'a' + `b${X}T` + `${Y}c`      X = 22, Y = 60  (const)
+výstup:  "ab2260c"                     ← T zmizlo
+```
+
+### Presné pravidlo, kedy to nastane
+
+| vzor | výsledok |
+|---|---|
+| `` `b${KONST}T` + `${KONST}c` `` | **T zmizne** |
+| `` `b${KONST}T` + 'plain string' `` | v poriadku |
+| `` `b${runtime}T` + `${runtime}c` `` | v poriadku (nedá sa zložiť) |
+| `` `b${KONST}T` + `${runtime}c` `` | v poriadku |
+| tri literály s konštantami | zmiznú **oba** stredné texty |
+
+Podmienka je teda úzka: **obe** strany hranice musia byť konštanty známe
+v čase buildu a oba fragmenty musia byť template literály.
+
+### Rozsah v repe
+
+Prehľadané všetky `.ts`/`.tsx` v `apps/` a `packages/`. 15 miest má tvar
+„literál končiaci textom za `${…}` + ďalší literál". Z nich interpoluje
+konštantu jediné — `rescore-lead.ts:58` (`AI_ASSISTANT_NAME`) — a tam
+nasleduje **obyčajný reťazec**, nie template literál, čo je podľa tabuľky
+vyššie bezpečné. Ostatných 14 interpoluje runtime hodnoty
+(`lead.*`, `input.*`, `ctx.action`, `process.env`…).
+
+**Zasiahnuté miesto bolo teda v repe jediné** a #805 ho odstránilo tým, že
+vetu prepísalo na jeden template literál. Overené: po oprave minifikátor text
+zachová.
+
+### Prečo to štyri dni nikto nevidel
+
+Test kontroloval `toContain('22')` a `toContain('60')`. Reťazec „2260"
+obsahuje oboje. #805 to zmenil na rovnosť plus kontrolu samotnej kontroly.
+
+### Čo si z toho odniesť
+
+Lokálne spustenie funkcie nie je dôkaz o produkcii. `vitest` beží nad
+zdrojom, produkcia nad minifikovaným buildom — a toto je trieda chýb, ktorá
+existuje **iba** v tom druhom. Pri čomkoľvek, čoho výstup je text závislý na
+konštantách, je dôkazom až minifikovaný výstup alebo hodnota z PROD.
+
+---
+
+## REALVIA-SEC-01 — Realviine prihlasovacie údaje v logoch a DB (2026-10-07)
+
+**Ako sa to našlo.** Founder priniesol plán od ChatGPT (Sol) s piatimi bodmi.
+Audit proti kódu na `main` (`98eea03c`) dal tri body platné, jeden
+nereprodukovateľný a jeden nález, ktorý plán minul — a práve ten bol
+najzávažnejší.
+
+**Nález (opravené).** `collectRequestHeaders` (`lib/realvia/validate.ts`)
+redagovala `authorization`, `x-revolis-secret` a všetko s `secret`/`password`,
+ale **nie `identifikator`/`identifikator2`** — a tie sú PRIMÁRNA produkčná
+autentifikácia Realvie (Mode 1 vo `validateSecret`). Tá istá mapa hlavičiek
+ide do `logInfo('[realvia-webhook] Incoming headers')` **pri každom doručení**
+aj do `headers_json` v `realvia_webhook_logs`. Credentials boli teda čitateľné
+v logoch aj v DB. Opravené prefixovou kontrolou (`identifikator*`), nie
+zoznamom presných mien — `identifikator3` by zoznam ticho obišiel.
+
+**Diera bola zamknutá testom.** `validate.test.ts` tvrdil
+`expect(headers.identifikator).toBe('id1')` — teda PRIKAZOVAL, aby sa
+credential vypísal. CI to dva roky považovalo za správne chovanie. Druhý
+prípad po „2260" (#816), kde test nie že chybu nenašel, ale ju držal.
+**Poučenie: pri bezpečnostnej oprave si vždy prečítaj, čo existujúci test
+vlastne tvrdí — môže byť na strane chyby.**
+
+**Druhá zmena.** `?dump=headers` bol bez autentifikácie. Sám credentials
+neprezradí (vracia hlavičky VOLAJÚCEHO, nie Realviine — Sol túto severitu
+nadhodnotil), ale komukoľvek vypísal Vercel metadáta nášho nasadenia.
+Teraz za `CRON_SECRET`, rovnako ako `diag=config`. Verejný health check bez
+parametra zostáva — Realvia aj uptime monitor ním overujú, že endpoint žije.
+
+**Tretia zmena — heartbeat vidí aj spracovanie, nie len prítok.**
+Pôvodne som founderovi napísal, že `heartbeat-check` nemá „ani jednu zmienku
+o Realvii". **Bolo to nesprávne a opravené:** grepol som 25-riadkovú route,
+nie `lib/infra/platform-heartbeat.ts`, kam deleguje — tam už existovali
+`realviaLastWebhookAt`, `realviaWebhookTotal` a signály na 48 h/7 d ticho.
+Chýbalo štvoro a to je doplnené: `realviaQueuePending`, `realviaQueueFailed`,
+`realviaLastWorkerRunAt`, `realviaPropertiesUpdated24h`, plus dva signály —
+`realvia_queue_failed_jobs` (critical pri ≥1, lebo `max_retries` je 3 a čo
+spadlo do `failed`, sa samo nepohne) a `realvia_worker_stale_2h` (critical len
+keď front NIEČO čaká; prázdna rada bez behu nie je porucha). Oboje za rovnakou
+bránou ako existujúce realvia signály (`realviaWebhookTotal > 0`), aby tenant
+bez Realvie nedostal falošný alarm.
+
+`realvia_processing_queue` **nemá `agency_id`** → tieto tri metriky sú
+platformové, nescopujú sa. Properties sa scopovať dajú a počítajú sa cez
+`realvia_updated_at`, ktorý píše výlučne realvianá cesta.
+
+**Čo z plánu vypadlo a prečo.** Sol navrhoval „vyčistiť build/lint blokery
+(`useRealtimeLeadScore.ts`, stale `.next` typy)". **Nereprodukovateľné:**
+`npm run lint` v `apps/crm` skončil exit 0 bez výstupu, typecheck 49 chýb
+proti baseline 54, CI „Lint, test, build" zelené na každom heade dva dni.
+Bod škrtnutý — oprava toho, čo nie je rozbité, je nesprávna investícia.
+
+**Dôkaz.** 28 testov v troch dotknutých suitách; celý balík 3205 prešlo,
+8 zlyhaní je nemenná množina integračných/RLS testov vyžadujúcich lokálnu
+Supabase (`TEST_SUPABASE_*`), ktoré CI nespúšťa. Typecheck 49 (nepridal som
+ani jednu chybu — prvý beh mal 50, nový `HeartbeatMetrics` fixture
+v `guardian.test.ts` doplnený). Lint exit 0.
+
+**Neoverené, zámerne.** Či Realvia naozaj posiela na `www.revolis.ai` namiesto
+`app.revolis.ai` (Solov bod 3). Mechanizmus drží — `apps/marketing` nemá ani
+jednu API route, takže `/api/webhooks/realvia` tam je 404 — ale čo je nastavené
+na strane Realvie, z repa vidieť nedá a živý probe produkcie bol zamietnutý.
+Autorizovaný E2E smoke (Solov bod 2) je ďalšia brána a potrebuje produkčný
+`CRON_SECRET` ako env premennú session, nie v chate.

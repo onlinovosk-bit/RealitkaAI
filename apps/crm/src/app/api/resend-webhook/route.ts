@@ -23,6 +23,8 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { recordEmailEngagement } from "@/lib/events/email-engagement";
 import { verifyStandardWebhook } from "@/lib/webhooks/standard-webhooks";
 import { storeReply } from "@/lib/email-tracking";
+import { createServiceRoleClient } from "@/lib/supabase/admin";
+import { addSuppression, GLOBAL_SCOPE, type SuppressionReason } from "@/lib/email/suppression";
 
 export const runtime = "nodejs";
 
@@ -90,6 +92,44 @@ export async function POST(req: NextRequest) {
       recorded: result.recorded,
       reason:   result.reason,
     });
+  }
+
+  // EMAIL-SUPPRESSION-01: tvrdý bounce, sťažnosť na spam a potlačenie u Resendu
+  // idú na globálny zoznam — adresa je nedoručiteľná alebo nechcená pre všetkých
+  // odosielateľov. Mäkký bounce (Transient/Undetermined) sa nezapisuje: ide o
+  // dočasný stav, trvalé potlačenie by pripravilo o zákazníka kvôli plnej schránke.
+  if (type === "email.bounced" || type === "email.complained" || type === "email.suppressed") {
+    const bounceType = (data?.bounce as { type?: unknown } | undefined)?.type;
+    if (type === "email.bounced" && bounceType !== "Permanent") {
+      return NextResponse.json({ ok: true, handled: type, recorded: false, reason: "nie je tvrdý bounce" });
+    }
+
+    const rawTo = data?.to;
+    const recipients = (Array.isArray(rawTo) ? rawTo : [rawTo]).filter(
+      (v): v is string => typeof v === "string" && v.trim() !== "",
+    );
+    if (recipients.length === 0) {
+      return NextResponse.json({ ok: true, handled: type, recorded: false, reason: "bez adresáta" });
+    }
+
+    const admin = createServiceRoleClient();
+    if (!admin) {
+      // 503 → Resend webhook zopakuje; zahodiť bounce by znamenalo posielať ďalej.
+      console.error("[resend-webhook] service role klient nie je dostupný");
+      return NextResponse.json({ ok: false, error: "Zápis nie je dostupný." }, { status: 503 });
+    }
+
+    const reason: SuppressionReason =
+      type === "email.bounced" ? "hard_bounce" : type === "email.complained" ? "complaint" : "suppressed";
+    const results = await Promise.all(
+      recipients.map((email) =>
+        addSuppression(admin, { email, scopeKey: GLOBAL_SCOPE, reason, source: "resend-webhook" }),
+      ),
+    );
+    if (results.some((r) => !r.ok)) {
+      return NextResponse.json({ ok: false, error: "Zápis zlyhal." }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true, handled: type, recorded: true, count: recipients.length });
   }
 
   // Legacy / custom payload: { to, text, date }
