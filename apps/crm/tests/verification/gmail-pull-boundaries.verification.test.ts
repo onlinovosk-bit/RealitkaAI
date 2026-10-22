@@ -18,7 +18,7 @@ describe("[verification] Gmail pull — hranice čítania", () => {
     expect(src).toContain("newer_than:");
     expect(src).toContain("if (!labelId) throw new Error(\"label_id_required\")");
     // správa vrátená bez nášho štítku sa neposiela
-    expect(src).toContain("(msg.labelIds ?? []).includes(cfg.labelId)");
+    expect(src).toContain("(msg.labelIds ?? []).includes(labelId)");
   });
 
   it("bez pamäte spracovaných správ nečíta (fail-closed)", () => {

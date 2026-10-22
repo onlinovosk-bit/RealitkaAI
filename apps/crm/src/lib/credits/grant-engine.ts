@@ -92,13 +92,22 @@ export function monthlyGrantAmountForAgency(agency: AgencyCreditRow): number {
   });
 }
 
+export type GrantMonthlyResult = {
+  granted: number;
+  skipped: boolean;
+  /** Hard failure — caller must mark the cycle failed so cron retries. */
+  error?: string;
+};
+
 /** Idempotentný mesačný grant (1. deň mesiaca). */
 export async function grantMonthlyCreditsForAgency(
   agency: AgencyCreditRow,
   periodKey: string,
-): Promise<{ granted: number; skipped: boolean }> {
+): Promise<GrantMonthlyResult> {
   const supabase = createServiceRoleClient();
-  if (!supabase) return { granted: 0, skipped: true };
+  if (!supabase) {
+    return { granted: 0, skipped: true, error: "service_unavailable" };
+  }
 
   const amount = monthlyGrantAmountForAgency(agency);
 
@@ -119,7 +128,13 @@ export async function grantMonthlyCreditsForAgency(
 
   if (!result.ok) {
     console.warn("[grant-engine] monthly grant:", result.error);
-    return { granted: 0, skipped: true };
+    // Soft `skipped` (amount<=0 / already granted) must NOT look like success to the
+    // monthly cycle — without `error`, cron returns HTTP 200 and Vercel never retries.
+    return {
+      granted: 0,
+      skipped: true,
+      error: result.error ?? "grant_failed",
+    };
   }
   if (result.skipped) return { granted: 0, skipped: true };
   return { granted: result.granted ?? amount, skipped: false };
