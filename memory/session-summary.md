@@ -1,3 +1,16 @@
+## Session 2026-10-22 (LICENCE-V3-SSOT)
+### Dokončené
+- Cenník licencie v3 (jeden produkt „Revolis licencia", Graduated, mesiac/rok, kupón 25 %) v kóde + JSON manifest + test s referenčnými sumami zo Stripe TEST režimu (10/10).
+### Rozpracované / Pending
+- Checkout stále číta `STRIPE_PRICE_*` (seat/cockpit/kredity) — prepnutie na lookup key čaká na GO.
+- Otvorené: mesačná 31–50 (4,80 €) > 21–30 (4,60 €); ročná 21–30 = 53,33 €/ks + 0,03 € mimo pravidla 10×.
+- Live Stripe: produkt, 2 ceny a kupón zatiaľ nevytvorené (founder posiela price_ ID a ID kupónu).
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/licence-v3-pricing.ts` (nový), `scripts/ops/stripe-expected-licence-v3.json` (nový),
+  `apps/crm/tests/verification/licence-v3-pricing.verification.test.ts` (nový), `apps/crm/docs/pricing-v1.md`, `memory/decisions.md`.
+### Ďalší krok
+Founder odpovie na 2 otvorené body cien → GO na zapojenie checkoutu na lookup key.
+
 ## Session 2026-10-01 (LEAD-PIPELINE-AFTER)
 ### Dokončené
 - **LEAD-PIPELINE-AFTER** (GO foundera, jedna stena): `runAfterResponse` (`after()`, sekvenčne, izolované chyby) namiesto `void` v 5 trasách

@@ -1,5 +1,18 @@
 # Critical Decisions Log
 
+## [2026-10-22] LICENCE-V3-SSOT — cenník licencie v3 do kódu + manifest (BUILD, GO foundera „Úprav repo"; checkout NEZAPOJENÝ)
+
+**Brána Ústavy v2:** zákazník potrebuje jednoduchý cenník pre predaj pásmami (1 produkt, počet maklérov = množstvo); nie „príliš skoro".
+Rozsah zámerne len SSOT + dôkaz súm — prepnutie checkoutu zo `STRIPE_PRICE_*` na lookup key je samostatné GO (dotýka sa webhooku, `agencies.seats`, upgrade stránky).
+
+**Čo:** `apps/crm/src/lib/licence-v3-pricing.ts` (pásma v centoch, `licenceV3ChargeCents`, kupón 25 %), `scripts/ops/stripe-expected-licence-v3.json`,
+`apps/crm/tests/verification/licence-v3-pricing.verification.test.ts` (10 testov: referenčné sumy zo Stripe TEST režimu, drift kód↔manifest), sekcia v `apps/crm/docs/pricing-v1.md`.
+Existujúci `stripe-expected-prices.json` a seat/cockpit/kredity kód nedotknuté.
+
+**Otvorené pre foundera:** (1) mesačná 31–50 = 4,80 €/ks je vyššia než 21–30 = 4,60 €/ks; (2) ročná 21–30 = 53,33 €/ks + 0,03 € porušuje pravidlo 10× mesačná;
+(3) verify skript Graduated cenu neoverí (hľadá `unit_amount`). Kód prepisuje tabuľku presne tak, ako je schválená.
+**Dôkaz:** 10/10 testov (vitest 4, lokálne), 30 maklérov mesačne = 250 €, ročne po kupóne 1 930,00 €. Live Stripe, Vercel ani checkout nedotknuté.
+
 ## [2026-10-01] SCOREBOARD — „prvá reakcia na lead" (lead → AI triáž → AI návrh → potvrdenie klientovi → viditeľnosť): 30 % dokázané v PROD
 
 **Metóda (aby sa dalo prepočítať, nie veriť):** 10 kontrolných bodov. ✅ = dokázané v PROD, 🟡 = postavené/zmergované, ale nedokázané alebo čiastočné,

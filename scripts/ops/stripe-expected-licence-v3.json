@@ -1,0 +1,40 @@
+{
+  "_comment": "Revolis licencia v3 — co ma byt v Stripe (jeden produkt, dve opakovane Graduated ceny, dan Exclusive). Sumy v centoch. Drift voci kodu (apps/crm/src/lib/licence-v3-pricing.ts) strazi apps/crm/tests/verification/licence-v3-pricing.verification.test.ts. Existujuci stripe-expected-prices.json (seat/cockpit/kredity) sa NEMENI - verify skript hlada ceny podla unit_amount a tiered cenu overit nevie.",
+  "product": "Revolis licencia",
+  "tax_behavior": "exclusive",
+  "coupon": { "percent_off": 25, "duration": "once", "redeem_by": "2026-12-31", "applies_to": "Revolis licencia" },
+  "prices": [
+    {
+      "lookup_key": "revolis_v3_licence_month",
+      "interval": "month",
+      "billing_scheme": "tiered",
+      "tiers_mode": "graduated",
+      "tiers": [
+        { "up_to": 1, "unit_amount": 0, "flat_amount": 3000 },
+        { "up_to": 2, "unit_amount": 0, "flat_amount": 3000 },
+        { "up_to": 5, "unit_amount": 0, "flat_amount": 1800 },
+        { "up_to": 10, "unit_amount": 1080, "flat_amount": 0 },
+        { "up_to": 20, "unit_amount": 720, "flat_amount": 0 },
+        { "up_to": 30, "unit_amount": 460, "flat_amount": 0 },
+        { "up_to": 50, "unit_amount": 480, "flat_amount": 0 },
+        { "up_to": "inf", "unit_amount": 360, "flat_amount": 0 }
+      ]
+    },
+    {
+      "lookup_key": "revolis_v3_licence_year",
+      "interval": "year",
+      "billing_scheme": "tiered",
+      "tiers_mode": "graduated",
+      "tiers": [
+        { "up_to": 1, "unit_amount": 0, "flat_amount": 30000 },
+        { "up_to": 2, "unit_amount": 0, "flat_amount": 30000 },
+        { "up_to": 5, "unit_amount": 0, "flat_amount": 18000 },
+        { "up_to": 10, "unit_amount": 10800, "flat_amount": 0 },
+        { "up_to": 20, "unit_amount": 7200, "flat_amount": 0 },
+        { "up_to": 30, "unit_amount": 5333, "flat_amount": 3 },
+        { "up_to": 50, "unit_amount": 4800, "flat_amount": 0 },
+        { "up_to": "inf", "unit_amount": 3600, "flat_amount": 0 }
+      ]
+    }
+  ]
+}

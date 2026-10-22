@@ -125,3 +125,33 @@ Env: `STRIPE_PRICE_OWNER_COCKPIT` (recurring, qty 1, `send_invoice`)
    - `20260611000002_ai_action_audit_cost.sql` (PR-3)
    - `20260611000004_ai_cost_daily.sql` (PR-3)
 4. **Smoke:** seat checkout → webhook → `agencies.seats` + grant cron 1. deň mesiaca.
+
+---
+
+## Licencia v3 — jeden produkt, pásma podľa počtu maklérov (NEZAPOJENÉ do checkoutu)
+
+**Stav:** cenník a overenie súm v kóde (`src/lib/licence-v3-pricing.ts`), manifest `scripts/ops/stripe-expected-licence-v3.json`.
+Checkout stále číta Vrstvu 1 (`STRIPE_PRICE_*_SEAT`). Prepnutie checkoutu = samostatné GO. Staré 4 produkty v Stripe sa neprepisujú ani nearchivujú do spustenia.
+
+Produkt „Revolis licencia", ceny opakované, Tiered → Graduated, Quantity = počet maklérov, daň **Exclusive**.
+Lookup key: `revolis_v3_licence_month` / `revolis_v3_licence_year`. Názvy Start/Team/Kancelária/Sieť sú len na webe.
+
+| Pásmo | Mesačná | Ročná |
+|-------|---------|-------|
+| 1     | paušál 30 € | paušál 300 € |
+| 2     | paušál 30 € | paušál 300 € |
+| 3–5   | paušál 18 € | paušál 180 € |
+| 6–10  | 10,80 €/ks | 108 €/ks |
+| 11–20 | 7,20 €/ks | 72 €/ks |
+| 21–30 | 4,60 €/ks | 53,33 €/ks + paušál 0,03 € |
+| 31–50 | 4,80 €/ks | 48 €/ks |
+| 51+   | 3,60 €/ks | 36 €/ks |
+
+Kupón: 25 %, Duration „Once", len produkt „Revolis licencia", platný do 31. 12. 2026.
+Referenčné sumy zo Stripe TEST režimu (zamknuté testom): 30 maklérov mesačne = 250 €; 2 makléri ročne = 600 €; 30 maklérov ročne po kupóne = 1 930,00 €.
+
+**Otvorené (founder):**
+- Mesačná cena 31–50 (4,80 €/ks) je VYŠŠIA než 21–30 (4,60 €/ks) — pri hranici 30→31 rastie cena za ďalšieho makléra. Zámer, alebo preklep?
+- Ročná cena 21–30 (53,33 €/ks + 0,03 €) nesleduje pravidlo „ročná = 10× mesačná" (ostatné pásma ho dodržiavajú; 10× 4,60 = 46 €). Vyzerá dolaďovaná na 1 930,00 € po kupóne. Zámer?
+- `stripe_verify_prices.py` hľadá ceny podľa `unit_amount`; Graduated cenu overiť nevie. Verify cez lookup key = samostatný krok.
+
