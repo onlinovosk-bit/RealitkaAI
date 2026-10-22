@@ -77,7 +77,7 @@ describe('public/index.html — kampaň cenník v3', () => {
   it('SEO: canonical a og:url na www, CTA vedú na registráciu a nesú UTM', () => {
     expect(html).toContain('<link rel="canonical" href="https://www.revolis.ai/">')
     expect(html).toContain('<meta property="og:url" content="https://www.revolis.ai/">')
-    expect(html).toContain('href="https://realitka-ai.vercel.app/register"')
+    expect(html).toContain('href="https://app.revolis.ai"')
     expect(html).toContain('/^utm_/i.test(k)')
   })
 

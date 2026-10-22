@@ -14,6 +14,7 @@ const PUBLIC_PATHS = new Set([
   "/api/healthz",
   "/api/demo/request",
   "/api/demo/capture-lead",
+  "/api/demo/public-capture",
   "/api/demo/estimate",
   "/api/demo/prefill-links",
   "/api/proof",

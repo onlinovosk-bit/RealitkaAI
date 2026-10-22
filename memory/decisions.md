@@ -105,6 +105,25 @@
 **Rozhodnutie:** roadmap + `LISTING_FROM_PHOTOS_V0` (default OFF) + www copy len o LIVE funkciách. Staging / reel / pôdorys označené missing / not feasible.
 **Výstup:** `docs/strategy/2026-10-20-speed-time-saving-roadmap.md`, `docs/reports/2026-10-20-speed-time-saving.md`.
 
+## 2026-10-15 — API Cost Governor v1 (úzka BUS vrstva) — BUILD
+
+Founder GO: implementovať fail-closed USD bránu pred plateným AI volaním a potom jednu ďalšiu úlohu. Nie je to GO na merge, deploy, produkčný env, nákup kreditov ani auto-reload.
+
+**Rozhodnutie:** nový modul `packages/bus-core/src/cost-governor.ts` vedľa count capu. CLI `scripts/bus/consume.ts` ho volá pred spawnom. Defaultný katalóg je prázdny → neznámy model je BLOCK. Interné limity 0,50 / 5,00 / 25,00 USD nie sú Claude Console bonus 100 USD. Odhad a actual sú oddelené polia. CRM call site sa v tejto vlne nenapájajú.
+
+## Engineering justification: API Cost Governor
+
+- **Trigger:** new-file
+- **Decision path:** new-code
+- **Alternatives considered:** rozšíriť `execution-cap.ts` o USD (zamietnuté — count cap je 24 h okno počtu behov, USD je kalendárny UTC deň/mesiac a iný ledger); použiť `llm-usage-cost.ts` ako cenník (zamietnuté — natvrdo sadzby a fallback na Sonnet, nie overený cenník); nový orchestrátor (zamietnuté — BUS runner už existuje).
+- **Why not reuse:** count cap a control-contract denyList neriešia per-task/day/month USD hold ani actual od providera. DenyList ostáva. Governor ho nekopíruje ako druhú autoritu nad akciami, len odmieta platený spawn pri zakázanom side effecte.
+- **Expected outcome:** `bus:consume` bez platného kontraktu a snapshotu Claude nespustí. Existujúce testy `runConsumer` bez `costGate` ostávajú zelené. CRM cesty ostávajú nepokryté a sú tak označené.
+- **Related paths:** `packages/bus-core/src/cost-governor.ts`, `packages/bus-core/src/execution-cap.ts`, `scripts/bus/consume.ts`, `docs/reports/2026-10-15-api-cost-governor-v1.md`, `docs/architecture/l99-parked-concepts.md` P-MR
+- **Contradiction check:** none — P-MR (plný model router a produkčná cost telemetry) ostáva zaparkovaný. Toto GO povoľuje len BUS spawn. CRM sa neodomkýna.
+- **PR / vetva:** #847 · `cursor/api-cost-governor-v1-0b41` (draft, nemergované)
+
+**Ďalšia úloha v tom istom GO:** CHECKOUT-ENV-01 ostáva neuzavretý (kód seat + v2 stále čaká na Price ID; live Stripe dnes nečítaný). Výstup je read-only checklist `docs/reports/2026-10-15-checkout-env-01-founder-checklist.md`. Odporúčanie: najprv nový read-only verify (voľba C), nie hádanie seat cien.
+
 # Critical Decisions Log
 
 ## 2026-10-05 — GMAIL-CONNECT: pripojenie Gmailu cez Revolis (kód hotový, neaktivované)

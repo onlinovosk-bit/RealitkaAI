@@ -53,23 +53,28 @@ Tento dodatok **prepisuje** ceny, pásma a Stripe kľúče vyššie; zvyšok kon
 | Pásmo | Maklérov | Základ mesačne |
 |---|---|---|
 | `start` | 1 | 2500 |
-| `team` | 2–5 | 6500 spolu |
+| `team` | 2 | 5000 (GO B, #908) |
+| `team` | 3–5 | 6500 spolu |
 | `office` | 6–10 | 6500 + 900 × (n − 5) |
-| `network` | 11+ | 11000 + 600 × (n − 10) pre n ≤ 20; 17000 + 500 × (n − 20) pre n > 20 |
+| `network` | 11–20 | 11000 + 600 × (n − 10) |
+| `network` | 21+ | graduated tarifa A+ (nie vzorec 17000 + 500 × (n − 20)) |
 
-Mesačná platba bez záväzku = základ × 1,2 (presne v centoch); ročná = 12 × základ. Pásmo sa odvodí z počtu: `resolvePricingV2Band(n)` (vyhodí `RangeError` pri neplatnom `n`; `resolvePricingV2BandResult(n)` vracia `{ ok, band }` bez výnimky). Grant kreditov kancelárie ostáva 25 / 60 / 120 / 175 (otvorená otázka foundera).
+Mesačná platba bez záväzku pri 1–20 = základ × 1,2 (presne v centoch); ročná pri 1–20 = 12 × základ. Od 21. makléra (variant A+, GO Andreja 2026-10-21) sú obe obdobia priamo tiery nižšie; ročná suma nie je deliteľná 12 a nie je 10× mesačná. Pásmo sa odvodí z počtu: `resolvePricingV2Band(n)` (vyhodí `RangeError` pri neplatnom `n`; `resolvePricingV2BandResult(n)` vracia `{ ok, band }` bez výnimky). Grant kreditov kancelárie ostáva 25 / 60 / 120 / 175 (otvorená otázka foundera).
 
-**Akcia 9/12:** do `PRICING_V3_PROMO_UNTIL = "2026-12-31T22:59:59Z"` je prvý ročný rok 9 z 12 mesiacov (`annualPromoNetCents = 9 × základ`, `isAnnualPromoActive(now)`). V Stripe to rieši kupón `STRIPE_COUPON_V3_ANNUAL_PROMO` (`percent_off=25`, `duration=once`, `redeem_by` = termín); server ho pridá cez `discounts` len pri `interval=year` a pred termínom (`resolveAnnualPromoCouponId`). `allow_promotion_codes` sa nezapína.
+**Akcia 9/12:** do `PRICING_V3_PROMO_UNTIL = "2026-12-31T22:59:59Z"` je kupón −25 % z ročnej sumy (`duration=once`). Pri 1–20 vyjde presne 9 × základ. Od 21. je to `ročná − round(ročná × 25 / 100)` (30 maklérov = 193000 centov). `isAnnualPromoActive(now)`. V Stripe to rieši kupón `STRIPE_COUPON_V3_ANNUAL_PROMO` (`percent_off=25`, `duration=once`, `redeem_by` = termín, len produkt Revolis licencia); server ho pridá cez `discounts` len pri `interval=year` a pred termínom (`resolveAnnualPromoCouponId`). `allow_promotion_codes` sa nezapína.
 
 **Stripe model:** jeden produkt „Revolis licencia“, dve ceny `billing_scheme=tiered`, `tiers_mode=graduated`, quantity = počet maklérov (`PRICING_V3_SEAT_TIERS`, simulácia `graduatedTierNetCents`; `flat_amount` sa pripočíta raz, keď množstvo zasiahne tier):
 
 | `up_to` | ročná `flat_amount` / `unit_amount` | mesačná `flat_amount` / `unit_amount` |
 |---|---|---|
 | 1 | 30000 / 0 | 3000 / 0 |
-| 5 | 48000 / 0 | 4800 / 0 |
+| 2 | 30000 / 0 | 3000 / 0 |
+| 5 | 18000 / 0 | 1800 / 0 |
 | 10 | 0 / 10800 | 0 / 1080 |
 | 20 | 0 / 7200 | 0 / 720 |
-| inf (`null`) | 0 / 6000 | 0 / 600 |
+| 30 | 3 / 5333 | 0 / 460 |
+| 50 | 0 / 4800 | 0 / 480 |
+| inf (`null`) | 0 / 3600 | 0 / 360 |
 
 **Balíky kreditov** (mesačné opakované, samostatný produkt, kupón sa na ne nevzťahuje, s ročným plánom sa nemiešajú): 50 / 100 / 150 / 200 / 250 / 300 kreditov za 2600 / 5100 / 7400 / 9400 / 11400 / 13100 centov. Samostatný kredit `PRICING_V2_CREDIT_NET_CENTS = 75`. Staré veľkosti 60/120/180/240 parser odmieta.
 

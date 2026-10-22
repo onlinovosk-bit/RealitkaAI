@@ -27,7 +27,7 @@ from urllib.request import Request, urlopen
 
 CATALOG_PATH = Path(__file__).with_name("revolis-stripe-v2-catalog.json")
 API = "https://api.stripe.com/v1"
-CATALOG_VERSION = "revolis_v3_2026_10_19"
+CATALOG_VERSION = "revolis_v3_2026_10_21"
 # Termin akcie 9/12: 2026-12-31T22:59:59Z (= 23:59:59 Europe/Bratislava).
 PROMO_REDEEM_BY = calendar.timegm((2026, 12, 31, 22, 59, 59))
 assert PROMO_REDEEM_BY == 1798757999
@@ -36,8 +36,14 @@ assert PROMO_REDEEM_BY == 1798757999
 # zhodu strazi apps/crm/tests/verification/stripe-v2-catalog.verification.test.ts.
 # Tvar: (up_to, flat_amount, unit_amount); up_to "inf" = bez hornej hranice.
 SEAT_TIERS = {
-    "month": [(1, 3000, 0), (2, 3000, 0), (5, 1800, 0), (10, 0, 1080), (20, 0, 720), ("inf", 0, 600)],
-    "year": [(1, 30000, 0), (2, 30000, 0), (5, 18000, 0), (10, 0, 10800), (20, 0, 7200), ("inf", 0, 6000)],
+    "month": [
+        (1, 3000, 0), (2, 3000, 0), (5, 1800, 0), (10, 0, 1080), (20, 0, 720),
+        (30, 0, 460), (50, 0, 480), ("inf", 0, 360),
+    ],
+    "year": [
+        (1, 30000, 0), (2, 30000, 0), (5, 18000, 0), (10, 0, 10800), (20, 0, 7200),
+        (30, 3, 5333), (50, 0, 4800), ("inf", 0, 3600),
+    ],
 }
 # sku -> (suma v centoch | None pre tiered, kredity | None)
 EXPECTED = {
@@ -113,10 +119,18 @@ def validate():
             assert x["recurring_interval"] == "month", sku
         elif x["kind"] == "one_time_credit":
             assert sku == "credit_unit_one_time" and x["recurring_interval"] is None
-    # Rocna licencia vs mesacna pri kazdom pocte makleru (rovnaky vztah ako licenseNetCents v pricing-v2.ts).
-    for n in range(1, 61):
-        # mesacna = zaklad x 1,2; rocna = 12 x zaklad = 10 x mesacna
+    # Pri 1–20: mesacna = zaklad x 1,2; rocna = 12 x zaklad = 10 x mesacna.
+    # Od 21. (variant A+) su obdobia nezavisle; vztah 10x neplati.
+    for n in range(1, 21):
         assert graduated_cents(SEAT_TIERS["year"], n) == 10 * graduated_cents(SEAT_TIERS["month"], n), n
+    assert graduated_cents(SEAT_TIERS["month"], 30) == 25000
+    assert graduated_cents(SEAT_TIERS["month"], 50) == 34600
+    assert graduated_cents(SEAT_TIERS["month"], 100) == 52600
+    assert graduated_cents(SEAT_TIERS["year"], 30) == 257333
+    assert graduated_cents(SEAT_TIERS["year"], 100) == 533333
+    year_30 = graduated_cents(SEAT_TIERS["year"], 30)
+    discount_30 = int((Decimal(year_30) * Decimal("0.25")).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+    assert year_30 - discount_30 == 193000
     coupons = catalog["coupons"]
     assert len(coupons) == 1
     c = coupons[0]
@@ -135,8 +149,14 @@ def eur(cents):
 def tier_summary(item):
     parts = []
     for up_to, flat, unit in tiers_of(item):
-        what = f"flat {eur(flat)}" if flat else f"{eur(unit)}/ks"
-        parts.append(f"do {up_to}: {what}")
+        bits = []
+        if flat:
+            bits.append(f"flat {eur(flat)}")
+        if unit:
+            bits.append(f"{eur(unit)}/ks")
+        if not bits:
+            bits.append("0.00")
+        parts.append(f"do {up_to}: {' + '.join(bits)}")
     return "; ".join(parts)
 
 
