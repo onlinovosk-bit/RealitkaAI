@@ -44,16 +44,15 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: Stripe krok C — nájsť a odstrániť zmeraný blokátor platieb
+Cieľ: Reverse engineering a discovery systému Revolis (iba čítanie) — 5 dokumentov s dôkazmi
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] 1 — Prečítaná celá cesta kódu checkout → webhook; zistené, ktoré env premenné kód SKUTOČNE číta
-- [x] 2 — Zmeraný stav Vercel Production (17 Stripe/pricing premenných, len názvy a ciele; hodnoty nečítané)
-- [x] 3 — Blokátor pomenovaný: chýba `STRIPE_PRICE_V3_SEAT_MONTHLY`; osem `STRIPE_PRICE_V2_*` je mŕtvych
-- [x] 4 — Zmeraný stav platieb v PROD: 7 agentúr, 0 so `stripe_subscription_id`; spor „1 vs 3 platiace" uzavretý na 0 cez Stripe
-- [x] 5 — Kód overený zelený (69/69) → blokátor je konfigurácia, nie kód
-- [x] 6 — Opravené zastarané dokumenty: riadok Stripe v STATUS.md a plán z 2026-10-16
-- [ ] 7 — Founder vytvorí cenu v LIVE Stripe + pridá `STRIPE_PRICE_V3_SEAT_MONTHLY` + redeploy → `checkoutAvailable: true`
-- [ ] 8 — Testovací nákup end-to-end: platba → webhook → `agencies.subscription_status`
+- [x] 1 — `ARCHITECTURE.md`: mapa systému (monorepo, proxy, multi-tenant, AI vrstva)
+- [x] 2 — `DATA_FLOWS.md`: toky príjem leadu, odchádzajúci e-mail, platby, prierezové mechanizmy
+- [x] 3 — `INTEGRATIONS.md`: 24 verejných ciest, cron autentifikácia, inventár integrácií, CI
+- [x] 4 — `FINDINGS.md`: 29 nálezov (3× P1) s dôkazom, dopadom, overením a krokom
+- [x] 5 — `OPEN_QUESTIONS.md`: 31 otvorených otázok (UNKNOWN) s postupom overenia
+- [x] 6 — Founder: read-only potvrdenie F-02 na `/api/resend-webhook` (snímka GET bez session: `{"ok":false,"error":"Unauthorized"}` z proxy; Resend delivery log zostáva otvorený v Q-01)
+- [x] 7 — GO stena „doručiteľnosť a odhlásenie" v kóde: F-02 bypass + F-01 potlačenie/List-Unsubscribe + bounce/complaint + GDPR analýza; testy 58+164 PASS, lint/typecheck/check-security čisté. **Neaplikované na PROD** (migrácia, `UNSUBSCRIBE_TOKEN_SECRET`, nasadenie čakajú na GO); CI na heade nemerané
 <!-- SESSION:END -->
 
 ## Hotové 2026-10-07 — s dôkazom (REALVIA-SEC-01)

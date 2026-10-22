@@ -12,6 +12,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockResendSend = vi.hoisted(() => vi.fn());
 const mockGenerate = vi.hoisted(() => vi.fn());
 const mockLogAiAction = vi.hoisted(() => vi.fn());
+// Agency id must be a real UUID: the unsubscribe token only signs UUID scopes.
+const AGENCY = vi.hoisted(() => "11111111-1111-4111-8111-111111111111");
 
 vi.mock("resend", () => ({
   Resend: class {
@@ -29,13 +31,24 @@ const audit = vi.hoisted(() => ({
   sentToday: 0 as number,
   lastSentAt: null as string | null,
   error: null as { message: string } | null,
+  suppressed: false,
+  suppressionError: null as { message: string } | null,
 }));
 vi.mock("@/lib/supabase/admin", () => ({
   createServiceRoleClient: () => {
     if (!audit.available) return null;
     const chain: Record<string, unknown> = {};
     const self = () => chain;
-    for (const m of ["from", "eq", "gte", "order", "limit"]) chain[m] = self;
+    for (const m of ["eq", "gte", "order", "limit"]) chain[m] = self;
+    // email_suppressions lookup: from().select().eq().in().limit() is awaited.
+    const supp: Record<string, unknown> = {};
+    for (const m of ["select", "eq", "in", "limit"]) supp[m] = () => supp;
+    supp.then = (res: (v: unknown) => void) =>
+      res({
+        data: audit.suppressed ? [{ reason: "unsubscribe" }] : [],
+        error: audit.suppressionError,
+      });
+    chain.from = (table: string) => (table === "email_suppressions" ? supp : chain);
     chain.select = (_cols: string, opts?: { head?: boolean }) => {
       if (opts?.head) {
         const q: Record<string, unknown> = {};
@@ -65,7 +78,7 @@ vi.mock("@/lib/moat-capture/log-ai-recommendation", () => ({
   hashRecommendationDedupePart: () => "h",
 }));
 vi.mock("@/lib/outbound-orchestrator", () => ({
-  fetchLeadAgencyId: async () => "agency-A",
+  fetchLeadAgencyId: async () => AGENCY,
   outreachLeadCooldownHours: () => 48,
   pickOutboundAbVariant: () => "A",
 }));
@@ -74,6 +87,8 @@ vi.mock("@/lib/leads-store", () => ({
   getLeadAsService: async () => undefined,
 }));
 
+import { verifyUnsubscribeToken } from "@/lib/email/unsubscribe-token";
+import { hashEmail } from "@/lib/email/suppression";
 import { prepareOutreachDraft, sendAiOutreachEmail, sendApprovedOutreach } from "../outreach-store";
 
 function fakeAdmin() {
@@ -93,13 +108,14 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.stubEnv("RESEND_API_KEY", "re_test_key");
   vi.stubEnv("OUTREACH_FROM_EMAIL", "rk@example.com");
+  vi.stubEnv("UNSUBSCRIBE_TOKEN_SECRET", "test-unsubscribe-secret-0123456789abcdef");
   vi.stubEnv("AGENT_KILL_SWITCH", "");
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "");
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "");
   mockCreateActivity.mockResolvedValue(undefined);
   mockLogAiAction.mockResolvedValue(undefined);
-  Object.assign(audit, { available: true, sentToday: 0, lastSentAt: null, error: null });
+  Object.assign(audit, { available: true, sentToday: 0, lastSentAt: null, error: null, suppressed: false, suppressionError: null });
   mockGenerate.mockResolvedValue({ subject: "S", body: "B", provider: "openai:gpt-4.1-mini", totalTokens: 10 });
   mockResendSend.mockResolvedValue({ data: { id: "re-1" }, error: null });
 });
@@ -111,7 +127,7 @@ describe("sendAiOutreachEmail — no generate-and-send path", () => {
     expect(mockGenerate).not.toHaveBeenCalled();
     expect(mockResendSend).not.toHaveBeenCalled();
     const blocked = mockLogAiAction.mock.calls.find((c) => (c[0] as { meta?: { blocked?: boolean } }).meta?.blocked);
-    expect(blocked?.[0]).toMatchObject({ actionKind: "send_failed", agencyId: "agency-A" });
+    expect(blocked?.[0]).toMatchObject({ actionKind: "send_failed", agencyId: AGENCY });
   });
 
   it("reports the kill switch when it is on", async () => {
@@ -147,7 +163,7 @@ describe("prepareOutreachDraft — step 1, nothing is sent", () => {
     });
     const suggested = mockLogAiAction.mock.calls.find((c) => (c[0] as { actionKind: string }).actionKind === "ai_suggested");
     expect(suggested?.[0]).toMatchObject({
-      agencyId: "agency-A",
+      agencyId: AGENCY,
       variant: "A",
       meta: { approval_state: "pending_human", agent_id: "REVOLIS-OUTREACH" },
     });
@@ -205,8 +221,42 @@ describe("sendApprovedOutreach — step 2, sends the approved text verbatim", ()
       from: "rk@example.com",
       to: "jan@example.com",
       subject: "Schválený predmet",
-      text: "Schválený text.",
+      text: expect.stringMatching(/^Schválený text\.\n\n--\n/),
     }));
+  });
+
+  it("adds a signed List-Unsubscribe header (RFC 8058 one-click) and a footer link", async () => {
+    await sendApprovedOutreach(approved);
+    const sent = mockResendSend.mock.calls[0][0] as { text: string; headers: Record<string, string> };
+    const url = /<(https:\/\/[^>]+\/api\/unsubscribe\?t=[^>]+)>/.exec(sent.headers["List-Unsubscribe"])?.[1];
+    expect(url).toBeTruthy();
+    expect(sent.headers["List-Unsubscribe-Post"]).toBe("List-Unsubscribe=One-Click");
+    expect(sent.text).toContain(url!);
+    // the token carries the address hash and the agency, never the address itself
+    const payload = verifyUnsubscribeToken(new URL(url!).searchParams.get("t"));
+    expect(payload).toEqual({ t: "o", h: hashEmail("jan@example.com"), a: AGENCY });
+    expect(url).not.toContain("jan");
+  });
+
+  it("does not send to a suppressed address", async () => {
+    audit.suppressed = true;
+    const res = await sendApprovedOutreach(approved);
+    expect(res).toMatchObject({ ok: false, error: expect.stringMatching(/odhlásených/) });
+    expect(mockResendSend).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when the suppression list cannot be read", async () => {
+    audit.suppressionError = { message: 'relation "email_suppressions" does not exist' };
+    const res = await sendApprovedOutreach(approved);
+    expect(res).toMatchObject({ ok: false });
+    expect(mockResendSend).not.toHaveBeenCalled();
+  });
+
+  it("does not send without UNSUBSCRIBE_TOKEN_SECRET", async () => {
+    vi.stubEnv("UNSUBSCRIBE_TOKEN_SECRET", "");
+    const res = await sendApprovedOutreach(approved);
+    expect(res).toMatchObject({ ok: false, error: expect.stringMatching(/UNSUBSCRIBE_TOKEN_SECRET/) });
+    expect(mockResendSend).not.toHaveBeenCalled();
   });
 
   it("re-checks the cooldown at send time (another e-mail went out meanwhile)", async () => {

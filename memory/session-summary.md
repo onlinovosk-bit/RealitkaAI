@@ -1,3 +1,32 @@
+## Session 2026-10-22 (STENA doručiteľnosť a odhlásenie)
+### Dokončené
+- Kód: `apps/crm/src/proxy.ts` (verejné cesty), `lib/email/{suppression,unsubscribe-token}.ts`, `app/api/unsubscribe/route.ts`, `app/api/resend-webhook/route.ts` (bounce/complaint/suppressed), `lib/outreach-store.ts` (kontrola potlačenia + List-Unsubscribe), `lib/morning-brief/generators/email-html.ts` (podpísaný odkaz), `app/api/notifications/unsubscribe/route.ts` (len redirect).
+- Migrácia (iba súbor, neaplikovaná): `supabase/migrations/20261022100000_email_suppressions.sql`.
+- Testy: 58 PASS v 5 dotknutých súboroch, 164 PASS v susedných; lint, typecheck (53 ≤ 54), check-security čisté.
+- GDPR + Constitution v2: `docs/architecture/gdpr-deliverability-unsubscribe-2026-10-22.md` (BUILD, override Q1).
+### Rozpracované / Pending
+- Founder GO: migrácia na PROD (skill `prod-migration`) → `UNSUBSCRIBE_TOKEN_SECRET` vo Vercel → nasadenie → merge #910 (po zelenom CI).
+- Právnik: základ obchodného e-mailu fyzickej osobe, odtlačok bez soli, retencia.
+- Q-01 (Resend delivery log) a Stripe krok C ostávajú na founderovi.
+### Kľúčové súbory zmenené
+- viď Dokončené + `docs/STATUS.md` (míľnik 7), `memory/decisions.md`, `memory/session-summary.md`.
+### Ďalší krok
+GO na aplikáciu migrácie + tajomstva + nasadenie (jedna stena), potom overenie jedným testovacím bounce.
+
+---
+## Session 2026-10-21 (REVERSE ENGINEERING & SYSTEM DISCOVERY v1.0)
+### Dokončené
+- `docs/discovery/2026-10-21/`: ARCHITECTURE, DATA_FLOWS, INTEGRATIONS, FINDINGS (29 nálezov, 3× P1), OPEN_QUESTIONS (31 otázok). Iba čítanie; žiadna zmena kódu, PROD ani env.
+### Rozpracované / Pending
+- Q-01: živé `curl -i` na `/api/resend-webhook` bez cookie (potvrdí/vyvráti F-02).
+- Stripe krok C: founder pošle ID cien/kupónu, 7. webhook udalosť, A/B/C pre 21+; env + redeploy len na GO.
+- Skill `gdpr-advisor` chýba (podmienka steny doručiteľnosti).
+- Pricing testy po #908 nespustené (NOT_VERIFIED).
+### Kľúčové súbory zmenené
+- `docs/discovery/2026-10-21/*.md` (5 nových), `docs/STATUS.md` (SESSION blok), `memory/decisions.md`, `memory/session-summary.md`.
+### Ďalší krok
+Q-01 (read-only), potom GO na stenu „doručiteľnosť a odhlásenie".
+
 ---
 ## Session 2026-10-21 (merge origin/main do API Cost Governor)
 ### Dokončené
