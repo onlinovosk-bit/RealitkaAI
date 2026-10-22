@@ -52,7 +52,7 @@ Cieľ: Reverse engineering a discovery systému Revolis (iba čítanie) — 5 do
 - [x] 4 — `FINDINGS.md`: 29 nálezov (3× P1) s dôkazom, dopadom, overením a krokom
 - [x] 5 — `OPEN_QUESTIONS.md`: 31 otvorených otázok (UNKNOWN) s postupom overenia
 - [x] 6 — Founder: read-only potvrdenie F-02 na `/api/resend-webhook` (snímka GET bez session: `{"ok":false,"error":"Unauthorized"}` z proxy; Resend delivery log zostáva otvorený v Q-01)
-- [ ] 7 — GO na stenu „doručiteľnosť a odhlásenie" (F-02 bypass + F-01 potlačenie/List-Unsubscribe + bounce/complaint + testy; vyžaduje skill `gdpr-advisor`)
+- [x] 7 — GO stena „doručiteľnosť a odhlásenie" v kóde: F-02 bypass + F-01 potlačenie/List-Unsubscribe + bounce/complaint + GDPR analýza; testy 58+164 PASS, lint/typecheck/check-security čisté. **Neaplikované na PROD** (migrácia, `UNSUBSCRIBE_TOKEN_SECRET`, nasadenie čakajú na GO); CI na heade nemerané
 <!-- SESSION:END -->
 
 ## Hotové 2026-10-07 — s dôkazom (REALVIA-SEC-01)
