@@ -1,3 +1,17 @@
+## Session 2026-10-22 (STENA PROD aktivácia doručiteľnosti)
+### Dokončené
+- PROD migrácia `apps/crm/supabase/migrations/20261022100000_email_suppressions.sql` aplikovaná, dôkaz v transakcii s ROLLBACK, ledger zapísaný.
+- Overené: PROD deployment READY na `a2e42ac`; verejné cesty `/api/resend-webhook` (405) a `/api/unsubscribe` (400 bez tokenu) dosiahnuteľné bez proxy 401.
+### Rozpracované / Pending
+- Founder: `UNSUBSCRIBE_TOKEN_SECRET` (≥ 32 znakov, Production) vo Vercel projekte `realitka-ai` + Redeploy; potvrdiť existenciu `RESEND_API_KEY`. Do tej doby je outreach e-mail fail-closed.
+- Founder: Q-01 testovací bounce / Resend delivery log.
+- Právnik: základ obchodného e-mailu fyzickej osobe, odtlačok bez soli, retencia.
+### Kľúčové súbory zmenené
+- `docs/STATUS.md`: SESSION blok prepísaný na cieľ PROD aktivácia (4/6), poznámka k stavu.
+- `memory/decisions.md`, `memory/session-summary.md`: PREPEND záznamy.
+### Ďalší krok
+Founder nastaví `UNSUBSCRIBE_TOKEN_SECRET` a spraví Redeploy; potom jedno overenie Q-01.
+
 ## Session 2026-10-22 (STENA doručiteľnosť a odhlásenie)
 ### Dokončené
 - Kód: `apps/crm/src/proxy.ts` (verejné cesty), `lib/email/{suppression,unsubscribe-token}.ts`, `app/api/unsubscribe/route.ts`, `app/api/resend-webhook/route.ts` (bounce/complaint/suppressed), `lib/outreach-store.ts` (kontrola potlačenia + List-Unsubscribe), `lib/morning-brief/generators/email-html.ts` (podpísaný odkaz), `app/api/notifications/unsubscribe/route.ts` (len redirect).

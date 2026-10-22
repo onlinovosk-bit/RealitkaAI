@@ -7,6 +7,8 @@
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 08:30 UTC** (EVENTS-WIRE + CRON-ALIVE, zatiaľ nezmergované).
 > **2026-10-09 AGENTIC-WAVES:** Vlna 1 (WP-1…WP-6) zmergovaná do `main` (#836–#841): bez 180 000 € fallbackov, čítač `inbound_mail_outcomes`, send-gate, inventár trás, návrh Strážcu follow-upu (BACKLOG), PROD balíky **neaplikované**. Tabuľka nižšie sa NEMENÍ (nič z toho nie je PROD dôkaz). Plán: `docs/plans/2026-10-09-agentic-waves.md`.
 
+> **2026-10-22 (PROD aktivácia doručiteľnosti):** tabuľka sa neprepočítava, produkt ostáva **≈ 51 %** (odhad; tabuľka STARÁ, posledný prepočet 2026-10-05). Migrácia `email_suppressions` je na PROD, kód nasadený; odchádzajúci outreach e-mail je fail-closed, kým founder nenastaví `UNSUBSCRIBE_TOKEN_SECRET`. Posledná aktualizácia: **2026-10-22**.
+>
 > **2026-10-16 (víkend, bez prepočtu tabuľky):** vážené **≈ 51 %** ostáva meranie z **2026-10-05**. **ZMERANÉ** `git rev-list --count origin/main --since=2026-10-05` na `9168d583` = **34** commitov. SESSION blok nižšie už má body 1, 2, 3, 4, 5, 9 a 10 odškrtnuté s PR na main (#851, #852, #855, #856, #858, #857, #854). Predaj / platby ostáva **0 %**, lebo live Stripe katalóg je v tomto behu **NEZMERANÉ** (žiaden live kľúč, `scripts/ops/stripe-verify-prices.sh` sa nespúšťal). Tabuľka sa neprepočítava, kým nie je živý nákup.
 >
 > **2026-10-08 SIGNUP-PROD:** migrácie SIGNUP-ARCH a pricing v2 stĺpce sú **aplikované na PROD** (dôkaz v `docs/architecture/2026-10-06-self-serve-signup.md`). Zavreté 2 nové cesty (zápis billing/trial stĺpcov agentúry z prehliadača; zhoda neoverený e-mail → tenant). Tabuľka nižšie sa NEPREPOČÍTAVA, kým nie je aj živý nákup (váha Predaj/platby 30).
@@ -44,15 +46,14 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: Reverse engineering a discovery systému Revolis (iba čítanie) — 5 dokumentov s dôkazmi
+Cieľ: PROD aktivácia doručiteľnosti (migrácia, nasadenie, odhlasovací token, overenie)
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] 1 — `ARCHITECTURE.md`: mapa systému (monorepo, proxy, multi-tenant, AI vrstva)
-- [x] 2 — `DATA_FLOWS.md`: toky príjem leadu, odchádzajúci e-mail, platby, prierezové mechanizmy
-- [x] 3 — `INTEGRATIONS.md`: 24 verejných ciest, cron autentifikácia, inventár integrácií, CI
-- [x] 4 — `FINDINGS.md`: 29 nálezov (3× P1) s dôkazom, dopadom, overením a krokom
-- [x] 5 — `OPEN_QUESTIONS.md`: 31 otvorených otázok (UNKNOWN) s postupom overenia
-- [x] 6 — Founder: read-only potvrdenie F-02 na `/api/resend-webhook` (snímka GET bez session: `{"ok":false,"error":"Unauthorized"}` z proxy; Resend delivery log zostáva otvorený v Q-01)
-- [x] 7 — GO stena „doručiteľnosť a odhlásenie" v kóde: F-02 bypass + F-01 potlačenie/List-Unsubscribe + bounce/complaint + GDPR analýza; testy 58+164 PASS, lint/typecheck/check-security čisté. **Neaplikované na PROD** (migrácia, `UNSUBSCRIBE_TOKEN_SECRET`, nasadenie čakajú na GO); CI na heade nemerané
+- [x] 1 — Migrácia `20261022100000_email_suppressions` na PROD (tabuľka, RLS + deny-all, 3 indexy; dôkaz v transakcii s ROLLBACK, 0 riadkov po)
+- [x] 2 — Ledger `supabase_migrations.schema_migrations` má riadok `20261022100000 / email_suppressions`
+- [x] 3 — Nový kód je na PROD: deployment `dpl_EDaKJ2VntQDLwgsHEycUSAuP77e9` READY na commite `a2e42ac` (projekt `realitka-ai`, app.revolis.ai)
+- [x] 4 — Živá kontrola verejných ciest: `/api/resend-webhook` GET → 405 (route dosiahnutá, nie proxy „Unauthorized"), `/api/unsubscribe` bez tokenu → 400 „Odkaz nie je platný"
+- [ ] 5 — Founder: `UNSUBSCRIBE_TOKEN_SECRET` (≥ 32 znakov) vo Vercel projekte `realitka-ai` (Production) + Redeploy; potvrdiť `RESEND_API_KEY`
+- [ ] 6 — Founder: Q-01 testovací bounce / Resend delivery log (webhook podpis + zápis do `email_suppressions`)
 <!-- SESSION:END -->
 
 ## Hotové 2026-10-07 — s dôkazom (REALVIA-SEC-01)
