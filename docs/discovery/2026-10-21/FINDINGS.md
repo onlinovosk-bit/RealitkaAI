@@ -10,7 +10,7 @@
 | ID | Závažnosť | Nález | Istota |
 |---|---|---|---|
 | F-01 | **P1** | Odchádzajúci e-mail nemá odhlásenie, `List-Unsubscribe`, zoznam potlačení ani spracovanie bounce/complaint | CONFIRMED |
-| F-02 | **P1** | Proxy vracia 401 na `/api/resend-webhook`, `/api/morning-brief/track/*` a `/api/notifications/unsubscribe` | statika CONFIRMED, živé UNKNOWN |
+| F-02 | **P1** | Proxy vracia 401 na `/api/resend-webhook`, `/api/morning-brief/track/*` a `/api/notifications/unsubscribe` | statika CONFIRMED; živé CONFIRMED-D len pre `resend-webhook` (GET, snímka foundera 2026-10-22) |
 | F-03 | **P1** | Feature gating je vypnutý (DEV OVERRIDE) a spoplatňovanie kreditov je default-off a fail-open | CONFIRMED |
 | F-04 | P2 (P1 po zapnutí) | `/api/scheduled-outreach` obchádza schválenie človekom; následné kroky len v pamäti | CONFIRMED-D (latentné) |
 | F-28 | P2 | 10 cron routes nemá známy spúšťač (vrátane `credits-grant`/`credits-expire`) | CONFIRMED / UNKNOWN beh |
@@ -52,7 +52,7 @@
 ### F-02 — Proxy blokuje webhook Resend, sledovacie pixely a odhlásenie
 - **Dôkaz:** `S/proxy.ts` ani `crm/vercel.json` neobsahujú `/api/resend-webhook`, `/api/morning-brief/track/*` ani `/api/notifications/unsubscribe` (grep v tomto turne = 0 zhôd; `/api/webhooks*` je bypass, ale `resend-webhook` je mimo tohto podstromu). Handlery sami verifikujú podpis Svix (`resend-webhook/route.ts:51-55`), no kým žiadosť neprejde proxy, k handleru sa nedostane.
 - **Dopad (ak sa potvrdí):** Resend delivery/bounce/complaint udalosti sa strácajú (väzba na F-01); kliky/otvorenia z morning-brief sa nezaznamenajú; odkaz „odhlásiť" v e-maile vedie na 401/login.
-- **Istota:** statická absencia CONFIRMED; živé správanie **UNKNOWN** (môže existovať iný mechanizmus, napr. úprava matcheru, ktorý sme nečítali celý; `proxy.ts` bol čítaný celý v predchádzajúcej časti).
+- **Istota:** statická absencia CONFIRMED. Živé správanie pre `/api/resend-webhook` **CONFIRMED-D (2026-10-22)**: founder poslal snímku z prehliadača bez prihlásenia (`GET https://app.revolis.ai/api/resend-webhook`) s telom `{"ok":false,"error":"Unauthorized"}`. Toto telo je presne to z `proxy.ts:185/196`; handler by pri zlom podpise vrátil `Invalid signature` (`route.ts:62`) a pri `GET` by (exportuje len `POST`) vrátil 405. Brána v `proxy.ts` nerozlišuje metódu, takže rovnako zablokuje aj `POST` od Resendu. Obmedzenia: nebol to `POST`, stavový kód a hlavičky na snímke nie sú vidieť. Tracking (`/api/morning-brief/track/*`) a `/api/notifications/unsubscribe` živé overenie nemajú (zostáva statika). Resend delivery log nie je overený (nemáme prístup).
 - **Overenie (read-only):** `curl -i -X POST https://<crm-host>/api/resend-webhook` bez cookie → 401 z proxy (nie 400 z handlera) potvrdí; Resend dashboard → Webhooks → delivery log (stav 401).
 - **Odporúčanie:** najmenší krok: pridať tri cesty do bypass zoznamu v `proxy.ts` (handlery sa autentifikujú samy), + test. Malá zmena, vysoká hodnota, ale mení produkčnú bránu → GO.
 

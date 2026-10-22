@@ -34,7 +34,7 @@
 
 ## C. E-mail a doručiteľnosť (Resend)
 
-- **Q-01 — F-02 živé potvrdenie.** `curl -i -X POST https://<crm-host>/api/resend-webhook` bez cookie: 401 = potvrdené, 200/400 = proxy cestu pustí (a F-02 padá). Doplnok: Resend → Webhooks → delivery log (úspešnosť doručenia na našu URL).
+- **Q-01 — F-02 živé potvrdenie. ČIASTOČNE ZODPOVEDANÉ (2026-10-22):** `GET /api/resend-webhook` bez session vrátil `{"ok":false,"error":"Unauthorized"}` (snímka foundera; telo zodpovedá `proxy.ts`, nie handleru) → F-02 pre túto cestu CONFIRMED-D. Zostáva: Resend delivery log, a živé overenie `/api/morning-brief/track/*` a `/api/notifications/unsubscribe`. Pôvodné znenie: `curl -i -X POST https://<crm-host>/api/resend-webhook` bez cookie: 401 = potvrdené, 200/400 = proxy cestu pustí (a F-02 padá). Doplnok: Resend → Webhooks → delivery log (úspešnosť doručenia na našu URL).
 - **Q-12 — Resend DNS (SPF/DKIM/DMARC) a webhook URL v dashboarde.** Z repozitára nezistiteľné. Odpoveď od foundera je už dlho otvorená (STATUS: „founder: Resend DNS + reply-to + súhlas referenčného klienta"). *Mení:* F-01 závažnosť (bez DKIM/DMARC je riziko doručiteľnosti vyššie), aj reálna hodnota „opt-in auto-odpovede".
 - **Q-13 — Existuje už ručná suppression/unsubscribe evidencia** mimo CRM (napr. v Resend audience alebo v Gmaile)? Ak áno, F-01 je organizačný, nie len technický.
 - **Q-14 — Právny základ outbound (6(1)(f) + test proporcionality).** Skill `gdpr-advisor` v repozitári **chýba**, preto nebola vykonaná brána z CLAUDE.md pravidlo 5 pre outbound/inbound dáta. *Odomkne:* `GO GDPR-ADVISOR` (vytvoriť skill) a až potom stena „doručiteľnosť a odhlásenie".
