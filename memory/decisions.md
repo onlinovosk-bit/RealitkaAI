@@ -1,3 +1,10 @@
+## 2026-10-22 — Pricing v3: 1 produkt, 8 plánových Price ID, bez kupónov (BUILD)
+**GO:** founder zadanie presunúť pricing v3 z generických `STRIPE_PRICE_V3_SEAT_MONTHLY/YEARLY` na Price ID podľa plánu a obdobia; bez Stripe API volaní, bez objektov, bez PROD zmien a bez merge.
+**Čo:** licencia ostáva jeden Stripe Product `Revolis licencia`; pridáva sa 8 env názvov `STRIPE_PRICE_V3_{START,TEAM,KANCELARIA,SIET}_{MONTHLY,YEARLY}`. Nová env má prednosť; neplatná nastavená hodnota fail-closed; ak nová env chýba, stará intervalová env funguje ako dočasný fallback. Checkout stále posiela `quantity = počet maklérov`; pásmo sa odvodí z počtu maklérov.
+**Ceny:** Start 25 €, Team 65 €, Kancelária 65 € + 9 € nad 5, Sieť 110 € + 6 € pre 11–20 a +5 € od 21; mesačné platenie = +20 %, ročné = 12× mesačný základ. Promo/kupóny nie sú súčasťou tejto zmeny.
+**Dôkaz:** completion gate PASS (`661` related testov, `473` billing testov), `npx vitest run billing pricing-v2` PASS (`471`), `stripe-v2-catalog.verification` PASS (`9`), `npm run typecheck` PASS na baseline 54, `npm run lint` PASS, `npm run build` PASS.
+**Rollback:** revert PR; staré fallback env sú zachované, takže konfiguráciu možno ponechať bez okamžitého Vercel zásahu.
+
 ## 2026-10-21 — Cenník v3: Team bez skoku 1→2 (GO B) (BUILD)
 **GO:** founder „GO B" po zistení, že 2 makléri (65 €) platia viac na hlavu než 1 (25 €) a lacnejšie vyjdú dve licencie Start (50 €). Cenu určuje founder; Prime Directive: odstraňuje dôvod nekúpiť Team (priamy dopad nemeraný).
 **Čo:** licencia = 1 → 25 €, 2 → 50 €, 3–5 → 65 € (strop), 6+ bez zmeny (9 / 6 / 5 € za makléra). Mesačná platba = základ × 1,2 (2 makléri 60 €), ročná 9/12 promo: 2 makléri 450 € namiesto 600 €. Stripe graduated tiery majú 6 stupňov (year: 30000 / +30000 / +18000 flat; month: 3000 / +3000 / +1800). Team pásmo = „od 50 €", ostáva self-serve (demo-only len Kancelária a Sieť, nové pole `priceOnRequest`). ROI kalkulačka počíta Team konzervatívne na strope 65 €.

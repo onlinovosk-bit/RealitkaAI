@@ -11,8 +11,6 @@ import {
 import {
   PRICING_V2_AGENCY_MODEL,
   PRICING_V2_BAND_ACCOUNT_TIER,
-  PRICING_V3_ANNUAL_PROMO_COUPON_ENV,
-  PRICING_V3_SEAT_PRICE_ENV,
   PRICING_V2_CHECKOUT_TYPE_CREDITS,
   PRICING_V2_CHECKOUT_TYPE_PLAN,
   PRICING_V2_CREDIT_PRICE_ENV,
@@ -21,12 +19,12 @@ import {
   parsePricingV2CheckoutRequest,
   readPricingV2CreditsMetadata,
   readPricingV2PlanMetadata,
-  resolveAnnualPromoCouponId,
+  PRICING_V3_SEAT_PRICE_ENV,
+  resolvePricingV3PlanPriceId,
   type PricingV2CheckoutParseResult,
   type PricingV2CheckoutRequest,
 } from "@/lib/pricing-v2-contract";
 import { isValidStripePriceId } from "@/lib/program-tier-pricing";
-import { isAnnualPromoActive } from "@/lib/pricing-v2";
 import {
   currentPeriodKey,
   monthlyGrantAmountForAgency,
@@ -77,9 +75,13 @@ export function resolvePricingV2PriceRole(
     const configured = env[envName];
     return isValidStripePriceId(configured) && configured!.trim() === id;
   };
-  if (is(PRICING_V3_SEAT_PRICE_ENV.month)) return { kind: "seat", interval: "month" };
-  // Ročná cena je tá istá licencia (rovnaký plán a grant), len iný interval fakturácie.
-  if (is(PRICING_V3_SEAT_PRICE_ENV.year)) return { kind: "seat", interval: "year" };
+  for (const interval of ["month", "year"] as const) {
+    if (is(PRICING_V3_SEAT_PRICE_ENV[interval])) return { kind: "seat", interval };
+    for (const band of ["start", "team", "office", "network"] as const) {
+      const resolved = resolvePricingV3PlanPriceId(band, interval, env);
+      if (resolved.ok && resolved.priceId === id) return { kind: "seat", interval };
+    }
+  }
   for (const pack of PRICING_V2_MONTHLY_PACKS) {
     if (is(PRICING_V2_PACK_PRICE_ENV[pack.credits])) return { kind: "pack", credits: pack.credits };
   }
@@ -140,20 +142,15 @@ export function missingPricingV2PriceEnvKeysForRequest(
 ): string[] {
   const needed: string[] = [];
   if (request.checkoutType === PRICING_V2_CHECKOUT_TYPE_PLAN) {
-    needed.push(PRICING_V3_SEAT_PRICE_ENV[request.interval ?? "month"]);
+    const bandId = resolvePricingV2Band(request.users);
+    const resolved = resolvePricingV3PlanPriceId(bandId, request.interval ?? "month", env);
+    if (!resolved.ok) needed.push(resolved.envName);
     if (request.packCredits) needed.push(PRICING_V2_PACK_PRICE_ENV[request.packCredits] ?? `pack:${request.packCredits}`);
   } else {
     needed.push(PRICING_V2_CREDIT_PRICE_ENV);
   }
   const missing = needed.filter((name) => !isValidStripePriceId(env[name]));
-  if (
-    request.checkoutType === PRICING_V2_CHECKOUT_TYPE_PLAN &&
-    request.interval === "year" &&
-    isAnnualPromoActive(now) &&
-    resolveAnnualPromoCouponId("year", now, env) === null
-  ) {
-    missing.push(PRICING_V3_ANNUAL_PROMO_COUPON_ENV);
-  }
+  void now;
   return missing;
 }
 
@@ -191,11 +188,11 @@ export function buildPricingV2PlanCheckoutParams(
   if (metadata.interval === "year" && input.packCredits) {
     throw new RangeError("Mesačný balík kreditov sa s ročným plánom nedá kombinovať.");
   }
-  const seatPriceId = env[PRICING_V3_SEAT_PRICE_ENV[metadata.interval]]?.trim();
-  if (!isValidStripePriceId(seatPriceId)) throw new Error("Stripe cena licencie v3 nie je nakonfigurovaná.");
+  const resolvedPrice = resolvePricingV3PlanPriceId(metadata.bandId, metadata.interval, env);
+  if (!resolvedPrice.ok) throw new Error(`Stripe cena licencie v3 nie je nakonfigurovaná (${resolvedPrice.envName}).`);
 
   const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
-    { price: seatPriceId, quantity: input.users },
+    { price: resolvedPrice.priceId, quantity: input.users },
   ];
   if (input.packCredits) {
     const packPriceId = env[PRICING_V2_PACK_PRICE_ENV[input.packCredits] ?? ""]?.trim();
@@ -203,11 +200,10 @@ export function buildPricingV2PlanCheckoutParams(
     lineItems.push({ price: packPriceId, quantity: 1 });
   }
 
-  const coupon = resolveAnnualPromoCouponId(metadata.interval, now, env);
+  void now;
   return {
     mode: "subscription",
     lineItems,
-    ...(coupon ? { discounts: [{ coupon }] } : {}),
     metadata: { ...metadata },
     automaticTax: isPricingV2StripeTaxOn(env),
   };

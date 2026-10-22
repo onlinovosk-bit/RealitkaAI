@@ -3,9 +3,7 @@
 import { useState } from "react";
 import { SLATE_HORIZON, WORKDESK_CARD } from "@/lib/slate-horizon-theme";
 import {
-  annualPromoNetCents,
   illustrativeAnnualMonthlyNetCents,
-  isAnnualPromoActive,
   licenseNetCents,
   priceFromNetCents,
   resolvePricingV2BandResult,
@@ -67,12 +65,13 @@ export default function PricingV2Plans({ config, initialUsers = 1, navigate = de
   // Ročné platenie sa ponúka až keď existuje ročná cena (inak ostáva mesačné).
   const yearlyOffered = config.yearlyAvailable === true;
   const yearly = yearlyOffered && interval === "year";
-  const promoActive = yearly && isAnnualPromoActive(now ?? new Date());
+  void now;
+  const promoActive = yearly && catalog.promo.active === true;
   const vat = catalog.vatPercent;
 
   // Živý prepočet: suma, ktorú zaplatí zákazník za obdobie (pri akcii prvá ročná faktúra = 9 × základ).
   const regularNet = validUsers ? licenseNetCents(users, yearly ? "year" : "month") : null;
-  const chargedNet = validUsers ? (promoActive ? annualPromoNetCents(users) : regularNet) : null;
+  const chargedNet = validUsers ? regularNet : null;
   const charged = chargedNet === null ? null : priceFromNetCents(chargedNet, vat);
   const regular = regularNet === null ? null : priceFromNetCents(regularNet, vat);
   const yearNet = validUsers ? licenseNetCents(users, "year") : null;

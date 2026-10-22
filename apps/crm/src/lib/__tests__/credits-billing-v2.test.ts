@@ -140,22 +140,26 @@ import { PRICING_V3_SEAT_PRICE_ENV } from "@/lib/pricing-v2-contract";
 
 // Syntetické price ID (nie sú to skutočné Stripe ID).
 const PRICE = {
-  STRIPE_PRICE_V3_SEAT_MONTHLY: "price_1Abcdefgh12341",
-  STRIPE_PRICE_V3_SEAT_YEARLY: "price_1Abcdefgh12342",
-  STRIPE_PRICE_V3_PACK_50: "price_1Abcdefgh12345",
-  STRIPE_PRICE_V3_PACK_100: "price_1Abcdefgh12346",
-  STRIPE_PRICE_V3_PACK_150: "price_1Abcdefgh12347",
-  STRIPE_PRICE_V3_PACK_200: "price_1Abcdefgh12348",
-  STRIPE_PRICE_V3_PACK_250: "price_1Abcdefgh12349",
-  STRIPE_PRICE_V3_PACK_300: "price_1Abcdefgh12351",
-  STRIPE_PRICE_V3_CREDIT: "price_1Abcdefgh12350",
+  STRIPE_PRICE_V3_START_MONTHLY: "price_1Abcdefgh12341",
+  STRIPE_PRICE_V3_START_YEARLY: "price_1Abcdefgh12342",
+  STRIPE_PRICE_V3_TEAM_MONTHLY: "price_1Abcdefgh12343",
+  STRIPE_PRICE_V3_TEAM_YEARLY: "price_1Abcdefgh12344",
+  STRIPE_PRICE_V3_KANCELARIA_MONTHLY: "price_1Abcdefgh12345",
+  STRIPE_PRICE_V3_KANCELARIA_YEARLY: "price_1Abcdefgh12346",
+  STRIPE_PRICE_V3_SIET_MONTHLY: "price_1Abcdefgh12347",
+  STRIPE_PRICE_V3_SIET_YEARLY: "price_1Abcdefgh12348",
+  STRIPE_PRICE_V3_SEAT_MONTHLY: "price_1Abcdefgh12998",
+  STRIPE_PRICE_V3_SEAT_YEARLY: "price_1Abcdefgh12999",
+  STRIPE_PRICE_V3_PACK_50: "price_1Abcdefgh12445",
+  STRIPE_PRICE_V3_PACK_100: "price_1Abcdefgh12446",
+  STRIPE_PRICE_V3_PACK_150: "price_1Abcdefgh12447",
+  STRIPE_PRICE_V3_PACK_200: "price_1Abcdefgh12448",
+  STRIPE_PRICE_V3_PACK_250: "price_1Abcdefgh12449",
+  STRIPE_PRICE_V3_PACK_300: "price_1Abcdefgh12451",
+  STRIPE_PRICE_V3_CREDIT: "price_1Abcdefgh12450",
 } as const;
-/** ID kupónu (syntetické). */
-const COUPON = "promo_synthetic_9of12";
-
 function stubAllPrices() {
   for (const [k, v] of Object.entries(PRICE)) vi.stubEnv(k, v);
-  vi.stubEnv("STRIPE_COUPON_V3_ANNUAL_PROMO", COUPON);
 }
 
 /** Čas tesne pred koncom akcie 9/12 a hneď po ňom. */
@@ -219,25 +223,33 @@ describe("v3 checkout builders", () => {
     stubAllPrices();
     const p = buildPricingV2PlanCheckoutParams({ ...actor, users: 1, packCredits: null });
     expect(p.mode).toBe("subscription");
-    expect(p.lineItems).toEqual([{ price: PRICE.STRIPE_PRICE_V3_SEAT_MONTHLY, quantity: 1 }]);
+    expect(p.lineItems).toEqual([{ price: PRICE.STRIPE_PRICE_V3_START_MONTHLY, quantity: 1 }]);
     expect(p.metadata).toMatchObject({ checkoutType: "pricing_v2", agencyId: AGENCY, bandId: "start", users: "1", packCredits: "0" });
   });
 
-  it("plan: cena je tá istá pre každý počet, quantity = n, pásmo v metadátach vyplýva z n (1, 2, 5, 6, 10, 11, 60)", () => {
+  it("plan: cena sa vyberie podľa pásma, quantity = n, pásmo v metadátach vyplýva z n (1, 2, 5, 6, 10, 11, 60)", () => {
     stubAllPrices();
-    const bandAt = (users: number) => {
+    const bandAt = (users: number, price: string) => {
       const p = buildPricingV2PlanCheckoutParams({ ...actor, users, packCredits: null });
-      expect(p.lineItems).toEqual([{ price: PRICE.STRIPE_PRICE_V3_SEAT_MONTHLY, quantity: users }]);
+      expect(p.lineItems).toEqual([{ price, quantity: users }]);
       return p.metadata.bandId;
     };
-    expect([1, 2, 5, 6, 10, 11, 60].map(bandAt)).toEqual(["start", "team", "team", "office", "office", "network", "network"]);
+    expect([
+      bandAt(1, PRICE.STRIPE_PRICE_V3_START_MONTHLY),
+      bandAt(2, PRICE.STRIPE_PRICE_V3_TEAM_MONTHLY),
+      bandAt(5, PRICE.STRIPE_PRICE_V3_TEAM_MONTHLY),
+      bandAt(6, PRICE.STRIPE_PRICE_V3_KANCELARIA_MONTHLY),
+      bandAt(10, PRICE.STRIPE_PRICE_V3_KANCELARIA_MONTHLY),
+      bandAt(11, PRICE.STRIPE_PRICE_V3_SIET_MONTHLY),
+      bandAt(60, PRICE.STRIPE_PRICE_V3_SIET_MONTHLY),
+    ]).toEqual(["start", "team", "team", "office", "office", "network", "network"]);
   });
 
   it("plan: voliteľný balík pridá druhý opakovaný riadok s qty 1 (quantity licencie ostáva n)", () => {
     stubAllPrices();
     const p = buildPricingV2PlanCheckoutParams({ ...actor, users: 3, packCredits: 100 });
     expect(p.lineItems).toEqual([
-      { price: PRICE.STRIPE_PRICE_V3_SEAT_MONTHLY, quantity: 3 },
+      { price: PRICE.STRIPE_PRICE_V3_TEAM_MONTHLY, quantity: 3 },
       { price: PRICE.STRIPE_PRICE_V3_PACK_100, quantity: 1 },
     ]);
     expect(p.metadata.packCredits).toBe("100");
@@ -246,9 +258,9 @@ describe("v3 checkout builders", () => {
 
   it("plan: fail-closed pri chýbajúcej, placeholder alebo chybnej cene (nikdy nejde do Stripe)", () => {
     expect(() => buildPricingV2PlanCheckoutParams({ ...actor, users: 1, packCredits: null })).toThrow(/nie je nakonfigurovan/);
-    vi.stubEnv("STRIPE_PRICE_V3_SEAT_MONTHLY", "price_xxx");
+    vi.stubEnv("STRIPE_PRICE_V3_START_MONTHLY", "price_xxx");
     expect(() => buildPricingV2PlanCheckoutParams({ ...actor, users: 1, packCredits: null })).toThrow();
-    vi.stubEnv("STRIPE_PRICE_V3_SEAT_MONTHLY", PRICE.STRIPE_PRICE_V3_SEAT_MONTHLY);
+    vi.stubEnv("STRIPE_PRICE_V3_START_MONTHLY", PRICE.STRIPE_PRICE_V3_START_MONTHLY);
     expect(() => buildPricingV2PlanCheckoutParams({ ...actor, users: 1, packCredits: 50 })).toThrow(/bal/);
     expect(() => buildPricingV2PlanCheckoutParams({ ...actor, users: 0, packCredits: null })).toThrow(RangeError);
     expect(() => buildPricingV2PlanCheckoutParams({ ...actor, agencyId: " ", users: 1, packCredits: null })).toThrow(RangeError);
@@ -258,48 +270,34 @@ describe("v3 checkout builders", () => {
     stubAllPrices();
     for (const users of [1, 6, 25, 60]) {
       const p = buildPricingV2PlanCheckoutParams({ ...actor, users, packCredits: null, interval: "year" }, process.env, BEFORE_PROMO_END);
-      expect(p.lineItems).toEqual([{ price: PRICE.STRIPE_PRICE_V3_SEAT_YEARLY, quantity: users }]);
+      const price =
+        users === 1 ? PRICE.STRIPE_PRICE_V3_START_YEARLY :
+        users <= 10 ? PRICE.STRIPE_PRICE_V3_KANCELARIA_YEARLY :
+        PRICE.STRIPE_PRICE_V3_SIET_YEARLY;
+      expect(p.lineItems).toEqual([{ price, quantity: users }]);
       expect(p.metadata.interval).toBe("year");
     }
     // bez zadaného intervalu ostáva mesačná cena
     expect(buildPricingV2PlanCheckoutParams({ ...actor, users: 3, packCredits: null }).lineItems[0].price).toBe(
-      PRICE.STRIPE_PRICE_V3_SEAT_MONTHLY,
+      PRICE.STRIPE_PRICE_V3_TEAM_MONTHLY,
     );
   });
 
-  it("akcia 9/12: ročný checkout pred termínom nesie kupón, presne po termíne nie", () => {
+  it("ročný checkout nepridáva kupón ani pole zľavy", () => {
     stubAllPrices();
     const year = (now: Date) =>
       buildPricingV2PlanCheckoutParams({ ...actor, users: 3, packCredits: null, interval: "year" }, process.env, now);
-    expect(year(BEFORE_PROMO_END).discounts).toEqual([{ coupon: COUPON }]);
-    expect(year(new Date("2026-10-19T08:00:00Z")).discounts).toEqual([{ coupon: COUPON }]);
+    expect(year(BEFORE_PROMO_END).discounts).toBeUndefined();
+    expect(year(new Date("2026-10-19T08:00:00Z")).discounts).toBeUndefined();
     expect(year(AFTER_PROMO_END).discounts).toBeUndefined();
     expect(year(new Date("2027-03-01T00:00:00Z")).discounts).toBeUndefined();
-    // žiadne allow_promotion_codes ani iné pole zľavy
-    expect(Object.keys(year(BEFORE_PROMO_END)).sort()).toEqual(["automaticTax", "discounts", "lineItems", "metadata", "mode"]);
-  });
-
-  it("kupón sa nikdy nepridá pri mesačnej platbe, ani pred termínom", () => {
-    stubAllPrices();
-    const p = buildPricingV2PlanCheckoutParams({ ...actor, users: 3, packCredits: 150, interval: "month" }, process.env, BEFORE_PROMO_END);
-    expect(p.discounts).toBeUndefined();
-    expect(buildPricingV2PlanCheckoutParams({ ...actor, users: 3, packCredits: null }, process.env, BEFORE_PROMO_END).discounts).toBeUndefined();
-  });
-
-  it("kupón: nenastavené alebo placeholder env = bez kupónu (builder nehádže)", () => {
-    stubAllPrices();
-    vi.stubEnv("STRIPE_COUPON_V3_ANNUAL_PROMO", "");
-    const year = () =>
-      buildPricingV2PlanCheckoutParams({ ...actor, users: 3, packCredits: null, interval: "year" }, process.env, BEFORE_PROMO_END);
-    expect(year().discounts).toBeUndefined();
-    vi.stubEnv("STRIPE_COUPON_V3_ANNUAL_PROMO", "promo_xxx");
-    expect(year().discounts).toBeUndefined();
+    expect(Object.keys(year(BEFORE_PROMO_END)).sort()).toEqual(["automaticTax", "lineItems", "metadata", "mode"]);
   });
 
   it("ročný plán s balíkom kreditov sa nikdy nezostaví; chýbajúca ročná cena = výnimka (mesačná cena sa nepodstrčí)", () => {
     stubAllPrices();
     expect(() => buildPricingV2PlanCheckoutParams({ ...actor, users: 3, packCredits: 50, interval: "year" })).toThrow(RangeError);
-    vi.stubEnv("STRIPE_PRICE_V3_SEAT_YEARLY", "");
+    vi.stubEnv("STRIPE_PRICE_V3_TEAM_YEARLY", "price_xxx");
     expect(() => buildPricingV2PlanCheckoutParams({ ...actor, users: 3, packCredits: null, interval: "year" })).toThrow(
       /nie je nakonfigurovan/,
     );
@@ -334,25 +332,23 @@ describe("v3 checkout builders", () => {
   });
 
   it("missing-price report names only the env variables the request needs, never values", () => {
-    vi.stubEnv("STRIPE_PRICE_V3_SEAT_MONTHLY", PRICE.STRIPE_PRICE_V3_SEAT_MONTHLY);
+    vi.stubEnv("STRIPE_PRICE_V3_TEAM_MONTHLY", PRICE.STRIPE_PRICE_V3_TEAM_MONTHLY);
     const need = (r: Parameters<typeof missingPricingV2PriceEnvKeysForRequest>[0], now = BEFORE_PROMO_END) =>
       missingPricingV2PriceEnvKeysForRequest(r, process.env, now);
     expect(need({ checkoutType: "pricing_v2", users: 3, packCredits: null })).toEqual([]);
     expect(need({ checkoutType: "pricing_v2", users: 3, packCredits: 100 })).toEqual(["STRIPE_PRICE_V3_PACK_100"]);
     expect(need({ checkoutType: "pricing_v2", users: 1, packCredits: null, interval: "year" })).toEqual([
-      "STRIPE_PRICE_V3_SEAT_YEARLY",
-      "STRIPE_COUPON_V3_ANNUAL_PROMO",
+      "STRIPE_PRICE_V3_START_YEARLY",
     ]);
     expect(need({ checkoutType: "pricing_v2_credits", credits: 5 })).toEqual(["STRIPE_PRICE_V3_CREDIT"]);
   });
 
-  it("fail-closed: ročný checkout počas akcie bez kupónu je nedostupný, po akcii kupón nie je potrebný", () => {
+  it("fallback: stará intervalová cena stačí, ale neplatná nová env má prednosť a fail-closed", () => {
     vi.stubEnv("STRIPE_PRICE_V3_SEAT_YEARLY", PRICE.STRIPE_PRICE_V3_SEAT_YEARLY);
     const year = { checkoutType: "pricing_v2", users: 3, packCredits: null, interval: "year" } as const;
-    expect(missingPricingV2PriceEnvKeysForRequest(year, process.env, BEFORE_PROMO_END)).toEqual(["STRIPE_COUPON_V3_ANNUAL_PROMO"]);
-    expect(missingPricingV2PriceEnvKeysForRequest(year, process.env, AFTER_PROMO_END)).toEqual([]);
-    vi.stubEnv("STRIPE_COUPON_V3_ANNUAL_PROMO", COUPON);
     expect(missingPricingV2PriceEnvKeysForRequest(year, process.env, BEFORE_PROMO_END)).toEqual([]);
+    vi.stubEnv("STRIPE_PRICE_V3_TEAM_YEARLY", "price_xxx");
+    expect(missingPricingV2PriceEnvKeysForRequest(year, process.env, BEFORE_PROMO_END)).toEqual(["STRIPE_PRICE_V3_TEAM_YEARLY"]);
   });
 
   it("telo požiadavky: seats (1..500) + interval; starší názov users sa ešte prijíma; mimo rozsahu sa odmietne", () => {
@@ -379,8 +375,9 @@ describe("v3 checkout builders", () => {
 describe("v3 price recognition", () => {
   it("maps each configured price id to its role", () => {
     stubAllPrices();
+    expect(resolvePricingV2PriceRole(PRICE.STRIPE_PRICE_V3_TEAM_MONTHLY)).toEqual({ kind: "seat", interval: "month" });
+    expect(resolvePricingV2PriceRole(PRICE.STRIPE_PRICE_V3_SIET_YEARLY)).toEqual({ kind: "seat", interval: "year" });
     expect(resolvePricingV2PriceRole(PRICE.STRIPE_PRICE_V3_SEAT_MONTHLY)).toEqual({ kind: "seat", interval: "month" });
-    expect(resolvePricingV2PriceRole(PRICE.STRIPE_PRICE_V3_SEAT_YEARLY)).toEqual({ kind: "seat", interval: "year" });
     expect(resolvePricingV2PriceRole(PRICE.STRIPE_PRICE_V3_PACK_250)).toEqual({ kind: "pack", credits: 250 });
     expect(resolvePricingV2PriceRole(PRICE.STRIPE_PRICE_V3_CREDIT)).toEqual({ kind: "credit" });
     expect(resolvePricingV2PriceRole("price_1Unrelated00000")).toBeNull();
@@ -401,8 +398,9 @@ describe("v3 price recognition", () => {
     });
     const year = { checkoutType: "pricing_v2", users: 3, packCredits: null, interval: "year" } as const;
     expect(missingPricingV2PriceEnvKeysForRequest(year, process.env, BEFORE_PROMO_END)).toEqual([]);
+    vi.stubEnv("STRIPE_PRICE_V3_TEAM_YEARLY", "");
     vi.stubEnv("STRIPE_PRICE_V3_SEAT_YEARLY", "");
-    expect(missingPricingV2PriceEnvKeysForRequest(year, process.env, BEFORE_PROMO_END)).toEqual(["STRIPE_PRICE_V3_SEAT_YEARLY"]);
+    expect(missingPricingV2PriceEnvKeysForRequest(year, process.env, BEFORE_PROMO_END)).toEqual(["STRIPE_PRICE_V3_TEAM_YEARLY"]);
     // mesačná požiadavka tým nie je dotknutá
     expect(missingPricingV2PriceEnvKeysForRequest({ checkoutType: "pricing_v2", users: 3, packCredits: null })).toEqual([]);
   });
@@ -410,14 +408,14 @@ describe("v3 price recognition", () => {
   it("unset env never matches an undefined / blank / placeholder id (undefined === undefined trap)", () => {
     expect(resolvePricingV2PriceRole(undefined)).toBeNull();
     expect(resolvePricingV2PriceRole("")).toBeNull();
-    vi.stubEnv("STRIPE_PRICE_V3_SEAT_MONTHLY", "price_xxx");
+    vi.stubEnv("STRIPE_PRICE_V3_TEAM_MONTHLY", "price_xxx");
     expect(resolvePricingV2PriceRole("price_xxx")).toBeNull();
   });
 
   it("subscription is v2 when ANY item is a v2 price, regardless of item order", () => {
     stubAllPrices();
     const sub = (...ids: string[]) => ({ items: { data: ids.map((id) => ({ price: { id } })) } });
-    expect(subscriptionHasPricingV2Price(sub(PRICE.STRIPE_PRICE_V3_PACK_50, PRICE.STRIPE_PRICE_V3_SEAT_MONTHLY))).toBe(true);
+    expect(subscriptionHasPricingV2Price(sub(PRICE.STRIPE_PRICE_V3_PACK_50, PRICE.STRIPE_PRICE_V3_TEAM_MONTHLY))).toBe(true);
     expect(subscriptionHasPricingV2Price(sub("price_1Legacy000000"))).toBe(false);
     expect(subscriptionHasPricingV2Price(sub())).toBe(false);
     expect(subscriptionHasPricingV2Price(null)).toBe(false);
@@ -477,7 +475,7 @@ describe("createPricingV2CheckoutSession", () => {
     const arg = h.sessionsCreate.mock.calls[0][0];
     expect(arg.mode).toBe("subscription");
     expect(arg.line_items).toEqual([
-      { price: PRICE.STRIPE_PRICE_V3_SEAT_MONTHLY, quantity: 3 },
+      { price: PRICE.STRIPE_PRICE_V3_TEAM_MONTHLY, quantity: 3 },
       { price: PRICE.STRIPE_PRICE_V3_PACK_100, quantity: 1 },
     ]);
     expect(arg.discounts).toBeUndefined();
@@ -487,21 +485,21 @@ describe("createPricingV2CheckoutSession", () => {
     expect(arg.automatic_tax).toBeUndefined();
   });
 
-  it("ročný plán: Stripe session nesie kupón len pred termínom, nikdy allow_promotion_codes", async () => {
+  it("ročný plán: Stripe session používa plánovú ročnú cenu bez zľavového poľa", async () => {
     vi.useFakeTimers();
     try {
       vi.setSystemTime(BEFORE_PROMO_END);
       await createPricingV2CheckoutSession({ checkoutType: "pricing_v2", users: 8, packCredits: null, interval: "year" });
       const early = h.sessionsCreate.mock.calls[0][0];
-      expect(early.line_items).toEqual([{ price: PRICE.STRIPE_PRICE_V3_SEAT_YEARLY, quantity: 8 }]);
-      expect(early.discounts).toEqual([{ coupon: COUPON }]);
+      expect(early.line_items).toEqual([{ price: PRICE.STRIPE_PRICE_V3_KANCELARIA_YEARLY, quantity: 8 }]);
+      expect(early.discounts).toBeUndefined();
       expect(early.allow_promotion_codes).toBeUndefined();
 
       vi.setSystemTime(AFTER_PROMO_END);
       await createPricingV2CheckoutSession({ checkoutType: "pricing_v2", users: 8, packCredits: null, interval: "year" });
       const late = h.sessionsCreate.mock.calls[1][0];
       expect(late.discounts).toBeUndefined();
-      expect(late.line_items).toEqual([{ price: PRICE.STRIPE_PRICE_V3_SEAT_YEARLY, quantity: 8 }]);
+      expect(late.line_items).toEqual([{ price: PRICE.STRIPE_PRICE_V3_KANCELARIA_YEARLY, quantity: 8 }]);
     } finally {
       vi.useRealTimers();
     }

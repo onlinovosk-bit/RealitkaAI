@@ -1,4 +1,20 @@
 ---
+## Session 2026-10-22 (PRICING V3 PLAN PRICE ENVS)
+### Dokončené
+- `apps/crm/src/lib/pricing-v2.ts`, `pricing-v2-contract.ts`, `credits-billing-v2.ts`: pricing v3 má 8 plánových Price ID, fallback na staré intervalové env, čistý kalkulátor hraníc a checkout fail-closed pri neplatnej plan env.
+- `apps/crm/.env.example`, `docs/pricing/2026-10-22-pricing-v3-plan-price-envs.md`, `docs/reports/2026-10-22-pricing-v3-plan-price-envs.md`: env zoznam, Stripe model a zistené použitia zdokumentované.
+- Testy/verifikácia: completion gate PASS, `billing pricing-v2` PASS, `typecheck` baseline PASS, `lint` PASS, `build` PASS.
+### Rozpracované / Pending
+- Draft PR otvorený; merge, Vercel env a Stripe objekty vyžadujú samostatné GO foundera.
+- Po nastavení nových env rozhodnúť, kedy odstrániť fallback `STRIPE_PRICE_V3_SEAT_*`.
+### Kľúčové súbory zmenené
+- `scripts/ops/stripe-expected-prices.json`, `scripts/ops/stripe-v2/revolis-stripe-v2-catalog.json`: offline manifest = 8 plánových cien, `coupons: []`.
+- `apps/crm/tests/**`: boundary testy 1/5/6/10/11/20/21/30/31 pre month/year a checkout/env regresie.
+### Ďalší krok
+Founder: potvrdiť ručné vytvorenie 8 Price objektov pod jedným produktom a doplnenie env vo Verceli; bez toho checkout ostáva bezpečne nedostupný pre chýbajúce plány.
+
+---
+
 ## Session 2026-10-21 (CROSS-AGENT ENGINEERING v1.0)
 ### Dokončené
 - `scripts/ci/revolis-verify.mjs`, `scripts/ci/lib/verify-core.mjs`: completion + plan-lint, 27 testov v `scripts/ci/__tests__/revolis-verify.test.mjs`, 8 mutácií.
