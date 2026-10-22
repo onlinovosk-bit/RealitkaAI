@@ -9,9 +9,9 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   PRICING_V2_CREDIT_NET_CENTS,
+  PRICING_V2_BAND_IDS,
   PRICING_V2_MONTHLY_PACKS,
-  PRICING_V3_PROMO_UNTIL,
-  PRICING_V3_SEAT_TIERS,
+  PRICING_V3_PLAN_TIERS,
   licenseNetCents,
   priceFromNetCents,
   type PricingV3Tier,
@@ -19,8 +19,7 @@ import {
 import {
   PRICING_V2_CREDIT_PRICE_ENV,
   PRICING_V2_PACK_PRICE_ENV,
-  PRICING_V3_ANNUAL_PROMO_COUPON_ENV,
-  PRICING_V3_SEAT_PRICE_ENV,
+  PRICING_V3_PLAN_PRICE_ENV,
 } from "@/lib/pricing-v2-contract";
 
 const DIR = join(__dirname, "../../../../scripts/ops/stripe-v2");
@@ -56,26 +55,37 @@ function graduated(tiers: CatalogTier[], quantity: number): number {
 }
 
 describe("scripts/ops/stripe-v2 katalóg vs kód (cenník v3)", () => {
-  it("licencia: jeden produkt, dve tiered graduated ceny, tiers z PRICING_V3_SEAT_TIERS, env kľúč z kontraktu", () => {
-    for (const [interval, sku] of [["month", "licence_month"], ["year", "licence_year"]] as const) {
-      const item = bySku(sku);
-      expect(item.name, sku).toBe("Revolis licencia");
-      expect(item.billing_scheme, sku).toBe("tiered");
-      expect(item.tiers_mode, sku).toBe("graduated");
-      expect(item.recurring_interval, sku).toBe(interval);
-      expect(item.unit_amount_cents, sku).toBeUndefined();
-      expect(item.tiers, sku).toEqual(asCatalogTiers(PRICING_V3_SEAT_TIERS[interval]));
-      expect(item.env_key, sku).toBe(PRICING_V3_SEAT_PRICE_ENV[interval]);
+  const licenceSku = (band: (typeof PRICING_V2_BAND_IDS)[number], interval: "month" | "year") =>
+    `licence_${band === "office" ? "kancelaria" : band === "network" ? "siet" : band}_${interval}`;
+
+  it("licencia: jeden produkt, osem tiered graduated cien, tiers z PRICING_V3_PLAN_TIERS, env kľúče z kontraktu", () => {
+    for (const band of PRICING_V2_BAND_IDS) {
+      for (const interval of ["month", "year"] as const) {
+        const sku = licenceSku(band, interval);
+        const item = bySku(sku);
+        expect(item.name, sku).toBe("Revolis licencia");
+        expect(item.billing_scheme, sku).toBe("tiered");
+        expect(item.tiers_mode, sku).toBe("graduated");
+        expect(item.recurring_interval, sku).toBe(interval);
+        expect(item.unit_amount_cents, sku).toBeUndefined();
+        expect(item.tiers, sku).toEqual(asCatalogTiers(PRICING_V3_PLAN_TIERS[band][interval]));
+        expect(item.env_key, sku).toBe(PRICING_V3_PLAN_PRICE_ENV[band][interval]);
+      }
     }
-    // ročná je druhá Price na produkte mesačnej
-    expect(bySku("licence_year").product_sku).toBe("licence_month");
-    expect(bySku("licence_month").product_sku).toBeUndefined();
+    expect(bySku("licence_start_month").product_sku).toBeUndefined();
+    for (const band of PRICING_V2_BAND_IDS) {
+      for (const interval of ["month", "year"] as const) {
+        const sku = licenceSku(band, interval);
+        if (sku !== "licence_start_month") expect(bySku(sku).product_sku).toBe("licence_start_month");
+      }
+    }
   });
 
-  it("graduated výpočet z tiers katalógu = licenseNetCents(n, interval) pre n = 1…60 (ročne aj mesačne)", () => {
-    for (const [interval, sku] of [["month", "licence_month"], ["year", "licence_year"]] as const) {
-      for (let n = 1; n <= 60; n++) {
-        expect(graduated(bySku(sku).tiers!, n), `${interval} n=${n}`).toBe(licenseNetCents(n, interval));
+  it("graduated výpočet z tiers katalógu = licenseNetCents(n, interval) pre hranice pásiem", () => {
+    for (const n of [1, 5, 6, 10, 11, 20, 21, 30, 31]) {
+      const band = n === 1 ? "start" : n <= 5 ? "team" : n <= 10 ? "office" : "network";
+      for (const interval of ["month", "year"] as const) {
+        expect(graduated(bySku(licenceSku(band, interval)).tiers!, n), `${interval} n=${n}`).toBe(licenseNetCents(n, interval));
       }
     }
   });
@@ -97,20 +107,11 @@ describe("scripts/ops/stripe-v2 katalóg vs kód (cenník v3)", () => {
     expect(unit.unit_amount_cents).toBe(75);
     expect(unit.env_key).toBe(PRICING_V2_CREDIT_PRICE_ENV);
     expect(unit.recurring_interval).toBeNull();
-    expect(catalog.items).toHaveLength(9);
+    expect(catalog.items).toHaveLength(15);
   });
 
-  it("kupón akcie 9/12: 25 %, once, redeem_by 2026-12-31T22:59:59Z, len produkt licencie, env kľúč z kontraktu", () => {
-    expect(catalog.coupons).toHaveLength(1);
-    const c = catalog.coupons[0];
-    expect(c.percent_off).toBe(25);
-    expect(c.duration).toBe("once");
-    expect(c.redeem_by).toBe(1798757999);
-    expect(c.redeem_by).toBe(Date.parse(PRICING_V3_PROMO_UNTIL) / 1000);
-    expect(c.redeem_by_iso).toBe(PRICING_V3_PROMO_UNTIL);
-    expect(c.env_key).toBe(PRICING_V3_ANNUAL_PROMO_COUPON_ENV);
-    expect(bySku(String(c.applies_to_product_sku)).name).toBe("Revolis licencia");
-    expect(bySku(String(c.applies_to_product_sku)).product_sku).toBeUndefined();
+  it("kupóny nie sú súčasťou tohto katalógu", () => {
+    expect(catalog.coupons).toEqual([]);
   });
 
   it("mena EUR a tax_behavior exclusive; staré v2 SKU, env a sumy v katalógu nie sú", () => {
@@ -136,19 +137,15 @@ describe("scripts/ops/stripe-v2 katalóg vs kód (cenník v3)", () => {
         expect(row.amount).toBe(item.unit_amount_cents);
       }
     }
-    const c = catalog.coupons[0];
-    const mc = manifest.coupons.find((m) => m.env === c.env_key)!;
-    expect(mc).toBeDefined();
-    expect([mc.name, mc.percent_off, mc.duration, mc.redeem_by]).toEqual([c.name, c.percent_off, c.duration, c.redeem_by]);
-    expect(mc.applies_to_product).toBe(bySku(String(c.applies_to_product_sku)).name);
+    expect(manifest.coupons).toEqual([]);
   });
 
-  it("testovací skript prejde vlastnou validáciou (bez siete) a vypíše tiers, kupón a balíky", () => {
+  it("testovací skript prejde vlastnou validáciou (bez siete) a vypíše tiers a balíky", () => {
     const res = spawnSync("python3", [join(DIR, "stripe_test_catalog.py")], { encoding: "utf8" });
     expect(res.status, res.stderr).toBe(0);
-    expect(res.stdout).toContain("licence_year | do 1: flat 300.00; do 2: flat 300.00; do 5: flat 180.00; do 10: 108.00/ks; do 20: 72.00/ks; do 30: flat 0.03 + 53.33/ks; do 50: 48.00/ks; do inf: 36.00/ks");
-    expect(res.stdout).toContain("licence_month | do 1: flat 30.00; do 2: flat 30.00; do 5: flat 18.00; do 10: 10.80/ks; do 20: 7.20/ks; do 30: 4.60/ks; do 50: 4.80/ks; do inf: 3.60/ks");
-    expect(res.stdout).toContain("Kupon annual_promo: -25 %, duration=once, redeem_by=2026-12-31T22:59:59Z (1798757999)");
+    expect(res.stdout).toContain("licence_team_year | do 5: flat 780.00");
+    expect(res.stdout).toContain("licence_siet_month | do 10: flat 132.00; do 20: 7.20/ks; do inf: 6.00/ks");
+    expect(res.stdout).toContain("Kupony: ziadne v tomto katalogu");
     expect(res.stdout).toContain("credits_50_month | 26.00 | 31.98 | 50 |");
     expect(res.stdout).toContain("credit_unit_one_time | 0.75 | 0.92 | 1 |");
   });
@@ -159,19 +156,16 @@ describe("scripts/ops/stripe-v2 katalóg vs kód (cenník v3)", () => {
     expect(src).not.toMatch(/sk_live_/);
     expect(src).toContain("Stripe vytvoril produkt v live režime");
     expect(src).toContain("Stripe vytvoril cenu v live režime");
-    expect(src).toContain("Stripe vytvoril {what} v live režime");
   });
 
-  it("test skript zakladá tiered cenu s tiers[i][up_to|flat_amount|unit_amount] a kupón s applies_to bez siete", () => {
+  it("test skript zakladá tiered cenu s tiers[i][up_to|flat_amount|unit_amount] bez siete", () => {
     const src = readFileSync(join(DIR, "stripe_test_catalog.py"), "utf8");
     expect(src).toContain('params["billing_scheme"] = "tiered"');
     expect(src).toContain('params["tiers_mode"] = item["tiers_mode"]');
     expect(src).toContain('f"tiers[{i}][up_to]"');
     expect(src).toContain('f"tiers[{i}][flat_amount]"');
     expect(src).toContain('f"tiers[{i}][unit_amount]"');
-    expect(src).toContain('"applies_to[products][0]"');
-    expect(src).toContain('"redeem_by": coupon["redeem_by"]');
     const posts = [...src.matchAll(/request\(\s*"POST",\s*"([^"]+)"/g)].map((m) => m[1]);
-    expect(new Set(posts)).toEqual(new Set(["/products", "/prices", "/coupons"]));
+    expect(new Set(posts)).toEqual(new Set(["/products", "/prices"]));
   });
 });

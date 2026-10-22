@@ -32,7 +32,7 @@ describe("FinalCTA: PRICING_PUBLIC_ENABLED vypnuté (predvolené) = žiadna suma
       expect(html).toContain('href="/support"');
       expect(html).toContain('href="/demo"');
       expect(t).toContain(GUARANTEE);
-      expect(t).not.toMatch(/pilot|\+\s?50|každý cent/i);
+      expect(t).not.toMatch(/\+\s?50|každý cent/i);
       expect(t).not.toMatch(FORBIDDEN_CLIENT_NAMES);
     });
   }
@@ -41,7 +41,6 @@ describe("FinalCTA: PRICING_PUBLIC_ENABLED vypnuté (predvolené) = žiadna suma
     const src = fs.readFileSync(path.join(__dirname, "..", "page.tsx"), "utf8");
     expect(src).toContain("getPublicPricingCatalog()");
     expect(src).not.toContain("getPricingV2CatalogIfEnabled");
-    expect(src).not.toMatch(/pilot/i);
   });
 });
 
@@ -58,8 +57,9 @@ describe("FinalCTA: PRICING_PUBLIC_ENABLED zapnuté (cenník v3)", () => {
       "30,75 € s DPH 23 %",
       "30 € mesačne bez DPH pri mesačnej platbe (+20 %)",
       "2–5 maklérov",
-      "od 50 € mesačne bez DPH pri ročnej platbe",
-      "od 61,50 € s DPH 23 %",
+      "65 € mesačne bez DPH pri ročnej platbe",
+      "79,95 € s DPH 23 %",
+      "78 € mesačne bez DPH pri mesačnej platbe (+20 %)",
       "6–10 maklérov",
       "od 74 € mesačne bez DPH pri ročnej platbe",
       "od 91,02 € s DPH 23 %",
@@ -77,17 +77,18 @@ describe("FinalCTA: PRICING_PUBLIC_ENABLED zapnuté (cenník v3)", () => {
     }
   });
 
-  it("do 31. 12. 2026 ukáže akciu 9 z 12; po termíne ju neukáže", () => {
-    expect(t).toContain("Prvý rok 3 mesiace zadarmo (platíte 9 z 12)");
+  it("promo text nie je súčasťou cenníka", () => {
+    expect(t).not.toContain("Prvý rok 3 mesiace zadarmo");
+    expect(t).not.toContain("3 mesiace zadarmo");
     const after = htmlText(renderToStaticMarkup(<FinalCTA pricingV2={buildPricingV2Catalog(23, new Date("2027-01-01T00:00:00Z"))} />));
     expect(after).not.toContain("Prvý rok 3 mesiace zadarmo");
     expect(after).not.toContain("3 mesiace zadarmo");
   });
 
-  it("nesie garanciu v jedinom znení a nenesie zvyšky starých cien, seat, odpočet, pilot ani meno klienta", () => {
+  it("nesie garanciu v jedinom znení a nenesie zvyšky starých cien, seat, odpočet ani meno klienta", () => {
     expect(t).toContain(GUARANTEE);
     expect(t).not.toMatch(LEGACY_PRICE_TOKEN);
-    expect(t).not.toMatch(/cockpit|seat|COUNTDOWN|SPOTS|zľav|pilot|\+\s?50|každý cent/i);
+    expect(t).not.toMatch(/cockpit|seat|COUNTDOWN|SPOTS|zľav|\+\s?50|každý cent/i);
     expect(t).not.toMatch(FORBIDDEN_CLIENT_NAMES);
   });
 

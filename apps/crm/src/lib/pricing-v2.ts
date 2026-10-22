@@ -5,11 +5,8 @@
  * Všetky sumy sú v CENTOCH a BEZ DPH. Konečná cena sa počíta zo základu a sadzby DPH;
  * základ sa pri zmene sadzby nemení. Grant kreditov patrí kancelárii, nie používateľovi.
  *
- * Pri 1–20 makléroch je základ = mesačná cena pri ROČNEJ fakturácii (vrátane GO B, #908: 2 makléri 50 €, 3–5 maklérov 65 €).
+ * Základ = mesačná cena pri ROČNEJ fakturácii.
  * Mesačná platba bez záväzku = základ × 1,2; ročná platba = 12 × základ.
- * Od 21. makléra (variant A+, GO Andreja 2026-10-21) sú mesačná aj ročná suma priamo graduated tarify
- * v `PRICING_V3_SEAT_TIERS` — ročná už nie je 10× mesačná a nie je deliteľná 12.
- * Akcia do 31. 12. 2026: kupón −25 % z ročnej sumy, `duration=once` (pri 1–20 vyjde presne 9 z 12 mesiacov).
  * Pásmo sa nevyberá ručne, odvodí sa z počtu maklérov (`resolvePricingV2Band`).
  *
  * `isPricingV2Enabled()` je predvolene vypnuté. Staré seat ceny v `program-tier-pricing.ts` ostávajú nedotknuté.
@@ -18,7 +15,7 @@
 /** Verzia cenníka. GO foundera: 2026-10-19. */
 export const PRICING_VERSION = "v3";
 
-/** Akcia 9/12 pri ročnej platbe platí najneskôr do tohto okamihu (= 31. 12. 2026 23:59:59 Europe/Bratislava). */
+/** Historický termín zľavovej akcie; nový checkout ho nepoužíva. */
 export const PRICING_V3_PROMO_UNTIL = "2026-12-31T22:59:59Z";
 
 export const PRICING_V2_VAT_PERCENT_DEFAULT = 23;
@@ -46,12 +43,12 @@ function freezeList<T extends object>(items: T[]): readonly T[] {
 }
 
 /**
- * Pásma v3 (1 / 2–5 / 6–10 / 11+). `netCents` = základ pri `minUsers`: Team od 50 € (2 makléri), 3–5 maklérov 65 € (strop). Mesačný grant kreditov kancelárie ostáva 25 / 60 / 120 / 175
+ * Pásma v3 (1 / 2–5 / 6–10 / 11+). `netCents` = základ pri `minUsers`. Mesačný grant kreditov kancelárie ostáva 25 / 60 / 120 / 175
  * (v3 ho nemení; otvorená otázka pre foundera).
  */
 export const PRICING_V2_BANDS: readonly PricingV2Band[] = freezeList<PricingV2Band>([
   { id: "start", label: "Start", minUsers: 1, maxUsers: 1, netCents: 2500, isFromPrice: false, monthlyCredits: 25 },
-  { id: "team", label: "Team", minUsers: 2, maxUsers: 5, netCents: 5000, isFromPrice: true, monthlyCredits: 60 },
+  { id: "team", label: "Team", minUsers: 2, maxUsers: 5, netCents: 6500, isFromPrice: false, monthlyCredits: 60 },
   { id: "office", label: "Kancelária", minUsers: 6, maxUsers: 10, netCents: 7400, isFromPrice: true, monthlyCredits: 120 },
   { id: "network", label: "Sieť", minUsers: 11, maxUsers: null, netCents: 11600, isFromPrice: true, monthlyCredits: 175 },
 ]);
@@ -63,8 +60,8 @@ export type PricingV2Interval = (typeof PRICING_V2_INTERVALS)[number];
 /** Ročná platba = 12 × základ (bežná cena). Kredity sa pri ročnom pláne prideľujú naďalej MESAČNE. */
 export const PRICING_V2_ANNUAL_MONTHS = 12;
 
-/** Akcia do `PRICING_V3_PROMO_UNTIL`: prvý ročný rok sa platí 9 z 12 mesiacov. */
-export const PRICING_V3_PROMO_PAID_MONTHS = 9;
+/** Zľavová akcia nie je v novom checkout variante aktívna. */
+export const PRICING_V3_PROMO_PAID_MONTHS = PRICING_V2_ANNUAL_MONTHS;
 
 /** Mesačná platba bez ročného záväzku = základ × 1,2 (presne v centoch). */
 export const PRICING_V3_MONTHLY_MARKUP_PERCENT = 20;
@@ -101,37 +98,32 @@ export function annualNetCents(monthlyNetCents: number): number {
 
 /**
  * Základ: mesačná cena pri ročnej fakturácii pre `n` maklérov (v centoch bez DPH).
- * 1 = 25 €, 2 = 50 €, 3–5 = 65 € (strop Team), potom 9 / 6 € za makléra do 20.
- * Od 21. nie je ročná suma deliteľná 12 — fakturovaná cena je `licenseNetCents`.
+ * 1 = 25 €, 2–5 = 65 €, 6–10 = 65 € + 9 € za makléra nad 5,
+ * 11–20 = 110 € + 6 € za makléra nad 10, od 21. +5 € za ďalšieho makléra.
  */
 export function licenseBaseMonthlyNetCents(n: number): number {
   assertUsers(n);
-  if (n > 20) {
-    throw new RangeError(
-      `Základ (mesačne pri ročnej fakturácii) je celé číslo len pre 1–20 maklérov; od 21. platí graduated tarifa (licenseNetCents).`,
-    );
-  }
   let base: number;
   if (n === 1) base = 2500;
-  else if (n === 2) base = 5000; // 2 × 25 €: bez skoku na hranici 1→2
-  else if (n <= 5) base = 6500; // strop Team
+  else if (n <= 5) base = 6500;
   else if (n <= 10) base = 6500 + 900 * (n - 5);
-  else base = 11000 + 600 * (n - 10);
+  else if (n <= 20) base = 11000 + 600 * (n - 10);
+  else base = 17000 + 500 * (n - 20);
   if (!Number.isSafeInteger(base)) throw new RangeError(`Základ ceny nie je bezpečné celé číslo: ${base}`);
   return base;
 }
 
-/** Cena licencie za jedno fakturačné obdobie. Pri 1–20 = základ × 1,2 / × 12; od 21. priamo graduated tarifa. */
+/** Cena licencie za jedno fakturačné obdobie. */
 export function licenseNetCents(n: number, interval: PricingV2Interval): number {
   if (!isPricingV2Interval(interval)) throw new RangeError(`Neplatné fakturačné obdobie: ${String(interval)}`);
-  const total = graduatedTierNetCents(PRICING_V3_SEAT_TIERS[interval], n);
+  const base = licenseBaseMonthlyNetCents(n);
+  const total = interval === "year" ? annualNetCents(base) : Math.round((base * (100 + PRICING_V3_MONTHLY_MARKUP_PERCENT)) / 100);
   if (!Number.isSafeInteger(total)) throw new RangeError(`Cena licencie nie je bezpečné celé číslo: ${total}`);
   return total;
 }
 
 /**
- * Orientačný mesačný prepočet bežnej ročnej ceny. Pri 1–20 je presný základ.
- * Od 21. je to `Math.round(ročná / 12)` a NIE JE fakturovaná položka.
+ * Mesačný prepočet bežnej ročnej ceny.
  */
 export function illustrativeAnnualMonthlyNetCents(n: number): number {
   const year = licenseNetCents(n, "year");
@@ -176,24 +168,53 @@ export const PRICING_V3_SEAT_TIERS: {
 } = Object.freeze({
   year: Object.freeze([
     Object.freeze({ up_to: 1, flat_amount: 30000, unit_amount: 0 }),
-    Object.freeze({ up_to: 2, flat_amount: 30000, unit_amount: 0 }),
-    Object.freeze({ up_to: 5, flat_amount: 18000, unit_amount: 0 }),
+    Object.freeze({ up_to: 5, flat_amount: 48000, unit_amount: 0 }),
     Object.freeze({ up_to: 10, flat_amount: 0, unit_amount: 10800 }),
     Object.freeze({ up_to: 20, flat_amount: 0, unit_amount: 7200 }),
-    Object.freeze({ up_to: 30, flat_amount: 3, unit_amount: 5333 }),
-    Object.freeze({ up_to: 50, flat_amount: 0, unit_amount: 4800 }),
-    Object.freeze({ up_to: null, flat_amount: 0, unit_amount: 3600 }),
+    Object.freeze({ up_to: null, flat_amount: 0, unit_amount: 6000 }),
   ]),
   month: Object.freeze([
     Object.freeze({ up_to: 1, flat_amount: 3000, unit_amount: 0 }),
-    Object.freeze({ up_to: 2, flat_amount: 3000, unit_amount: 0 }),
-    Object.freeze({ up_to: 5, flat_amount: 1800, unit_amount: 0 }),
+    Object.freeze({ up_to: 5, flat_amount: 4800, unit_amount: 0 }),
     Object.freeze({ up_to: 10, flat_amount: 0, unit_amount: 1080 }),
     Object.freeze({ up_to: 20, flat_amount: 0, unit_amount: 720 }),
-    Object.freeze({ up_to: 30, flat_amount: 0, unit_amount: 460 }),
-    Object.freeze({ up_to: 50, flat_amount: 0, unit_amount: 480 }),
-    Object.freeze({ up_to: null, flat_amount: 0, unit_amount: 360 }),
+    Object.freeze({ up_to: null, flat_amount: 0, unit_amount: 600 }),
   ]),
+});
+
+export const PRICING_V3_PLAN_TIERS: {
+  readonly [B in PricingV2BandId]: { readonly year: readonly PricingV3Tier[]; readonly month: readonly PricingV3Tier[] };
+} = Object.freeze({
+  start: Object.freeze({
+    year: Object.freeze([Object.freeze({ up_to: 1, flat_amount: 30000, unit_amount: 0 })]),
+    month: Object.freeze([Object.freeze({ up_to: 1, flat_amount: 3000, unit_amount: 0 })]),
+  }),
+  team: Object.freeze({
+    year: Object.freeze([Object.freeze({ up_to: 5, flat_amount: 78000, unit_amount: 0 })]),
+    month: Object.freeze([Object.freeze({ up_to: 5, flat_amount: 7800, unit_amount: 0 })]),
+  }),
+  office: Object.freeze({
+    year: Object.freeze([
+      Object.freeze({ up_to: 5, flat_amount: 78000, unit_amount: 0 }),
+      Object.freeze({ up_to: 10, flat_amount: 0, unit_amount: 10800 }),
+    ]),
+    month: Object.freeze([
+      Object.freeze({ up_to: 5, flat_amount: 7800, unit_amount: 0 }),
+      Object.freeze({ up_to: 10, flat_amount: 0, unit_amount: 1080 }),
+    ]),
+  }),
+  network: Object.freeze({
+    year: Object.freeze([
+      Object.freeze({ up_to: 10, flat_amount: 132000, unit_amount: 0 }),
+      Object.freeze({ up_to: 20, flat_amount: 0, unit_amount: 7200 }),
+      Object.freeze({ up_to: null, flat_amount: 0, unit_amount: 6000 }),
+    ]),
+    month: Object.freeze([
+      Object.freeze({ up_to: 10, flat_amount: 13200, unit_amount: 0 }),
+      Object.freeze({ up_to: 20, flat_amount: 0, unit_amount: 720 }),
+      Object.freeze({ up_to: null, flat_amount: 0, unit_amount: 600 }),
+    ]),
+  }),
 });
 
 /** Simulácia Stripe graduated pricing: flat sa pripočíta raz, keď množstvo zasiahne tier; unit × počet kusov v tieri. */
@@ -386,13 +407,14 @@ export function buildPricingV2Catalog(
   now: Date = new Date(),
 ): PricingV2Catalog {
   assertVatPercent(vatPercent);
+  void now;
   return {
     version: PRICING_VERSION,
     vatPercent,
     creditUnit: priceFromNetCents(PRICING_V2_CREDIT_NET_CENTS, vatPercent),
     promo: {
       until: PRICING_V3_PROMO_UNTIL,
-      active: isAnnualPromoActive(now),
+      active: false,
       paidMonths: PRICING_V3_PROMO_PAID_MONTHS,
       totalMonths: PRICING_V2_ANNUAL_MONTHS,
     },

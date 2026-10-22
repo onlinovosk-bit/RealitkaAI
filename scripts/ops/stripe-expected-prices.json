@@ -11,32 +11,42 @@
     { "env": "STRIPE_PRICE_CREDITS_PRO", "product": "Kredity Pro (500)", "amount": 37900, "type": "one_time", "gate": "topup" },
     { "env": "STRIPE_PRICE_CREDITS_MEGA", "product": "Kredity Mega (1500)", "amount": 99900, "type": "one_time", "gate": "topup" },
     { "env": "STRIPE_PRICE_STARTER_PACK", "product": "Maklérsky štartovací balík", "amount": 4700, "type": "one_time", "gate": "starter_pack" },
+    { "env": "STRIPE_PRICE_V3_START_YEARLY", "product": "Revolis licencia", "type": "recurring", "interval": "year", "gate": "pricing_v2", "billing_scheme": "tiered", "tiers_mode": "graduated", "tiers": [{ "up_to": 1, "flat_amount": 30000, "unit_amount": 0 }] },
+    { "env": "STRIPE_PRICE_V3_START_MONTHLY", "product": "Revolis licencia", "type": "recurring", "gate": "pricing_v2", "billing_scheme": "tiered", "tiers_mode": "graduated", "tiers": [{ "up_to": 1, "flat_amount": 3000, "unit_amount": 0 }] },
+    { "env": "STRIPE_PRICE_V3_TEAM_YEARLY", "product": "Revolis licencia", "type": "recurring", "interval": "year", "gate": "pricing_v2", "billing_scheme": "tiered", "tiers_mode": "graduated", "tiers": [{ "up_to": 5, "flat_amount": 78000, "unit_amount": 0 }] },
+    { "env": "STRIPE_PRICE_V3_TEAM_MONTHLY", "product": "Revolis licencia", "type": "recurring", "gate": "pricing_v2", "billing_scheme": "tiered", "tiers_mode": "graduated", "tiers": [{ "up_to": 5, "flat_amount": 7800, "unit_amount": 0 }] },
     {
-      "env": "STRIPE_PRICE_V3_SEAT_YEARLY", "product": "Revolis licencia", "type": "recurring", "interval": "year", "gate": "pricing_v2",
+      "env": "STRIPE_PRICE_V3_KANCELARIA_YEARLY", "product": "Revolis licencia", "type": "recurring", "interval": "year", "gate": "pricing_v2",
       "billing_scheme": "tiered", "tiers_mode": "graduated",
       "tiers": [
-        { "up_to": 1, "flat_amount": 30000, "unit_amount": 0 },
-        { "up_to": 2, "flat_amount": 30000, "unit_amount": 0 },
-        { "up_to": 5, "flat_amount": 18000, "unit_amount": 0 },
-        { "up_to": 10, "flat_amount": 0, "unit_amount": 10800 },
-        { "up_to": 20, "flat_amount": 0, "unit_amount": 7200 },
-        { "up_to": 30, "flat_amount": 3, "unit_amount": 5333 },
-        { "up_to": 50, "flat_amount": 0, "unit_amount": 4800 },
-        { "up_to": "inf", "flat_amount": 0, "unit_amount": 3600 }
+        { "up_to": 5, "flat_amount": 78000, "unit_amount": 0 },
+        { "up_to": 10, "flat_amount": 0, "unit_amount": 10800 }
       ]
     },
     {
-      "env": "STRIPE_PRICE_V3_SEAT_MONTHLY", "product": "Revolis licencia", "type": "recurring", "gate": "pricing_v2",
+      "env": "STRIPE_PRICE_V3_KANCELARIA_MONTHLY", "product": "Revolis licencia", "type": "recurring", "gate": "pricing_v2",
       "billing_scheme": "tiered", "tiers_mode": "graduated",
       "tiers": [
-        { "up_to": 1, "flat_amount": 3000, "unit_amount": 0 },
-        { "up_to": 2, "flat_amount": 3000, "unit_amount": 0 },
-        { "up_to": 5, "flat_amount": 1800, "unit_amount": 0 },
-        { "up_to": 10, "flat_amount": 0, "unit_amount": 1080 },
+        { "up_to": 5, "flat_amount": 7800, "unit_amount": 0 },
+        { "up_to": 10, "flat_amount": 0, "unit_amount": 1080 }
+      ]
+    },
+    {
+      "env": "STRIPE_PRICE_V3_SIET_YEARLY", "product": "Revolis licencia", "type": "recurring", "interval": "year", "gate": "pricing_v2",
+      "billing_scheme": "tiered", "tiers_mode": "graduated",
+      "tiers": [
+        { "up_to": 10, "flat_amount": 132000, "unit_amount": 0 },
+        { "up_to": 20, "flat_amount": 0, "unit_amount": 7200 },
+        { "up_to": "inf", "flat_amount": 0, "unit_amount": 6000 }
+      ]
+    },
+    {
+      "env": "STRIPE_PRICE_V3_SIET_MONTHLY", "product": "Revolis licencia", "type": "recurring", "gate": "pricing_v2",
+      "billing_scheme": "tiered", "tiers_mode": "graduated",
+      "tiers": [
+        { "up_to": 10, "flat_amount": 13200, "unit_amount": 0 },
         { "up_to": 20, "flat_amount": 0, "unit_amount": 720 },
-        { "up_to": 30, "flat_amount": 0, "unit_amount": 460 },
-        { "up_to": 50, "flat_amount": 0, "unit_amount": 480 },
-        { "up_to": "inf", "flat_amount": 0, "unit_amount": 360 }
+        { "up_to": "inf", "flat_amount": 0, "unit_amount": 600 }
       ]
     },
     { "env": "STRIPE_PRICE_V3_PACK_50", "product": "Revolis balíky kreditov", "amount": 2600, "type": "recurring", "gate": "pricing_v2" },
@@ -47,11 +57,5 @@
     { "env": "STRIPE_PRICE_V3_PACK_300", "product": "Revolis balíky kreditov", "amount": 13100, "type": "recurring", "gate": "pricing_v2" },
     { "env": "STRIPE_PRICE_V3_CREDIT", "product": "Revolis Kredit (1 ks)", "amount": 75, "type": "one_time", "gate": "pricing_v2" }
   ],
-  "coupons": [
-    {
-      "env": "STRIPE_COUPON_V3_ANNUAL_PROMO", "name": "Prvý rok 9 z 12 mesiacov (-25 %)",
-      "percent_off": 25, "duration": "once", "redeem_by": 1798757999, "redeem_by_iso": "2026-12-31T22:59:59Z",
-      "applies_to_product": "Revolis licencia", "gate": "pricing_v2"
-    }
-  ]
+  "coupons": []
 }

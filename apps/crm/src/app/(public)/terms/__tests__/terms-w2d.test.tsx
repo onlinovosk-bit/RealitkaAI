@@ -22,7 +22,7 @@ describe("VOP: verejná stránka nikdy neukáže sumu, kým nie je PRICING_PUBLI
     const t = htmlText(html);
     expect(html).not.toContain("€");
     expect(t).not.toMatch(LEGACY_PRICE_TOKEN);
-    expect(t).not.toMatch(/pilot|\+\s?50|každý cent/i);
+    expect(t).not.toMatch(/\+\s?50|každý cent/i);
     expect(t).not.toMatch(FORBIDDEN_CLIENT_NAMES);
   });
 
@@ -54,12 +54,12 @@ describe("VOP: zapnuté V2 aj PRICING_PUBLIC_ENABLED (NÁVRH, cenník v3)", () =
   it("ukáže pásma s čistou aj konečnou cenou z katalógu", () => {
     const t = render();
     expect(t).toContain("Start — 1 maklér (25 € mesačne bez DPH pri ročnej platbe; 30,75 € s DPH 23 %)");
-    expect(t).toContain("Team — 2–5 maklérov (od 50 € mesačne bez DPH pri ročnej platbe; od 61,50 € s DPH 23 %)");
+    expect(t).toContain("Team — 2–5 maklérov (65 € mesačne bez DPH pri ročnej platbe; 79,95 € s DPH 23 %)");
     expect(t).toContain("Kancelária — 6–10 maklérov (od 74 € mesačne bez DPH pri ročnej platbe; od 91,02 € s DPH 23 %)");
     expect(t).toContain("Sieť — 11 a viac maklérov (od 116 € mesačne bez DPH pri ročnej platbe; od 142,68 € s DPH 23 %)");
     expect(t).toContain("50 kreditov mesačne navyše: 26 € mesačne bez DPH (31,98 € s DPH 23 %)");
     expect(t).toContain("0,75 € za kredit bez DPH (0,92 € s DPH 23 %)");
-    expect(t).toContain("Prvý rok 3 mesiace zadarmo (platíte 9 z 12)");
+    expect(t).not.toContain("Prvý rok 3 mesiace zadarmo");
   });
 
   it("nenesie žiadne zvyšky starých cien ani Owner Cockpit ani meno referenčného klienta", () => {
@@ -69,7 +69,7 @@ describe("VOP: zapnuté V2 aj PRICING_PUBLIC_ENABLED (NÁVRH, cenník v3)", () =
     expect(t).not.toMatch(FORBIDDEN_CLIENT_NAMES);
     expect(t).not.toContain("Solo Seat");
     expect(t).not.toContain("2. júna 2026");
-    expect(t).not.toMatch(/pilot|\+\s?50|každý cent/i);
+    expect(t).not.toMatch(/\+\s?50|každý cent/i);
   });
 
   it("je označené ako návrh a nedoriešené veci sú viditeľne „DOPLNIŤ — rozhodnutie foundera“", () => {

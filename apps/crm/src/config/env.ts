@@ -26,7 +26,7 @@ const envSchema = z.object({
   OUTREACH_LEAD_COOLDOWN_HOURS: z.coerce.number().default(20),
 
   // ── Stripe ───────────────────────────────────────────────────
-  STRIPE_SECRET_KEY: z.string().min(1).optional(), // app-env.ts: voliteľné pre pilot bez platieb
+  STRIPE_SECRET_KEY: z.string().min(1).optional(), // app-env.ts: voliteľné pre režim bez platieb
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   STRIPE_PRICE_STARTER: z.string().optional(),
   STRIPE_PRICE_PRO: z.string().optional(),
@@ -57,6 +57,15 @@ const envSchema = z.object({
   SELF_SERVE_TRIAL_CREDITS: z.string().optional(),
   // Cenník v3 (GO 2026-10-19): len NÁZVY; hodnoty (Price/Coupon ID) patria do Vercelu, nie do kódu.
   PRICING_PUBLIC_ENABLED: z.string().optional(),
+  STRIPE_PRICE_V3_START_MONTHLY: z.string().optional(),
+  STRIPE_PRICE_V3_START_YEARLY: z.string().optional(),
+  STRIPE_PRICE_V3_TEAM_MONTHLY: z.string().optional(),
+  STRIPE_PRICE_V3_TEAM_YEARLY: z.string().optional(),
+  STRIPE_PRICE_V3_KANCELARIA_MONTHLY: z.string().optional(),
+  STRIPE_PRICE_V3_KANCELARIA_YEARLY: z.string().optional(),
+  STRIPE_PRICE_V3_SIET_MONTHLY: z.string().optional(),
+  STRIPE_PRICE_V3_SIET_YEARLY: z.string().optional(),
+  // Dočasný fallback počas migrácie na plánové Price ID.
   STRIPE_PRICE_V3_SEAT_MONTHLY: z.string().optional(),
   STRIPE_PRICE_V3_SEAT_YEARLY: z.string().optional(),
   STRIPE_COUPON_V3_ANNUAL_PROMO: z.string().optional(),

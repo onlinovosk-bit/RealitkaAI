@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildPricingV2Catalog } from "@/lib/pricing-v2";
 import {
-  ANNUAL_PROMO_HEADLINE,
   annualPromoLines,
   creditUnitLine,
   formatEurFromCents,
@@ -63,7 +62,7 @@ describe("pricing-v2-copy (cenník v3)", () => {
     // [rozsah, základ pri ročnej platbe, s DPH 23 %, mesačná platba +20 %, kredity]
     const expected = [
       ["1 maklér", "25 € mesačne bez DPH pri ročnej platbe", "30,75 € s DPH 23 %", "30 € mesačne bez DPH pri mesačnej platbe (+20 %)", "25 kreditov mesačne pre celú kanceláriu"],
-      ["2–5 maklérov", "od 50 € mesačne bez DPH pri ročnej platbe", "od 61,50 € s DPH 23 %", "od 60 € mesačne bez DPH pri mesačnej platbe (+20 %)", "60 kreditov mesačne pre celú kanceláriu"],
+      ["2–5 maklérov", "65 € mesačne bez DPH pri ročnej platbe", "79,95 € s DPH 23 %", "78 € mesačne bez DPH pri mesačnej platbe (+20 %)", "60 kreditov mesačne pre celú kanceláriu"],
       ["6–10 maklérov", "od 74 € mesačne bez DPH pri ročnej platbe", "od 91,02 € s DPH 23 %", "od 88,80 € mesačne bez DPH pri mesačnej platbe (+20 %)", "120 kreditov mesačne pre celú kanceláriu"],
       ["11 a viac maklérov", "od 116 € mesačne bez DPH pri ročnej platbe", "od 142,68 € s DPH 23 %", "od 139,20 € mesačne bez DPH pri mesačnej platbe (+20 %)", "175 kreditov mesačne pre celú kanceláriu"],
     ];
@@ -88,11 +87,10 @@ describe("pricing-v2-copy (cenník v3)", () => {
     expect(n(creditUnitLine(c))).toBe("0,75 € za kredit bez DPH (0,92 € s DPH 23 %)");
   });
 
-  it("akcia 9/12: text len kým je akcia aktívna; garancia má jediné znenie", () => {
+  it("ročná promo komunikácia je v katalógu vypnutá; garancia má jediné znenie", () => {
     const active = buildPricingV2Catalog(23, new Date("2026-11-01T10:00:00Z"));
     const expired = buildPricingV2Catalog(23, new Date("2027-01-01T00:00:00Z"));
-    expect(annualPromoLines(active)[0]).toBe("Prvý rok 3 mesiace zadarmo (platíte 9 z 12)");
-    expect(annualPromoLines(active)[0]).toBe(ANNUAL_PROMO_HEADLINE);
+    expect(annualPromoLines(active)).toEqual([]);
     expect(annualPromoLines(expired)).toEqual([]);
     expect(GUARANTEE_TEXT).toBe("100 % vrátenie peňazí do 30 dní – bez otázok");
   });
