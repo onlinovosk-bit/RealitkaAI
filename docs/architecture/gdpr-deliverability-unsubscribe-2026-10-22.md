@@ -59,6 +59,7 @@ Dve rôzne spracúvania, dva rôzne základy (úsudok):
 - Podpísaný odkaz: `HMAC-SHA256`, tajomstvo `UNSUBSCRIBE_TOKEN_SECRET` (≥ 32 znakov), bez expirácie (odhlásenie z
   starého e-mailu musí fungovať), bez zápisu na GET, `Cache-Control: no-store`, `X-Robots-Tag: noindex`, `Referrer-Policy: no-referrer`.
   Token obsahuje odtlačok adresy, nie adresu.
+- POST na `/api/unsubscribe` má limit 20 požiadaviek za minútu na IP a počíta sa do `usage_metrics` (`unsubscribe_confirmed`); GET nič nezapisuje.
 - Chýbajúce tajomstvo, chýbajúca tabuľka alebo chyba čítania = **odoslanie sa zastaví** (fail-closed). Riziko: nasadenie
   v nesprávnom poradí zablokuje odchádzajúce e-maily (nie stratu údajov) — viď poradie v §6.
 

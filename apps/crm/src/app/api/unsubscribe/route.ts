@@ -11,11 +11,20 @@
 // Autorizáciu tvorí samotný token (HMAC): bez tajomstva ho nik nevyrobí.
 // Vždy sa odpovedá rovnako, či token existuje alebo nie — nič sa nevyzrádza.
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
+import { errorResponse } from '@/lib/api-response'
+import { validateQuery } from '@/lib/api-validate'
+import { rateLimit } from '@/lib/rate-limit'
+import { incrementUsageMetric, SYSTEM_USAGE_AGENCY_ID } from '@/lib/usage-metrics'
 import { verifyUnsubscribeToken } from '@/lib/email/unsubscribe-token'
 import { addSuppressionByHash } from '@/lib/email/suppression'
 
 export const runtime = 'nodejs'
+
+// Tvar tokenu sa overí pred HMAC-om; neplatný vstup dostane rovnakú stránku
+// „Odkaz nie je platný“ ako podvrhnutý podpis.
+const QuerySchema = z.object({ t: z.string().min(1).max(2048) })
 
 const HEADERS = {
   'content-type': 'text/html; charset=utf-8',
@@ -54,9 +63,11 @@ function invalid(): NextResponse {
 }
 
 export async function GET(request: NextRequest) {
-  const token = request.nextUrl.searchParams.get('t')
+  const query = validateQuery(request.nextUrl.searchParams, QuerySchema)
+  if (!query.ok) return invalid()
+  const token = query.data.t
   const payload = verifyUnsubscribeToken(token)
-  if (!payload || !token) return invalid()
+  if (!payload) return invalid()
 
   const what =
     payload.t === 'b'
@@ -67,7 +78,15 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const payload = verifyUnsubscribeToken(request.nextUrl.searchParams.get('t'))
+  // Verejný zápisový endpoint: limit na IP. Poštový klient pri jednom kliku
+  // pošle jeden POST, takže 20/min je pre legitímne použitie s rezervou.
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
+  const { allowed } = await rateLimit(`unsubscribe:${ip}`, 20, 60_000)
+  if (!allowed) return errorResponse('Too many requests.', 429)
+
+  const query = validateQuery(request.nextUrl.searchParams, QuerySchema)
+  if (!query.ok) return invalid()
+  const payload = verifyUnsubscribeToken(query.data.t)
   if (!payload) return invalid()
 
   const admin = createServiceRoleClient()
@@ -98,6 +117,11 @@ export async function POST(request: NextRequest) {
       return page('Odhlásenie sa nepodarilo', 'Skúste to prosím o chvíľu znova.', undefined, 500)
     }
   }
+
+  await incrementUsageMetric({
+    agencyId: payload.t === 'o' ? payload.a : SYSTEM_USAGE_AGENCY_ID,
+    metric: 'unsubscribe_confirmed',
+  })
 
   return page('Odhlásenie je hotové', 'Ďalšie správy už nedostanete. Ak to bol omyl, stačí nám napísať.')
 }

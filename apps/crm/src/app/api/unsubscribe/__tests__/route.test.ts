@@ -9,7 +9,15 @@ const update = vi.fn(() => ({ eq: updateEq }))
 const from = vi.fn((table: string) => (table === 'email_suppressions' ? { upsert } : { update }))
 const mockAdmin = vi.fn()
 
+const mockRateLimit = vi.fn()
+const mockMetric = vi.fn()
+
 vi.mock('@/lib/supabase/admin', () => ({ createServiceRoleClient: () => mockAdmin() }))
+vi.mock('@/lib/rate-limit', () => ({ rateLimit: (...a: unknown[]) => mockRateLimit(...a) }))
+vi.mock('@/lib/usage-metrics', async (orig) => ({
+  ...(await orig<typeof import('@/lib/usage-metrics')>()),
+  incrementUsageMetric: (...a: unknown[]) => mockMetric(...a),
+}))
 
 const AGENCY = '11111111-1111-4111-8111-111111111111'
 const PROFILE = '22222222-2222-4222-8222-222222222222'
@@ -23,6 +31,8 @@ beforeEach(() => {
   vi.clearAllMocks()
   vi.stubEnv('UNSUBSCRIBE_TOKEN_SECRET', 'test-unsubscribe-secret-0123456789abcdef')
   mockAdmin.mockReturnValue({ from })
+  mockRateLimit.mockResolvedValue({ allowed: true, remaining: 19 })
+  mockMetric.mockResolvedValue(undefined)
   upsert.mockResolvedValue({ error: null })
   updateEq.mockResolvedValue({ error: null })
   vi.spyOn(console, 'error').mockImplementation(() => {})
@@ -74,5 +84,37 @@ describe('POST /api/unsubscribe — executes', () => {
     expect((await POST(req(t, 'POST'))).status).toBe(503)
     expect((await POST(req('forged.token', 'POST'))).status).toBe(400)
     expect(from).not.toHaveBeenCalled()
+  })
+})
+
+describe('POST /api/unsubscribe — public write endpoint guards', () => {
+  it('rate-limits per IP before touching the token or the DB', async () => {
+    mockRateLimit.mockResolvedValue({ allowed: false, remaining: 0 })
+    const t = signUnsubscribeToken({ t: 'o', h: hashEmail('jan@example.com'), a: AGENCY })!
+    const res = await POST(req(t, 'POST'))
+    expect(res.status).toBe(429)
+    expect(from).not.toHaveBeenCalled()
+    expect(mockMetric).not.toHaveBeenCalled()
+  })
+
+  it('counts a confirmed unsubscribe against the sending agency', async () => {
+    const t = signUnsubscribeToken({ t: 'o', h: hashEmail('jan@example.com'), a: AGENCY })!
+    const res = await POST(req(t, 'POST'))
+    expect(res.status).toBe(200)
+    expect(mockMetric).toHaveBeenCalledWith({ agencyId: AGENCY, metric: 'unsubscribe_confirmed' })
+  })
+
+  it('does not count a failed write', async () => {
+    upsert.mockResolvedValue({ error: { message: 'boom' } })
+    const t = signUnsubscribeToken({ t: 'o', h: hashEmail('jan@example.com'), a: AGENCY })!
+    const res = await POST(req(t, 'POST'))
+    expect(res.status).toBe(500)
+    expect(mockMetric).not.toHaveBeenCalled()
+  })
+
+  it('rejects a missing token with the invalid page, not JSON', async () => {
+    const res = await POST(req(null, 'POST'))
+    expect(res.status).toBe(400)
+    expect(res.headers.get('content-type')).toContain('text/html')
   })
 })

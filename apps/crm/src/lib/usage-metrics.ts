@@ -35,6 +35,8 @@ export type UsageMetricName =
   | "cron_credits_cycle"
   | "cron_customer_health"
   | "outreach_send"
+  // EMAIL-SUPPRESSION-01: príjemca potvrdil odhlásenie cez verejný odkaz.
+  | "unsubscribe_confirmed"
   // Public endpoints (website concierge widget, onboarding capability URLs).
   // They had no usage visibility at all, which is why the API contract ratchet
   // counted them as violations rather than as an accepted exception.
