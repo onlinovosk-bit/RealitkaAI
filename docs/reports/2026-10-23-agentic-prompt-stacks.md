@@ -1,6 +1,6 @@
 # Agentic Prompt Stacks — 2026-10-23
 
-Vetva tohto súboru: `cursor/agentic-visual-qa-dd79` (fáza 2), základ je vetva fázy 1. Nie je druhý report.
+Vetva tohto súboru: `cursor/agentic-api-lifecycle-dd79` (fáza 3), základ je vetva fázy 2. Nie je druhý report.
 
 ## G0 — baseline pred zmenou správania
 
@@ -105,4 +105,44 @@ Na recenzovanom hede `93ed763ea3284d527c2b7e53a4070374013f06b4` som v tomto turn
 
 Oprava je na vetve fázy 1. Blocked a `prReady: false` majú nenulový exit (blocked je 2). `PR_READY` len po otvorení súboru v repe. Chýbajúci `previousState` je `invalid_transition`.
 
-Fázy 3–5, merge a deploy táto vetva nerobí.
+## Fáza 3 — API Lifecycle Guard
+
+**Verdikt:** klasifikátor a inventár sú IMPLEMENTED a TESTED. Živá stránka poskytovateľa sa neťahala (`vendor_deprecation_fetched: false`). Nie je to migrácia a nie je to PRODUCTION_VERIFIED.
+
+Inventár `scripts/ci/api-lifecycle-inventory.json` vznikol extrakciou, nie odpisom z pamäte. `CODEOWNERS` v repe nie je, preto `ownership_gap: true` a `owner: null` na každom zázname.
+
+| id | hodnota nájdená v súbore | api verzia |
+|---|---|---|
+| anthropic-sonnet | `claude-sonnet-4-6` v `apps/crm/src/lib/ai/claude.ts` | medzera |
+| anthropic-haiku | `claude-haiku-4-5-20251001` v tom istom súbore | medzera |
+| openai-ghostwriter | `gpt-4o` | medzera |
+| openai-call-script | `gpt-4o-mini` | medzera |
+| openai-assistant-chat | `gpt-4o-mini` | medzera |
+| openai-transcribe | `whisper-1` | medzera |
+| google-ads-rest | API verzia `v25` v `google-ads-client.ts` | pin v kóde |
+| stripe-node-client | `new Stripe(` v `billing-store.ts` bez `apiVersion` | medzera |
+| dep-anthropic-sdk / dep-openai / dep-stripe | rozsahy `^0.91.1` / `^6.33.0` / `^21.0.1` z `apps/crm/package.json` | rozsah balíka, nie API verzia |
+
+Komentár v `google-ads-client.ts`, že v18 je sunset, sa neberie ako potvrdený primárny zdroj. Oznámenie s citátom a bez overenia je `unverified_notice`.
+
+Brána: `autoMigrate` je false pre missing source, unverified notice aj confirmed deprecation. Founder `action: migrate` na potvrdenom oznámení dá `allowed: true` a stále `autoMigrate: false` (`founder_authorized_not_automatic`). Neoverené oznámenie ostane `allowed: false` aj s tým istým povolením.
+
+### Príkaz
+
+`node --test scripts/ci/__tests__/api-lifecycle.test.mjs` → exit 0, 2 pass, 0 fail, 0 skipped.
+
+### Bezpečnosť
+
+Žiadny fetch deprecation stránky, žiadna zmena modelu v CRM, žiadny zápis do PROD. Inventár nie je úplný zoznam všetkých HTTP integrácií; je to množina, ktorú extraktor naozaj našiel.
+
+### Engineering justification
+
+- **Trigger:** new-file
+- **Decision path:** new-code (klasifikátor; inventár je extrakt existujúcich súborov, nie druhý katalóg cien)
+- **Alternatives considered:** ručný zoznam modelov v dokumente — zamietnuté, lebo by sa dal odpísať bez súboru
+- **Why not reuse:** cost governor nerieši deprecation notice a nespúšťa ani nezakazuje migráciu API
+- **Expected outcome:** neoverené vypnutie má `autoMigrate: false`
+- **Related paths:** `scripts/ci/lib/api-lifecycle.mjs`, `scripts/ci/api-lifecycle-inventory.json`
+- **Contradiction check:** none. Komentár o sunsete v18 sa nepoužil ako dôvod zmeny klienta.
+
+Fázy 4–5, merge a deploy táto vetva nerobí. CI tohto headu po rebase ešte nie je prečítaný.
