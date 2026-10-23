@@ -1,6 +1,6 @@
 # Agentic Prompt Stacks — 2026-10-23
 
-Vetva tohto súboru: `cursor/agentic-api-lifecycle-dd79` (fáza 3), základ je vetva fázy 2. Nie je druhý report.
+Vetva tohto súboru: `cursor/agentic-cost-routing-dd79` (fáza 4), základ je vetva fázy 3. Nie je druhý report.
 
 ## G0 — baseline pred zmenou správania
 
@@ -145,4 +145,64 @@ Brána: `autoMigrate` je false pre missing source, unverified notice aj confirme
 - **Related paths:** `scripts/ci/lib/api-lifecycle.mjs`, `scripts/ci/api-lifecycle-inventory.json`
 - **Contradiction check:** none. Komentár o sunsete v18 sa nepoužil ako dôvod zmeny klienta.
 
-Fázy 4–5, merge a deploy táto vetva nerobí. CI tohto headu po rebase ešte nie je prečítaný.
+## Fáza 4 — cost route advisor
+
+**Verdikt:** `selectRoute` je IMPLEMENTED a TESTED na reprodukovateľnom fixture. Živé vendor ceny a produkčná telemetria sú INCOMPLETE / NEMERANÉ. Produkčné limity sa nezmenili. Nie je to automatický switch a nie je to PRODUCTION_VERIFIED.
+
+Fixture `case-alpha`, metrika `exact_match`, latka `0.8`, rozpočet `0.1`. Čísla sú stropy v teste, nie cenník poskytovateľa.
+
+| kandidát | strop v teste | skóre | výsledok |
+|---|---|---|---|
+| fixture-cheap | 0.02 | 0.5 | pod latkou, nevybraný |
+| fixture-mid | 0.05 | 0.9 | vybraný, `applied: false` |
+| fixture-dear | 0.2 | 0.95 | drahší, nevybraný |
+
+Ďalšie výsledky toho istého behu: chýbajúci `price_source` → `INCOMPLETE` / `measurement_incomplete`; `budget_remaining_usd: null` → `BLOCK` / `budget_unknown`; rozpočet `0.01` → `BLOCK` / `budget_exhausted`; `environment: production` a `apply_switch: true` → `BLOCK` / `production_switch_forbidden`, `selected: null`; `retries_used: 1` pri `max_retries: 0` → `BLOCK` / `retry_limit`. Model id v tvare tajomstva sa v telemetrii rediguje.
+
+### Príkazy
+
+- `node --experimental-strip-types --test packages/bus-core/tests/cost-governor.test.ts` → exit 0, 22 pass, 0 fail (predtým 19).
+- `npx tsc -p packages/bus-core/tsconfig.json --noEmit` → exit 0.
+
+CI job `bus:test` tento súbor už spúšťa. Beh na GitHube po rebase ešte nie je prečítaný.
+
+### Bezpečnosť a cena
+
+Žiadny call na poskytovateľa, žiadna zmena `INTERNAL_GOVERNOR_LIMITS`, žiadny nákup kreditov, žiadny produkčný prepínač. `applied` je vždy false.
+
+### Engineering justification
+
+- **Trigger:** new-abstraction v existujúcom súbore
+- **Decision path:** reuse
+- **Alternatives considered:** čítať sadzby z `llm-usage-cost.ts` — zamietnuté, lebo to nie je overený živý cenník
+- **Why not reuse:** N/A — reuse applied (`redactSecrets`, limity sa nekopírujú do nových čísel)
+- **Expected outcome:** lacnejší kandidát pod latkou sa nevyberie; chýbajúci rozpočet fail-closed
+- **Related paths:** `packages/bus-core/src/cost-governor.ts`
+- **Contradiction check:** none pre automatický produkčný router — ten sa nestavia. Backlog `model-router` a `cost-governor` ostáva BACKLOG. Founder GO v tomto zadaní kryje len fail-closed radu.
+
+Fáza 5, merge a deploy táto vetva nerobí. `applied` ostáva false. Limity `0.5 / 5 / 25` sa nemenia. Routing sa z tejto tabuľky neprepína.
+
+### Ceny — overené v tomto turne vs unknown
+
+Žiadne číslo nižšie nie je nameraný náklad (žiadny invoice, žiadny usage export). Overené riadky sú publikovaný cenník prečítaný 2026-10-23. Ostatné ostávajú unknown a nie sú overené.
+
+**Overené (list price, nie measured cost)**
+
+| Čo kód drží | Jednotka | Podmienka z prečítanej stránky | Zhoda | Zdroj |
+|---|---|---|---|---|
+| Sonnet v `llm-usage-cost.ts`: input 3.0, output 15.0. Konštanta `CLAUDE_SONNET` je `claude-sonnet-4-6`. | USD / 1M tokenov | Riadok Claude Sonnet 4.6: base input $3 / MTok, output $15 / MTok | áno | https://platform.claude.com/docs/en/about-claude/pricing |
+| `gpt-4o` 2.5 / 10.0, `gpt-4o-mini` 0.15 / 0.6, `gpt-4.1` 2.0 / 8.0, `gpt-4.1-mini` 0.4 / 1.6 | USD / 1M tokenov | Tabuľka Standard, stĺpce Input a Output (nie Batch, nie long context) | áno | https://developers.openai.com/api/docs/pricing |
+| `CACHE_WRITE_MULTIPLIER` 1.25 a `CACHE_READ_MULTIPLIER` 0.1 | násobok base input | Stránka: 5-minútový cache write je 1.25× a cache hit je 10 % base input | áno ako násobok, nie ako dolárová sadzba Haiku 4.5 | tá istá Claude stránka |
+
+**Unknown (kód alebo test číslo má, tento turn ich ako cenu poskytovateľa neoveril)**
+
+| Číslo | Kde | Prečo unknown |
+|---|---|---|
+| Haiku input 0.8, output 4.0 | `llm-usage-cost.ts`, kľúč `CLAUDE_HAIKU` = `claude-haiku-4-5-20251001` | Tá istá Claude stránka má Claude Haiku 4.5 za $1 / $5 za 1M tokenov. $0.80 / $4 je riadok retired Claude Haiku 3.5, nie model id v kóde. Nie je to overená cena Haiku 4.5. |
+| `whisper-1` | inventár transcribe | Na OpenAI pricing stránke som nenašiel riadok `whisper-1`. `gpt-realtime-whisper` $0.017/min je iný produkt. |
+| `USD_TO_EUR` 0.92 | `llm-usage-cost.ts` | Nie je na cenníku modelu. |
+| `RETAIL_EUR_PER_CREDIT` 0.86 | `llm-usage-cost.ts` | Nie je na cenníku modelu. |
+| `INTERNAL_GOVERNOR_LIMITS` 0.5 / 5 / 25 USD, `warn_remaining_ratio` 0.2, `max_retries` 0 | `cost-governor.ts` | Politický strop v kóde, nie vendor cena. V tomto commite sa nemení. |
+| Fixture stropy 0.02, 0.05, 0.2 a test katalóg sonnet/opus 5, haiku 0.2 | `cost-governor.test.ts` | Vstupy testu, nie cenník. |
+
+`selectRoute` tieto sadzby nečíta a model neprepína.
