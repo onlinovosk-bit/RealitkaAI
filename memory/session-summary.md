@@ -1,3 +1,30 @@
+## Session 2026-10-23 (STENA LEDGER-REPAIR)
+### Dokončené
+- PROD transakcia (ROLLBACK dôkaz, potom COMMIT): 3 chýbajúce migrácie (`agency_gmail_inbound_oauth`, `lead_assignment_rules` agency_id + tenantová RLS, `morning_briefs.content_source*`) + 55 ledger riadkov; ledger 81 → 136, dôkaz v `memory/decisions.md`.
+- Odmietnuté do ledgera: 13 verzií bez prítomného efektu v PROD (zoznam + dôvody v decisions.md).
+### Rozpracované / Pending
+- Founder: `UNSUBSCRIBE_TOKEN_SECRET` + Redeploy + `RESEND_API_KEY`; Q-01 bounce; Stripe krok C; právnik; rozhodnutie o `20261016170000`.
+- `leads_demo_source_check` (`hero_email_capture`) chýba na PROD; anon write granty (105 z 143 tabuliek) čakajú na mapu ciest + test s anon kľúčom.
+- Lokálny izolovaný test migrácií: nemerané (Postgres nepovolený v prostredí).
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md`, `docs/STATUS.md`: záznam steny, SESSION blok. Kód sa nemenil.
+### Ďalší krok
+GO na stenu ANON-WRITE-MAP: úplná mapa ciest (tabuľky × anon/authenticated × kód) + test s anon kľúčom, potom jeden balík SQL.
+
+## Session 2026-10-22 (STENA PROD aktivácia doručiteľnosti)
+### Dokončené
+- PROD migrácia `apps/crm/supabase/migrations/20261022100000_email_suppressions.sql` aplikovaná, dôkaz v transakcii s ROLLBACK, ledger zapísaný.
+- Overené: PROD deployment READY na `a2e42ac`; verejné cesty `/api/resend-webhook` (405) a `/api/unsubscribe` (400 bez tokenu) dosiahnuteľné bez proxy 401.
+### Rozpracované / Pending
+- Founder: `UNSUBSCRIBE_TOKEN_SECRET` (≥ 32 znakov, Production) vo Vercel projekte `realitka-ai` + Redeploy; potvrdiť existenciu `RESEND_API_KEY`. Do tej doby je outreach e-mail fail-closed.
+- Founder: Q-01 testovací bounce / Resend delivery log.
+- Právnik: základ obchodného e-mailu fyzickej osobe, odtlačok bez soli, retencia.
+### Kľúčové súbory zmenené
+- `docs/STATUS.md`: SESSION blok prepísaný na cieľ PROD aktivácia (4/6), poznámka k stavu.
+- `memory/decisions.md`, `memory/session-summary.md`: PREPEND záznamy.
+### Ďalší krok
+Founder nastaví `UNSUBSCRIBE_TOKEN_SECRET` a spraví Redeploy; potom jedno overenie Q-01.
+
 ## Session 2026-10-22 (STENA doručiteľnosť a odhlásenie)
 ### Dokončené
 - Kód: `apps/crm/src/proxy.ts` (verejné cesty), `lib/email/{suppression,unsubscribe-token}.ts`, `app/api/unsubscribe/route.ts`, `app/api/resend-webhook/route.ts` (bounce/complaint/suppressed), `lib/outreach-store.ts` (kontrola potlačenia + List-Unsubscribe), `lib/morning-brief/generators/email-html.ts` (podpísaný odkaz), `app/api/notifications/unsubscribe/route.ts` (len redirect).
