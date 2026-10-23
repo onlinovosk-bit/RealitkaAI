@@ -331,3 +331,106 @@ export function lintPlan(text) {
 
   return { ok: !findings.some((f) => f.level === "error"), findings };
 }
+
+// ── 8. stavy úlohy (evidence gate) ─────────────────────────────────────────
+// Agentove tvrdenie nie je dôkaz. Nástroj nikdy nevykoná merge ani deploy.
+
+export const WORKFLOW_STATES = Object.freeze([
+  "PLANNED",
+  "IN_PROGRESS",
+  "IMPLEMENTED",
+  "TESTED",
+  "REVIEWED",
+  "PR_READY",
+  "HUMAN_APPROVED",
+  "MERGED",
+  "DEPLOYED",
+  "PRODUCTION_VERIFIED",
+]);
+
+const PR_READY_AT = WORKFLOW_STATES.indexOf("PR_READY");
+
+export function checkTransition(from, to) {
+  const a = WORKFLOW_STATES.indexOf(from);
+  const b = WORKFLOW_STATES.indexOf(to);
+  if (a < 0 || b < 0) return { ok: false, code: "unknown_state", from, to, allowed: null };
+  if (b !== a + 1) {
+    return { ok: false, code: "invalid_transition", from, to, allowed: WORKFLOW_STATES[a + 1] ?? null };
+  }
+  return { ok: true, code: "ok", from, to, requiresHuman: b > PR_READY_AT };
+}
+
+export function deriveWorkflowState(evidence = {}) {
+  const blockers = [];
+  const files = Array.isArray(evidence.filesChanged) ? evidence.filesChanged : [];
+  const base = { actions: [], performsMerge: false, performsDeploy: false };
+
+  if (!evidence.started) {
+    return { ...base, state: "PLANNED", prReady: false, blockers };
+  }
+  if (!files.length) {
+    blockers.push({ code: "no_files" });
+    return { ...base, state: "IN_PROGRESS", prReady: false, blockers };
+  }
+
+  const checks = Array.isArray(evidence.checks) ? evidence.checks : [];
+  const required = checks.filter((c) => c.required !== false);
+  const criteria = Array.isArray(evidence.criteria) ? evidence.criteria : [];
+  const untested = Array.isArray(evidence.untested) ? evidence.untested : [];
+  if (!required.length || required.some((c) => c.status !== STATUS.PASS)) {
+    blockers.push({ code: required.some((c) => c.status === STATUS.FAIL) ? "failed_checks" : "checks_not_pass" });
+    return { ...base, state: "IMPLEMENTED", prReady: false, blockers };
+  }
+  if (!criteria.length || criteria.some((c) => c.status !== STATUS.PASS)) {
+    blockers.push({ code: "criteria" });
+    return { ...base, state: "IMPLEMENTED", prReady: false, blockers };
+  }
+  if (evidence.scopeStatus !== STATUS.PASS) {
+    blockers.push({ code: "scope" });
+    return { ...base, state: "IMPLEMENTED", prReady: false, blockers };
+  }
+  if (untested.length) {
+    blockers.push({ code: "untested" });
+    return { ...base, state: "IMPLEMENTED", prReady: false, blockers };
+  }
+
+  const review = evidence.independentReview;
+  if (!review || review.status !== STATUS.PASS || review.source === "agent_assertion" || !review.reviewer || !review.artifact) {
+    blockers.push({ code: "no_review" });
+    return { ...base, state: "TESTED", prReady: false, blockers };
+  }
+  if (evidence.author && review.reviewer === evidence.author) {
+    blockers.push({ code: "self_review" });
+    return { ...base, state: "TESTED", prReady: false, blockers };
+  }
+
+  // Stavy za PR_READY sú v `checkTransition`, ale tento príkaz ich neudeľuje.
+  // JSON záznam „founder" nie je dôkaz identity a nesmie vyzerať ako merge.
+  return { ...base, state: "PR_READY", prReady: true, blockers };
+}
+
+export function evaluateWorkflow({ assertedState = null, previousState = null, evidence = {} } = {}) {
+  const derived = deriveWorkflowState(evidence);
+  const shell = {
+    ...derived,
+    assertedState,
+    effectiveState: derived.state,
+  };
+  if (previousState && assertedState) {
+    const step = checkTransition(previousState, assertedState);
+    if (!step.ok) return { ...shell, ok: false, code: step.code, prReady: false };
+  }
+  if (assertedState && !WORKFLOW_STATES.includes(assertedState)) {
+    return { ...shell, ok: false, code: "unknown_state", prReady: false };
+  }
+  if (assertedState && WORKFLOW_STATES.indexOf(assertedState) > WORKFLOW_STATES.indexOf(derived.state)) {
+    return {
+      ...shell,
+      ok: false,
+      code: "assertion_not_evidence",
+      prReady: false,
+      blockers: [...derived.blockers, { code: "assertion_not_evidence" }],
+    };
+  }
+  return { ...shell, ok: true, code: derived.prReady ? "evidence_supports_state" : "blocked" };
+}

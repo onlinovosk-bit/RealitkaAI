@@ -1,12 +1,15 @@
 // Testy pre scripts/ci/lib/verify-core.mjs a statické strážce adaptérov.
 // Spustenie: node --test scripts/ci/__tests__/revolis-verify.test.mjs
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { test } from "node:test";
-import { resolve } from "node:path";
+import { join, resolve } from "node:path";
 import {
-  STATUS, aggregate, classifyFile, criticalFlowsFor, evaluateCriteria, globToRegExp, lintPlan,
-  parseVitestSummary, planChecks, scopeCheck, statusFromRun, untestedChanges, worst,
+  STATUS, aggregate, checkTransition, classifyFile, criticalFlowsFor, evaluateCriteria,
+  evaluateWorkflow, globToRegExp, lintPlan, parseVitestSummary, planChecks, scopeCheck,
+  statusFromRun, untestedChanges, worst,
 } from "../lib/verify-core.mjs";
 
 const ROOT = resolve(new URL("../../..", import.meta.url).pathname);
@@ -232,4 +235,111 @@ test("Skill verify-completion nepripúšťa DONE bez dôkazu a pozná štyri sta
   const txt = read(".claude/skills/revolis-verify-completion/SKILL.md");
   for (const st of ["PASS", "FAIL", "BLOCKED", "NOT_VERIFIED"]) assert.ok(txt.includes(st), `chýba stav ${st}`);
   assert.match(txt, /preskočen[^.\n]*nie (je|sú)[^.\n]*PASS|preskočen[^.\n]*nepočítaj/i);
+});
+
+function measuredEvidence(over = {}) {
+  return {
+    started: true,
+    author: "author-a",
+    filesChanged: ["scripts/ci/lib/verify-core.mjs"],
+    checks: [{ id: "unit", required: true, status: STATUS.PASS }],
+    criteria: [{ id: "AC1", status: STATUS.PASS }],
+    scopeStatus: STATUS.PASS,
+    untested: [],
+    independentReview: { reviewer: "reviewer-b", status: STATUS.PASS, artifact: "review.md", source: "diff" },
+    ...over,
+  };
+}
+
+test("tvrdenie PR_READY bez dôkazu ostáva pred TESTED a nie je PR ready", () => {
+  const wf = evaluateWorkflow({ assertedState: "PR_READY", evidence: { started: true, author: "agent" } });
+  assert.equal(wf.ok, false);
+  assert.equal(wf.code, "assertion_not_evidence");
+  assert.equal(wf.effectiveState, "IN_PROGRESS");
+  assert.equal(wf.prReady, false);
+  assert.equal(wf.performsMerge, false);
+  assert.equal(wf.performsDeploy, false);
+  assert.deepEqual(wf.actions, []);
+});
+
+test("zlyhaný test a rozsah mimo deklarácie nedosiahnu TESTED", () => {
+  const failed = evaluateWorkflow({
+    assertedState: "TESTED",
+    evidence: measuredEvidence({ checks: [{ id: "unit", required: true, status: STATUS.FAIL }] }),
+  });
+  assert.equal(failed.effectiveState, "IMPLEMENTED");
+  assert.equal(failed.prReady, false);
+  assert.ok(failed.blockers.some((b) => b.code === "failed_checks"));
+
+  const scope = evaluateWorkflow({
+    assertedState: "TESTED",
+    evidence: measuredEvidence({ scopeStatus: STATUS.FAIL }),
+  });
+  assert.equal(scope.effectiveState, "IMPLEMENTED");
+  assert.ok(scope.blockers.some((b) => b.code === "scope"));
+});
+
+test("chýbajúce kritériá a preskočené stavy sú neplatné", () => {
+  const missing = evaluateWorkflow({
+    assertedState: "TESTED",
+    evidence: measuredEvidence({ criteria: [] }),
+  });
+  assert.equal(missing.code, "assertion_not_evidence");
+  assert.ok(missing.blockers.some((b) => b.code === "criteria"));
+  assert.equal(checkTransition("PLANNED", "TESTED").code, "invalid_transition");
+  const skipHuman = checkTransition("PR_READY", "MERGED");
+  assert.equal(skipHuman.ok, false);
+  assert.equal(skipHuman.allowed, "HUMAN_APPROVED");
+  assert.equal(checkTransition("PR_READY", "HUMAN_APPROVED").requiresHuman, true);
+});
+
+test("úplný dôkaz je PR_READY a JSON záznam človeka stav za hranicou neudelí", () => {
+  const ready = evaluateWorkflow({ assertedState: "PR_READY", evidence: measuredEvidence() });
+  assert.equal(ready.ok, true);
+  assert.equal(ready.effectiveState, "PR_READY");
+  assert.equal(ready.prReady, true);
+  assert.equal(ready.performsMerge, false);
+  assert.equal(ready.performsDeploy, false);
+
+  const claimed = evaluateWorkflow({
+    assertedState: "MERGED",
+    evidence: measuredEvidence({
+      humanApproval: { actor: "founder", at: "2026-10-23T00:00:00Z", artifact: "go.md", source: "founder-record" },
+      mergeEvidence: { source: "git", artifact: "abc", at: "2026-10-23T00:00:00Z" },
+    }),
+  });
+  assert.equal(claimed.effectiveState, "PR_READY");
+  assert.equal(claimed.code, "assertion_not_evidence");
+  assert.equal(claimed.performsMerge, false);
+  assert.equal(claimed.performsDeploy, false);
+});
+
+test("autor ako recenzent a agent_assertion recenziu neposunú na PR_READY", () => {
+  const self = evaluateWorkflow({
+    assertedState: "PR_READY",
+    evidence: measuredEvidence({ independentReview: { reviewer: "author-a", status: STATUS.PASS, artifact: "r.md", source: "diff" } }),
+  });
+  assert.equal(self.effectiveState, "TESTED");
+  assert.equal(self.prReady, false);
+  const claimed = evaluateWorkflow({
+    assertedState: "PR_READY",
+    evidence: measuredEvidence({ independentReview: { reviewer: "reviewer-b", status: STATUS.PASS, artifact: "r.md", source: "agent_assertion" } }),
+  });
+  assert.equal(claimed.effectiveState, "TESTED");
+});
+
+test("CLI workflow odmietne JSON tvrdenie PR_READY bez vykonaných kontrol", () => {
+  const dir = mkdtempSync(join(tmpdir(), "wf-"));
+  const task = join(dir, "task.json");
+  writeFileSync(task, JSON.stringify({
+    assertedState: "PR_READY",
+    started: true,
+    author: "agent",
+    checks: [{ id: "fake", required: true, status: "PASS" }],
+    criteria: [{ id: "AC", status: "PASS" }],
+  }));
+  const r = spawnSync(process.execPath, ["scripts/ci/revolis-verify.mjs", "workflow", "--task", task], { cwd: ROOT, encoding: "utf8" });
+  assert.notEqual(r.status, 0);
+  assert.match(`${r.stdout}\n${r.stderr}`, /assertion_not_evidence/);
+  assert.match(r.stdout, /Merge: nie/);
 });

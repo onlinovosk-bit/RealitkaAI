@@ -19,3 +19,10 @@ Claude Code používa `CLAUDE.md` a Skills v `.claude/skills/`; ostatné nástro
 - Tajomstvá nikdy do promptov, logov, commitov, pamäte ani BUS správ.
 - Hlás iba to, čo si naozaj spustil. Preskočený alebo nespustiteľný test nie je PASS; uveď ho ako BLOCKED alebo NOT_VERIFIED.
 - Rozhodnutia a ich odôvodnenie patria do `memory/decisions.md` (neexistuje druhý log). Úplné pravidlá projektu: `CLAUDE.md`.
+
+## Dokončenie úlohy
+
+Stavy `PLANNED` → `PR_READY` a ľudská hranica ďalej sú v `scripts/ci/lib/verify-core.mjs`.
+Tvrdenie agenta nie je dôkaz. Pred „hotovo" spusti
+`node scripts/ci/revolis-verify.mjs workflow --task <file.json> --run`.
+Príkaz nerobí merge ani deploy. Podrobnosti: `.claude/skills/revolis-verify-completion/SKILL.md`.
