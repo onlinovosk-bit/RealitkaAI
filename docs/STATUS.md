@@ -1,7 +1,7 @@
 # Revolis.AI — STAV NA JEDNEJ STRÁNKE
 
 > Aktualizuje sa **po každom uzavretom bloku** (jeden riadok zmeny hore + tabuľka). Čísla sú merané, kde je uvedený dôkaz;
-> **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-05** (GMAIL-CONNECT: pripojenie Gmailu s šifrovaným tokenom a karta v Integráciách sú v kóde, **neaktivované** — % nezmenené).
+> **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-23** (LEDGER-REPAIR: ledger 81 → 136, 3 migrácie na PROD, tabuľka % nepreratúvaná; pôvodne 2026-10-05 GMAIL-CONNECT: pripojenie Gmailu s šifrovaným tokenom a karta v Integráciách sú v kóde, **neaktivované** — % nezmenené).
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 20:45 UTC** (opt-in auto-odpoveď: migrácia na PROD + fail-closed #811; `last_contact_at` sa zapisuje #800; „Čakajú na kontakt" prestalo byť celá kniha #804).
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-05, 07:55 UTC** (FAIL-OPEN-SWEEP + TRIAL-GATE-CLOSED variant A: po vypršaní trialu je účet read-only, nie otvorený; hlavička prepočítaná z tabuľky 53 % → 51 %).
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 08:30 UTC** (EVENTS-WIRE + CRON-ALIVE, zatiaľ nezmergované).
@@ -46,14 +46,14 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: PROD aktivácia doručiteľnosti (migrácia, nasadenie, odhlasovací token, overenie)
+Cieľ: LEDGER-REPAIR (zosúladenie migračného ledgera s PROD + 3 chýbajúce migrácie)
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] 1 — Migrácia `20261022100000_email_suppressions` na PROD (tabuľka, RLS + deny-all, 3 indexy; dôkaz v transakcii s ROLLBACK, 0 riadkov po)
-- [x] 2 — Ledger `supabase_migrations.schema_migrations` má riadok `20261022100000 / email_suppressions`
-- [x] 3 — Nový kód je na PROD: deployment `dpl_EDaKJ2VntQDLwgsHEycUSAuP77e9` READY na commite `a2e42ac` (projekt `realitka-ai`, app.revolis.ai)
-- [x] 4 — Živá kontrola verejných ciest: `/api/resend-webhook` GET → 405 (route dosiahnutá, nie proxy „Unauthorized"), `/api/unsubscribe` bez tokenu → 400 „Odkaz nie je platný"
-- [ ] 5 — Founder: `UNSUBSCRIBE_TOKEN_SECRET` (≥ 32 znakov) vo Vercel projekte `realitka-ai` (Production) + Redeploy; potvrdiť `RESEND_API_KEY`
-- [ ] 6 — Founder: Q-01 testovací bounce / Resend delivery log (webhook podpis + zápis do `email_suppressions`)
+- [x] 1 — Audit: 68 súborov mimo ledgera klasifikovaných voči PROD (55 efekt prítomný / 13 vylúčených)
+- [x] 2 — ROLLBACK dôkaz na PROD (ledger 136, objekty OK, po rollbacku 81)
+- [x] 3 — COMMIT: `agency_gmail_inbound_oauth`, `lead_assignment_rules` tenant RLS, `morning_briefs.content_source*`
+- [x] 4 — Ledger 81 → 136, `20261016170000` nedotknutá, 7 ledger-only riadkov nedotknutých
+- [x] 5 — Memory PREPEND + STATUS (jeden commit)
+- [ ] 6 — Founder: `UNSUBSCRIBE_TOKEN_SECRET` + Redeploy, Q-01 bounce, Stripe krok C, rozhodnutie o `20261016170000`
 <!-- SESSION:END -->
 
 ## Hotové 2026-10-07 — s dôkazom (REALVIA-SEC-01)

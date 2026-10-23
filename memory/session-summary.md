@@ -1,3 +1,16 @@
+## Session 2026-10-23 (STENA LEDGER-REPAIR)
+### Dokončené
+- PROD transakcia (ROLLBACK dôkaz, potom COMMIT): 3 chýbajúce migrácie (`agency_gmail_inbound_oauth`, `lead_assignment_rules` agency_id + tenantová RLS, `morning_briefs.content_source*`) + 55 ledger riadkov; ledger 81 → 136, dôkaz v `memory/decisions.md`.
+- Odmietnuté do ledgera: 13 verzií bez prítomného efektu v PROD (zoznam + dôvody v decisions.md).
+### Rozpracované / Pending
+- Founder: `UNSUBSCRIBE_TOKEN_SECRET` + Redeploy + `RESEND_API_KEY`; Q-01 bounce; Stripe krok C; právnik; rozhodnutie o `20261016170000`.
+- `leads_demo_source_check` (`hero_email_capture`) chýba na PROD; anon write granty (105 z 143 tabuliek) čakajú na mapu ciest + test s anon kľúčom.
+- Lokálny izolovaný test migrácií: nemerané (Postgres nepovolený v prostredí).
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md`, `docs/STATUS.md`: záznam steny, SESSION blok. Kód sa nemenil.
+### Ďalší krok
+GO na stenu ANON-WRITE-MAP: úplná mapa ciest (tabuľky × anon/authenticated × kód) + test s anon kľúčom, potom jeden balík SQL.
+
 ## Session 2026-10-22 (STENA PROD aktivácia doručiteľnosti)
 ### Dokončené
 - PROD migrácia `apps/crm/supabase/migrations/20261022100000_email_suppressions.sql` aplikovaná, dôkaz v transakcii s ROLLBACK, ledger zapísaný.
