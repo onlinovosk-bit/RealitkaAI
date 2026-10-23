@@ -1,3 +1,12 @@
+## 2026-10-23 — Oprava review blockerov agentic stacks (BUILD, PR-only, bez merge)
+
+**GO:** founder „FIX AGENTIC STACKS REVIEW BLOCKERS“. Merge a deploy nie sú povolené.
+**Čo:** #918 nenulový exit pri blocked a neotvorenom review; #922 `probeStacks` na vstupnom príkaze so stavmi VERIFIED/MISSING/FAILED/NOT_VERIFIED; #919 snímky lokálneho UI; #921 tabuľka list price vs unknown. Limity 0.5/5/25 a `applied: false` bez zmeny.
+**Dôkaz:** na poskladanom strome `node --test` verify+visual+lifecycle+orchestrate 51 pass, exit 0; cost-governor 22 pass, exit 0. `visual-qa-pages.mjs` exit 0. CI nových headov v čase zápisu nečítané. Nezávislá recenzia opráv NOT_VERIFIED.
+**Nerobené:** merge, deploy, PROD, zmena limitov, prepnutie modelu, Onlinovo.sk.
+**BUILD/BACKLOG:** BUILD pre tieto fail-closed opravy. BACKLOG `model-router` a `cost-governor` ostáva.
+**Rollback:** revert príslušného PR.
+
 ## 2026-10-23 — Agentic Prompt Stacks: štyri brány + orchestrácia (BUILD, PR-only)
 
 **GO:** founder explicit GO na workflow Agentic Prompt Stacks v tomto repe, len PR (branch, commit, push, otvorenie PR). Prime Directive: nepriamy — menej falošných „hotovo" a tichých migrácií modelov; priamy dopad na platiaceho klienta nemeraný. Ústava v2 sa znova nespochybňuje. RAU router na skrátenom zadaní vrátil `GO_REQUIRED` / `BUILD` / `revolis` (slová merge, deploy, production sú v zadaní zákazy). Strategic Backlog `model-router` a `cost-governor` ostáva BACKLOG: automatický produkčný prepínač sa nestavia.

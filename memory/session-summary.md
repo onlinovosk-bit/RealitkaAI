@@ -1,3 +1,27 @@
+## Session 2026-10-23 (Agentic stacks review fixes)
+
+### Dokončené
+- #918: blocked workflow už nekončí exit 0; `PR_READY` vyžaduje otvorený artefakt; chýbajúci `previousState` je `invalid_transition`. Commit na `cursor/agentic-completion-gate-dd79`.
+- #919: lokálne UI snímky Playwrightom (`visual-qa-pages.mjs`, exit 0) plus syntetický RGBA test. Chránené routy skončili na `/login`.
+- #921: v reporte rozdelené overené list prices a unknown. Limity 0.5/5/25 a `applied: false` bez zmeny.
+- #922: `revolis-orchestrate.mjs` volá `probeStacks`. `MISSING`/`FAILED`/`NOT_VERIFIED` nie sú úspech. JSON zásobník neprepisuje sondu.
+- Rebase 919 na 918, 920 na 919, 921 na 920, 922 na 921. Bez merge a bez deploy.
+
+### Rozpracované / Pending
+- CI na nových headov v čase tohto zápisu ešte nie je prečítané.
+- Nezávislá recenzia týchto opráv NOT_VERIFIED (písal ich ten istý agent).
+- Haiku 4.5 sadzba v kóde (0.8/4) sa nezhoduje s prečítaným cenníkom ($1/$5) a ostáva unknown.
+- `/dashboard` za prihlásením sa na snímke neukázal.
+
+### Kľúčové súbory zmenené
+- `scripts/ci/lib/verify-core.mjs`, `scripts/ci/revolis-verify.mjs`, `scripts/ci/lib/orchestrate.mjs`, `scripts/ci/revolis-orchestrate.mjs`
+- `docs/reports/2026-10-23-agentic-prompt-stacks.md`
+- `scripts/ci/fixtures/visual-qa/pages/`
+
+### Ďalší krok
+Po zelenom required CI na aktuálnom hede a po novej nezávislej recenzii môže founder povedať merge. Tento agent nemerguje.
+RAU route: GO_REQUIRED BUILD revolis
+
 ## Session 2026-10-23 (Agentic Prompt Stacks)
 ### Dokončené
 - Fáza 1 completion gate: `scripts/ci/lib/verify-core.mjs`, `scripts/ci/revolis-verify.mjs`. PR #918, commit `6c55672a`. Testy 33 pass.

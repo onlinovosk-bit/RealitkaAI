@@ -231,4 +231,33 @@ Na neposkladanej vetve (pred týmto rebase) probe hlásil visual a lifecycle `mo
 - **Related paths:** `scripts/ci/lib/orchestrate.mjs`, `scripts/ci/revolis-orchestrate.mjs`
 - **Contradiction check:** none
 
-Merge a deploy sa nerobia. CI tohto headu po rebase ešte nie je prečítaný. Následný commit na tejto vetve napojí `probeStacks` na vstupný príkaz.
+Merge a deploy sa nerobia.
+
+### Reprodukcia #922 pred opravou sondy
+
+Na recenzovanom hede `ae3b12a2b889dd89fb7ff6a20000bb56ebd0469a` (súbory `visual-qa.mjs` a `api-lifecycle.mjs` chýbali): `node scripts/ci/revolis-orchestrate.mjs --fixture orch.json` so všetkými stage `PASS` a `checks: [{id: visual, required: true, status: PASS}]` skončil exit **0**, `prReady: true`.
+
+Oprava v nasledujúcom commite volá `probeStacks` z `revolis-orchestrate.mjs`. `MISSING` / `FAILED` / `NOT_VERIFIED` nie sú úspech. JSON id zásobníka sa ignoruje.
+
+## Fáza 6 — dôkaz po review
+
+Stavy nižšie sú len tam, kde ich tento turn zmeral. Nie je tu MERGED ani PRODUCTION_VERIFIED. PR_READY pre tieto PR sa neudeľuje: nezávislá recenzia opráv ešte nie je a CI nových headov v čase tohto odseku nie je prečítané.
+
+| Nález | Stav |
+|---|---|
+| #918 exit 0 pri `blocked` / `prReady: false` | FIXED. CLI s `previousState: PLANNED` a `assertedState: IN_PROGRESS` má exit 2. |
+| #918 `PR_READY` z neotvoreného artefaktu | FIXED. `does-not-exist.md` ostáva `TESTED`, blocker `review_artifact_unopened`. |
+| #918 chýbajúci `previousState` | FIXED. Kód `invalid_transition`, `prReady: false`. |
+| #918 pokazený vstup a blocked | FIXED. `evaluateWorkflow(null)`, reťazec v `evidence` a `checks: "PASS"` nie sú ready. |
+| #922 príkaz nevolal `probeStacks` | FIXED. Test vstupného príkazu s prázdnym `--root` má `visual` `MISSING` a exit nie 0. |
+| #922 rovnaké `NOT_VERIFIED` pre prítomný aj chýbajúci súbor | FIXED. `MISSING`, `FAILED`, `NOT_VERIFIED`, `VERIFIED` sú rozdielne. Iba `VERIFIED` má `passesAsPass`. |
+| #922 JSON `PASS` pri chýbajúcom module | FIXED. Rovnaký test posiela `status: PASS` a ready nie je. |
+| #919 blocking defect | žiadny v review. Syntetické RGBA ostáva unit test. Prehliadačové snímky UI sú v odseku Prehliadač, exit 0 príkazu `visual-qa-pages.mjs`. |
+| #920 blocking defect | žiadny v review. `autoMigrate` ostáva false. |
+| #921 blocking defect | žiadny v review. Ceny sú v tabuľke fázy 4. Limity 0.5 / 5 / 25 a `applied: false` sa nemenia. |
+
+Lokálne príkazy na poskladanom strome v tomto turne, exit 0: `revolis-verify` 37 pass, `visual-qa` 4 pass, `api-lifecycle` 2 pass, `orchestrate` 8 pass (spolu 51 v jednom `node --test`), `cost-governor` 22 pass. CI nových SHA sa dopĺňa až po pushi, keď je beh vidno. `Preview — Playwright smoke` na recenzovaných SHA bol `skipped` (nie prehliadačový PASS): #918 run 39954401354, #919 run 39961159489, #920 run 39961443149, #921 run 39961750764, #922 run 39956901951.
+
+`Lint, test, build` na recenzovaných headov, prečítané v tomto turne, conclusion `success`: #918 run 39953704621 (krok `Playwright smoke (next start + ephemeral DB)` success), #919 run 39960870282, #920 run 39960873220, #921 run 39960882714, #922 run 39956504297. To nie je CI nových headov.
+
+Zostáva: nezávislá recenzia týchto opráv, CI na nových SHA, obsah `/dashboard` za prihlásením (snímka skončila na `/login`). Haiku 4.5 sadzba v kóde sa nezhoduje s prečítaným cenníkom a ostáva unknown.

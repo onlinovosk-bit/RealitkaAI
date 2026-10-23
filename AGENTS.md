@@ -32,6 +32,6 @@ Podrobnosti: `.claude/skills/revolis-verify-completion/SKILL.md`.
 ## Agentic stacks
 
 Jedna orchestrácia nad existujúcim verify workflow, nie druhý rámec.
-`node scripts/ci/revolis-orchestrate.mjs --fixture <file.json>` prejde Intake → Plan → Preflight → Implement → Validate → Independent review → Evidence gate → PR readiness.
-Povinná kontrola iná než PASS blokuje PR readiness. Príkaz nerobí merge, deploy ani post-release.
-Súrodenecké brány (completion stavy, vizuálne RGBA, API lifecycle, cost route) sú samostatné PR. Chýbajúci modul nie je PASS. Dokončenie úlohy: `.claude/skills/revolis-verify-completion/SKILL.md`.
+`node scripts/ci/revolis-orchestrate.mjs --fixture <file.json>` prejde Intake → Plan → Preflight → Implement → Validate → Independent review → Evidence gate → PR readiness a zavolá `probeStacks` na štyri moduly.
+Stavy sondy sú `VERIFIED`, `MISSING`, `FAILED`, `NOT_VERIFIED`. Iba `VERIFIED` je úspech. JSON neprepíše sondu.
+Príkaz nerobí merge, deploy ani post-release. Dokončenie úlohy: `.claude/skills/revolis-verify-completion/SKILL.md`.

@@ -1,5 +1,9 @@
 // Orchestrácia štyroch brán. Nevolá merge, deploy ani post-release.
-// Chýbajúci modul alebo neznámy výsledok nie je PASS.
+// MISSING, FAILED a NOT_VERIFIED nie sú úspech. JSON stav zásobníka sa ignoruje.
+
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 export const PIPELINE_STAGES = Object.freeze([
   "intake",
@@ -12,25 +16,124 @@ export const PIPELINE_STAGES = Object.freeze([
   "pr_readiness",
 ]);
 
-export const STACK_PATHS = Object.freeze({
-  completion: "scripts/ci/lib/verify-core.mjs",
-  visual: "scripts/ci/lib/visual-qa.mjs",
-  lifecycle: "scripts/ci/lib/api-lifecycle.mjs",
-  cost: "packages/bus-core/src/cost-governor.ts",
+export const PROBE_STATUS = Object.freeze({
+  VERIFIED: "VERIFIED",
+  MISSING: "MISSING",
+  FAILED: "FAILED",
+  NOT_VERIFIED: "NOT_VERIFIED",
 });
 
-export function interpretStack({ id, modulePresent, result }) {
-  if (!modulePresent) return { id, status: "NOT_VERIFIED", passesAsPass: false, code: "module_absent" };
-  if (result?.status === "PASS") return { id, status: "PASS", passesAsPass: true, code: "measured" };
-  return { id, status: result?.status || "NOT_VERIFIED", passesAsPass: false, code: "not_pass" };
+export const STACKS = Object.freeze([
+  { id: "completion", path: "scripts/ci/lib/verify-core.mjs", symbol: "evaluateWorkflow" },
+  { id: "visual", path: "scripts/ci/lib/visual-qa.mjs", symbol: "compareRgba" },
+  { id: "lifecycle", path: "scripts/ci/lib/api-lifecycle.mjs", symbol: "classifyNotice" },
+  { id: "cost", path: "packages/bus-core/src/cost-governor.ts", symbol: "selectRoute" },
+]);
+
+const STACK_IDS = new Set(STACKS.map((stack) => stack.id));
+
+export function classifyProbe({ id, present, executed = false, passed = false, code = null }) {
+  if (!present) return { id, status: PROBE_STATUS.MISSING, passesAsPass: false, code: code || "module_absent" };
+  if (!executed) return { id, status: PROBE_STATUS.NOT_VERIFIED, passesAsPass: false, code: code || "not_executed" };
+  if (passed === true) return { id, status: PROBE_STATUS.VERIFIED, passesAsPass: true, code: code || "executed" };
+  return { id, status: PROBE_STATUS.FAILED, passesAsPass: false, code: code || "check_failed" };
 }
 
-export function probeStacks(exists) {
-  return Object.entries(STACK_PATHS).map(([id, path]) => interpretStack({
-    id,
-    modulePresent: Boolean(exists(path)),
-    result: null,
-  }));
+function selfCheck(id, fn) {
+  if (id === "completion") {
+    const wf = fn({ assertedState: "PR_READY", evidence: { started: true } });
+    return Boolean(wf && wf.prReady === false && wf.performsMerge === false && wf.performsDeploy === false);
+  }
+  if (id === "visual") {
+    const frame = { width: 1, height: 1, rgba: Uint8Array.from([1, 2, 3, 255]) };
+    const same = fn(frame, frame, { maxChangedRatio: 0 });
+    return same?.status === "PASS" && same.changedPixels === 0;
+  }
+  if (id === "lifecycle") {
+    const notice = fn({});
+    return notice?.autoMigrate === false && notice?.class === "missing_source";
+  }
+  if (id === "cost") {
+    const decision = fn({
+      apply_switch: true,
+      environment: "production",
+      retries_used: 0,
+      max_retries: 0,
+      candidates: [],
+      budget_remaining_usd: 1,
+      case_id: "probe",
+      metric: "exact_match",
+      quality_bar: 1,
+    });
+    return decision?.applied === false && decision?.decision === "BLOCK" && decision?.code === "production_switch_forbidden";
+  }
+  return false;
+}
+
+export async function probeStacks(root) {
+  const rows = [];
+  for (const spec of STACKS) {
+    const path = resolve(root, spec.path);
+    if (!existsSync(path)) {
+      rows.push(classifyProbe({ id: spec.id, present: false }));
+      continue;
+    }
+    try {
+      const mod = await import(pathToFileURL(path).href);
+      const fn = mod[spec.symbol];
+      if (typeof fn !== "function") {
+        rows.push(classifyProbe({ id: spec.id, present: true, executed: false, code: "symbol_absent" }));
+        continue;
+      }
+      let passed = false;
+      try {
+        passed = selfCheck(spec.id, fn) === true;
+      } catch {
+        rows.push(classifyProbe({ id: spec.id, present: true, executed: true, passed: false, code: "check_threw" }));
+        continue;
+      }
+      rows.push(classifyProbe({ id: spec.id, present: true, executed: true, passed }));
+    } catch {
+      rows.push(classifyProbe({ id: spec.id, present: true, executed: true, passed: false, code: "import_failed" }));
+    }
+  }
+  return rows;
+}
+
+export function guardPipeline({ stageResults, checks, probes }) {
+  if (!stageResults || typeof stageResults !== "object" || Array.isArray(stageResults)) {
+    return stopped(null, [{ id: "config", status: PROBE_STATUS.FAILED, code: "malformed_config" }]);
+  }
+  if (checks != null && !Array.isArray(checks)) {
+    return stopped("evidence_gate", [{ id: "checks", status: PROBE_STATUS.FAILED, code: "malformed_config" }]);
+  }
+  if (!Array.isArray(probes)) {
+    return stopped("evidence_gate", [{ id: "stacks", status: PROBE_STATUS.NOT_VERIFIED, code: "probe_missing" }]);
+  }
+  const stackChecks = [];
+  for (const spec of STACKS) {
+    const probe = probes.find((row) => row && row.id === spec.id);
+    if (!probe) {
+      stackChecks.push({ id: spec.id, required: true, status: PROBE_STATUS.NOT_VERIFIED, code: "probe_missing" });
+      continue;
+    }
+    stackChecks.push({
+      id: spec.id,
+      required: true,
+      status: probe.status === PROBE_STATUS.VERIFIED ? "PASS" : probe.status,
+      code: probe.code,
+    });
+  }
+  const extra = [];
+  for (const check of checks || []) {
+    if (!check || typeof check !== "object" || Array.isArray(check) || typeof check.id !== "string") {
+      return stopped("evidence_gate", [{ id: "checks", status: PROBE_STATUS.FAILED, code: "malformed_config" }]);
+    }
+    if (STACK_IDS.has(check.id)) continue;
+    extra.push(check);
+  }
+  const result = runPipeline({ stageResults, checks: [...stackChecks, ...extra] });
+  return { ...result, probes };
 }
 
 function stopped(reached, blockedBy) {
