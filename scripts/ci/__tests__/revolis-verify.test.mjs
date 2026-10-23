@@ -338,7 +338,7 @@ test("CLI workflow odmietne JSON tvrdenie PR_READY bez vykonaných kontrol", () 
     checks: [{ id: "fake", required: true, status: "PASS" }],
     criteria: [{ id: "AC", status: "PASS" }],
   }));
-  const r = spawnSync(process.execPath, ["scripts/ci/revolis-verify.mjs", "workflow", "--task", task], { cwd: ROOT, encoding: "utf8" });
+  const r = spawnSync(process.execPath, ["scripts/ci/revolis-verify.mjs", "workflow", "--task", task, "--base", "HEAD"], { cwd: ROOT, encoding: "utf8" });
   assert.notEqual(r.status, 0);
   assert.match(`${r.stdout}\n${r.stderr}`, /assertion_not_evidence/);
   assert.match(r.stdout, /Merge: nie/);

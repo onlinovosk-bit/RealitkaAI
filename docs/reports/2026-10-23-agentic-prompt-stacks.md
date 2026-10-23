@@ -64,4 +64,4 @@ Medzi novými kontrolami: tvrdenie `PR_READY` bez dôkazu → `assertion_not_evi
 
 Fázy 2–5, merge, deploy, zmena Vercel nastavení, Onlinovo.sk, billing a zákaznícke dáta.
 
-CI na pushnutom heade: NOT_VERIFIED, kým beh na GitHube nie je prečítaný.
+CI na prvom hede `6c55672a`: required check `Lint, test, build` zlyhal (run 39947704502). Test 33 volal `git diff origin/main...HEAD`; v checkout-e CI revízia `origin/main` nie je. Oprava: ten istý test ide s `--base HEAD`, aby prázdny diff stále odmietol tvrdenie `PR_READY`. Nový beh CI po oprave v čase zápisu ešte nie je prečítaný.
