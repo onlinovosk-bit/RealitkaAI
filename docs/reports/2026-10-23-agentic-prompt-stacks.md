@@ -62,7 +62,7 @@ Medzi novými kontrolami: tvrdenie `PR_READY` bez dôkazu → `assertion_not_evi
 
 ## Fáza 2 — Visual QA Guard
 
-**Verdikt:** RGBA guard je IMPLEMENTED a TESTED. Playwright snímky v tomto commite existujú. Nie sú to produktové routy a nie sú to smoke testy.
+**Verdikt:** RGBA guard je IMPLEMENTED a TESTED. Syntetické PNG nižšie nie sú snímky produktových rout. Samostatné snímky lokálneho UI sú v odseku „Prehliadač“.
 
 Prvý pokus v commite porovnávača: `chromium.launch()` exit 1, chýbala binárka `chromium_headless_shell-1217`. Potom `npx playwright install chromium` skončil exit 0 (Chrome for Testing v cache `chromium-1217` a `chromium_headless_shell-1217`).
 
@@ -79,6 +79,20 @@ Zachytenie v tomto turne:
 - `scripts/ci/lib/visual-qa.mjs` — `compareRgba`. Bez `maxChangedRatio` je `BLOCKED` / `missing_threshold`.
 
 Syntetický pixel test nie je screenshotová validácia prehliadača.
+
+### Prehliadač — lokálne UI
+
+Server už bežal: `next dev` v `apps/crm`, `http://127.0.0.1:3000` (proces štartoval pred týmto zachytením, stránky sa skladajú z aktuálneho stromu). Príkaz `node scripts/ci/visual-qa-pages.mjs`, exit 0. HEAD stromu pri zachytení: `576cb1213bbc0deee9a893f9ce0ece137f2c9b81`. Chromium cez Playwright, nie smoke test.
+
+| Route | HTTP | Finálna URL | Súbor |
+|---|---|---|---|
+| `/proof` | 200 | `/proof` | `scripts/ci/fixtures/visual-qa/pages/proof.png` |
+| `/proof` 390×844 | 200 | `/proof` | `scripts/ci/fixtures/visual-qa/pages/proof-mobile.png` (text `PROOF OF VALUE` je na stránke) |
+| `/landing` | 200 | `/landing` | `scripts/ci/fixtures/visual-qa/pages/landing.png` |
+| `/login` | 200 | `/login` | `scripts/ci/fixtures/visual-qa/pages/login.png` |
+| `/dashboard`, `/forecast`, `/team`, `/settings`, `/import/universal` | 200 po presmerovaní | `/login` | rovnaké snímky prihlásenia, nie obsah za auth |
+
+Kópie: `/cursor/stores/self/media/visual-qa/` a `/opt/cursor/artifacts/visual-qa/pages/`. Manifest: `scripts/ci/fixtures/visual-qa/pages/pages-manifest.json`. Dashboard za prihlásením sa nezobrazil.
 
 CI na prvom hede `6c55672a`: required check `Lint, test, build` zlyhal (run 39947704502). Test 33 volal `git diff origin/main...HEAD`; v checkout-e CI revízia `origin/main` nie je. Oprava: ten istý test ide s `--base HEAD`.
 
