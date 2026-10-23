@@ -1,9 +1,14 @@
 // Orchestrácia štyroch brán. Nevolá merge, deploy ani post-release.
 // MISSING, FAILED a NOT_VERIFIED nie sú úspech. JSON stav zásobníka sa ignoruje.
 
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { createRequire } from "node:module";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+
+const require = createRequire(import.meta.url);
+const TOOL_ROOT = fileURLToPath(new URL("../../..", import.meta.url));
 
 export const PIPELINE_STAGES = Object.freeze([
   "intake",
@@ -70,6 +75,52 @@ function selfCheck(id, fn) {
   return false;
 }
 
+function typescriptCompiler(root) {
+  const candidates = [
+    join(TOOL_ROOT, "node_modules/typescript/lib/typescript.js"),
+    join(TOOL_ROOT, "apps/crm/node_modules/typescript/lib/typescript.js"),
+    join(root, "node_modules/typescript/lib/typescript.js"),
+    join(root, "apps/crm/node_modules/typescript/lib/typescript.js"),
+  ];
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) return require(candidate);
+  }
+  return null;
+}
+
+// Node 20 (krok Test CI helper scripts) import .ts odmietne. Súbor sa preloží
+// existujúcim typescript a spustí sa vygenerovaný modul. Chýbajúci prekladač
+// alebo chyba importu ostáva import_failed, nie VERIFIED.
+export async function loadStackModule(path, root, options = {}) {
+  if (options.native !== false) {
+    try {
+      return await import(pathToFileURL(path).href);
+    } catch (error) {
+      if (!path.endsWith(".ts")) throw error;
+    }
+  } else if (!path.endsWith(".ts")) {
+    return import(pathToFileURL(path).href);
+  }
+  const ts = typescriptCompiler(root);
+  if (!ts) throw new Error("typescript_missing");
+  const emitted = ts.transpileModule(readFileSync(path, "utf8"), {
+    fileName: path,
+    compilerOptions: {
+      target: ts.ScriptTarget.ES2022,
+      module: ts.ModuleKind.ESNext,
+      verbatimModuleSyntax: false,
+    },
+  });
+  const dir = mkdtempSync(join(tmpdir(), "orch-ts-"));
+  const file = join(dir, "probe.mjs");
+  writeFileSync(file, emitted.outputText);
+  try {
+    return await import(pathToFileURL(file).href);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
 export async function probeStacks(root) {
   const rows = [];
   for (const spec of STACKS) {
@@ -79,7 +130,7 @@ export async function probeStacks(root) {
       continue;
     }
     try {
-      const mod = await import(pathToFileURL(path).href);
+      const mod = await loadStackModule(path, root);
       const fn = mod[spec.symbol];
       if (typeof fn !== "function") {
         rows.push(classifyProbe({ id: spec.id, present: true, executed: false, code: "symbol_absent" }));

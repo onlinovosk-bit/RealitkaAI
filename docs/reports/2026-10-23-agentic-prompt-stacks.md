@@ -261,3 +261,11 @@ Lokálne príkazy na poskladanom strome v tomto turne, exit 0: `revolis-verify` 
 `Lint, test, build` na recenzovaných headov, prečítané v tomto turne, conclusion `success`: #918 run 39953704621 (krok `Playwright smoke (next start + ephemeral DB)` success), #919 run 39960870282, #920 run 39960873220, #921 run 39960882714, #922 run 39956504297. To nie je CI nových headov.
 
 Zostáva: nezávislá recenzia týchto opráv, CI na nových SHA, obsah `/dashboard` za prihlásením (snímka skončila na `/login`). Haiku 4.5 sadzba v kóde sa nezhoduje s prečítaným cenníkom a ostáva unknown.
+
+### #922 CI `a3844370` — cost `import_failed`
+
+Beh [39975457756](https://github.com/onlinovosk-bit/RealitkaAI/actions/runs/39975457756) na `a38443706fb1f138529dcea202f35e62d5ad3419`, job `Lint, test, build`, krok `Test CI helper scripts`: subtest `overený strom je ready a JSON zásobníka to neprepíše` nie je ok. Exit 1, `prReady` false, `blockedBy` cost `FAILED` / `import_failed`. completion, visual a lifecycle boli `VERIFIED`. Negatívne testy v tom istom súbore prešli. Krok beží na Node 20, ktorý import `.ts` odmietne (`ERR_UNKNOWN_FILE_EXTENSION`).
+
+Oprava nenačíta `.ts` ako úspech bez behu. Keď natívny import spadne, `loadStackModule` preloží súbor balíkom `typescript` z `node_modules` alebo `apps/crm/node_modules` a spustí `selectRoute`. Chýbajúci prekladač ostáva `import_failed`. `MISSING` a `NOT_VERIFIED` ostávajú neúspech.
+
+Lokálne po oprave: `node --test scripts/ci/__tests__/orchestrate.test.mjs` exit 0, 10 pass, 0 fail. Ten istý vstupný príkaz s `--no-experimental-strip-types` (rovnaké odmietnutie `.ts` ako Node 20) exit 0, všetky štyri sondy `VERIFIED`, `prReady` true, merge aj deploy false. Rovnaký príkaz s prekladačom iba v `apps/crm/node_modules/typescript` exit 0 a cost `VERIFIED`. Nový beh CI tohto commitu sa sem nezapisuje ako zelený, kým `Lint, test, build` na novom SHA neskončí success a krok Playwright smoke nie je preskočený.

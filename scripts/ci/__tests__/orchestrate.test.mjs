@@ -5,7 +5,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { test } from "node:test";
 import { join, resolve } from "node:path";
-import { classifyProbe, PIPELINE_STAGES, PROBE_STATUS, runPipeline } from "../lib/orchestrate.mjs";
+import { classifyProbe, loadStackModule, PIPELINE_STAGES, PROBE_STATUS, runPipeline } from "../lib/orchestrate.mjs";
 
 const ROOT = resolve(new URL("../../..", import.meta.url).pathname);
 
@@ -132,6 +132,37 @@ test("overený strom je ready a JSON zásobníka to neprepíše", () => {
   for (const id of ["completion", "visual", "lifecycle", "cost"]) {
     assert.ok(body.probes.some((row) => row.id === id && row.status === "VERIFIED"), id);
   }
+});
+
+test("TypeScript bez funkcie je NOT_VERIFIED a chýbajúci zásobník ostáva MISSING", () => {
+  const root = mkdtempSync(join(tmpdir(), "orch-ts-"));
+  mkdirSync(join(root, "packages/bus-core/src"), { recursive: true });
+  writeFileSync(join(root, "packages/bus-core/src/cost-governor.ts"), "export const selectRoute = 1;\n");
+  const run = runCli({ stageResults: readyStages() }, root);
+  assert.notEqual(run.status, 0);
+  const body = JSON.parse(run.stdout);
+  assert.equal(body.prReady, false);
+  assert.ok(body.probes.some((row) => row.id === "cost" && row.status === "NOT_VERIFIED" && row.code === "symbol_absent"));
+  assert.ok(body.probes.some((row) => row.id === "visual" && row.status === "MISSING"));
+});
+
+test("cost modul sa overí aj bez natívneho importu .ts", async () => {
+  const mod = await loadStackModule(join(ROOT, "packages/bus-core/src/cost-governor.ts"), ROOT, { native: false });
+  assert.equal(typeof mod.selectRoute, "function");
+  const decision = mod.selectRoute({
+    apply_switch: true,
+    environment: "production",
+    retries_used: 0,
+    max_retries: 0,
+    candidates: [],
+    budget_remaining_usd: 1,
+    case_id: "probe",
+    metric: "exact_match",
+    quality_bar: 1,
+  });
+  assert.equal(decision.applied, false);
+  assert.equal(decision.decision, "BLOCK");
+  assert.equal(decision.code, "production_switch_forbidden");
 });
 
 test("CLI vráti nenulový kód, keď povinná kontrola mimo zásobníka zlyhá", () => {
