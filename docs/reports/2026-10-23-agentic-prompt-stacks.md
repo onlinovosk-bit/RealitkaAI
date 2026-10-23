@@ -1,6 +1,6 @@
 # Agentic Prompt Stacks — 2026-10-23
 
-Vetva tohto súboru: `cursor/agentic-completion-gate-dd79` (fáza 1). Ďalšie fázy sú samostatné PR z `main` a tento súbor na nich doplnia. Nie je druhý report.
+Vetva tohto súboru: `cursor/agentic-visual-qa-dd79` (fáza 2), základ je vetva fázy 1. Nie je druhý report.
 
 ## G0 — baseline pred zmenou správania
 
@@ -60,9 +60,15 @@ Medzi novými kontrolami: tvrdenie `PR_READY` bez dôkazu → `assertion_not_evi
 - **Related paths:** `scripts/ci/lib/verify-core.mjs`, `scripts/ci/revolis-verify.mjs`
 - **Contradiction check:** none voči cost-governor backlogu (táto fáza router nestavia)
 
-## Čo táto vetva nerobí
+## Fáza 2 — Visual QA Guard
 
-Fázy 2–5, merge, deploy, zmena Vercel nastavení, Onlinovo.sk, billing a zákaznícke dáta.
+**Verdikt v commite porovnávača:** RGBA guard je IMPLEMENTED a TESTED. V tom commite browser screenshot nebol: `chromium.launch()` skončil exit 1, binárka `chromium_headless_shell-1217` chýbala. Tento odsek ten stav nahrádza až ďalší commit, ak v ňom snímky naozaj vzniknú.
+
+- `scripts/ci/lib/visual-qa.mjs` — `compareRgba`. Bez `maxChangedRatio` je `BLOCKED` / `missing_threshold`.
+- Syntetický test: biely blok 16/64 pixelov, prah `0.02` → `FAIL` `visual_regression`. Schválená snímka voči sebe → `PASS`. Do `apps/crm` sa regresia nezapisuje.
+- `node --test scripts/ci/__tests__/visual-qa.test.mjs` v pôvodnom behu: exit 0, 3 pass, 0 fail.
+
+Syntetický pixel test nie je screenshotová validácia prehliadača.
 
 CI na prvom hede `6c55672a`: required check `Lint, test, build` zlyhal (run 39947704502). Test 33 volal `git diff origin/main...HEAD`; v checkout-e CI revízia `origin/main` nie je. Oprava: ten istý test ide s `--base HEAD`.
 
@@ -73,4 +79,6 @@ Na recenzovanom hede `93ed763ea3284d527c2b7e53a4070374013f06b4` som v tomto turn
 - `node scripts/ci/revolis-verify.mjs workflow --task blocked.json --base HEAD` s `assertedState: IN_PROGRESS`, `started: true`: exit **0**, stdout `Kód: blocked`, `PR ready: nie`.
 - `evaluateWorkflow` s `artifact: does-not-exist.md`, `source: diff`, bez `previousState`: `prReady: true`, `effectiveState: PR_READY`.
 
-Oprava v nasledujúcom commite: blocked a `prReady: false` majú nenulový exit (blocked je 2). `PR_READY` len po otvorení súboru v repe. Chýbajúci `previousState` je `invalid_transition`. Lokálny test po oprave je v commite, nie tu ako CI nového headu.
+Oprava je na vetve fázy 1. Blocked a `prReady: false` majú nenulový exit (blocked je 2). `PR_READY` len po otvorení súboru v repe. Chýbajúci `previousState` je `invalid_transition`.
+
+Fázy 3–5, merge a deploy táto vetva nerobí.
