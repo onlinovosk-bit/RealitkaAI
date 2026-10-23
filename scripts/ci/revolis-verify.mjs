@@ -5,8 +5,8 @@
 //                                      [--criteria kriteria.json] [--run] [--out dir]
 //   node scripts/ci/revolis-verify.mjs plan-lint <plan.md>
 //
-// Kód výstupu: 0 = hotovo smie byť potvrdené / plán je v poriadku
-//              1 = FAIL (kontrola zlyhala alebo plán porušuje pravidlo)
+// Kód výstupu: 0 = odvodený stav naozaj podporuje hotovo (workflow: prReady a kód nie je blocked)
+//              1 = FAIL (kontrola zlyhala, neplatný prechod, alebo plán porušuje pravidlo)
 //              2 = BLOCKED alebo NOT_VERIFIED (nedostatok dôkazu — nie je to PASS)
 //
 // Nič nemení: číta git, spúšťa existujúce kontroly (vitest, eslint, prepush-gate) a píše
@@ -17,7 +17,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import {
   STATUS, aggregate, evaluateCriteria, evaluateWorkflow, lintPlan, planChecks, renderMarkdown,
-  scopeCheck, statusFromRun, untestedChanges,
+  scopeCheck, statusFromRun, untestedChanges, workflowExitCode,
 } from "./lib/verify-core.mjs";
 
 const ROOT = resolve(new URL("../..", import.meta.url).pathname);
@@ -85,7 +85,7 @@ function completion() {
     });
     report.workflow = wf;
     md += `\n## Stav úlohy\n\nEfektívny stav: **${wf.effectiveState}** · kód: \`${wf.code}\` · PR ready: ${wf.prReady ? "áno" : "nie"} · merge: nie · deploy: nie\n`;
-    if (!wf.ok) workflowExit = 1;
+    workflowExit = workflowExitCode(wf);
   }
   console.log(md);
 
@@ -143,7 +143,7 @@ function workflow() {
   console.log("");
   console.log("_Stavy kontrol pochádzajú z behu, nie z JSON tvrdenia. Tvrdenie agenta samo osebe stav neposunie._");
   if (!task.assertedState) process.exit(2);
-  process.exit(wf.ok ? 0 : 1);
+  process.exit(workflowExitCode(wf));
 }
 
 function planLint() {

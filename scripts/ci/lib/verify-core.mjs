@@ -1,12 +1,19 @@
-// verify-core.mjs — čisté funkcie pre `revolis-verify` (completion + plan-lint).
+// verify-core.mjs — funkcie pre `revolis-verify` (completion + plan-lint).
 //
-// Žiadne I/O, žiadne závislosti: testuje sa to bez gitu, bez vitestu, bez siete.
+// Okrem jedného čítania review artefaktu vo vnútri repa žiadne I/O.
+// Testuje sa to bez gitu, bez vitestu, bez siete.
 // Stavy sú štyri a nezamieňajú sa:
 //   PASS          príkaz sa naozaj vykonal, vykonal aspoň 1 test/kontrolu a skončil 0
 //   FAIL          príkaz sa vykonal a zlyhal (alebo porušil explicitné pravidlo)
 //   BLOCKED       kontrola sa nedala spustiť (chýba nástroj, DB, prístup)
 //   NOT_VERIFIED  nikto to nespustil, alebo chýba dôkaz (aj „0 testov nájdených")
 // Preskočený test sa NIKDY nepočíta ako PASS.
+
+import { readFileSync, statSync } from "node:fs";
+import { relative, resolve, sep } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const REPO_ROOT = fileURLToPath(new URL("../../..", import.meta.url));
 
 export const STATUS = Object.freeze({
   PASS: "PASS",
@@ -360,23 +367,61 @@ export function checkTransition(from, to) {
   return { ok: true, code: "ok", from, to, requiresHuman: b > PR_READY_AT };
 }
 
+export function readReviewArtifact(artifact, root = REPO_ROOT) {
+  if (typeof artifact !== "string" || artifact.includes("\0") || artifact.trim() === "") return null;
+  const base = resolve(root);
+  const path = resolve(base, artifact);
+  const rel = relative(base, path);
+  if (rel === "" || rel.startsWith("..") || rel.split(sep).includes("..")) return null;
+  try {
+    const info = statSync(path);
+    if (!info.isFile() || info.size <= 0 || info.size > 1_000_000) return null;
+    const text = readFileSync(path, "utf8");
+    return text.trim() ? text : null;
+  } catch {
+    return null;
+  }
+}
+
+function malformed(state, blockers) {
+  blockers.push({ code: "malformed_evidence" });
+  return { actions: [], performsMerge: false, performsDeploy: false, state, prReady: false, blockers };
+}
+
+function objectList(value) {
+  if (value == null) return [];
+  if (!Array.isArray(value)) return null;
+  if (value.some((item) => !item || typeof item !== "object" || Array.isArray(item))) return null;
+  return value;
+}
+
 export function deriveWorkflowState(evidence = {}) {
   const blockers = [];
-  const files = Array.isArray(evidence.filesChanged) ? evidence.filesChanged : [];
   const base = { actions: [], performsMerge: false, performsDeploy: false };
+  if (!evidence || typeof evidence !== "object" || Array.isArray(evidence)) {
+    return malformed("PLANNED", blockers);
+  }
 
   if (!evidence.started) {
     return { ...base, state: "PLANNED", prReady: false, blockers };
   }
-  if (!files.length) {
-    blockers.push({ code: "no_files" });
+  if (evidence.filesChanged != null && !Array.isArray(evidence.filesChanged)) {
+    return malformed("IN_PROGRESS", blockers);
+  }
+  const files = Array.isArray(evidence.filesChanged) ? evidence.filesChanged : [];
+  if (!files.length || files.some((file) => typeof file !== "string" || !file.trim())) {
+    blockers.push({ code: files.length ? "malformed_evidence" : "no_files" });
     return { ...base, state: "IN_PROGRESS", prReady: false, blockers };
   }
 
-  const checks = Array.isArray(evidence.checks) ? evidence.checks : [];
+  const checks = objectList(evidence.checks);
+  const criteria = objectList(evidence.criteria);
+  const untestedList = evidence.untested == null ? [] : evidence.untested;
+  if (checks === null || criteria === null || !Array.isArray(untestedList)) {
+    return malformed("IMPLEMENTED", blockers);
+  }
   const required = checks.filter((c) => c.required !== false);
-  const criteria = Array.isArray(evidence.criteria) ? evidence.criteria : [];
-  const untested = Array.isArray(evidence.untested) ? evidence.untested : [];
+  const untested = untestedList;
   if (!required.length || required.some((c) => c.status !== STATUS.PASS)) {
     blockers.push({ code: required.some((c) => c.status === STATUS.FAIL) ? "failed_checks" : "checks_not_pass" });
     return { ...base, state: "IMPLEMENTED", prReady: false, blockers };
@@ -395,33 +440,96 @@ export function deriveWorkflowState(evidence = {}) {
   }
 
   const review = evidence.independentReview;
-  if (!review || review.status !== STATUS.PASS || review.source === "agent_assertion" || !review.reviewer || !review.artifact) {
+  if (!review || typeof review !== "object" || Array.isArray(review)) {
     blockers.push({ code: "no_review" });
     return { ...base, state: "TESTED", prReady: false, blockers };
   }
-  if (evidence.author && review.reviewer === evidence.author) {
-    blockers.push({ code: "self_review" });
+  const source = typeof review.source === "string" ? review.source.trim() : "";
+  const reviewer = typeof review.reviewer === "string" ? review.reviewer.trim() : "";
+  const author = typeof evidence.author === "string" ? evidence.author.trim() : "";
+  if (review.status !== STATUS.PASS || !source || source === "agent_assertion" || !reviewer) {
+    blockers.push({ code: "no_review" });
+    return { ...base, state: "TESTED", prReady: false, blockers };
+  }
+  if (!author || reviewer === author) {
+    blockers.push({ code: author ? "self_review" : "review_author_missing" });
+    return { ...base, state: "TESTED", prReady: false, blockers };
+  }
+  if (!readReviewArtifact(review.artifact)) {
+    blockers.push({ code: "review_artifact_unopened" });
     return { ...base, state: "TESTED", prReady: false, blockers };
   }
 
   // Stavy za PR_READY sú v `checkTransition`, ale tento príkaz ich neudeľuje.
   // JSON záznam „founder" nie je dôkaz identity a nesmie vyzerať ako merge.
+  // Neprázdny `artifact` a source iný než `agent_assertion` samy o sebe nestačia:
+  // súbor sa musí dať otvoriť vnútri repa.
   return { ...base, state: "PR_READY", prReady: true, blockers };
 }
 
-export function evaluateWorkflow({ assertedState = null, previousState = null, evidence = {} } = {}) {
-  const derived = deriveWorkflowState(evidence);
-  const shell = {
-    ...derived,
+function closed(code, assertedState = null) {
+  return {
+    ok: false,
+    code,
+    prReady: false,
     assertedState,
-    effectiveState: derived.state,
+    effectiveState: "PLANNED",
+    state: "PLANNED",
+    blockers: [{ code }],
+    actions: [],
+    performsMerge: false,
+    performsDeploy: false,
   };
-  if (previousState && assertedState) {
-    const step = checkTransition(previousState, assertedState);
-    if (!step.ok) return { ...shell, ok: false, code: step.code, prReady: false };
+}
+
+export function workflowExitCode(wf) {
+  if (!wf || typeof wf !== "object" || wf.prReady !== true || wf.code === "blocked" || wf.code === "malformed_evidence") {
+    if (wf && wf.ok === false && wf.code !== "blocked" && wf.code !== "malformed_evidence") return 1;
+    return 2;
   }
+  return 0;
+}
+
+export function evaluateWorkflow(input = {}) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) return closed("malformed_evidence");
+  const assertedState = input.assertedState ?? null;
+  const previousState = input.previousState ?? null;
+  if (input.evidence != null && (typeof input.evidence !== "object" || Array.isArray(input.evidence))) {
+    return closed("malformed_evidence", assertedState);
+  }
+  let derived;
+  try {
+    derived = deriveWorkflowState(input.evidence ?? {});
+  } catch {
+    return closed("malformed_evidence", assertedState);
+  }
+  const notReadyState = derived.prReady ? "TESTED" : derived.state;
+  const shell = { ...derived, assertedState, effectiveState: derived.state };
   if (assertedState && !WORKFLOW_STATES.includes(assertedState)) {
-    return { ...shell, ok: false, code: "unknown_state", prReady: false };
+    return { ...shell, ok: false, code: "unknown_state", prReady: false, effectiveState: notReadyState };
+  }
+  if (assertedState && assertedState !== "PLANNED") {
+    if (typeof previousState !== "string" || !WORKFLOW_STATES.includes(previousState)) {
+      return {
+        ...shell,
+        ok: false,
+        code: "invalid_transition",
+        prReady: false,
+        effectiveState: notReadyState,
+        blockers: [...derived.blockers, { code: "invalid_transition" }],
+      };
+    }
+    const step = checkTransition(previousState, assertedState);
+    if (!step.ok) {
+      return {
+        ...shell,
+        ok: false,
+        code: step.code,
+        prReady: false,
+        effectiveState: notReadyState,
+        blockers: [...derived.blockers, { code: step.code }],
+      };
+    }
   }
   if (assertedState && WORKFLOW_STATES.indexOf(assertedState) > WORKFLOW_STATES.indexOf(derived.state)) {
     return {
@@ -432,5 +540,6 @@ export function evaluateWorkflow({ assertedState = null, previousState = null, e
       blockers: [...derived.blockers, { code: "assertion_not_evidence" }],
     };
   }
-  return { ...shell, ok: true, code: derived.prReady ? "evidence_supports_state" : "blocked" };
+  const code = derived.prReady ? "evidence_supports_state" : "blocked";
+  return { ...shell, ok: code !== "blocked", code, prReady: derived.prReady && code !== "blocked" };
 }

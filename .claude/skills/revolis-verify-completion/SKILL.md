@@ -49,13 +49,13 @@ Okrem štyroch stavov kontroly má úloha postupnosť, ktorú nemožno preskoči
 `PR_READY` → `HUMAN_APPROVED` je ľudská hranica. Príkaz `workflow` ani `completion --task`
 stavy za `PR_READY` neudeľuje a merge ani deploy nevykoná. Tvrdenie v JSON
 (`assertedState`, falošné `checks`, meno aktéra) sa nepočíta: statusy kontrol berie beh.
-Samotné tvrdenie agenta nedá `PR_READY`.
+Samotné tvrdenie agenta nedá `PR_READY`. Chýbajúci `previousState` pri stave inom než `PLANNED` je `invalid_transition`. `independentReview.artifact` sa musí dať otvoriť ako súbor v repe; samotný reťazec a `source` iný než `agent_assertion` nestačia.
 
 ```bash
 node scripts/ci/revolis-verify.mjs workflow --task task.json --run
 ```
 
-Exit 0 znamená, že tvrdený stav nie je pred dôkazom. Nie je to povolenie na merge.
+Exit 0 je len keď `prReady` je true a kód nie je `blocked`. Exit 2 je blocked alebo nedostatok dôkazu. Ani jedno nie je povolenie na merge.
 
 ## Hranice
 

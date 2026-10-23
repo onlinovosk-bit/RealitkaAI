@@ -64,4 +64,13 @@ Medzi novými kontrolami: tvrdenie `PR_READY` bez dôkazu → `assertion_not_evi
 
 Fázy 2–5, merge, deploy, zmena Vercel nastavení, Onlinovo.sk, billing a zákaznícke dáta.
 
-CI na prvom hede `6c55672a`: required check `Lint, test, build` zlyhal (run 39947704502). Test 33 volal `git diff origin/main...HEAD`; v checkout-e CI revízia `origin/main` nie je. Oprava: ten istý test ide s `--base HEAD`, aby prázdny diff stále odmietol tvrdenie `PR_READY`. Nový beh CI po oprave v čase zápisu ešte nie je prečítaný.
+CI na prvom hede `6c55672a`: required check `Lint, test, build` zlyhal (run 39947704502). Test 33 volal `git diff origin/main...HEAD`; v checkout-e CI revízia `origin/main` nie je. Oprava: ten istý test ide s `--base HEAD`.
+
+Na recenzovanom hede `93ed763ea3284d527c2b7e53a4070374013f06b4` som v tomto turne čítal run [39953704621](https://github.com/onlinovosk-bit/RealitkaAI/actions/runs/39953704621): workflow `CI - Revolis.AI` conclusion `success`, job `Lint, test, build` conclusion `success`, krok `Playwright smoke (next start + ephemeral DB)` conclusion `success`. Samostatný workflow `Preview — Playwright smoke` na tom istom SHA je run [39954401354](https://github.com/onlinovosk-bit/RealitkaAI/actions/runs/39954401354), conclusion `skipped`. Skip nie je prehliadačový PASS.
+
+### Review blockers na `93ed763e` (reprodukované pred opravou)
+
+- `node scripts/ci/revolis-verify.mjs workflow --task blocked.json --base HEAD` s `assertedState: IN_PROGRESS`, `started: true`: exit **0**, stdout `Kód: blocked`, `PR ready: nie`.
+- `evaluateWorkflow` s `artifact: does-not-exist.md`, `source: diff`, bez `previousState`: `prReady: true`, `effectiveState: PR_READY`.
+
+Oprava v nasledujúcom commite: blocked a `prReady: false` majú nenulový exit (blocked je 2). `PR_READY` len po otvorení súboru v repe. Chýbajúci `previousState` je `invalid_transition`. Lokálny test po oprave je v commite, nie tu ako CI nového headu.

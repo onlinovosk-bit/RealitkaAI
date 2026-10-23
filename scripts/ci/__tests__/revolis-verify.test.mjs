@@ -2,14 +2,14 @@
 // Spustenie: node --test scripts/ci/__tests__/revolis-verify.test.mjs
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { test } from "node:test";
-import { join, resolve } from "node:path";
+import { join, relative, resolve } from "node:path";
 import {
   STATUS, aggregate, checkTransition, classifyFile, criticalFlowsFor, evaluateCriteria,
   evaluateWorkflow, globToRegExp, lintPlan, parseVitestSummary, planChecks, scopeCheck,
-  statusFromRun, untestedChanges, worst,
+  statusFromRun, untestedChanges, workflowExitCode, worst,
 } from "../lib/verify-core.mjs";
 
 const ROOT = resolve(new URL("../../..", import.meta.url).pathname);
@@ -251,8 +251,24 @@ function measuredEvidence(over = {}) {
   };
 }
 
+function withReviewFile(body) {
+  const dir = mkdtempSync(join(ROOT, "scripts/ci/__tests__/tmp-review-"));
+  const file = join(dir, "review.md");
+  const rel = relative(ROOT, file);
+  writeFileSync(file, "Opened independent review.\n");
+  try {
+    return body(rel);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
 test("tvrdenie PR_READY bez dôkazu ostáva pred TESTED a nie je PR ready", () => {
-  const wf = evaluateWorkflow({ assertedState: "PR_READY", evidence: { started: true, author: "agent" } });
+  const wf = evaluateWorkflow({
+    assertedState: "PR_READY",
+    previousState: "REVIEWED",
+    evidence: { started: true, author: "agent" },
+  });
   assert.equal(wf.ok, false);
   assert.equal(wf.code, "assertion_not_evidence");
   assert.equal(wf.effectiveState, "IN_PROGRESS");
@@ -265,6 +281,7 @@ test("tvrdenie PR_READY bez dôkazu ostáva pred TESTED a nie je PR ready", () =
 test("zlyhaný test a rozsah mimo deklarácie nedosiahnu TESTED", () => {
   const failed = evaluateWorkflow({
     assertedState: "TESTED",
+    previousState: "IMPLEMENTED",
     evidence: measuredEvidence({ checks: [{ id: "unit", required: true, status: STATUS.FAIL }] }),
   });
   assert.equal(failed.effectiveState, "IMPLEMENTED");
@@ -273,6 +290,7 @@ test("zlyhaný test a rozsah mimo deklarácie nedosiahnu TESTED", () => {
 
   const scope = evaluateWorkflow({
     assertedState: "TESTED",
+    previousState: "IMPLEMENTED",
     evidence: measuredEvidence({ scopeStatus: STATUS.FAIL }),
   });
   assert.equal(scope.effectiveState, "IMPLEMENTED");
@@ -282,6 +300,7 @@ test("zlyhaný test a rozsah mimo deklarácie nedosiahnu TESTED", () => {
 test("chýbajúce kritériá a preskočené stavy sú neplatné", () => {
   const missing = evaluateWorkflow({
     assertedState: "TESTED",
+    previousState: "IMPLEMENTED",
     evidence: measuredEvidence({ criteria: [] }),
   });
   assert.equal(missing.code, "assertion_not_evidence");
@@ -294,52 +313,156 @@ test("chýbajúce kritériá a preskočené stavy sú neplatné", () => {
 });
 
 test("úplný dôkaz je PR_READY a JSON záznam človeka stav za hranicou neudelí", () => {
-  const ready = evaluateWorkflow({ assertedState: "PR_READY", evidence: measuredEvidence() });
-  assert.equal(ready.ok, true);
-  assert.equal(ready.effectiveState, "PR_READY");
-  assert.equal(ready.prReady, true);
-  assert.equal(ready.performsMerge, false);
-  assert.equal(ready.performsDeploy, false);
+  withReviewFile((artifact) => {
+    const ready = evaluateWorkflow({
+      assertedState: "PR_READY",
+      previousState: "REVIEWED",
+      evidence: measuredEvidence({ independentReview: { reviewer: "reviewer-b", status: STATUS.PASS, artifact, source: "diff" } }),
+    });
+    assert.equal(ready.ok, true);
+    assert.equal(ready.effectiveState, "PR_READY");
+    assert.equal(ready.prReady, true);
+    assert.equal(ready.performsMerge, false);
+    assert.equal(ready.performsDeploy, false);
+    assert.equal(workflowExitCode(ready), 0);
 
-  const claimed = evaluateWorkflow({
-    assertedState: "MERGED",
-    evidence: measuredEvidence({
-      humanApproval: { actor: "founder", at: "2026-10-23T00:00:00Z", artifact: "go.md", source: "founder-record" },
-      mergeEvidence: { source: "git", artifact: "abc", at: "2026-10-23T00:00:00Z" },
-    }),
+    const claimed = evaluateWorkflow({
+      assertedState: "MERGED",
+      previousState: "HUMAN_APPROVED",
+      evidence: measuredEvidence({
+        independentReview: { reviewer: "reviewer-b", status: STATUS.PASS, artifact, source: "diff" },
+        humanApproval: { actor: "founder", at: "2026-10-23T00:00:00Z", artifact: "go.md", source: "founder-record" },
+        mergeEvidence: { source: "git", artifact: "abc", at: "2026-10-23T00:00:00Z" },
+      }),
+    });
+    assert.equal(claimed.effectiveState, "PR_READY");
+    assert.equal(claimed.code, "assertion_not_evidence");
+    assert.equal(claimed.prReady, false);
+    assert.equal(claimed.performsMerge, false);
+    assert.equal(claimed.performsDeploy, false);
+    assert.notEqual(workflowExitCode(claimed), 0);
   });
-  assert.equal(claimed.effectiveState, "PR_READY");
-  assert.equal(claimed.code, "assertion_not_evidence");
-  assert.equal(claimed.performsMerge, false);
-  assert.equal(claimed.performsDeploy, false);
 });
 
 test("autor ako recenzent a agent_assertion recenziu neposunú na PR_READY", () => {
-  const self = evaluateWorkflow({
-    assertedState: "PR_READY",
-    evidence: measuredEvidence({ independentReview: { reviewer: "author-a", status: STATUS.PASS, artifact: "r.md", source: "diff" } }),
+  withReviewFile((artifact) => {
+    const self = evaluateWorkflow({
+      assertedState: "PR_READY",
+      previousState: "REVIEWED",
+      evidence: measuredEvidence({ independentReview: { reviewer: "author-a", status: STATUS.PASS, artifact, source: "diff" } }),
+    });
+    assert.equal(self.effectiveState, "TESTED");
+    assert.equal(self.prReady, false);
+    const claimed = evaluateWorkflow({
+      assertedState: "PR_READY",
+      previousState: "REVIEWED",
+      evidence: measuredEvidence({ independentReview: { reviewer: "reviewer-b", status: STATUS.PASS, artifact, source: "agent_assertion" } }),
+    });
+    assert.equal(claimed.effectiveState, "TESTED");
+    assert.equal(claimed.prReady, false);
   });
-  assert.equal(self.effectiveState, "TESTED");
-  assert.equal(self.prReady, false);
-  const claimed = evaluateWorkflow({
-    assertedState: "PR_READY",
-    evidence: measuredEvidence({ independentReview: { reviewer: "reviewer-b", status: STATUS.PASS, artifact: "r.md", source: "agent_assertion" } }),
-  });
-  assert.equal(claimed.effectiveState, "TESTED");
 });
 
-test("CLI workflow odmietne JSON tvrdenie PR_READY bez vykonaných kontrol", () => {
-  const dir = mkdtempSync(join(tmpdir(), "wf-"));
-  const task = join(dir, "task.json");
-  writeFileSync(task, JSON.stringify({
+test("neotvorený artefakt, chýbajúci autor a source mimo agent_assertion nedajú PR_READY", () => {
+  const missing = evaluateWorkflow({
     assertedState: "PR_READY",
+    previousState: "REVIEWED",
+    evidence: measuredEvidence({
+      independentReview: { reviewer: "reviewer-b", status: STATUS.PASS, artifact: "does-not-exist.md", source: "diff" },
+    }),
+  });
+  assert.equal(missing.prReady, false);
+  assert.equal(missing.effectiveState, "TESTED");
+  assert.ok(missing.blockers.some((b) => b.code === "review_artifact_unopened"));
+  assert.notEqual(workflowExitCode(missing), 0);
+
+  const escaped = evaluateWorkflow({
+    assertedState: "PR_READY",
+    previousState: "REVIEWED",
+    evidence: measuredEvidence({
+      independentReview: { reviewer: "reviewer-b", status: STATUS.PASS, artifact: "../../etc/passwd", source: "primary" },
+    }),
+  });
+  assert.equal(escaped.prReady, false);
+  assert.equal(escaped.effectiveState, "TESTED");
+
+  const noAuthor = evaluateWorkflow({
+    assertedState: "PR_READY",
+    previousState: "REVIEWED",
+    evidence: measuredEvidence({
+      author: undefined,
+      independentReview: { reviewer: "reviewer-b", status: STATUS.PASS, artifact: "package.json", source: "diff" },
+    }),
+  });
+  assert.equal(noAuthor.prReady, false);
+  assert.ok(noAuthor.blockers.some((b) => b.code === "review_author_missing"));
+});
+
+test("chýbajúci previousState nepreskočí invalid_transition", () => {
+  withReviewFile((artifact) => {
+    const skipped = evaluateWorkflow({
+      assertedState: "PR_READY",
+      evidence: measuredEvidence({
+        independentReview: { reviewer: "reviewer-b", status: STATUS.PASS, artifact, source: "diff" },
+      }),
+    });
+    assert.equal(skipped.ok, false);
+    assert.equal(skipped.code, "invalid_transition");
+    assert.equal(skipped.prReady, false);
+    assert.notEqual(skipped.effectiveState, "PR_READY");
+    assert.notEqual(workflowExitCode(skipped), 0);
+  });
+});
+
+test("pokazený vstup a blocked výsledok nie sú ready", () => {
+  for (const input of [null, [], { evidence: "PASS" }, { evidence: { started: true, filesChanged: "x", checks: "PASS" } }]) {
+    const wf = evaluateWorkflow(input);
+    assert.equal(wf.prReady, false);
+    assert.notEqual(wf.effectiveState, "PR_READY");
+    assert.notEqual(workflowExitCode(wf), 0);
+  }
+  const blocked = evaluateWorkflow({
+    assertedState: "IN_PROGRESS",
+    previousState: "PLANNED",
+    evidence: { started: true },
+  });
+  assert.equal(blocked.code, "blocked");
+  assert.equal(blocked.prReady, false);
+  assert.equal(workflowExitCode(blocked), 2);
+  assert.equal(workflowExitCode({ ok: true, code: "blocked", prReady: false }), 2);
+  assert.equal(workflowExitCode({ ok: true, code: "evidence_supports_state", prReady: true }), 0);
+});
+
+function runWorkflow(task) {
+  const dir = mkdtempSync(join(tmpdir(), "wf-"));
+  const file = join(dir, "task.json");
+  writeFileSync(file, JSON.stringify(task));
+  return spawnSync(process.execPath, ["scripts/ci/revolis-verify.mjs", "workflow", "--task", file, "--base", "HEAD"], { cwd: ROOT, encoding: "utf8" });
+}
+
+test("CLI workflow odmietne JSON tvrdenie PR_READY bez vykonaných kontrol", () => {
+  const r = runWorkflow({
+    assertedState: "PR_READY",
+    previousState: "REVIEWED",
     started: true,
     author: "agent",
     checks: [{ id: "fake", required: true, status: "PASS" }],
     criteria: [{ id: "AC", status: "PASS" }],
-  }));
-  const r = spawnSync(process.execPath, ["scripts/ci/revolis-verify.mjs", "workflow", "--task", task, "--base", "HEAD"], { cwd: ROOT, encoding: "utf8" });
+    prReady: true,
+  });
   assert.notEqual(r.status, 0);
   assert.match(`${r.stdout}\n${r.stderr}`, /assertion_not_evidence/);
   assert.match(r.stdout, /Merge: nie/);
+  assert.match(r.stdout, /PR ready: nie/);
+});
+
+test("CLI blocked a neúplná úloha nekončia nulou", () => {
+  const reproduced = runWorkflow({ assertedState: "IN_PROGRESS", started: true });
+  assert.notEqual(reproduced.status, 0);
+  assert.match(reproduced.stdout, /PR ready: nie/);
+
+  const blocked = runWorkflow({ assertedState: "IN_PROGRESS", previousState: "PLANNED", started: true });
+  assert.equal(blocked.status, 2);
+  assert.match(blocked.stdout, /Kód: `blocked`/);
+  assert.match(blocked.stdout, /PR ready: nie/);
 });

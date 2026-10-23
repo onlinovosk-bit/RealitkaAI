@@ -25,4 +25,6 @@ Claude Code používa `CLAUDE.md` a Skills v `.claude/skills/`; ostatné nástro
 Stavy `PLANNED` → `PR_READY` a ľudská hranica ďalej sú v `scripts/ci/lib/verify-core.mjs`.
 Tvrdenie agenta nie je dôkaz. Pred „hotovo" spusti
 `node scripts/ci/revolis-verify.mjs workflow --task <file.json> --run`.
-Príkaz nerobí merge ani deploy. Podrobnosti: `.claude/skills/revolis-verify-completion/SKILL.md`.
+Chýbajúci `previousState` prechod nepreskočí. `PR_READY` vyžaduje otvorený review artefakt v repe.
+Exit 0 nie je blocked ani `prReady: false`. Príkaz nerobí merge ani deploy.
+Podrobnosti: `.claude/skills/revolis-verify-completion/SKILL.md`.
