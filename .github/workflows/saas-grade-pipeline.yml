@@ -210,6 +210,7 @@ jobs:
           node --test ./scripts/ci/__tests__/revolis-verify.test.mjs
           node --test ./scripts/ci/__tests__/visual-qa.test.mjs
           node --test ./scripts/ci/__tests__/api-lifecycle.test.mjs
+          node --test ./scripts/ci/__tests__/orchestrate.test.mjs
           ./scripts/ci/__tests__/wait-for-supabase.test.sh
           ./scripts/ci/__tests__/memory-append-only.test.sh
 

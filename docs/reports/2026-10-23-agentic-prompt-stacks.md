@@ -1,6 +1,6 @@
 # Agentic Prompt Stacks — 2026-10-23
 
-Vetva tohto súboru: `cursor/agentic-cost-routing-dd79` (fáza 4), základ je vetva fázy 3. Nie je druhý report.
+Vetva tohto súboru: `cursor/agentic-orchestration-dd79` (fáza 5), základ je vetva fázy 4. Nie je druhý report.
 
 ## G0 — baseline pred zmenou správania
 
@@ -180,7 +180,7 @@ CI job `bus:test` tento súbor už spúšťa. Beh na GitHube po rebase ešte nie
 - **Related paths:** `packages/bus-core/src/cost-governor.ts`
 - **Contradiction check:** none pre automatický produkčný router — ten sa nestavia. Backlog `model-router` a `cost-governor` ostáva BACKLOG. Founder GO v tomto zadaní kryje len fail-closed radu.
 
-Fáza 5, merge a deploy táto vetva nerobí. `applied` ostáva false. Limity `0.5 / 5 / 25` sa nemenia. Routing sa z tejto tabuľky neprepína.
+`applied` ostáva false. Limity `0.5 / 5 / 25` sa nemenia. Routing sa z tejto tabuľky neprepína. Merge a deploy sa nerobia.
 
 ### Ceny — overené v tomto turne vs unknown
 
@@ -206,3 +206,29 @@ Fáza 5, merge a deploy táto vetva nerobí. `applied` ostáva false. Limity `0.
 | Fixture stropy 0.02, 0.05, 0.2 a test katalóg sonnet/opus 5, haiku 0.2 | `cost-governor.test.ts` | Vstupy testu, nie cenník. |
 
 `selectRoute` tieto sadzby nečíta a model neprepína.
+
+## Fáza 5 — orchestrácia
+
+**Verdikt tohto commitu:** `runPipeline` je IMPLEMENTED a TESTED. Povinný `FAIL` dá `prReady` false, `actions` [], `performsMerge` false, `performsDeploy` false, `postReleaseRan` false. Skok cez `validate` sa do `pr_readiness` nedostane. Prítomnosť súboru nie je PASS.
+
+Na neposkladanej vetve (pred týmto rebase) probe hlásil visual a lifecycle `module_absent`. Tento commit tie moduly neimportuje; dôkaz, že ich orchestrácia na poskladanom hrote vidí, je samostatný commit na tejto istej vetve, až keď ten beh naozaj prebehne.
+
+### Príkaz
+
+`node --test scripts/ci/__tests__/orchestrate.test.mjs` v pôvodnom commite: exit 0, 5 pass, 0 fail, 0 skipped.
+
+### Bezpečnosť
+
+Žiadne tajomstvá, žiadny zápis do PROD, žiadna zmena výdavkových limitov, žiadny automatický prepínač modelu, žiadna migrácia API. Orchestrátor nevydá merge ani deploy. Post-release stage nie je.
+
+### Engineering justification
+
+- **Trigger:** new-file
+- **Decision path:** new-code pre stavový beh; brány samotné ostávajú v predchádzajúcich fázach
+- **Alternatives considered:** skopírovať súrodenecké moduly do tejto vetvy — zamietnuté, lebo by zdvojili PR
+- **Why not reuse:** existujúci `revolis-verify` nespája povinný FAIL so zákazom merge/deploy v jednom príkaze
+- **Expected outcome:** povinný FAIL nie je PR ready a výsledok nemá merge/deploy
+- **Related paths:** `scripts/ci/lib/orchestrate.mjs`, `scripts/ci/revolis-orchestrate.mjs`
+- **Contradiction check:** none
+
+Merge a deploy sa nerobia. CI tohto headu po rebase ešte nie je prečítaný. Následný commit na tejto vetve napojí `probeStacks` na vstupný príkaz.

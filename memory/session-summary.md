@@ -1,3 +1,22 @@
+## Session 2026-10-23 (Agentic Prompt Stacks)
+### Dokončené
+- Fáza 1 completion gate: `scripts/ci/lib/verify-core.mjs`, `scripts/ci/revolis-verify.mjs`. PR #918, commit `6c55672a`. Testy 33 pass.
+- Fáza 2 visual QA: `scripts/ci/lib/visual-qa.mjs`. PR #919, commit `a8791653`. Testy 3 pass. Browser launch BLOCKED (chýba binárka).
+- Fáza 3 API lifecycle: `scripts/ci/lib/api-lifecycle.mjs` + inventory JSON. PR #920, commit `57c4e5f2`. Testy 2 pass.
+- Fáza 4 `selectRoute` v `packages/bus-core/src/cost-governor.ts`. PR #921, commit `1075b7c8`. Testy 22 pass, tsc exit 0. Limity nezmenené.
+- Fáza 5 orchestrácia: `scripts/ci/lib/orchestrate.mjs`, `scripts/ci/revolis-orchestrate.mjs`. Testy 5 pass. Číslo PR je v popise po otvorení.
+- Report na každej vetve: `docs/reports/2026-10-23-agentic-prompt-stacks.md`.
+### Rozpracované / Pending
+- CI na headov PR v čase zápisu NOT_VERIFIED.
+- Nezávislá recenzia NOT_VERIFIED (ten istý agent písal aj testy).
+- In-process prepojenie súrodeneckých modulov na vetve fázy 5 je NOT_VERIFIED: visual a lifecycle `module_absent`, completion a cost súbor existuje, ale probe bez výsledku nie je PASS.
+- Screenshot v prehliadači BLOCKED.
+### Kľúčové súbory zmenené
+- viď PR #918–#921, vetva `cursor/agentic-orchestration-dd79` a `memory/decisions.md` (záznam 2026-10-23).
+### Ďalší krok
+Founder po zelenom CI na aktuálnom hede každého PR: merge v poradí #918, #919, #920, #921, potom PR fázy 5 (konflikty v reporte, `AGENTS.md` a riadku CI testov). Tento agent nemerguje.
+RAU route: GO_REQUIRED BUILD revolis
+
 ## Session 2026-10-22 (STENA doručiteľnosť a odhlásenie)
 ### Dokončené
 - Kód: `apps/crm/src/proxy.ts` (verejné cesty), `lib/email/{suppression,unsubscribe-token}.ts`, `app/api/unsubscribe/route.ts`, `app/api/resend-webhook/route.ts` (bounce/complaint/suppressed), `lib/outreach-store.ts` (kontrola potlačenia + List-Unsubscribe), `lib/morning-brief/generators/email-html.ts` (podpísaný odkaz), `app/api/notifications/unsubscribe/route.ts` (len redirect).

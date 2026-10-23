@@ -84,6 +84,9 @@ At the start of every session:
    - Opakované GO bez nového vstupu → krátka odpoveď: čo som práve overil, že sa nič nezmenilo, čo treba
      poslať. Neopakuj celý postup.
    - PROD, merge a flagy iba na explicitné GO. Merge až keď je CI na aktuálnom heade zelené.
+   - Agentické stacky: `node scripts/ci/revolis-orchestrate.mjs --fixture <file.json>`.
+     Povinný výsledok iný než PASS blokuje PR readiness. Príkaz nerobí merge, deploy ani post-release.
+     Chýbajúci modul súrodeneckej brány nie je PASS.
 9. **Postup session v %** (founder, 2026-10-02). Každá odpoveď foundrovi končí riadkom
    `📊 Session (<cieľ>): NN % (a/b míľnikov) · Architektúra: Y % · ďalší míľnik: …` (formát z #801) z bloku SESSION v `docs/STATUS.md`
    (`bash .claude/hooks/session-progress.sh print`). % = hotové míľniky / všetky, odškrtnuté iba s dôkazom.
