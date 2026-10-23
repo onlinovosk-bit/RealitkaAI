@@ -49,11 +49,19 @@ export async function fetchLeadAgencyId(leadId: string): Promise<string | null> 
     return null;
   }
 
-  const { data } = await sb
+  const { data, error } = await sb
     .from("leads")
     .select("agency_id")
     .eq("id", leadId)
     .maybeSingle();
 
-  return data?.agency_id ?? null;
+  // Chyba čítania ≠ „lead bez agentúry": volajúci musia fail-closed, nie
+  // nahradiť systémovým UUID (inak potlačenie/kvóta idú mimo tenant).
+  if (error) {
+    console.error("[outbound] fetchLeadAgencyId failed:", error.message);
+    return null;
+  }
+
+  const agencyId = data?.agency_id;
+  return typeof agencyId === "string" && agencyId.trim() !== "" ? agencyId.trim() : null;
 }
