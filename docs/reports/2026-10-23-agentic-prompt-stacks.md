@@ -62,11 +62,21 @@ Medzi novými kontrolami: tvrdenie `PR_READY` bez dôkazu → `assertion_not_evi
 
 ## Fáza 2 — Visual QA Guard
 
-**Verdikt v commite porovnávača:** RGBA guard je IMPLEMENTED a TESTED. V tom commite browser screenshot nebol: `chromium.launch()` skončil exit 1, binárka `chromium_headless_shell-1217` chýbala. Tento odsek ten stav nahrádza až ďalší commit, ak v ňom snímky naozaj vzniknú.
+**Verdikt:** RGBA guard je IMPLEMENTED a TESTED. Playwright snímky v tomto commite existujú. Nie sú to produktové routy a nie sú to smoke testy.
+
+Prvý pokus v commite porovnávača: `chromium.launch()` exit 1, chýbala binárka `chromium_headless_shell-1217`. Potom `npx playwright install chromium` skončil exit 0 (Chrome for Testing v cache `chromium-1217` a `chromium_headless_shell-1217`).
+
+Zachytenie v tomto turne:
+
+- Príkaz: `node scripts/ci/visual-qa-capture.mjs`
+- Exit: 0
+- Schválená snímka: `scripts/ci/fixtures/visual-qa/approved.png` (64×64, 169 B, pozadie `#102040`)
+- Test-only regresia: `scripts/ci/fixtures/visual-qa/regression.png` (64×64, 188 B, biely blok 32×32). Do `apps/crm` sa nezapisuje.
+- `compareRgba` prah `0.02`: regresia voči schválenej → `FAIL` `visual_regression`, `changedPixels` 1024, `changedRatio` 0.25. Schválená voči sebe → `PASS` `within_threshold`, 0 zmenených pixelov.
+- Review artefakty: `/opt/cursor/artifacts/visual-qa/approved.png`, `/opt/cursor/artifacts/visual-qa/regression.png`
+- `node --test scripts/ci/__tests__/visual-qa.test.mjs` po zachytení: exit 0, 4 pass, 0 fail. Štvrtý test číta uložené PNG a `.rgba` a Chromium nespúšťa. Spúšťač prehliadača nie je v kroku CI helper (ten beží pred `playwright install`).
 
 - `scripts/ci/lib/visual-qa.mjs` — `compareRgba`. Bez `maxChangedRatio` je `BLOCKED` / `missing_threshold`.
-- Syntetický test: biely blok 16/64 pixelov, prah `0.02` → `FAIL` `visual_regression`. Schválená snímka voči sebe → `PASS`. Do `apps/crm` sa regresia nezapisuje.
-- `node --test scripts/ci/__tests__/visual-qa.test.mjs` v pôvodnom behu: exit 0, 3 pass, 0 fail.
 
 Syntetický pixel test nie je screenshotová validácia prehliadača.
 
