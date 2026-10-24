@@ -1,6 +1,6 @@
 # Agentic Prompt Stacks — 2026-10-23
 
-Vetva tohto súboru: `cursor/agentic-completion-gate-dd79` (fáza 1). Ďalšie fázy sú samostatné PR z `main` a tento súbor na nich doplnia. Nie je druhý report.
+Vetva tohto súboru: `cursor/agentic-visual-qa-dd79` (fáza 2), základ je vetva fázy 1. Nie je druhý report.
 
 ## G0 — baseline pred zmenou správania
 
@@ -60,9 +60,39 @@ Medzi novými kontrolami: tvrdenie `PR_READY` bez dôkazu → `assertion_not_evi
 - **Related paths:** `scripts/ci/lib/verify-core.mjs`, `scripts/ci/revolis-verify.mjs`
 - **Contradiction check:** none voči cost-governor backlogu (táto fáza router nestavia)
 
-## Čo táto vetva nerobí
+## Fáza 2 — Visual QA Guard
 
-Fázy 2–5, merge, deploy, zmena Vercel nastavení, Onlinovo.sk, billing a zákaznícke dáta.
+**Verdikt:** RGBA guard je IMPLEMENTED a TESTED. Syntetické PNG nižšie nie sú snímky produktových rout. Samostatné snímky lokálneho UI sú v odseku „Prehliadač“.
+
+Prvý pokus v commite porovnávača: `chromium.launch()` exit 1, chýbala binárka `chromium_headless_shell-1217`. Potom `npx playwright install chromium` skončil exit 0 (Chrome for Testing v cache `chromium-1217` a `chromium_headless_shell-1217`).
+
+Zachytenie v tomto turne:
+
+- Príkaz: `node scripts/ci/visual-qa-capture.mjs`
+- Exit: 0
+- Schválená snímka: `scripts/ci/fixtures/visual-qa/approved.png` (64×64, 169 B, pozadie `#102040`)
+- Test-only regresia: `scripts/ci/fixtures/visual-qa/regression.png` (64×64, 188 B, biely blok 32×32). Do `apps/crm` sa nezapisuje.
+- `compareRgba` prah `0.02`: regresia voči schválenej → `FAIL` `visual_regression`, `changedPixels` 1024, `changedRatio` 0.25. Schválená voči sebe → `PASS` `within_threshold`, 0 zmenených pixelov.
+- Review artefakty: `/opt/cursor/artifacts/visual-qa/approved.png`, `/opt/cursor/artifacts/visual-qa/regression.png`
+- `node --test scripts/ci/__tests__/visual-qa.test.mjs` po zachytení: exit 0, 4 pass, 0 fail. Štvrtý test číta uložené PNG a `.rgba` a Chromium nespúšťa. Spúšťač prehliadača nie je v kroku CI helper (ten beží pred `playwright install`).
+
+- `scripts/ci/lib/visual-qa.mjs` — `compareRgba`. Bez `maxChangedRatio` je `BLOCKED` / `missing_threshold`.
+
+Syntetický pixel test nie je screenshotová validácia prehliadača.
+
+### Prehliadač — lokálne UI
+
+Server už bežal: `next dev` v `apps/crm`, `http://127.0.0.1:3000` (proces štartoval pred týmto zachytením, stránky sa skladajú z aktuálneho stromu). Príkaz `node scripts/ci/visual-qa-pages.mjs`, exit 0. HEAD stromu pri zachytení: `576cb1213bbc0deee9a893f9ce0ece137f2c9b81`. Chromium cez Playwright, nie smoke test.
+
+| Route | HTTP | Finálna URL | Súbor |
+|---|---|---|---|
+| `/proof` | 200 | `/proof` | `scripts/ci/fixtures/visual-qa/pages/proof.png` |
+| `/proof` 390×844 | 200 | `/proof` | `scripts/ci/fixtures/visual-qa/pages/proof-mobile.png` (text `PROOF OF VALUE` je na stránke) |
+| `/landing` | 200 | `/landing` | `scripts/ci/fixtures/visual-qa/pages/landing.png` |
+| `/login` | 200 | `/login` | `scripts/ci/fixtures/visual-qa/pages/login.png` |
+| `/dashboard`, `/forecast`, `/team`, `/settings`, `/import/universal` | 200 po presmerovaní | `/login` | rovnaké snímky prihlásenia, nie obsah za auth |
+
+Kópie: `/cursor/stores/self/media/visual-qa/` a `/opt/cursor/artifacts/visual-qa/pages/`. Manifest: `scripts/ci/fixtures/visual-qa/pages/pages-manifest.json`. Dashboard za prihlásením sa nezobrazil.
 
 CI na prvom hede `6c55672a`: required check `Lint, test, build` zlyhal (run 39947704502). Test 33 volal `git diff origin/main...HEAD`; v checkout-e CI revízia `origin/main` nie je. Oprava: ten istý test ide s `--base HEAD`.
 
@@ -73,4 +103,6 @@ Na recenzovanom hede `93ed763ea3284d527c2b7e53a4070374013f06b4` som v tomto turn
 - `node scripts/ci/revolis-verify.mjs workflow --task blocked.json --base HEAD` s `assertedState: IN_PROGRESS`, `started: true`: exit **0**, stdout `Kód: blocked`, `PR ready: nie`.
 - `evaluateWorkflow` s `artifact: does-not-exist.md`, `source: diff`, bez `previousState`: `prReady: true`, `effectiveState: PR_READY`.
 
-Oprava v nasledujúcom commite: blocked a `prReady: false` majú nenulový exit (blocked je 2). `PR_READY` len po otvorení súboru v repe. Chýbajúci `previousState` je `invalid_transition`. Lokálny test po oprave je v commite, nie tu ako CI nového headu.
+Oprava je na vetve fázy 1. Blocked a `prReady: false` majú nenulový exit (blocked je 2). `PR_READY` len po otvorení súboru v repe. Chýbajúci `previousState` je `invalid_transition`.
+
+Fázy 3–5, merge a deploy táto vetva nerobí.
