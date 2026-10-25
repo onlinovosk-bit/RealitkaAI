@@ -46,14 +46,13 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: LEDGER-REPAIR (zosúladenie migračného ledgera s PROD + 3 chýbajúce migrácie)
+Cieľ: UX cenníka + ročná zľava 17 % z katalógu (aj marketing)
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] 1 — Audit: 68 súborov mimo ledgera klasifikovaných voči PROD (55 efekt prítomný / 13 vylúčených)
-- [x] 2 — ROLLBACK dôkaz na PROD (ledger 136, objekty OK, po rollbacku 81)
-- [x] 3 — COMMIT: `agency_gmail_inbound_oauth`, `lead_assignment_rules` tenant RLS, `morning_briefs.content_source*`
-- [x] 4 — Ledger 81 → 136, `20261016170000` nedotknutá, 7 ledger-only riadkov nedotknutých
-- [x] 5 — Memory PREPEND + STATUS (jeden commit)
-- [ ] 6 — Founder: `UNSUBSCRIBE_TOKEN_SECRET` + Redeploy, Q-01 bounce, Stripe krok C, rozhodnutie o `20261016170000`
+- [x] 1 — `/porovnanie-programov` prepracované (jedna dominantná cena, jednotné riadky)
+- [x] 2 — Ročná zľava 17 % z katalógu (nie natvrdo 20 %) v billing UI
+- [x] 3 — Marketing + podmienky: „ročne o 17 % lacnejšie" (169/169 testov)
+- [x] 4 — Memory PREPEND + STATUS (jeden commit)
+- [ ] 5 — Push + PR #914 + zelené CI na aktuálnom heade (merge až na GO)
 <!-- SESSION:END -->
 
 ## Hotové 2026-10-07 — s dôkazom (REALVIA-SEC-01)

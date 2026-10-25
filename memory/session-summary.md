@@ -1,3 +1,18 @@
+## Session 2026-10-25 (STENA UX cenníka + ročná zľava 17 %)
+### Dokončené
+- `PricingV2Comparison` prepracovaný (jedna dominantná cena, jednotné riadky, jeden banner), `annualDiscountPercent` v `billing/v2/format.ts` a `marketing/pricing-v2-copy.ts`.
+- Ročná zľava 17 % z katalógu na `/porovnanie-programov`, `/upgrade` a v marketingu (`FinalCTAV2`, `monthlyBillingLine`); testy 169/169.
+### Rozpracované / Pending
+- Blokované: preflight `coach-loop-graph-v3.patch` (patch je len na founderovom disku `C:\RealitkaAI`).
+- Founder: Stripe rotácia webhook secretu → „secret zosúladený" → minimálna live platba + refund; `UNSUBSCRIBE_TOKEN_SECRET` + Redeploy; Q-01; právnik (terms riadok 119 vs. 17 %); `20261016170000`.
+- Vizuálny render nového layoutu: nemerané.
+### Kľúčové súbory zmenené
+- `apps/crm/src/components/billing/v2/PricingV2Comparison.tsx`: nový layout porovnania.
+- `apps/crm/src/components/billing/v2/{format.ts,PricingV2Plans.tsx}`: ročná zľava z katalógu.
+- `apps/crm/src/components/marketing/pricing-v2-copy.ts`, `apps/crm/src/app/(marketing)/landing/sections/FinalCTAV2.tsx`: marketingový text s 17 %.
+### Ďalší krok
+Stripe krok C: founder zosúladí webhook secret, potom minimálna live platba + refund ako dôkaz.
+
 ## Session 2026-10-23 (STENA LEDGER-REPAIR)
 ### Dokončené
 - PROD transakcia (ROLLBACK dôkaz, potom COMMIT): 3 chýbajúce migrácie (`agency_gmail_inbound_oauth`, `lead_assignment_rules` agency_id + tenantová RLS, `morning_briefs.content_source*`) + 55 ledger riadkov; ledger 81 → 136, dôkaz v `memory/decisions.md`.
