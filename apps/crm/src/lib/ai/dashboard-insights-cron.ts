@@ -143,6 +143,8 @@ export async function generateAndCacheAgencyInsights(
               stop_reason: generated.audit.usage.stopReason,
               input_tokens: generated.audit.usage.inputTokens,
               output_tokens: generated.audit.usage.outputTokens,
+              cache_creation_input_tokens: generated.audit.usage.cacheCreationInputTokens,
+              cache_read_input_tokens: generated.audit.usage.cacheReadInputTokens,
             }
           : {}),
         ...(generated.audit.failure

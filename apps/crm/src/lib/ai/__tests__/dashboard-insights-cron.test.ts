@@ -352,7 +352,13 @@ describe('dashboard-insights-cron cache writer', () => {
         costEur: null,
         latencyMs: 6380,
         failure: { reason: 'bad_output', httpStatus: null, errorType: null, errorName: 'SyntaxError', requestId: null },
-        usage: { stopReason: 'max_tokens', inputTokens: 420, outputTokens: 700 },
+        usage: {
+          stopReason: 'max_tokens',
+          inputTokens: 420,
+          outputTokens: 700,
+          cacheCreationInputTokens: 0,
+          cacheReadInputTokens: 0,
+        },
       },
     })
     const { from } = mockAdminForCache({ summary: smolkoSummary })
@@ -365,6 +371,8 @@ describe('dashboard-insights-cron cache writer', () => {
       stop_reason: 'max_tokens',
       input_tokens: 420,
       output_tokens: 700,
+      cache_creation_input_tokens: 0,
+      cache_read_input_tokens: 0,
     })
   })
 

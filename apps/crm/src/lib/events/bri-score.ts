@@ -3,7 +3,7 @@
 // Computes and caches Buyer Readiness Index for each lead
 // ================================================================
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { createClient }        from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import type { BRIScore, BRIScoreChange } from '@/types/events'
 
 export interface ScoreWeights {
@@ -66,8 +66,9 @@ export async function recomputeBRIDetailed(
 
     const oldScore = current?.bri_score ?? 0
 
-    // Trigger Postgres computation
-    const { data, error } = await supabase
+    // Trigger Postgres computation — SECURITY DEFINER RPC, EXECUTE má iba
+    // service_role (balík D), preto nie cez session klienta.
+    const { data, error } = await createAdminClient()
       .rpc('compute_bri_score', {
         p_lead_id:    leadId,
         p_profile_id: profileId,

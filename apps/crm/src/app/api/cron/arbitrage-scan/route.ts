@@ -5,7 +5,7 @@
 // ================================================================
 import { NextRequest, NextResponse } from 'next/server'
 import { isAuthorizedCronBearer } from '@/lib/cron-auth'
-import { createClient }               from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { runArbitrageScan }           from '@/lib/arbitrage/scan'
 
 const MAX_PROFILES_PER_RUN = 100
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
 
   // Also expire old matches
   try {
-    await supabase.rpc('expire_arbitrage_matches')
+    await createAdminClient().rpc('expire_arbitrage_matches')
   } catch (err) {
     console.error(err)
   }

@@ -16,6 +16,8 @@ export type DealHealthIssue = {
   openTasks: number;
   overdueOpenTasks: number;
   note: string;
+  /** Hodnota dealu z rozpočtu leadu v EUR; null = rozpočet chýba (nevypočítané). */
+  expectedDealValueEur?: number | null;
 };
 
 function extractBudget(value: string) {
@@ -88,7 +90,10 @@ export async function getForecastingData(
     const bestMatchScore = leadMatches[0]?.matchScore ?? 0;
     const leadRecommendations = recommendations.filter((item) => item.leadId === lead.id);
     const budget = extractBudget(lead.budget);
-    const expectedDealValue = budget > 0 ? budget : 180000;
+    // Bez rozpočtu leadu NEDOPOČÍTAVAME hodnotu (žiadna vymyslená konštanta):
+    // expectedDealValue = 0 a budgetKnown = false → "nevypočítané — chýba rozpočet".
+    const budgetKnown = budget > 0;
+    const expectedDealValue = budgetKnown ? budget : 0;
 
     let probability =
       stageProbability(lead.status) *
@@ -114,12 +119,14 @@ export async function getForecastingData(
       recommendationCount: leadRecommendations.length,
       openTasks,
       expectedDealValue,
+      budgetKnown,
       probability,
       weightedValue,
       location: lead.location,
     };
   });
 
+  const leadsWithoutBudget = enriched.filter((item) => !item.budgetKnown).length;
   const expectedClosedDeals = enriched.reduce((sum, item) => sum + item.probability, 0);
   const expectedPipelineValue = enriched.reduce((sum, item) => sum + item.weightedValue, 0);
   const avgProbability =
@@ -285,6 +292,7 @@ export async function getForecastingData(
         probabilityPercent: Math.round(item.probability * 100),
         openTasks: item.openTasks,
         overdueOpenTasks: overdue,
+        expectedDealValueEur: item.budgetKnown ? item.expectedDealValue : null,
         note: `${overdue} otvorená úloha po termíne`,
       });
     }
@@ -306,6 +314,7 @@ export async function getForecastingData(
           probabilityPercent: Math.round(item.probability * 100),
           openTasks: 0,
           overdueOpenTasks: 0,
+          expectedDealValueEur: item.budgetKnown ? item.expectedDealValue : null,
           note: "Pokročilá fáza bez otvorených úloh",
         });
       }
@@ -322,6 +331,8 @@ export async function getForecastingData(
       expectedClosedDeals: Number(expectedClosedDeals.toFixed(2)),
       expectedPipelineValue: Math.round(expectedPipelineValue),
       avgProbabilityPercent: Math.round(avgProbability * 100),
+      /** Počet leadov bez rozpočtu — ich hodnota je nevypočítaná (neráta sa do pipeline). */
+      leadsWithoutBudget,
     },
     sourceBenchmarks,
     agentBenchmarks,

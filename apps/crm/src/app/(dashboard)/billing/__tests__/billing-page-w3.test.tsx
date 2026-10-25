@@ -41,7 +41,12 @@ async function renderPlan(planKey: string, ctx?: Ctx): Promise<string> {
     <BillingPage />
   );
   const { container } = render(ui);
-  await waitFor(() => expect(container.textContent).not.toContain("…"));
+  // Čakaj na NAČÍTANÝ stav, nie na zmiznutie troch bodiek: tie sú vo vnútri
+  // bloku `{!loading && …}`, takže počas načítavania v DOM vôbec nie sú a
+  // podmienka `not.toContain("…")` je splnená hneď pri prvom renderi. Golden
+  // potom raz za čas zachytil kratší (načítavací) výstup — v CI 11318 vs 11623 B.
+  // Reťazec "/mes" je naopak v DOM iba po načítaní (legacy aj v2 vetva).
+  await waitFor(() => expect(container.textContent).toContain("/mes"));
   const html = container.innerHTML;
   cleanup();
   return html;
@@ -64,9 +69,9 @@ describe("Billing stránka: zapnutý prepínač", () => {
 
   it.each([
     ["start", "Start", "25 €", "30,75 € s DPH 23 %"],
-    ["team", "Team", "60 €", "73,80 € s DPH 23 %"],
-    ["office", "Kancelária", "149 €", "183,27 € s DPH 23 %"],
-    ["network", "Sieť", "od 349 €", "od 429,27 € s DPH 23 %"],
+    ["team", "Team", "od 50 €", "od 61,50 € s DPH 23 %"],
+    ["office", "Kancelária", "od 74 €", "od 91,02 € s DPH 23 %"],
+    ["network", "Sieť", "od 116 €", "od 142,68 € s DPH 23 %"],
   ] as const)("v2 zákazník (%s) vidí pásmo a cenu z katalógu (čistá aj s DPH), nie legacy cenu", async (bandId, label, net, gross) => {
     // planKey z legacy zdroja (Stripe) môže byť čokoľvek, aj `starter` (79 €): v2 ho musí prebiť.
     for (const legacyKey of ["starter", "active_force", "free"]) {

@@ -4,6 +4,7 @@ import { callOpenAI } from "@/lib/ai/openai";
 import { checkAiRateLimit } from "@/lib/ai/rate-guard";
 import { logAiAction } from "@/lib/ai-action-audit";
 import { estimateOpenAiCostEur } from "@/lib/ai/llm-usage-cost";
+import { ADDRESS_PLACEHOLDER, NAME_PLACEHOLDER, cityOnly, restoreName } from "@/lib/privacy/minimize";
 
 const EVENT_TYPE_LABELS: Record<string, string> = {
   dedičstvo:    "zápis dedičstva",
@@ -36,11 +37,17 @@ export async function POST(request: Request) {
 
     const eventLabel = EVENT_TYPE_LABELS[body.eventType ?? "dedičstvo"] ?? "zmenu na liste vlastníctva";
     const agentName  = body.agentName ?? "AI Asistent Revolis";
-    const ownerName  = body.ownerName ? `vážený ${body.ownerName}` : "vážený majiteľ";
+    // BOD 9 (PII): meno majiteľa a presná adresa z katastra k poskytovateľovi
+    // LLM neodchádzajú. Model píše zástupné znaky, dosadíme ich nižšie, lokálne.
+    // Toto je cold outreach na človeka, ktorý o nás nevie — minimalizácia tu
+    // nie je kozmetika.
+    const ownerName  = body.ownerName ? `vážený ${NAME_PLACEHOLDER}` : "vážený majiteľ";
 
     const prompt = `Si expertný realitný poradca na slovenskom trhu. Napíš profesionálny, personalizovaný list majiteľovi nehnuteľnosti.
 
-Situácia: Na liste vlastníctva sme identifikovali ${eventLabel} pre nehnuteľnosť na adrese: ${body.ownerAddress}
+Situácia: Na liste vlastníctva sme identifikovali ${eventLabel} pre nehnuteľnosť na adrese: ${ADDRESS_PLACEHOLDER} (v lokalite ${cityOnly(body.ownerAddress) || 'neuvedená'})
+
+Zástupné znaky ${NAME_PLACEHOLDER} a ${ADDRESS_PLACEHOLDER} opíš presne tak, ako sú — doplníme ich my.
 
 Požiadavky na list:
 - Oslovenie: "${ownerName}"
@@ -83,7 +90,12 @@ Vráť IBA HTML obsah listu (bez <!DOCTYPE>, <html>, <head> tagov). Použi inlin
       latencyMs: Date.now() - t0,
     });
 
-    const letterHtml = letterHtmlRaw.trim();
+    // Dosadenie prebieha až tu, po odpovedi modelu.
+    const letterHtml = restoreName(
+      restoreName(letterHtmlRaw.trim(), body.ownerName, NAME_PLACEHOLDER),
+      body.ownerAddress,
+      ADDRESS_PLACEHOLDER,
+    );
     const letterText = letterHtml.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 
     // Ulož do Supabase

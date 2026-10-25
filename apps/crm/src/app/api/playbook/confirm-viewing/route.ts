@@ -1,5 +1,7 @@
 import { errorResponse, okResponse } from "@/lib/api-response";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentProfile, getCurrentUser } from "@/lib/auth";
+import { logAiAction } from "@/lib/ai-action-audit";
+import { authorizeSend, authorityMeta } from "@/lib/control-plane/authorize-send";
 import { readDemoModeFromCookie } from "@/lib/demo-mode-cookie";
 import { getLead } from "@/lib/leads-store";
 import { sendMessage } from "@/lib/multi-channel-sender";
@@ -99,15 +101,78 @@ export async function POST(request: Request) {
     ? `sms:${phone}?body=${encodeURIComponent(smsBody)}`
     : undefined;
 
-  if (email) {
+  // Control Contract gate: the click of a logged-in broker of the lead's agency
+  // is the human approval; the kill switch (AGENT_KILL_SWITCH) refuses it
+  // regardless. A real (non-demo) send needs a tenant; demo mode has none.
+  const profile = await getCurrentProfile();
+  if (!demoMode && !profile?.agency_id) {
+    return errorResponse("Profil nemá priradenú kanceláriu.", 403);
+  }
+  const tenantId = profile?.agency_id ?? "demo";
+  const approver = profile?.email ?? user.email ?? user.id;
+  const approvalId = `confirm-viewing:${leadId}:${playbookItemId || "n/a"}`;
+
+  /** Authorizes + audits one send. Returns a blocked response, or the send result. */
+  const guardedSend = async (
+    channel: "email" | "sms",
+    to: string,
+    messageSubject: string | undefined,
+    messageBody: string,
+  ) => {
+    const action = channel === "email" ? "followup.email.send" : "followup.sms.send";
+    const agentId = "REVOLIS-VIEWING-CONFIRM";
+    const auditBase = {
+      action: "viewing_confirm_send",
+      agencyId: profile?.agency_id ?? null,
+      leadId,
+      profileId: profile?.id ?? null,
+      channel,
+      subjectPreview: messageSubject ?? null,
+      bodyText: messageBody,
+    };
+    const authz = authorizeSend({
+      action,
+      agentId,
+      tenantId,
+      approval: { approvalId, approvedBy: approver, approvedAt: new Date().toISOString() },
+    });
+    if (!authz.ok) {
+      await logAiAction({
+        ...auditBase,
+        actionKind: "send_failed",
+        meta: { agent_id: agentId, action, blocked: true, ...authorityMeta(authz.verdict) },
+      }).catch((e) => console.error("[confirm-viewing] audit blocked:", e));
+      return { blocked: errorResponse(authz.reason, authz.status) };
+    }
+    const auditMeta = {
+      agent_id: agentId,
+      action,
+      approved_by: approver,
+      playbook_item_id: playbookItemId || null,
+      ...authorityMeta(authz.verdict),
+    };
+    await logAiAction({ ...auditBase, actionKind: "human_approved", meta: auditMeta })
+      .catch((e) => console.error("[confirm-viewing] audit human_approved:", e));
     const result = await sendMessage({
       leadId,
-      channel: "email",
-      to: email,
-      subject,
-      body: emailBody,
+      channel,
+      to,
+      ...(messageSubject ? { subject: messageSubject } : {}),
+      body: messageBody,
       meta: { source: "playbook_confirm_viewing" },
     });
+    await logAiAction({
+      ...auditBase,
+      actionKind: result.ok ? "sent" : "send_failed",
+      meta: { ...auditMeta, ...(result.ok ? {} : { error: result.error ?? "send failed" }) },
+    }).catch((e) => console.error("[confirm-viewing] audit result:", e));
+    return { result };
+  };
+
+  if (email) {
+    const sent = await guardedSend("email", email, subject, emailBody);
+    if ("blocked" in sent) return sent.blocked;
+    const result = sent.result;
     if (result.ok) {
       return okResponse({
         sent: true,
@@ -118,13 +183,9 @@ export async function POST(request: Request) {
   }
 
   if (phone) {
-    const result = await sendMessage({
-      leadId,
-      channel: "sms",
-      to: phone,
-      body: smsBody,
-      meta: { source: "playbook_confirm_viewing" },
-    });
+    const sent = await guardedSend("sms", phone, undefined, smsBody);
+    if ("blocked" in sent) return sent.blocked;
+    const result = sent.result;
     if (result.ok) {
       return okResponse({
         sent: true,

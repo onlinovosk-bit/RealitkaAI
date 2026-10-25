@@ -16,6 +16,7 @@ import { sanitizeText } from "@/lib/ai/sanitize";
 import { checkAiRateLimit } from "@/lib/ai/rate-guard";
 import { logAiAction } from "@/lib/ai-action-audit";
 import { estimateClaudeCostEur } from "@/lib/ai/llm-usage-cost";
+import { cachedSystem, extractClaudeCacheUsage } from "@/lib/ai/prompt-cache";
 
 const SYSTEM = `Si realitný sales coach so 20 rokmi praxe v SR. \
 Dávaš úprimnú, konkrétnu spätnú väzbu — nie generické pochvaly. \
@@ -55,7 +56,7 @@ export async function POST(req: Request) {
         const stream = getClaudeClient().messages.stream({
           model:      CLAUDE_HAIKU,
           max_tokens: 500,
-          system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
+          system: cachedSystem(SYSTEM, CLAUDE_HAIKU),
           messages: [
             {
               role: "user",
@@ -82,6 +83,7 @@ export async function POST(req: Request) {
         }
 
         const finalMessage = await stream.finalMessage();
+        const cache = extractClaudeCacheUsage(finalMessage.usage);
         await logAiAction({
           action: "call_coach",
           agencyId: profile?.agency_id ?? null,
@@ -89,9 +91,16 @@ export async function POST(req: Request) {
             CLAUDE_HAIKU,
             finalMessage.usage.input_tokens,
             finalMessage.usage.output_tokens,
+            { creationInputTokens: cache.cacheCreationInputTokens, readInputTokens: cache.cacheReadInputTokens },
           ),
           model: CLAUDE_HAIKU,
           latencyMs: Date.now() - t0,
+          meta: {
+            input_tokens: finalMessage.usage.input_tokens,
+            output_tokens: finalMessage.usage.output_tokens,
+            cache_creation_input_tokens: cache.cacheCreationInputTokens,
+            cache_read_input_tokens: cache.cacheReadInputTokens,
+          },
         });
 
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));

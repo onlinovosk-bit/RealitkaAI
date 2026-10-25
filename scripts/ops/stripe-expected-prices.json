@@ -1,5 +1,5 @@
 {
-  "_comment": "Co musi existovat v Stripe live mode, aby sa dalo predavat. Sumy su v centoch. Drift voci kodu (program-tier-pricing.ts) strazi apps/crm/tests/verification/stripe-expected-prices.verification.test.ts. Cennik v2 (gate pricing_v2, sumy BEZ DPH, tax_behavior=exclusive) strazi ten isty test voci pricing-v2.ts a pricing-v2-contract.ts; PRICING_V2_ENABLED je predvolene vypnute, takze chybajuce v2 ceny nic nerozbijaju. Neupravuj rucne bez zmeny kodu.",
+  "_comment": "Co musi existovat v Stripe live mode, aby sa dalo predavat. Sumy su v centoch. Drift voci kodu (program-tier-pricing.ts) strazi apps/crm/tests/verification/stripe-expected-prices.verification.test.ts. Cennik v3 (gate pricing_v2 = flag PRICING_V2_ENABLED, sumy BEZ DPH, tax_behavior=exclusive): licencia = 2 tiered graduated ceny (quantity = pocet maklerov; tiers z pricing-v2.ts PRICING_V3_SEAT_TIERS, up_to 'inf' = bez hornej hranice), akcia 9/12 = kupon (pole coupons), baliky kreditov a kredit. Strazi ten isty test voci pricing-v2.ts a pricing-v2-contract.ts. Riadky bez billing_scheme su per_unit (pole amount). Neupravuj rucne bez zmeny kodu.",
   "prices": [
     { "env": "STRIPE_PRICE_SOLO_SEAT", "product": "Solo Seat", "amount": 7900, "type": "recurring", "gate": "seat" },
     { "env": "STRIPE_PRICE_TEAM_SEAT", "product": "Team Seat", "amount": 7100, "type": "recurring", "gate": "seat" },
@@ -11,19 +11,47 @@
     { "env": "STRIPE_PRICE_CREDITS_PRO", "product": "Kredity Pro (500)", "amount": 37900, "type": "one_time", "gate": "topup" },
     { "env": "STRIPE_PRICE_CREDITS_MEGA", "product": "Kredity Mega (1500)", "amount": 99900, "type": "one_time", "gate": "topup" },
     { "env": "STRIPE_PRICE_STARTER_PACK", "product": "Maklérsky štartovací balík", "amount": 4700, "type": "one_time", "gate": "starter_pack" },
-    { "env": "STRIPE_PRICE_V2_START", "product": "Revolis Start", "amount": 2500, "type": "recurring", "gate": "pricing_v2" },
-    { "env": "STRIPE_PRICE_V2_TEAM", "product": "Revolis Team", "amount": 6000, "type": "recurring", "gate": "pricing_v2" },
-    { "env": "STRIPE_PRICE_V2_OFFICE", "product": "Revolis Kancelária", "amount": 14900, "type": "recurring", "gate": "pricing_v2" },
-    { "env": "STRIPE_PRICE_V2_NETWORK", "product": "Revolis Sieť", "amount": 34900, "type": "recurring", "gate": "pricing_v2" },
-    { "env": "STRIPE_PRICE_V2_START_YEARLY", "product": "Revolis Start", "amount": 30000, "type": "recurring", "interval": "year", "gate": "pricing_v2" },
-    { "env": "STRIPE_PRICE_V2_TEAM_YEARLY", "product": "Revolis Team", "amount": 72000, "type": "recurring", "interval": "year", "gate": "pricing_v2" },
-    { "env": "STRIPE_PRICE_V2_OFFICE_YEARLY", "product": "Revolis Kancelária", "amount": 178800, "type": "recurring", "interval": "year", "gate": "pricing_v2" },
-    { "env": "STRIPE_PRICE_V2_NETWORK_YEARLY", "product": "Revolis Sieť", "amount": 418800, "type": "recurring", "interval": "year", "gate": "pricing_v2" },
-    { "env": "STRIPE_PRICE_V2_PACK_60", "product": "Revolis Balík 60 kreditov", "amount": 3400, "type": "recurring", "gate": "pricing_v2" },
-    { "env": "STRIPE_PRICE_V2_PACK_120", "product": "Revolis Balík 120 kreditov", "amount": 6200, "type": "recurring", "gate": "pricing_v2" },
-    { "env": "STRIPE_PRICE_V2_PACK_180", "product": "Revolis Balík 180 kreditov", "amount": 8600, "type": "recurring", "gate": "pricing_v2" },
-    { "env": "STRIPE_PRICE_V2_PACK_240", "product": "Revolis Balík 240 kreditov", "amount": 10800, "type": "recurring", "gate": "pricing_v2" },
-    { "env": "STRIPE_PRICE_V2_PACK_300", "product": "Revolis Balík 300 kreditov", "amount": 12900, "type": "recurring", "gate": "pricing_v2" },
-    { "env": "STRIPE_PRICE_V2_CREDIT", "product": "Revolis Kredit (1 ks)", "amount": 70, "type": "one_time", "gate": "pricing_v2" }
+    {
+      "env": "STRIPE_PRICE_V3_SEAT_YEARLY", "product": "Revolis licencia", "type": "recurring", "interval": "year", "gate": "pricing_v2",
+      "billing_scheme": "tiered", "tiers_mode": "graduated",
+      "tiers": [
+        { "up_to": 1, "flat_amount": 30000, "unit_amount": 0 },
+        { "up_to": 2, "flat_amount": 30000, "unit_amount": 0 },
+        { "up_to": 5, "flat_amount": 18000, "unit_amount": 0 },
+        { "up_to": 10, "flat_amount": 0, "unit_amount": 10800 },
+        { "up_to": 20, "flat_amount": 0, "unit_amount": 7200 },
+        { "up_to": 30, "flat_amount": 3, "unit_amount": 5333 },
+        { "up_to": 50, "flat_amount": 0, "unit_amount": 4800 },
+        { "up_to": "inf", "flat_amount": 0, "unit_amount": 3600 }
+      ]
+    },
+    {
+      "env": "STRIPE_PRICE_V3_SEAT_MONTHLY", "product": "Revolis licencia", "type": "recurring", "gate": "pricing_v2",
+      "billing_scheme": "tiered", "tiers_mode": "graduated",
+      "tiers": [
+        { "up_to": 1, "flat_amount": 3000, "unit_amount": 0 },
+        { "up_to": 2, "flat_amount": 3000, "unit_amount": 0 },
+        { "up_to": 5, "flat_amount": 1800, "unit_amount": 0 },
+        { "up_to": 10, "flat_amount": 0, "unit_amount": 1080 },
+        { "up_to": 20, "flat_amount": 0, "unit_amount": 720 },
+        { "up_to": 30, "flat_amount": 0, "unit_amount": 460 },
+        { "up_to": 50, "flat_amount": 0, "unit_amount": 480 },
+        { "up_to": "inf", "flat_amount": 0, "unit_amount": 360 }
+      ]
+    },
+    { "env": "STRIPE_PRICE_V3_PACK_50", "product": "Revolis balíky kreditov", "amount": 2600, "type": "recurring", "gate": "pricing_v2" },
+    { "env": "STRIPE_PRICE_V3_PACK_100", "product": "Revolis balíky kreditov", "amount": 5100, "type": "recurring", "gate": "pricing_v2" },
+    { "env": "STRIPE_PRICE_V3_PACK_150", "product": "Revolis balíky kreditov", "amount": 7400, "type": "recurring", "gate": "pricing_v2" },
+    { "env": "STRIPE_PRICE_V3_PACK_200", "product": "Revolis balíky kreditov", "amount": 9400, "type": "recurring", "gate": "pricing_v2" },
+    { "env": "STRIPE_PRICE_V3_PACK_250", "product": "Revolis balíky kreditov", "amount": 11400, "type": "recurring", "gate": "pricing_v2" },
+    { "env": "STRIPE_PRICE_V3_PACK_300", "product": "Revolis balíky kreditov", "amount": 13100, "type": "recurring", "gate": "pricing_v2" },
+    { "env": "STRIPE_PRICE_V3_CREDIT", "product": "Revolis Kredit (1 ks)", "amount": 75, "type": "one_time", "gate": "pricing_v2" }
+  ],
+  "coupons": [
+    {
+      "env": "STRIPE_COUPON_V3_ANNUAL_PROMO", "name": "Prvý rok 9 z 12 mesiacov (-25 %)",
+      "percent_off": 25, "duration": "once", "redeem_by": 1798757999, "redeem_by_iso": "2026-12-31T22:59:59Z",
+      "applies_to_product": "Revolis licencia", "gate": "pricing_v2"
+    }
   ]
 }

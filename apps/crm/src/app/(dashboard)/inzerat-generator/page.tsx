@@ -1,4 +1,5 @@
 import ListingGeneratorClient from "@/components/listing-generator/ListingGeneratorClient";
+import { isListingFromPhotosEnabled } from "@/lib/ai/listing-from-photos-flag";
 
 export const metadata = {
   title: "Generátor inzerátu | Revolis",
@@ -17,7 +18,7 @@ export default function InzeratGeneratorPage() {
             a e-mail. Všetko sa dá pred použitím upraviť a úpravy sa uložia.
           </p>
         </div>
-        <ListingGeneratorClient />
+        <ListingGeneratorClient photosEnabled={isListingFromPhotosEnabled()} />
       </div>
     </main>
   );

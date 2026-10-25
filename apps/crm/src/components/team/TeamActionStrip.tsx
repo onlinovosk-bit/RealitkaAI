@@ -17,29 +17,6 @@ type Props = {
   monthlyTargetPerAgent?: number;
 };
 
-const DEMO_SIGNALS: TeamAgentSignal[] = [
-  {
-    agentKey: "demo-a1",
-    agentName: "Miroslav Horváth",
-    action: "Horúce leady chladnú — presuň na call blok dnes",
-    riskEur: 18400,
-    staleLeads: 4,
-    hotLeads: 3,
-    leadsCount: 11,
-    urgency: "critical",
-  },
-  {
-    agentKey: "demo-a2",
-    agentName: "Katka Nováková",
-    action: "Pod cieľom príležitostí — aktivuj akvizíciu a radar",
-    riskEur: 9200,
-    staleLeads: 2,
-    hotLeads: 1,
-    leadsCount: 8,
-    urgency: "high",
-  },
-];
-
 function urgencyBadge(urgency: TeamAgentSignal["urgency"]) {
   if (urgency === "critical") return SLATE_HORIZON_BADGES.hot;
   if (urgency === "high") return SLATE_HORIZON_BADGES.team;
@@ -49,8 +26,28 @@ function urgencyBadge(urgency: TeamAgentSignal["urgency"]) {
 /** Team screen NBA — „Ktorý maklér práve stráca peniaze?" */
 export function TeamActionStrip({ leads, profiles, monthlyTargetPerAgent = 15 }: Props) {
   const signals = buildTeamAgentSignals(leads, profiles, monthlyTargetPerAgent);
-  const items = signals.length > 0 ? signals : DEMO_SIGNALS;
-  const placeholders = signals.length === 0;
+  // Žiadne demo/vymyslené signály: bez reálnych dát z CRM ukážeme poctivý prázdny stav.
+  if (signals.length === 0) {
+    return (
+      <section
+        className="mb-6 overflow-hidden rounded-2xl border px-4 py-5 md:px-5"
+        style={{
+          background: WORKDESK_CARD.background,
+          borderColor: WORKDESK_CARD.borderColor,
+          boxShadow: WORKDESK_CARD.boxShadow,
+        }}
+      >
+        <h2 className="text-sm font-black uppercase tracking-wide" style={{ color: SLATE_HORIZON.brandDeep }}>
+          Ktorý maklér práve stráca peniaze?
+        </h2>
+        <p className="mt-1 text-sm" style={{ color: SLATE_HORIZON.muted }}>
+          Nevypočítané — chýbajú priradené leady maklérov. Signály sa zobrazia z reálnych dát CRM.
+        </p>
+      </section>
+    );
+  }
+
+  const items = signals;
   const { headline, subline } = buildTeamRiskHeadline(items);
 
   return (
@@ -89,7 +86,7 @@ export function TeamActionStrip({ leads, profiles, monthlyTargetPerAgent = 15 }:
           return (
             <Link
               key={signal.agentKey}
-              href={placeholders ? "/team" : `/team/analytics?agent=${encodeURIComponent(signal.agentName)}`}
+              href={`/team/analytics?agent=${encodeURIComponent(signal.agentName)}`}
               onClick={() =>
                 trackWorkdeskEvent("team_alert_click", {
                   agentKey: signal.agentKey,

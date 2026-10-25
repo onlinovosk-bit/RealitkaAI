@@ -6,7 +6,9 @@
  * Volaný z: /api/ai/rescue/trigger
  */
 
-import { getClaudeClient, CLAUDE_HAIKU, extractJson } from "./claude";
+import { callClaude, CLAUDE_HAIKU, extractJson } from "./claude";
+import { firstNameOnly } from "@/lib/privacy/minimize";
+import { cachedSystem } from "./prompt-cache";
 import { withAiTimeout } from "./fallback";
 
 export type RescueChannel = "call" | "sms" | "email" | "whatsapp";
@@ -41,8 +43,6 @@ export async function generateRescuePlan(
   context: RescueContext,
   channel: RescueChannel = "sms"
 ): Promise<RescuePlanOutput> {
-  const client = getClaudeClient();
-
   const channelInstructions: Record<RescueChannel, string> = {
     sms:      "SMS: max 2 vety, bez diakritiky, personalizovaný háčik, konkrétna výzva na akciu.",
     whatsapp: "WhatsApp: 2-3 vety, priateľský tón, môže mať 1 otázku, ľudský.",
@@ -55,7 +55,7 @@ export async function generateRescuePlan(
     : null;
 
   const userPrompt = `Lead na rescue:
-Meno: ${context.leadName}
+Meno: ${firstNameOnly(context.leadName)}
 Score: ${context.score}/100
 Dni bez kontaktu: ${daysSinceContact ?? "neznámo"}
 Status: ${context.status ?? "neznámy"}
@@ -78,12 +78,15 @@ Vráť JSON:
   "status": "scheduled"
 }`;
 
-  const aiCall = client.messages.create({
+  // BOD 9 (PII): volanie ide cez `callClaude`, nie priamo cez klienta —
+  // priama cesta obchádza sanitizér, takže poznámka s telefónom alebo
+  // e-mailom odchádzala nemaskovaná (audit 2026-09-29, miesto MINIMIZE).
+  const aiCall = callClaude({
     model: CLAUDE_HAIKU,
     max_tokens: 400,
-    system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
+    system: cachedSystem(SYSTEM, CLAUDE_HAIKU),
     messages: [{ role: "user", content: userPrompt }],
-  }).then((response) => {
+  }, 'rescue-message').then((response) => {
     const raw = response.content[0].type === "text" ? response.content[0].text : "";
     return extractJson<RescuePlanOutput>(raw);
   });

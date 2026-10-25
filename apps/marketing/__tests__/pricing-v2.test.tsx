@@ -66,19 +66,22 @@ afterEach(() => {
   delete process.env.NEXT_PUBLIC_CRM_URL
 })
 
-// Nezávislé očakávanie (ručne spočítané z W1: bez DPH x 1,23 zaokrúhlené na cent).
+// Nezávislé očakávanie cenníka v3 (PR #884), ručne spočítané: základ = mesačná cena pri ročnej fakturácii
+// pre začiatok pásma (1 / 2 / 6 / 11 maklérov): 25 / 2×25=50 / 65+9=74 / 110+6=116 € (Team 3–5 maklérov: strop 65 €); konečná = bez DPH x 1,23 na cent.
 const EXPECTED_BANDS = [
   { label: 'Start', net: '25 €', gross: '30,75 € s DPH' },
-  { label: 'Team', net: '60 €', gross: '73,80 € s DPH' },
-  { label: 'Kancelária', net: '149 €', gross: '183,27 € s DPH' },
-  { label: 'Sieť', net: 'od 349 €', gross: 'od 429,27 € s DPH' },
+  { label: 'Team', net: 'od 50 €', gross: 'od 61,50 € s DPH' },
+  { label: 'Kancelária', net: 'od 74 €', gross: 'od 91,02 € s DPH' },
+  { label: 'Sieť', net: 'od 116 €', gross: 'od 142,68 € s DPH' },
 ]
+// Balíky kreditov v3: 50/100/150/200/250/300 kreditov za 26/51/74/94/114/131 € bez DPH.
 const EXPECTED_PACKS = [
-  ['60 kreditov', '34 €', '41,82 € s DPH'],
-  ['120 kreditov', '62 €', '76,26 € s DPH'],
-  ['180 kreditov', '86 €', '105,78 € s DPH'],
-  ['240 kreditov', '108 €', '132,84 € s DPH'],
-  ['300 kreditov', '129 €', '158,67 € s DPH'],
+  ['50 kreditov', '26 €', '31,98 € s DPH'],
+  ['100 kreditov', '51 €', '62,73 € s DPH'],
+  ['150 kreditov', '74 €', '91,02 € s DPH'],
+  ['200 kreditov', '94 €', '115,62 € s DPH'],
+  ['250 kreditov', '114 €', '140,22 € s DPH'],
+  ['300 kreditov', '131 €', '161,13 € s DPH'],
 ]
 
 describe('formatEurCents', () => {
@@ -127,39 +130,43 @@ describe('režim „len plány“ na webe', () => {
   it('PRICING_V2_PLANS_ONLY=false vráti balíky', () => {
     const view = resolvePricingV2View({ ...env, PRICING_V2_PLANS_ONLY: 'false' })!
     expect(view.plansOnly).toBe(false)
-    expect(view.packs).toHaveLength(5)
+    expect(view.packs).toHaveLength(6)
     expect(renderToStaticMarkup(<PricingSectionV2 view={view} />)).toContain('baliky-kreditov')
   })
 })
 
-describe('ročné platenie na webe (12 × mesačná, bez zľavy)', () => {
+describe('ročné platenie na webe (12 × základ, bez zľavy; akcia 9/12 sa na webe neukazuje)', () => {
   it('karty ukážu ročnú cenu bez DPH aj s DPH; Sieť s predponou „od“', () => {
     const view = buildPricingV2View(buildPricingV2Catalog())
     expect(view.bands.map((b) => norm(b.annualLabel))).toEqual([
       'Ročne 300 € bez DPH (369 € s DPH)',
-      'Ročne 720 € bez DPH (885,60 € s DPH)',
-      'Ročne 1788 € bez DPH (2199,24 € s DPH)',
-      'Ročne od 4188 € bez DPH (od 5151,24 € s DPH)',
+      'Ročne od 600 € bez DPH (od 738 € s DPH)',
+      'Ročne od 888 € bez DPH (od 1092,24 € s DPH)',
+      'Ročne od 1392 € bez DPH (od 1712,16 € s DPH)',
     ])
     const html = norm(renderToStaticMarkup(<PricingSectionV2 view={view} />))
-    expect(html).toContain('Ročne 720 € bez DPH (885,60 € s DPH)')
+    expect(html).toContain('Ročne od 600 € bez DPH (od 738 € s DPH)')
     expect(html).not.toContain('Ušetríte')
     expect(html).not.toMatch(/zľav/i)
   })
 })
 
-describe('zahrnuté kredity plánov (rozhodnutie 6. 10. 2026: 20 / 50 / 100 / 150)', () => {
-  it('karty plánov ukážu kredity na celú kanceláriu, nie staré 25 / 60 / 120 / 175', () => {
+describe('zahrnuté kredity plánov (rozhodnutie 13. 10. 2026: 25 / 60 / 120 / 175)', () => {
+  it('karty plánov ukážu kredity na celú kanceláriu, nie staré 20 / 50 / 100 / 150', () => {
     const view = buildPricingV2View(buildPricingV2Catalog())
     expect(view.bands.map((b) => b.creditsLabel)).toEqual([
-      '20 kreditov mesačne pre celú kanceláriu',
-      '50 kreditov mesačne pre celú kanceláriu',
-      '100 kreditov mesačne pre celú kanceláriu',
-      '150 kreditov mesačne pre celú kanceláriu',
+      '25 kreditov mesačne pre celú kanceláriu',
+      '60 kreditov mesačne pre celú kanceláriu',
+      '120 kreditov mesačne pre celú kanceláriu',
+      '175 kreditov mesačne pre celú kanceláriu',
     ])
     const html = renderToStaticMarkup(<PricingSectionV2 view={view} />)
-    for (const old of ['25 kreditov', '175 kreditov']) expect(html).not.toContain(old)
-    expect(html).not.toContain('120 kreditov mesačne pre celú')
+    for (const label of view.bands.map((b) => b.creditsLabel)) expect(html).toContain(label)
+    // „120 kreditov…“ obsahuje podreťazec „20 kreditov…“, preto staré čísla pinujeme celým labelom, nie substringom.
+    expect(html).not.toMatch(/(?<!\d)20 kreditov mesačne pre celú kanceláriu/)
+    expect(html).not.toMatch(/(?<!\d)50 kreditov mesačne pre celú kanceláriu/)
+    expect(html).not.toMatch(/(?<!\d)100 kreditov mesačne pre celú kanceláriu/)
+    expect(html).not.toMatch(/(?<!\d)150 kreditov mesačne pre celú kanceláriu/)
   })
 })
 
@@ -170,8 +177,8 @@ describe('ceny pochádzajú z katalógu', () => {
       EXPECTED_BANDS.map((b) => [b.label, b.net, b.gross]),
     )
     expect(view.packs.map((p) => [p.creditsLabel, norm(p.netLabel), norm(p.grossLabel)])).toEqual(EXPECTED_PACKS)
-    expect(norm(view.extraCredit.netLabel)).toBe('0,70 €')
-    expect(norm(view.extraCredit.grossLabel)).toBe('0,86 € s DPH')
+    expect(norm(view.extraCredit.netLabel)).toBe('0,75 €')
+    expect(norm(view.extraCredit.grossLabel)).toBe('0,92 € s DPH')
   })
 
   it('zmena sadzby DPH v katalógu sa prejaví bez zásahu do komponentov', () => {
@@ -216,8 +223,8 @@ describe('PricingSection pri zapnutom prepínači', () => {
     expect(html).not.toContain('79 €')
     expect(html).not.toContain('71 €')
     expect(html).not.toContain('63 €')
-    // 349 € smie byť len ako cena pásma Sieť („od 349 €“), nie ako samostatný produkt
-    expect((html.match(/349/g) ?? []).length).toBe(1)
+    // 349 € (Owner Cockpit) sa v v3 nikde nezobrazí; Sieť je „od 116 €“
+    expect(html).not.toContain('349')
   })
 
   it('CTA nikdy nevedie na priamy Stripe checkout ani na starý marketingový checkout', () => {
@@ -231,10 +238,12 @@ describe('PricingSection pri zapnutom prepínači', () => {
     const register = hrefs.filter((h) => h.startsWith(DEFAULT_CRM_URL))
     expect(register).toContain(`${DEFAULT_CRM_URL}/register?pricing=v2&amp;plan=start`)
     expect(register).toContain(`${DEFAULT_CRM_URL}/register?pricing=v2&amp;plan=team`)
-    expect(register).toContain(`${DEFAULT_CRM_URL}/register?pricing=v2&amp;plan=office`)
+    // Kancelária (6–10) a Sieť (11+) sú „od“ ceny podľa počtu maklérov: dojednáva sa na deme, nie checkout
+    expect(register).not.toContain(`${DEFAULT_CRM_URL}/register?pricing=v2&amp;plan=office`)
+    expect(register).not.toContain(`${DEFAULT_CRM_URL}/register?pricing=v2&amp;plan=network`)
     // balíky: registrácia bez konkrétneho pásma
     expect(register).toContain(`${DEFAULT_CRM_URL}/register?pricing=v2`)
-    // Sieť sa dojednáva: demo, nie checkout
+    expect(hrefs.some((h) => h.includes('calendly.com') && h.includes('pricing_v2_office'))).toBe(true)
     expect(hrefs.some((h) => h.includes('calendly.com') && h.includes('pricing_v2_network'))).toBe(true)
     // žiadne tlačidlo otvárajúce legacy modal
     expect(html).not.toContain('<button')
@@ -245,8 +254,8 @@ describe('PricingSection pri zapnutom prepínači', () => {
     expect(safeCrmUrl('https://checkout.stripe.com/c/pay')).toBe(DEFAULT_CRM_URL)
     expect(safeCrmUrl('javascript:alert(1)')).toBe(DEFAULT_CRM_URL)
     expect(safeCrmUrl('')).toBe(DEFAULT_CRM_URL)
-    expect(buildRegisterUrl('https://crm.example.sk', { plan: 'team', pack: 60 })).toBe(
-      'https://crm.example.sk/register?pricing=v2&plan=team&pack=60',
+    expect(buildRegisterUrl('https://crm.example.sk', { plan: 'team', pack: 50 })).toBe(
+      'https://crm.example.sk/register?pricing=v2&plan=team&pack=50',
     )
   })
 })
@@ -260,7 +269,7 @@ describe('CTA na webe: demo, kým nie je zapnutý signup', () => {
     expect(view.bands.map((b) => b.ctaLabel)).toEqual([
       'Rezervovať demo →',
       'Rezervovať demo →',
-      'Rezervovať demo →',
+      'Dohodnúť cenu na deme →',
       'Dohodnúť cenu na deme →',
     ])
     const html = renderToStaticMarkup(<PricingSectionV2 view={view} />)
@@ -268,10 +277,10 @@ describe('CTA na webe: demo, kým nie je zapnutý signup', () => {
     expect(html).not.toContain('app.revolis.ai')
     expect((html.match(/calendly\.com/g) ?? []).length).toBeGreaterThanOrEqual(4)
   })
-  it('PRICING_V2_SIGNUP_ENABLED=true|1|on zapne registráciu pre pásma Start/Team/Kancelária (Sieť ostáva demo)', () => {
+  it('PRICING_V2_SIGNUP_ENABLED=true|1|on zapne registráciu len pre pásma s pevnou cenou Start/Team (Kancelária a Sieť sú „od“ ceny: demo)', () => {
     for (const v of ['true', '1', 'on', ' ON ']) {
       const view = resolvePricingV2View({ ...noSignup, PRICING_V2_SIGNUP_ENABLED: v })!
-      expect(view.bands.map((b) => b.ctaIsDemo)).toEqual([false, false, false, true])
+      expect(view.bands.map((b) => b.ctaIsDemo)).toEqual([false, false, true, true])
     }
   })
   it.each(['', 'false', '0', 'yes', 'nonsense'])('PRICING_V2_SIGNUP_ENABLED=%j ostáva v bezpečnom režime (demo)', (v) => {
@@ -300,14 +309,21 @@ describe('LeadCaptureModal vo v2', () => {
       expect(out).not.toContain('Prejsť na platbu')
       expect(out).toContain('bez DPH')
     }
-    expect(html('pricing-v2-team')).toContain('60 €')
-    expect(html('pricing-v2-team')).toContain('73,80 € s DPH')
+    expect(html('pricing-v2-team')).toContain('od 50 €')
+    expect(html('pricing-v2-team')).toContain('od 61,50 € s DPH')
     expect(html('pricing-smart-start')).toContain('25 €')
   })
 
   it('CTA vedie do registrácie v CRM, nie do Stripe', () => {
+    const out = html('pricing-v2-team')
+    expect(out).toContain(`${DEFAULT_CRM_URL}/register?pricing=v2&amp;plan=team`)
+    expect(out).not.toMatch(/stripe/i)
+  })
+
+  it('„od“ pásmo (Kancelária) vedie aj v modale na demo, nie do registrácie', () => {
     const out = html('pricing-v2-office')
-    expect(out).toContain(`${DEFAULT_CRM_URL}/register?pricing=v2&amp;plan=office`)
+    expect(out).toContain('calendly.com')
+    expect(out).not.toContain('/register')
     expect(out).not.toMatch(/stripe/i)
   })
 
@@ -370,7 +386,18 @@ describe('starý marketingový checkout', () => {
       // komentáre smú Stripe spomínať; kontrolujeme kód bez komentárov
       const code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
       expect(code, f).not.toMatch(/checkout\/subscription|api\/checkout|checkout\.stripe|js\.stripe|STRIPE_|fetch\(/i)
+      expect(code, f).not.toMatch(/lemon|lemonsqueezy/i)
     }
+  })
+
+  it('CTA cenníka v2 nikdy nevedie na Lemon Squeezy', () => {
+    const view = buildPricingV2View(buildPricingV2Catalog(), undefined, { signupEnabled: true })
+    for (const band of view.bands) {
+      expect(band.ctaHref).not.toMatch(/lemon|lemonsqueezy/i)
+    }
+    expect(view.packsCtaHref).not.toMatch(/lemon|lemonsqueezy/i)
+    const html = renderToStaticMarkup(<PricingSectionV2 view={view} />)
+    expect(html).not.toMatch(/lemon|lemonsqueezy/i)
   })
 })
 

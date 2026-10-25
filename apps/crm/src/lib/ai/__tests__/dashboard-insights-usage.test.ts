@@ -47,7 +47,13 @@ describe('generateDashboardInsights — čo model skutočne vrátil (usage)', ()
     const res = await generateDashboardInsights(input)
 
     expect(res.audit.source).toBe('llm')
-    expect(res.audit.usage).toEqual({ stopReason: 'end_turn', inputTokens: 420, outputTokens: 310 })
+    expect(res.audit.usage).toEqual({
+      stopReason: 'end_turn',
+      inputTokens: 420,
+      outputTokens: 310,
+      cacheCreationInputTokens: 0,
+      cacheReadInputTokens: 0,
+    })
   })
 
   it('bad_output po orezaní na max_tokens: usage prežije a odlíši orezanie od zlého JSON', async () => {
@@ -61,6 +67,8 @@ describe('generateDashboardInsights — čo model skutočne vrátil (usage)', ()
       stopReason: 'max_tokens',
       inputTokens: 420,
       outputTokens: DASHBOARD_LLM_MAX_TOKENS,
+      cacheCreationInputTokens: 0,
+      cacheReadInputTokens: 0,
     })
   })
 
@@ -89,6 +97,27 @@ describe('generateDashboardInsights — čo model skutočne vrátil (usage)', ()
     const serialized = JSON.stringify(res.audit)
     expect(serialized).not.toContain('Ján')
     expect(serialized).not.toContain('Novák')
+  })
+
+  it('usage nesie cache_creation / cache_read keď ich model vráti', async () => {
+    mockCallClaude.mockResolvedValue({
+      content: [{ type: 'text', text: goodJson }],
+      stop_reason: 'end_turn',
+      usage: {
+        input_tokens: 80,
+        output_tokens: 200,
+        cache_creation_input_tokens: 0,
+        cache_read_input_tokens: 1_200,
+      },
+    })
+    const res = await generateDashboardInsights(input)
+    expect(res.audit.usage).toEqual({
+      stopReason: 'end_turn',
+      inputTokens: 80,
+      outputTokens: 200,
+      cacheCreationInputTokens: 0,
+      cacheReadInputTokens: 1_200,
+    })
   })
 
   it('volanie modelu dostane strop výstupu z konštanty (>= 1000 tokenov)', async () => {

@@ -73,7 +73,14 @@ export async function POST(req: Request) {
     costEur: audit.costEur,
     model: audit.model,
     latencyMs: audit.latencyMs,
-    meta: { persona: body.persona ?? "GENERAL", creditsCharged: spend.charged },
+    meta: {
+      persona: body.persona ?? "GENERAL",
+      creditsCharged: spend.charged,
+      input_tokens: audit.inputTokens,
+      output_tokens: audit.outputTokens,
+      cache_creation_input_tokens: audit.cacheCreationInputTokens,
+      cache_read_input_tokens: audit.cacheReadInputTokens,
+    },
   });
 
   // Perzistencia draftu — bez nej maklér stratí text zavretím tabu.
