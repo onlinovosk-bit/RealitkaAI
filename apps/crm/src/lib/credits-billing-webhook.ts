@@ -108,8 +108,15 @@ export async function handlePricingCheckoutWebhook(
   }
 
   if (checkoutType === "starter_pack") {
-    // Starter pack: plnenie ostáva na completed (existujúce správanie); async bez plnenia.
-    if (isAsyncPaid) return false;
+    // completed + unpaid (SEPA atď.): ACK bez plnenia — kód/download až po zaplatení.
+    // async_payment_succeeded (alebo completed + paid) plní idempotentne.
+    if (!isSessionPaid(session)) {
+      console.info("[pricing-webhook] starter_pack checkout awaiting payment", {
+        sessionId: session.id,
+      });
+      return true;
+    }
+
     const result = await fulfillStarterPackPurchase({
       stripeSessionId: session.id,
       customerEmail: session.customer_details?.email ?? session.customer_email,
