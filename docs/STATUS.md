@@ -1,5 +1,7 @@
 # Revolis.AI — STAV NA JEDNEJ STRÁNKE
 
+> **2026-10-26 BLOG:** `/blog` + prvý článok v `apps/marketing` na draft PR; PRODUCTION nezmenená. Tabuľka % sa NEMENÍ.
+
 > Aktualizuje sa **po každom uzavretom bloku** (jeden riadok zmeny hore + tabuľka). Čísla sú merané, kde je uvedený dôkaz;
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-05** (GMAIL-CONNECT: pripojenie Gmailu s šifrovaným tokenom a karta v Integráciách sú v kóde, **neaktivované** — % nezmenené).
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 20:45 UTC** (opt-in auto-odpoveď: migrácia na PROD + fail-closed #811; `last_contact_at` sa zapisuje #800; „Čakajú na kontakt" prestalo byť celá kniha #804).
@@ -44,15 +46,13 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: Reverse engineering a discovery systému Revolis (iba čítanie) — 5 dokumentov s dôkazmi
+Cieľ: Verejný blog na www.revolis.ai + prvý článok (draft PR)
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] 1 — `ARCHITECTURE.md`: mapa systému (monorepo, proxy, multi-tenant, AI vrstva)
-- [x] 2 — `DATA_FLOWS.md`: toky príjem leadu, odchádzajúci e-mail, platby, prierezové mechanizmy
-- [x] 3 — `INTEGRATIONS.md`: 24 verejných ciest, cron autentifikácia, inventár integrácií, CI
-- [x] 4 — `FINDINGS.md`: 29 nálezov (3× P1) s dôkazom, dopadom, overením a krokom
-- [x] 5 — `OPEN_QUESTIONS.md`: 31 otvorených otázok (UNKNOWN) s postupom overenia
-- [x] 6 — Founder: read-only potvrdenie F-02 na `/api/resend-webhook` (snímka GET bez session: `{"ok":false,"error":"Unauthorized"}` z proxy; Resend delivery log zostáva otvorený v Q-01)
-- [x] 7 — GO stena „doručiteľnosť a odhlásenie" v kóde: F-02 bypass + F-01 potlačenie/List-Unsubscribe + bounce/complaint + GDPR analýza; testy 58+164 PASS, lint/typecheck/check-security čisté. **Neaplikované na PROD** (migrácia, `UNSUBSCRIBE_TOKEN_SECRET`, nasadenie čakajú na GO); CI na heade nemerané
+- [x] 1 — `/blog` listing + `/blog/[slug]` v `apps/marketing` (build routy + HTTP 200)
+- [x] 2 — Prvý článok `ceny-nehnutelnosti-2026-sadzby-nove-ltv` v kóde (CTA register, zdroje, bez pilot)
+- [x] 3 — Sitemap + `seo.test.ts` obsahujú `/blog` a slug (10 PASS blog+seo)
+- [x] 4 — Draft PR proti `main` (merge/deploy nie)
+- [ ] 5 — Merge + nasadenie `revolis-marketing` (samostatné GO)
 <!-- SESSION:END -->
 
 ## Hotové 2026-10-07 — s dôkazom (REALVIA-SEC-01)

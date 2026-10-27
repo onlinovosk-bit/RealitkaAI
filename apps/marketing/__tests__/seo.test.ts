@@ -37,11 +37,19 @@ describe('sitemap()', () => {
     const entries = sitemap()
     const urls = entries.map((entry) => entry.url)
 
-    expect(PUBLIC_SITEMAP_PATHS).toEqual(['/', '/demo', '/balik'])
+    expect(PUBLIC_SITEMAP_PATHS).toEqual([
+      '/',
+      '/demo',
+      '/balik',
+      '/blog',
+      '/blog/ceny-nehnutelnosti-2026-sadzby-nove-ltv',
+    ])
     expect(urls).toEqual([
       'https://www.revolis.ai/',
       'https://www.revolis.ai/demo',
       'https://www.revolis.ai/balik',
+      'https://www.revolis.ai/blog',
+      'https://www.revolis.ai/blog/ceny-nehnutelnosti-2026-sadzby-nove-ltv',
     ])
     expect(urls.every((url) => url.startsWith('https://www.revolis.ai'))).toBe(true)
     expect(urls.some((url) => url.includes('revolis.ai/') && !url.includes('www.'))).toBe(false)
