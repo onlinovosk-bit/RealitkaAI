@@ -27,6 +27,12 @@ Path-qualified Obsidian odkazy — jednoznačný cieľ v repe.
 - [[docs/architecture/brain-retrieval-contract|Brain retrieval contract]] — sémantický register vs inventory
 - [[docs/OBSIDIAN-VAULT-ACTIVATION|Obsidian vault activation]] — čo sa zrkadlí a čo nie
 
+## Project OS
+
+Rozcestník oblastí práce. Pravidlá agentov ostávajú v kontrakte a v skilloch.
+
+- [[docs/project-os/README|Revolis Project OS]] — taxonómia, odovzdanie, briefy
+
 ## Stav systému
 
 - `brain/registry/index.json` — generovaný z `brain/src/catalog.ts` (nie wiki cieľ)
