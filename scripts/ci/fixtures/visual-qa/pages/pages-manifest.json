@@ -1,0 +1,85 @@
+{
+  "command": "node scripts/ci/visual-qa-pages.mjs",
+  "base": "http://127.0.0.1:3000",
+  "head_at_capture": "576cb1213bbc0deee9a893f9ce0ece137f2c9b81",
+  "browser": "playwright chromium",
+  "shots": [
+    {
+      "route": "/proof",
+      "requested_url": "http://127.0.0.1:3000/proof",
+      "final_url": "http://127.0.0.1:3000/proof",
+      "status": 200,
+      "png": "scripts/ci/fixtures/visual-qa/pages/proof.png",
+      "bytes": 64529
+    },
+    {
+      "route": "/landing",
+      "requested_url": "http://127.0.0.1:3000/landing",
+      "final_url": "http://127.0.0.1:3000/landing",
+      "status": 200,
+      "png": "scripts/ci/fixtures/visual-qa/pages/landing.png",
+      "bytes": 1170584
+    },
+    {
+      "route": "/login",
+      "requested_url": "http://127.0.0.1:3000/login",
+      "final_url": "http://127.0.0.1:3000/login",
+      "status": 200,
+      "png": "scripts/ci/fixtures/visual-qa/pages/login.png",
+      "bytes": 195227
+    },
+    {
+      "route": "/dashboard",
+      "requested_url": "http://127.0.0.1:3000/dashboard",
+      "final_url": "http://127.0.0.1:3000/login?redirectTo=%2Fdashboard",
+      "status": 200,
+      "png": "scripts/ci/fixtures/visual-qa/pages/dashboard.png",
+      "bytes": 195237
+    },
+    {
+      "route": "/forecast",
+      "requested_url": "http://127.0.0.1:3000/forecast",
+      "final_url": "http://127.0.0.1:3000/login",
+      "status": 200,
+      "png": "scripts/ci/fixtures/visual-qa/pages/forecast.png",
+      "bytes": 195227
+    },
+    {
+      "route": "/team",
+      "requested_url": "http://127.0.0.1:3000/team",
+      "final_url": "http://127.0.0.1:3000/login",
+      "status": 200,
+      "png": "scripts/ci/fixtures/visual-qa/pages/team.png",
+      "bytes": 195227
+    },
+    {
+      "route": "/settings",
+      "requested_url": "http://127.0.0.1:3000/settings",
+      "final_url": "http://127.0.0.1:3000/login",
+      "status": 200,
+      "png": "scripts/ci/fixtures/visual-qa/pages/settings.png",
+      "bytes": 195227
+    },
+    {
+      "route": "/import/universal",
+      "requested_url": "http://127.0.0.1:3000/import/universal",
+      "final_url": "http://127.0.0.1:3000/login",
+      "status": 200,
+      "png": "scripts/ci/fixtures/visual-qa/pages/import-universal.png",
+      "bytes": 195227
+    },
+    {
+      "route": "/proof",
+      "viewport": "390x844",
+      "requested_url": "http://127.0.0.1:3000/proof",
+      "final_url": "http://127.0.0.1:3000/proof",
+      "status": 200,
+      "png": "scripts/ci/fixtures/visual-qa/pages/proof-mobile.png",
+      "bytes": 56285,
+      "body_has_proof_of_value": true
+    }
+  ],
+  "store_dir": "/cursor/stores/self/media/visual-qa",
+  "artifact_dir": "/opt/cursor/artifacts/visual-qa/pages",
+  "note": "Syntetický compareRgba test nie je táto snímka."
+}

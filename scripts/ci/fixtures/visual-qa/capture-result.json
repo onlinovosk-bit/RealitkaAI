@@ -1,0 +1,33 @@
+{
+  "command": "node scripts/ci/visual-qa-capture.mjs",
+  "exit_expected": 0,
+  "approved": {
+    "repo": "scripts/ci/fixtures/visual-qa/approved.png",
+    "bytes": 169,
+    "width": 64,
+    "height": 64
+  },
+  "regression": {
+    "repo": "scripts/ci/fixtures/visual-qa/regression.png",
+    "bytes": 188,
+    "width": 64,
+    "height": 64
+  },
+  "review_artifacts": [
+    "/opt/cursor/artifacts/visual-qa/approved.png",
+    "/opt/cursor/artifacts/visual-qa/regression.png"
+  ],
+  "regression_vs_approved": {
+    "status": "FAIL",
+    "code": "visual_regression",
+    "changedPixels": 1024,
+    "changedRatio": 0.25
+  },
+  "approved_vs_itself": {
+    "status": "PASS",
+    "code": "within_threshold",
+    "changedPixels": 0,
+    "changedRatio": 0
+  },
+  "product_path_touched": false
+}
