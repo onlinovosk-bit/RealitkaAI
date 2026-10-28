@@ -42,13 +42,13 @@ vi.mock("@/lib/supabase/admin", () => ({
     from: (table: string) => {
       if (table === "agencies") {
         return {
-          select: () => ({
-            eq: (col: string, val: unknown) => ({
-              maybeSingle: async () => ({
-                data: db.readError ? null : (db.agencies.find((a) => a[col] === val) ?? null),
-                error: db.readError,
-              }),
-            }),
+          select: (cols?: string) => ({
+            eq: (col: string, val: unknown) => {
+              const row = db.readError ? null : (db.agencies.find((a) => a[col] === val) ?? null);
+              const read = async () => ({ data: row, error: db.readError });
+              // seat grant path uses .single(); v2 plan path uses .maybeSingle().
+              return { maybeSingle: read, single: read, _cols: cols };
+            },
           }),
           update: (payload: Record<string, unknown>) => ({
             eq: (col: string, val: unknown) => {
@@ -825,12 +825,18 @@ describe("handlePricingCheckoutWebhook — v2 vetvy", () => {
     expect(await handlePricingCheckoutWebhook(ev("checkout.session.completed", creditsSession({}, { credits: "-1" })))).toBe(false);
   });
 
-  it("async_payment_succeeded fulfils v2, but is ignored for legacy types (legacy behaviour unchanged)", async () => {
+  it("async_payment_succeeded fulfils v2 credits and legacy seat once paid", async () => {
     expect(await handlePricingCheckoutWebhook(ev("checkout.session.async_payment_succeeded", creditsSession()))).toBe(true);
     expect(rpc.purchaseCalls).toHaveLength(1);
-    const seat = { id: "cs_s", metadata: { checkoutType: "seat", agencyId: AGENCY, seatTier: "team", seatQuantity: "2" } };
-    expect(await handlePricingCheckoutWebhook(ev("checkout.session.async_payment_succeeded", seat))).toBe(false);
-    expect(db.agencyUpdates).toHaveLength(0);
+    const seat = {
+      id: "cs_s",
+      payment_status: "paid",
+      customer: "cus_1",
+      subscription: "sub_1",
+      metadata: { checkoutType: "seat", agencyId: AGENCY, seatTier: "team", seatQuantity: "2" },
+    };
+    expect(await handlePricingCheckoutWebhook(ev("checkout.session.async_payment_succeeded", seat))).toBe(true);
+    expect(db.agencyUpdates.length).toBeGreaterThan(0);
   });
 
   it("other event types are still ignored", async () => {

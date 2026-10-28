@@ -70,6 +70,8 @@ describe('marketing palette tokens', () => {
     expect(read('app/landing-v2.css')).toContain('var(--rev-bg)')
     expect(read('app/demo/demo.css')).toContain('var(--rev-gold)')
     expect(read('app/balik/balik.css')).toContain('var(--rev-gold)')
+    expect(read('app/blog/blog.css')).toContain('var(--rev-gold)')
+    expect(read('app/blog/blog.css')).toContain('.blog-page nav')
   })
 
   it('does not introduce the word pilot and keeps campaign prices/CTAs', () => {
