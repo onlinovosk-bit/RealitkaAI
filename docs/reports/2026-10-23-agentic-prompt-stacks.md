@@ -1,5 +1,6 @@
 # Agentic Prompt Stacks — 2026-10-23
 
+Vetva tohto súboru: `cursor/agentic-visual-qa-dd79` (fáza 2), základ je vetva fázy 1. Nie je druhý report.
 Vetva tohto súboru: `cursor/agentic-orchestration-dd79` (fáza 5), základ je vetva fázy 4. Nie je druhý report.
 
 ## G0 — baseline pred zmenou správania
@@ -105,6 +106,7 @@ Na recenzovanom hede `93ed763ea3284d527c2b7e53a4070374013f06b4` som v tomto turn
 
 Oprava je na vetve fázy 1. Blocked a `prReady: false` majú nenulový exit (blocked je 2). `PR_READY` len po otvorení súboru v repe. Chýbajúci `previousState` je `invalid_transition`.
 
+Fázy 3–5, merge a deploy táto vetva nerobí.
 ## Fáza 3 — API Lifecycle Guard
 
 **Verdikt:** klasifikátor a inventár sú IMPLEMENTED a TESTED. Živá stránka poskytovateľa sa neťahala (`vendor_deprecation_fetched: false`). Nie je to migrácia a nie je to PRODUCTION_VERIFIED.
