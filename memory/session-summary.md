@@ -35,6 +35,108 @@ Stripe krok C (priorita #1 podľa Prime Directive): founder spustí `bash script
 ### Ďalší krok
 Stripe krok C (Prime Directive): founder pošle výstup `scripts/ops/stripe-verify-prices.sh`; overenie spravím ja.
 
+## Session 2026-10-25 (STENA UX cenníka + ročná zľava 17 %)
+### Dokončené
+- `PricingV2Comparison` prepracovaný (jedna dominantná cena, jednotné riadky, jeden banner), `annualDiscountPercent` v `billing/v2/format.ts` a `marketing/pricing-v2-copy.ts`.
+- Ročná zľava 17 % z katalógu na `/porovnanie-programov`, `/upgrade` a v marketingu (`FinalCTAV2`, `monthlyBillingLine`); testy 169/169.
+### Rozpracované / Pending
+- Blokované: preflight `coach-loop-graph-v3.patch` (patch je len na founderovom disku `C:\RealitkaAI`).
+- Founder: Stripe rotácia webhook secretu → „secret zosúladený" → minimálna live platba + refund; `UNSUBSCRIBE_TOKEN_SECRET` + Redeploy; Q-01; právnik (terms riadok 119 vs. 17 %); `20261016170000`.
+- Vizuálny render nového layoutu: nemerané.
+### Kľúčové súbory zmenené
+- `apps/crm/src/components/billing/v2/PricingV2Comparison.tsx`: nový layout porovnania.
+- `apps/crm/src/components/billing/v2/{format.ts,PricingV2Plans.tsx}`: ročná zľava z katalógu.
+- `apps/crm/src/components/marketing/pricing-v2-copy.ts`, `apps/crm/src/app/(marketing)/landing/sections/FinalCTAV2.tsx`: marketingový text s 17 %.
+### Ďalší krok
+Stripe krok C: founder zosúladí webhook secret, potom minimálna live platba + refund ako dôkaz.
+
+## Session 2026-10-23 (STENA LEDGER-REPAIR)
+### Dokončené
+- PROD transakcia (ROLLBACK dôkaz, potom COMMIT): 3 chýbajúce migrácie (`agency_gmail_inbound_oauth`, `lead_assignment_rules` agency_id + tenantová RLS, `morning_briefs.content_source*`) + 55 ledger riadkov; ledger 81 → 136, dôkaz v `memory/decisions.md`.
+- Odmietnuté do ledgera: 13 verzií bez prítomného efektu v PROD (zoznam + dôvody v decisions.md).
+### Rozpracované / Pending
+- Founder: `UNSUBSCRIBE_TOKEN_SECRET` + Redeploy + `RESEND_API_KEY`; Q-01 bounce; Stripe krok C; právnik; rozhodnutie o `20261016170000`.
+- `leads_demo_source_check` (`hero_email_capture`) chýba na PROD; anon write granty (105 z 143 tabuliek) čakajú na mapu ciest + test s anon kľúčom.
+- Lokálny izolovaný test migrácií: nemerané (Postgres nepovolený v prostredí).
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md`, `docs/STATUS.md`: záznam steny, SESSION blok. Kód sa nemenil.
+### Ďalší krok
+GO na stenu ANON-WRITE-MAP: úplná mapa ciest (tabuľky × anon/authenticated × kód) + test s anon kľúčom, potom jeden balík SQL.
+
+## Session 2026-10-22 (STENA PROD aktivácia doručiteľnosti)
+### Dokončené
+- PROD migrácia `apps/crm/supabase/migrations/20261022100000_email_suppressions.sql` aplikovaná, dôkaz v transakcii s ROLLBACK, ledger zapísaný.
+- Overené: PROD deployment READY na `a2e42ac`; verejné cesty `/api/resend-webhook` (405) a `/api/unsubscribe` (400 bez tokenu) dosiahnuteľné bez proxy 401.
+### Rozpracované / Pending
+- Founder: `UNSUBSCRIBE_TOKEN_SECRET` (≥ 32 znakov, Production) vo Vercel projekte `realitka-ai` + Redeploy; potvrdiť existenciu `RESEND_API_KEY`. Do tej doby je outreach e-mail fail-closed.
+- Founder: Q-01 testovací bounce / Resend delivery log.
+- Právnik: základ obchodného e-mailu fyzickej osobe, odtlačok bez soli, retencia.
+### Kľúčové súbory zmenené
+- `docs/STATUS.md`: SESSION blok prepísaný na cieľ PROD aktivácia (4/6), poznámka k stavu.
+- `memory/decisions.md`, `memory/session-summary.md`: PREPEND záznamy.
+### Ďalší krok
+Founder nastaví `UNSUBSCRIBE_TOKEN_SECRET` a spraví Redeploy; potom jedno overenie Q-01.
+
+## Session 2026-10-23 (Agentic stacks review fixes)
+
+### Dokončené
+- #918: blocked workflow už nekončí exit 0; `PR_READY` vyžaduje otvorený artefakt; chýbajúci `previousState` je `invalid_transition`. Commit na `cursor/agentic-completion-gate-dd79`.
+- #919: lokálne UI snímky Playwrightom (`visual-qa-pages.mjs`, exit 0) plus syntetický RGBA test. Chránené routy skončili na `/login`.
+- #921: v reporte rozdelené overené list prices a unknown. Limity 0.5/5/25 a `applied: false` bez zmeny.
+- #922: `revolis-orchestrate.mjs` volá `probeStacks`. `MISSING`/`FAILED`/`NOT_VERIFIED` nie sú úspech. JSON zásobník neprepisuje sondu.
+- Rebase 919 na 918, 920 na 919, 921 na 920, 922 na 921. Bez merge a bez deploy.
+
+### Rozpracované / Pending
+- CI na nových headov v čase tohto zápisu ešte nie je prečítané.
+- Nezávislá recenzia týchto opráv NOT_VERIFIED (písal ich ten istý agent).
+- Haiku 4.5 sadzba v kóde (0.8/4) sa nezhoduje s prečítaným cenníkom ($1/$5) a ostáva unknown.
+- `/dashboard` za prihlásením sa na snímke neukázal.
+
+### Kľúčové súbory zmenené
+- `scripts/ci/lib/verify-core.mjs`, `scripts/ci/revolis-verify.mjs`, `scripts/ci/lib/orchestrate.mjs`, `scripts/ci/revolis-orchestrate.mjs`
+- `docs/reports/2026-10-23-agentic-prompt-stacks.md`
+- `scripts/ci/fixtures/visual-qa/pages/`
+
+### Ďalší krok
+Po zelenom required CI na aktuálnom hede a po novej nezávislej recenzii môže founder povedať merge. Tento agent nemerguje.
+RAU route: GO_REQUIRED BUILD revolis
+
+## Session 2026-10-23 (Agentic Prompt Stacks)
+### Dokončené
+- Fáza 1 completion gate: `scripts/ci/lib/verify-core.mjs`, `scripts/ci/revolis-verify.mjs`. PR #918, commit `6c55672a`. Testy 33 pass.
+- Fáza 2 visual QA: `scripts/ci/lib/visual-qa.mjs`. PR #919, commit `a8791653`. Testy 3 pass. Browser launch BLOCKED (chýba binárka).
+- Fáza 3 API lifecycle: `scripts/ci/lib/api-lifecycle.mjs` + inventory JSON. PR #920, commit `57c4e5f2`. Testy 2 pass.
+- Fáza 4 `selectRoute` v `packages/bus-core/src/cost-governor.ts`. PR #921, commit `1075b7c8`. Testy 22 pass, tsc exit 0. Limity nezmenené.
+- Fáza 5 orchestrácia: `scripts/ci/lib/orchestrate.mjs`, `scripts/ci/revolis-orchestrate.mjs`. Testy 5 pass. Číslo PR je v popise po otvorení.
+- Report na každej vetve: `docs/reports/2026-10-23-agentic-prompt-stacks.md`.
+### Rozpracované / Pending
+- CI na headov PR v čase zápisu NOT_VERIFIED.
+- Nezávislá recenzia NOT_VERIFIED (ten istý agent písal aj testy).
+- In-process prepojenie súrodeneckých modulov na vetve fázy 5 je NOT_VERIFIED: visual a lifecycle `module_absent`, completion a cost súbor existuje, ale probe bez výsledku nie je PASS.
+- Screenshot v prehliadači BLOCKED.
+### Kľúčové súbory zmenené
+- viď PR #918–#921, vetva `cursor/agentic-orchestration-dd79` a `memory/decisions.md` (záznam 2026-10-23).
+### Ďalší krok
+Founder po zelenom CI na aktuálnom hede každého PR: merge v poradí #918, #919, #920, #921, potom PR fázy 5 (konflikty v reporte, `AGENTS.md` a riadku CI testov). Tento agent nemerguje.
+RAU route: GO_REQUIRED BUILD revolis
+
+## Session 2026-10-26 (GO marketing /blog + prvý článok)
+RAU route: GO_REQUIRED BUILD revolis
+### Dokončené
+- `apps/marketing` `/blog` + `/blog/ceny-nehnutelnosti-2026-sadzby-nove-ltv` (TS dáta, markdown renderer, navy/gold chrome).
+- Sitemap + `seo.test.ts` + `blog.test.tsx` + CRM verification; lokálny HTTP 200/404 smoke.
+- Draft PR proti `main` (merge/deploy nie).
+### Rozpracované / Pending
+- Merge a nasadenie `revolis-marketing` čakajú na samostatné GO. Vercel Preview pre `cursor/*` je vypnutý.
+### Kľúčové súbory zmenené
+- `apps/marketing/lib/blog.ts`, `lib/markdown.tsx`, `lib/site.ts`, `app/blog/**`, `components/blog/BlogChrome.tsx`
+- `apps/marketing/__tests__/{blog.test.tsx,seo.test.ts,palette.test.ts}`
+- `apps/crm/tests/verification/marketing-blog.verification.test.ts`
+- `docs/reports/2026-10-26-marketing-blog.md`
+### Ďalší krok
+Review draft PR; merge + deploy len na GO.
+
+---
 ## Session 2026-10-22 (STENA doručiteľnosť a odhlásenie)
 ### Dokončené
 - Kód: `apps/crm/src/proxy.ts` (verejné cesty), `lib/email/{suppression,unsubscribe-token}.ts`, `app/api/unsubscribe/route.ts`, `app/api/resend-webhook/route.ts` (bounce/complaint/suppressed), `lib/outreach-store.ts` (kontrola potlačenia + List-Unsubscribe), `lib/morning-brief/generators/email-html.ts` (podpísaný odkaz), `app/api/notifications/unsubscribe/route.ts` (len redirect).

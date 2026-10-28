@@ -66,9 +66,18 @@ export function grossPriceLine(
   return `${band.isFromPrice ? "od " : ""}${formatEurFromCents(band.grossCents)} s DPH ${formatPercent(vatPercent)}`;
 }
 
-/** Mesačná platba bez záväzku (+20 %): "30 € mesačne bez DPH pri mesačnej platbe (+20 %)". */
-export function monthlyBillingLine(band: Pick<PricingV2CatalogBand, "monthly" | "isFromPrice">): string {
-  return `${band.isFromPrice ? "od " : ""}${formatEurFromCents(band.monthly.netCents)} mesačne bez DPH pri mesačnej platbe (+20${NBSP}%)`;
+/**
+ * Ročná zľava oproti mesačnej platbe v % (zaokrúhlená), z katalógu: 1 − ročná/mesačná cena.
+ * Mesačná cena je základ × 1,2, preto je zľava ≈ 16,7 % (17 %), nie 20 % – číslo nikdy nepíš natvrdo.
+ */
+export function annualDiscountPercent(band: Pick<PricingV2CatalogBand, "netCents" | "monthly">): number {
+  if (band.monthly.netCents <= 0) return 0;
+  return Math.round((1 - band.netCents / band.monthly.netCents) * 100);
+}
+
+/** Mesačná platba bez záväzku: "30 € mesačne bez DPH pri mesačnej platbe (ročne o 17 % lacnejšie)". */
+export function monthlyBillingLine(band: Pick<PricingV2CatalogBand, "monthly" | "isFromPrice" | "netCents">): string {
+  return `${band.isFromPrice ? "od " : ""}${formatEurFromCents(band.monthly.netCents)} mesačne bez DPH pri mesačnej platbe (ročne o ${annualDiscountPercent(band)}${NBSP}% lacnejšie)`;
 }
 
 /** Počet kreditov mesačne pre celú kanceláriu (grant patrí kancelárii, nie používateľovi). */
