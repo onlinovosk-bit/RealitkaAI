@@ -148,6 +148,34 @@ describe("vypnut sa ma iba tomu, kto neplati", () => {
     expect(agencyPaysOutsideStripe({ manual_plan: "market_vision", subscription_status: null })).toBe(true);
   });
 
+  it("past_due s leftover plan nie je paysOutsideStripe (session bez Stripe customera)", () => {
+    // billing-lifecycle pri payment_failed nechá plan/tier; isPayingAgency=true.
+    // Ak session nenájde Stripe customera (billing e-mail ≠ login), hasSubscription
+    // je false — bez tohto by trialGraceFrom vrátil active namiesto limited/blocked.
+    expect(
+      agencyPaysOutsideStripe({
+        plan: "Pro",
+        account_tier: "pro",
+        subscription_status: "past_due",
+        manual_plan: null,
+      }),
+    ).toBe(false);
+
+    const state = trialGraceFrom(
+      trialInput({
+        paysOutsideStripe: agencyPaysOutsideStripe({
+          plan: "Pro",
+          account_tier: "pro",
+          subscription_status: "past_due",
+        }),
+        hasSubscription: false,
+        nowMs: NOW + 400 * DAY,
+      }),
+    );
+    expect(state.state).toBe("limited");
+    expect(accessLevelFrom(state.state)).toBe("read_only");
+  });
+
   it("Stripe predplatne ma prednost pred priznakom agentury", () => {
     // Ked Stripe predplatne existuje, rozhoduje jeho stav — inak by zabudnuty
     // manual_plan prebil zruseny plateny ucet.
