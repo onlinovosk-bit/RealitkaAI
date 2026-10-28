@@ -219,6 +219,7 @@ export default function LandingPage() {
         <div className="wrap">
           <span>© 2026 Revolis — ONLINOVO s.r.o.</span>
           <span>
+            <a href="/blog">Blog</a> ·{' '}
             <a href="https://app.revolis.ai/privacy-policy">Ochrana osobných údajov</a> ·{' '}
             <a href="https://app.revolis.ai/terms">VOP</a> · <a href="mailto:info@revolis.ai">info@revolis.ai</a>
           </span>
