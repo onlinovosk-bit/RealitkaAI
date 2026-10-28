@@ -10,6 +10,7 @@ import {
   GUARANTEE_TEXT,
   grossPriceLine,
   monthlyBillingLine,
+  annualDiscountPercent,
   monthlyCreditsLine,
   usersRangeLabel,
 } from '@/components/marketing/pricing-v2-copy';
@@ -126,8 +127,8 @@ export default function FinalCTAV2({ catalog }: { catalog: PricingV2Catalog }) {
               </p>
             )}
             <p className="mt-2">
-              Ceny sú uvedené mesačne bez DPH; konečná cena je vždy uvedená aj s DPH. Pri mesačnej platbe bez ročného
-              záväzku je cena o 20 % vyššia.
+              Ceny sú uvedené mesačne bez DPH; konečná cena je vždy uvedená aj s DPH. Pri ročnej platbe je cena o {annualDiscountPercent(catalog.bands[0])}{"\u00a0"}% nižšia ako pri mesačnej platbe
+              bez záväzku.
             </p>
           </div>
 
