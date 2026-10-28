@@ -110,9 +110,9 @@ describe("GET /api/billing/checkout-config", () => {
     expect(v2.missingPriceEnvKeys).toEqual([]);
     expect(v2.catalog.version).toBe("v3");
     expect(v2.catalog.vatPercent).toBe(23);
-    expect(v2.catalog.bands.find((b) => b.id === "team")).toMatchObject({ netCents: 6500, grossCents: 7995 });
-    expect(v2.catalog.tiers.year).toHaveLength(5);
-    expect(v2.catalog.tiers.month).toHaveLength(5);
+    expect(v2.catalog.bands.find((b) => b.id === "team")).toMatchObject({ netCents: 5000, grossCents: 6150 });
+    expect(v2.catalog.tiers.year).toHaveLength(8);
+    expect(v2.catalog.tiers.month).toHaveLength(8);
     expect(v2.catalog.packs.map((p) => p.credits)).toEqual([50, 100, 150, 200, 250, 300]);
   });
 

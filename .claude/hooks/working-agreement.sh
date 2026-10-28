@@ -3,7 +3,8 @@
 # (bloky DIGEST a WEBHOOK). Použitie: working-agreement.sh <start|prompt|webhook>
 #
 #   start    SessionStart       celá dohoda + POSTUP (aj po resume/compact)
-#   prompt   UserPromptSubmit   celá dohoda + POSTUP pri každej správe foundera
+#   prompt   UserPromptSubmit   skrátená dohoda (blok TURN) + krátky POSTUP pri každej správe foundera
+#                               (plné znenie je v kontexte od SessionStart, tam aj po resume/compact)
 #   webhook  PostToolUse        pravidlo pre webhook (ReadNotifications)
 #
 # POSTUP = celkové % produktu, VYPOČÍTANÉ z tabuľky v docs/STATUS.md (súčet
@@ -24,6 +25,7 @@ block() { # block <MARKER>
 progress() { # POSTUP z docs/STATUS.md; pri chybe vráti poctivé "nedá sa", nikdy ticho nič
   local f="$root/docs/STATUS.md" calc d t then now age stale="" pct rows parts
   local rule='Správa o hotovom bloku alebo otázka "kde sme" ZAČÍNA riadkom: session X % (odhad, k/n) | produkt Y % a KONČÍ riadkom: Postup: produkt Y % -> Z % (+-N b.). Y je číslo z tohto riadku; Z len ak sa zmenila tabuľka, inak Y -> Y (0 b.). X = k/n zadaných blokov tejto session hotových s dôkazom, vždy so zlomkom a zoznamom, nikdy holé %. Váhy sú odhad, nie meranie.'
+  [ "$event" = "prompt" ] && rule='Formát riadkov session/Postup: pravidlo zo štartu session.'
   if [ ! -r "$f" ]; then
     printf 'POSTUP: chýba docs/STATUS.md, číslo sa nedá vypočítať. Povedz to; nevymýšľaj ho. %s' "$rule"; return 0
   fi
@@ -53,6 +55,10 @@ progress() { # POSTUP z docs/STATUS.md; pri chybe vráti poctivé "nedá sa", ni
   else
     d="dátum poslednej aktualizácie chýba"
   fi
+  if [ "$event" = "prompt" ]; then
+    printf 'POSTUP (z docs/STATUS.md, %s): produkt %s %% (odhad).%s %s' "$d" "$pct" "$stale" "$rule"
+    return 0
+  fi
   printf 'POSTUP (vypočítané z docs/STATUS.md, %s, %s riadkov): produkt %s %% (zaokrúhlené nadol, odhad). Bloky: %s.%s %s' "$d" "$rows" "$pct" "$parts" "$stale" "$rule"
 }
 
@@ -63,7 +69,8 @@ case "$event" in
     [ -n "$text" ] || text="WEBHOOK (pracovná dohoda): odpíš len pri červenom CI, konflikte, review komentári alebo hotovom bloku; inak najviac jedna veta alebo nič. (Záloha: chýba memory/working-agreement.md alebo jeho blok WEBHOOK.)"
     ;;
   start)  hook="SessionStart";     text="$(block DIGEST)" ;;
-  *)      hook="UserPromptSubmit"; text="$(block DIGEST)" ;;
+  *)      hook="UserPromptSubmit"; text="$(block TURN)"
+          [ -n "$text" ] || text="$(block DIGEST)" ;; # záloha: chýba blok TURN -> plná dohoda
 esac
 
 if [ -z "$text" ]; then
@@ -83,8 +90,8 @@ if [ "$event" = "prompt" ]; then
       if printf '%s' "$user_prompt" | grep -qiE 'migr[aá]ci|migration|drop (index|table|constraint)|\bddl\b|ledger|schema_migrations|prod z[aá]pis|db push'; then
         m="$(block MIGRACIA)"; [ -n "$m" ] && text="$text"$'\n'"$m"
       fi
-      # [COACH-PROMPT-OK] na prvom riadku = schválený prompt od coacha: vykonať, nikdy znova neauditovať (proti cyklu)
-      if [ "${#user_prompt}" -ge 60 ] && ! printf '%s' "$user_prompt" | grep -qiE '^[[:space:]]*(\[COACH-PROMPT-OK\]|go\b|merguj|merge)'; then
+      # COACH sa spúšťa IBA príkazom „GO COACH" na začiatku správy (nie automaticky pri každom zadaní)
+      if printf '%s' "$user_prompt" | grep -qiE '^[[:space:]]*go[[:space:]]+coach\b'; then
         c="$(block COACH)"; [ -n "$c" ] && text="$text"$'\n'"$c"
       fi
       ;;

@@ -35,7 +35,7 @@ export default function PricingSectionV2({ view }: { view: PricingV2View }) {
                 {band.features.map((feature) => (
                   <li key={feature}>{feature}</li>
                 ))}
-                {band.isFromPrice && <li>Cenu pre vašu sieť dojednáme podľa objemu</li>}
+                {band.priceOnRequest && <li>Cenu pre vašu sieť dojednáme podľa objemu</li>}
               </ul>
               <PricingV2Cta
                 href={band.ctaHref}

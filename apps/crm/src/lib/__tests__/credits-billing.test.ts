@@ -28,9 +28,12 @@ vi.mock("@/lib/credits/mutate-credits", () => ({
   applyCreditPurchase: (...args: unknown[]) => applyCreditPurchaseMock(...args),
 }));
 
+const grantMonthlyCreditsForAgencyMock = vi.fn();
+
 vi.mock("@/lib/credits/grant-engine", () => ({
   currentPeriodKey: () => "202606",
-  grantMonthlyCreditsForAgency: vi.fn().mockResolvedValue({ granted: 100, skipped: false }),
+  grantMonthlyCreditsForAgency: (...args: unknown[]) =>
+    grantMonthlyCreditsForAgencyMock(...args),
 }));
 
 describe("credits-billing", () => {
@@ -51,11 +54,12 @@ describe("credits-billing", () => {
     };
 
     mockAgencyUpdateResult.mockResolvedValue({
-      data: { id: "agency-1" },
+      data: [{ id: "agency-1" }],
       error: null,
     });
     mockDeleteEq.mockResolvedValue({ error: null });
     applyCreditPurchaseMock.mockResolvedValue({ ok: true, credited: 150, skipped: false });
+    grantMonthlyCreditsForAgencyMock.mockResolvedValue({ granted: 100, skipped: false });
 
     mockFrom.mockImplementation((table: string) => {
       if (table === "credit_ledger") {
@@ -78,9 +82,7 @@ describe("credits-billing", () => {
             eq: (...args: unknown[]) => {
               mockUpdate(payload, ...args);
               return {
-                select: () => ({
-                  maybeSingle: mockAgencyUpdateResult,
-                }),
+                select: () => mockAgencyUpdateResult(),
               };
             },
           }),
@@ -271,6 +273,19 @@ describe("credits-billing", () => {
         "agency-1",
       );
     });
+
+    it("returns false when UPDATE matches no agency row (silent 0-row must not ACK)", async () => {
+      mockAgencyUpdateResult.mockResolvedValueOnce({ data: [], error: null });
+
+      const ok = await applySeatCheckoutEntitlements({
+        agencyId: "missing-agency",
+        seatTier: "team",
+        seatQuantity: 3,
+        ownerCockpit: false,
+      });
+
+      expect(ok).toBe(false);
+    });
   });
 
   describe("applyTopupPurchase", () => {
@@ -330,6 +345,7 @@ describe("credits-billing", () => {
         data: {
           object: {
             id: "cs_seat_1",
+            payment_status: "paid",
             customer: "cus_1",
             subscription: "sub_1",
             metadata: {
@@ -346,6 +362,7 @@ describe("credits-billing", () => {
 
       expect(handled).toBe(true);
       expect(mockUpdate).toHaveBeenCalled();
+      expect(grantMonthlyCreditsForAgencyMock).toHaveBeenCalled();
     });
 
     it("handles credit topup checkout", async () => {
@@ -354,6 +371,7 @@ describe("credits-billing", () => {
         data: {
           object: {
             id: "cs_topup_1",
+            payment_status: "paid",
             metadata: {
               checkoutType: "credit_topup",
               agencyId: "agency-1",
@@ -371,6 +389,95 @@ describe("credits-billing", () => {
           idempotencyKey: "purchase:agency-1:cs_topup_1",
         }),
       );
+    });
+
+    it("ACKs unpaid seat/topup without fulfilling (waits for async_payment_succeeded)", async () => {
+      const seat = await handlePricingCheckoutWebhook({
+        type: "checkout.session.completed",
+        data: {
+          object: {
+            id: "cs_seat_unpaid",
+            payment_status: "unpaid",
+            metadata: {
+              checkoutType: "seat",
+              agencyId: "agency-1",
+              seatTier: "team",
+              seatQuantity: "3",
+            },
+          },
+        },
+      } as never);
+      expect(seat).toBe(true);
+      expect(mockUpdate).not.toHaveBeenCalled();
+      expect(grantMonthlyCreditsForAgencyMock).not.toHaveBeenCalled();
+
+      const topup = await handlePricingCheckoutWebhook({
+        type: "checkout.session.completed",
+        data: {
+          object: {
+            id: "cs_topup_unpaid",
+            payment_status: "unpaid",
+            metadata: {
+              checkoutType: "credit_topup",
+              agencyId: "agency-1",
+              topupPackage: "rast",
+            },
+          },
+        },
+      } as never);
+      expect(topup).toBe(true);
+      expect(applyCreditPurchaseMock).not.toHaveBeenCalled();
+    });
+
+    it("fulfills legacy seat on async_payment_succeeded once paid", async () => {
+      const handled = await handlePricingCheckoutWebhook({
+        type: "checkout.session.async_payment_succeeded",
+        data: {
+          object: {
+            id: "cs_seat_async",
+            payment_status: "paid",
+            customer: "cus_1",
+            subscription: "sub_1",
+            metadata: {
+              checkoutType: "seat",
+              agencyId: "agency-1",
+              seatTier: "team",
+              seatQuantity: "3",
+            },
+          },
+        },
+      } as never);
+
+      expect(handled).toBe(true);
+      expect(mockUpdate).toHaveBeenCalled();
+      expect(grantMonthlyCreditsForAgencyMock).toHaveBeenCalled();
+    });
+
+    it("returns false when seat entitlements succeed but initial grant hard-fails", async () => {
+      grantMonthlyCreditsForAgencyMock.mockResolvedValueOnce({
+        granted: 0,
+        skipped: true,
+        error: "grant_failed",
+      });
+
+      const handled = await handlePricingCheckoutWebhook({
+        type: "checkout.session.completed",
+        data: {
+          object: {
+            id: "cs_seat_grant_fail",
+            payment_status: "paid",
+            metadata: {
+              checkoutType: "seat",
+              agencyId: "agency-1",
+              seatTier: "team",
+              seatQuantity: "3",
+            },
+          },
+        },
+      } as never);
+
+      expect(handled).toBe(false);
+      expect(mockUpdate).toHaveBeenCalled();
     });
 
     it("ignores legacy checkout events", async () => {
@@ -393,6 +500,7 @@ describe("credits-billing", () => {
         data: {
           object: {
             id: "cs_seat_no_agency",
+            payment_status: "paid",
             metadata: {
               checkoutType: "seat",
               agencyId: "",
@@ -409,6 +517,7 @@ describe("credits-billing", () => {
         data: {
           object: {
             id: "cs_topup_no_agency",
+            payment_status: "paid",
             metadata: {
               checkoutType: "credit_topup",
               agencyId: "",
