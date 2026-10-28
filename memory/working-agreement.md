@@ -59,6 +59,8 @@ ju vráti **do posledných správ** vtedy, keď je rozhodnutie:
 | `UserPromptSubmit` (každá správa foundera) | DIGEST | zabudnutie po 20 správach |
 | `PostToolUse` na `ReadNotifications` (každé prebudenie z webhooku) | WEBHOOK | šum z webhookov, presne v momente, keď vzniká |
 | `SessionStart` + `UserPromptSubmit` | POSTUP (počíta hook z `docs/STATUS.md`) | zabudnuté % a vymyslené % — číslo nepíšem, len ho prevezmem |
+| `UserPromptSubmit`, len ak správa obsahuje migrácia / DROP / DDL / ledger / schema_migrations / PROD zápis | MIGRACIA | preskočený preflight a izolovaný test pred zápisom do PROD |
+| `UserPromptSubmit`, IBA keď správa začína príkazom „GO COACH" | COACH | nekonečný cyklus automatického coachingu; coach sa spúšťa len na príkaz |
 
 Skript: `.claude/hooks/working-agreement.sh`. Registrácia: `hooks` v
 `.claude/settings.json`. Text sa číta z blokov nižšie — **upraviť ich tu = zmeniť
@@ -87,6 +89,18 @@ PRACOVNÁ DOHODA s founderom (memory/working-agreement.md): STENY, NIE SKRUTKY.
 6) KAŽDÁ správa o hotovom bloku (a odpoveď na „kde sme") ZAČÍNA riadkom `session X % (odhad, k/n) · produkt Y %` a KONČÍ riadkom `Postup: produkt Y % → Z % (±N b.)`. Y = číslo z riadku POSTUP nižšie (počíta ho hook z docs/STATUS.md, nepíš ho z hlavy); X = k/n zo zadaných blokov tejto session hotových s dôkazom (zoznam v správe). Nulový posun = 0 b. Zmenila sa tabuľka → aktualizuj docs/STATUS.md v tom istom PR.
 <!-- DIGEST:END -->
 
+<!-- TURN:START -->
+STENY, NIE SKRUTKY (plné znenie je v kontexte od štartu session; zdroj memory/working-agreement.md): 1 GO = 1 blok + dôkaz, žiadne mikro-updaty; webhooky bez zmeny stavu = ticho; memory zápis 1× na konci steny; „merguj blok X" = všetky ZELENÉ PR toho bloku v poradí závislostí. Stav iba z primárneho zdroja overeného v tomto turne. Každá odpoveď končí riadkom `📊 Session …` (`bash .claude/hooks/session-progress.sh print`; Stop hook odpoveď bez neho zablokuje).
+<!-- TURN:END -->
+
 <!-- WEBHOOK:START -->
 WEBHOOK (pracovná dohoda): toto prebudenie je šum, kým sa nezmení stav. Odpíš LEN ak: červené CI na mojom PR, konflikt, review komentár, alebo je blok hotový (vtedy jedna správa s dôkazom). Inak NEOPISUJ udalosť (žiadne „Vercel Ready", „check suite prešiel", „echo zmergovaného PR"): najviac jedna veta, alebo nič.
 <!-- WEBHOOK:END -->
+
+<!-- MIGRACIA:START -->
+RUTINA MIGRACIA (founder GO RUTINA): správa sa týka migrácie/DDL/PROD zápisu. Pred akýmkoľvek zápisom: (1) READ-ONLY PREFLIGHT cez Supabase MCP — identita projektu (agentúry/leady/ponuky), stav indexov a constraintov (`pg_indexes`, `pg_constraint`), `list_migrations`, 0 duplicít pre nový unique; žiadny INSERT/UPDATE/DDL. (2) IZOLOVANÝ TEST na lokálnom Postgrese, nikdy nie PROD; ak prostredie lokálny Postgres nepovolí, len návrh testu v reporte, nič si nevymýšľaj. (3) Zápis do PROD, `db push`, repair a merge iba na výslovné GO. Výsledok: jedna správa s dôkazom.
+<!-- MIGRACIA:END -->
+
+<!-- COACH:START -->
+RUTINA COACH (founder: spúšťa sa IBA príkazom „GO COACH" na začiatku správy): správa začína „GO COACH", takže zadanie, ktoré za tým nasleduje, NEVYKONÁVAJ. Vráť iba blok „Prompt-coach" (max ~15 riadkov): (a) kvalita FORMY zadania v % (ODHAD podľa 5 bodov 0 – 10: vstupy = odkazy/súbory/ID/čísla, hranice = čo smiem/nesmiem, PROD a platby len na výslovné GO, formát výstupu, dôkaz, hotovo = merge/deploy/test a kto ho robí), (b) čo chýbalo (max 3), (c) jeden vylepšený prompt v kódovom bloku, ktorý NEZAČÍNA slovami „GO COACH". Potom skonči; nepridávaj nič ďalšie ani nový prompt. Správu, ktorá nezačína „GO COACH", coach nikdy nehodnotí ani nepridáva blok. Pri „VYPNI COACH" nerob nič. PRAVIDLO: o hodnote, priorite a obchodnom prínose úlohy rozhoduje VÝLUČNE founder; coach to nehodnotí, neprioritizuje, neodmieta úlohu z obchodných dôvodov ani nehovorí, čo „má zmysel"; posudzuje iba formu. Ak chýba cieľ, jedna otázka. Percentá sú odhad, nie meranie.
+<!-- COACH:END -->

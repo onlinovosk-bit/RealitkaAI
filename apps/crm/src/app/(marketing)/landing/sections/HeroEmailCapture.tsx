@@ -67,6 +67,7 @@ export function HeroTrustBar() {
 
 export function HeroEmailCapture() {
   const [email, setEmail] = useState("");
+  const [website, setWebsite] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -83,13 +84,14 @@ export function HeroEmailCapture() {
     setErrorMsg("");
 
     try {
-      const res = await fetch("/api/demo/capture-lead", {
+      const res = await fetch("/api/demo/public-capture", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email,
           source: "hero_email_capture",
           gdprConsent: true,
+          website,
         }),
       });
 
@@ -110,7 +112,7 @@ export function HeroEmailCapture() {
       setStatus("error");
       setErrorMsg(err instanceof Error ? err.message : "Skúste znovu.");
     }
-  }, [email]);
+  }, [email, website]);
 
   if (status === "success") {
     return (
@@ -123,6 +125,18 @@ export function HeroEmailCapture() {
 
   return (
     <div className="w-full max-w-md">
+      <div aria-hidden="true" style={{ position: "absolute", left: "-10000px" }}>
+        <label>
+          Web
+          <input
+            name="website"
+            value={website}
+            onChange={(e) => setWebsite(e.target.value)}
+            tabIndex={-1}
+            autoComplete="off"
+          />
+        </label>
+      </div>
       <div className="mb-2 flex gap-2">
         <label htmlFor="hero-email" className="sr-only">
           Váš pracovný email

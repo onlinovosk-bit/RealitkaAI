@@ -1,0 +1,15 @@
+---
+description: Spoločný inžiniersky kontrakt agentov — plán pred kódom, "hotovo" iba s dôkazom, autorita foundera
+alwaysApply: false
+---
+
+# Revolis cross-agent kontrakt (adaptér)
+
+Kanonický zdroj: `docs/architecture/cross-agent-engineering-contract.md`. Toto pravidlo ho nekopíruje, len naň odkazuje.
+
+- Pred väčšou implementáciou: `.claude/skills/revolis-review-plan/SKILL.md`, potom
+  `node scripts/ci/revolis-verify.mjs plan-lint plan.md`.
+- Pred "hotovo": `.claude/skills/revolis-verify-completion/SKILL.md`, potom
+  `node scripts/ci/revolis-verify.mjs completion --base origin/main --criteria kriteria.json --run`.
+- Stavy: PASS, FAIL, BLOCKED, NOT_VERIFIED. Preskočený test nie je PASS.
+- Merge, LIVE nasadenie, PROD DB, tajomstvá, mazanie a nové náklady iba na samostatné GO foundera.

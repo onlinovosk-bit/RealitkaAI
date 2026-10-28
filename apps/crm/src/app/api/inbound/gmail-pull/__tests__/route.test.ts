@@ -14,7 +14,7 @@ vi.mock("@/lib/ops/cron-run", async (orig) => ({
 }));
 
 vi.mock("@/lib/inbound/gmail-pull", () => ({
-  runGmailInboundPull: (...args: unknown[]) => mockPull(...args),
+  runGmailInboundPullAll: (...args: unknown[]) => mockPull(...args),
 }));
 
 import { GET, POST } from "../route";
@@ -29,7 +29,7 @@ describe("POST /api/inbound/gmail-pull", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv("CRON_SECRET", "fixture-cron");
-    mockPull.mockResolvedValue({ ok: true, pulled: 0, posted: 0, errors: [] });
+    mockPull.mockResolvedValue({ ok: true, agencies: 1, pulled: 0, posted: 0, errors: [], alreadySeen: 0, outsideLabel: 0 });
     mockClient.mockReturnValue({});
     mockRecord.mockResolvedValue(null);
     mockSkipped.mockResolvedValue(true);
@@ -97,7 +97,7 @@ describe("POST /api/inbound/gmail-pull", () => {
   });
 
   it("beh s novými správami nechá stopu s počtami", async () => {
-    mockPull.mockResolvedValue({ ok: true, pulled: 2, posted: 2, errors: [], alreadySeen: 5, outsideLabel: 0 });
+    mockPull.mockResolvedValue({ ok: true, agencies: 1, pulled: 2, posted: 2, errors: [], alreadySeen: 5, outsideLabel: 0 });
     const res = await GET(req("fixture-cron"));
     expect(res.status).toBe(200);
     expect(mockRecord).toHaveBeenCalledWith(

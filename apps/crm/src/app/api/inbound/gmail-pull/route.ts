@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { errorResponse, okResponse } from "@/lib/api-response";
 import { incrementUsageMetric, SYSTEM_USAGE_AGENCY_ID } from "@/lib/usage-metrics";
-import { runGmailInboundPull } from "@/lib/inbound/gmail-pull";
+import { runGmailInboundPullAll } from "@/lib/inbound/gmail-pull";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import {
   cronHttpStatus,
@@ -26,7 +26,7 @@ async function handle(req: NextRequest) {
   });
 
   const startedAt = new Date();
-  const result = await runGmailInboundPull({ fetch });
+  const result = await runGmailInboundPullAll({ fetch });
 
   // Trvalá stopa iba keď sa niečo stalo. Beh bez nových správ by zbytočne
   // plnil cron_runs; "nič nové" je pri tichom štítku normálny stav.
@@ -51,12 +51,12 @@ async function handle(req: NextRequest) {
       ? await recordCronRun(sb, {
           job: "gmail-inbound-pull",
           status: deriveCronStatus(result.pulled, result.posted, result.errors.length),
-          scanned: result.pulled + (result.alreadySeen ?? 0),
+          scanned: result.pulled + result.alreadySeen,
           eligible: result.pulled,
           written: result.posted,
           failed: result.errors.length,
           firstError: result.errors[0] ?? null,
-          detail: { outsideLabel: result.outsideLabel ?? 0, alreadySeen: result.alreadySeen ?? 0 },
+          detail: { agencies: result.agencies, outsideLabel: result.outsideLabel, alreadySeen: result.alreadySeen },
           startedAt,
         })
       : await recordCronRun(sb, {

@@ -10,3 +10,4 @@ export * from "./client.ts";
 export * from "./consumer.ts";
 export * from "./execution-state.ts";
 export * from "./execution-cap.ts";
+export * from "./cost-governor.ts";

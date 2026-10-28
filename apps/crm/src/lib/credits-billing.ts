@@ -221,13 +221,19 @@ export async function applySeatCheckoutEntitlements(input: {
     agencyUpdate.stripe_subscription_id = input.stripeSubscriptionId;
   }
 
-  const { error: agencyErr } = await supabase
+  // .select("id"): UPDATE na neexistujúci riadok nevráti chybu, len 0 riadkov —
+  // to nesmie prejsť ako úspech (inak Stripe dostane ACK a platba ostane bez aktivácie).
+  const { data: updated, error: agencyErr } = await supabase
     .from("agencies")
     .update(agencyUpdate)
-    .eq("id", input.agencyId);
+    .eq("id", input.agencyId)
+    .select("id");
 
-  if (agencyErr) {
-    console.warn("[credits-billing] agency entitlement:", agencyErr.message);
+  if (agencyErr || !updated || updated.length === 0) {
+    console.warn(
+      "[credits-billing] agency entitlement:",
+      agencyErr?.message ?? "no_row",
+    );
     return false;
   }
 
@@ -249,9 +255,9 @@ export async function applySeatCheckoutEntitlements(input: {
 /** Idempotentný prvý mesačný grant po seat checkout (reuse grant-engine). */
 export async function triggerInitialGrantAfterSeatCheckout(
   agencyId: string,
-): Promise<{ granted: number; skipped: boolean }> {
+): Promise<{ granted: number; skipped: boolean; error?: string }> {
   const supabase = createServiceRoleClient();
-  if (!supabase) return { granted: 0, skipped: true };
+  if (!supabase) return { granted: 0, skipped: true, error: "service_unavailable" };
 
   const { data: agency, error } = await supabase
     .from("agencies")
@@ -261,7 +267,9 @@ export async function triggerInitialGrantAfterSeatCheckout(
     .eq("id", agencyId)
     .single();
 
-  if (error || !agency) return { granted: 0, skipped: true };
+  if (error || !agency) {
+    return { granted: 0, skipped: true, error: error?.message ?? "agency_not_found" };
+  }
 
   return grantMonthlyCreditsForAgency(agency as AgencyCreditRow, currentPeriodKey());
 }

@@ -35,6 +35,8 @@ export type UsageMetricName =
   | "cron_credits_cycle"
   | "cron_customer_health"
   | "outreach_send"
+  // EMAIL-SUPPRESSION-01: príjemca potvrdil odhlásenie cez verejný odkaz.
+  | "unsubscribe_confirmed"
   // Public endpoints (website concierge widget, onboarding capability URLs).
   // They had no usage visibility at all, which is why the API contract ratchet
   // counted them as violations rather than as an accepted exception.
@@ -49,10 +51,17 @@ export type UsageMetricName =
   // DEMAND-D4: a broker opened the verified-demand matches on a lead — the
   // "opened" step of the matching funnel (matching-input-contract-v1 §4).
   | "demand_matches_view"
+  // GMAIL-CONNECT: pripojenie / odpojenie schránky agentúry (príjem dopytov).
+  | "gmail_connect_started"
+  | "gmail_connect"
+  | "gmail_disconnect"
   // MORNING-BRIEF-UI-01: maklér si uložil nastavenie ranného prehľadu. Počíta
   // sa preto, že do 2026-10-15 nebolo kde to nastaviť a tabuľka mala nula
   // riadkov — bez tohto čísla sa nedá povedať, či sa to po nasadení zmenilo.
-  | "morning_brief_settings_save";
+  | "morning_brief_settings_save"
+  // Verejný demo formulár (hero + AI Odhadca). Počíta sa až po 2xx z
+  // capture-lead. Meno metriky je voľný text v RPC, migrácia netreba.
+  | "demo_public_capture";
 
 /**
  * Inkrementuje denný počítadlo cez RPC (service role).

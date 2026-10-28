@@ -7,8 +7,9 @@
 
 ## Initialization
 At the start of every session:
-1. Read all files in the `/memory` directory to synchronize project state.
-2. If `memory/session-summary.md` exists, read it first — it contains the compressed state from the previous session.
+1. Read `memory/INDEX.md` (≤ 3 KB) — mapa pamäte.
+2. Read only the **first entry** of `memory/session-summary.md` (newest is on top) — the compressed state from the previous session.
+3. Do NOT read the rest of `/memory` whole: `decisions.md` + `session-summary.md` are ≈ 0.9 MB (≈ 315k tokens). Read them on demand with `grep -n "^## "` and `sed -n`. Rules from `working-agreement.md` are injected by hooks.
 
 ## Core Directives
 0. **Steny, nie skrutky — jeden hotový blok na jedno GO, nie priebežné otázky.**
@@ -29,13 +30,14 @@ At the start of every session:
    čas a 2026-09-28 aj tak nevydržalo do polovice session: šesť správ za sebou
    v tvare „bez zmeny, check-in preplánovaný na 18:31". CLAUDE.md sa číta RAZ,
    na začiatku session — v jej strede už pravidlo nedrží. Preto ho do kontextu
-   vkladajú hooky v `.claude/settings.json`, pri KAŽDOM prompte aj po
-   resume/compact:
+   vkladajú hooky v `.claude/settings.json`: celé znenie pri štarte session
+   (aj po resume/compact), skrátene (blok `TURN`) pri KAŽDOM prompte:
    - `.claude/hooks/working-agreement.sh` — zdroj pravdy je
-     `memory/working-agreement.md`, blok `DIGEST` (`SessionStart`,
-     `UserPromptSubmit`) a blok `WEBHOOK` (`PostToolUse: ReadNotifications`).
+     `memory/working-agreement.md`, blok `DIGEST` (`SessionStart`),
+     blok `TURN` (`UserPromptSubmit`) a blok `WEBHOOK` (`PostToolUse: ReadNotifications`).
      Text pravidla sa mení TAM, nie v skripte.
-   - `cat .claude/WALL-RULES.md` — plné znenie pravidiel stien.
+   - `cat .claude/WALL-RULES.md` — plné znenie pravidiel stien (`SessionStart`; pri prompte ho
+     nahrádza `TURN` + Stop hook, ktorý vynucuje riadok `📊`).
 
    **Tie hooky nie sú duplicita tohto odstavca — sú jeho jediné vynútenie.
    Nemazať.** A naopak: tretí hook s natvrdo zapísaným textom pravidla
@@ -82,6 +84,9 @@ At the start of every session:
    - Opakované GO bez nového vstupu → krátka odpoveď: čo som práve overil, že sa nič nezmenilo, čo treba
      poslať. Neopakuj celý postup.
    - PROD, merge a flagy iba na explicitné GO. Merge až keď je CI na aktuálnom heade zelené.
+   - Agentické stacky: `node scripts/ci/revolis-orchestrate.mjs --fixture <file.json>`.
+     Príkaz volá `probeStacks`. `VERIFIED` je jediný úspech sondy; `MISSING`, `FAILED` a `NOT_VERIFIED` blokujú PR readiness.
+     JSON stav zásobníka sa nepočíta. Príkaz nerobí merge, deploy ani post-release.
 9. **Postup session v %** (founder, 2026-10-02). Každá odpoveď foundrovi končí riadkom
    `📊 Session (<cieľ>): NN % (a/b míľnikov) · Architektúra: Y % · ďalší míľnik: …` (formát z #801) z bloku SESSION v `docs/STATUS.md`
    (`bash .claude/hooks/session-progress.sh print`). % = hotové míľniky / všetky, odškrtnuté iba s dôkazom.
@@ -97,6 +102,7 @@ At the start of every session:
 ## Session Wrap-up
 At the end of each session, update:
 - `memory/decisions.md` (new milestones, architectural decisions).
+- `memory/INDEX.md` — only when the set of files in `memory/` changes.
 - `memory/people.md` (team/stakeholders changes).
 - `memory/session-summary.md` — **PREPEND, nikdy neprepisuj.** Súbor je
   chronologický log, do ktorého každá session pridáva na začiatok. Formulácia
