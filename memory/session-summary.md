@@ -40,6 +40,23 @@ GO na stenu ANON-WRITE-MAP: úplná mapa ciest (tabuľky × anon/authenticated �
 ### Ďalší krok
 Founder nastaví `UNSUBSCRIBE_TOKEN_SECRET` a spraví Redeploy; potom jedno overenie Q-01.
 
+## Session 2026-10-26 (GO marketing /blog + prvý článok)
+RAU route: GO_REQUIRED BUILD revolis
+### Dokončené
+- `apps/marketing` `/blog` + `/blog/ceny-nehnutelnosti-2026-sadzby-nove-ltv` (TS dáta, markdown renderer, navy/gold chrome).
+- Sitemap + `seo.test.ts` + `blog.test.tsx` + CRM verification; lokálny HTTP 200/404 smoke.
+- Draft PR proti `main` (merge/deploy nie).
+### Rozpracované / Pending
+- Merge a nasadenie `revolis-marketing` čakajú na samostatné GO. Vercel Preview pre `cursor/*` je vypnutý.
+### Kľúčové súbory zmenené
+- `apps/marketing/lib/blog.ts`, `lib/markdown.tsx`, `lib/site.ts`, `app/blog/**`, `components/blog/BlogChrome.tsx`
+- `apps/marketing/__tests__/{blog.test.tsx,seo.test.ts,palette.test.ts}`
+- `apps/crm/tests/verification/marketing-blog.verification.test.ts`
+- `docs/reports/2026-10-26-marketing-blog.md`
+### Ďalší krok
+Review draft PR; merge + deploy len na GO.
+
+---
 ## Session 2026-10-22 (STENA doručiteľnosť a odhlásenie)
 ### Dokončené
 - Kód: `apps/crm/src/proxy.ts` (verejné cesty), `lib/email/{suppression,unsubscribe-token}.ts`, `app/api/unsubscribe/route.ts`, `app/api/resend-webhook/route.ts` (bounce/complaint/suppressed), `lib/outreach-store.ts` (kontrola potlačenia + List-Unsubscribe), `lib/morning-brief/generators/email-html.ts` (podpísaný odkaz), `app/api/notifications/unsubscribe/route.ts` (len redirect).

@@ -1,5 +1,7 @@
 # Revolis.AI — STAV NA JEDNEJ STRÁNKE
 
+> **2026-10-26 BLOG:** `/blog` + prvý článok v `apps/marketing` na draft PR; PRODUCTION nezmenená. Tabuľka % sa NEMENÍ.
+
 > Aktualizuje sa **po každom uzavretom bloku** (jeden riadok zmeny hore + tabuľka). Čísla sú merané, kde je uvedený dôkaz;
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-23** (LEDGER-REPAIR: ledger 81 → 136, 3 migrácie na PROD, tabuľka % nepreratúvaná; pôvodne 2026-10-05 GMAIL-CONNECT: pripojenie Gmailu s šifrovaným tokenom a karta v Integráciách sú v kóde, **neaktivované** — % nezmenené).
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 20:45 UTC** (opt-in auto-odpoveď: migrácia na PROD + fail-closed #811; `last_contact_at` sa zapisuje #800; „Čakajú na kontakt" prestalo byť celá kniha #804).
@@ -53,6 +55,13 @@ Cieľ: UX cenníka + ročná zľava 17 % z katalógu (aj marketing)
 - [x] 3 — Marketing + podmienky: „ročne o 17 % lacnejšie" (169/169 testov)
 - [x] 4 — Memory PREPEND + STATUS (jeden commit)
 - [ ] 5 — Push + PR #914 + zelené CI na aktuálnom heade (merge až na GO)
+Cieľ: Verejný blog na www.revolis.ai + prvý článok (draft PR)
+> % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
+- [x] 1 — `/blog` listing + `/blog/[slug]` v `apps/marketing` (build routy + HTTP 200)
+- [x] 2 — Prvý článok `ceny-nehnutelnosti-2026-sadzby-nove-ltv` v kóde (CTA register, zdroje, bez pilot)
+- [x] 3 — Sitemap + `seo.test.ts` obsahujú `/blog` a slug (10 PASS blog+seo)
+- [x] 4 — Draft PR proti `main` (merge/deploy nie)
+- [ ] 5 — Merge + nasadenie `revolis-marketing` (samostatné GO)
 <!-- SESSION:END -->
 
 ## Hotové 2026-10-07 — s dôkazom (REALVIA-SEC-01)

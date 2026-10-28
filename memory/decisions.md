@@ -22,6 +22,12 @@
 **Nemerané / čaká na foundera:** nastavenie `UNSUBSCRIBE_TOKEN_SECRET` (≥ 32 znakov, Production) + Redeploy; do tej doby `sendApprovedOutreach` je fail-closed (odchádzajúci outreach e-mail stojí — bezpečné, ale blokujúce). Q-01 (reálny bounce v Resend delivery logu, podpis webhooku, zápis do tabuľky) nemerané. Právnik: základ obchodného e-mailu, odtlačok bez soli, retencia.
 **BUILD/BACKLOG:** aktivácia schváleného BUILD (override Q1 z predchádzajúceho záznamu).
 **Rollback:** `DROP TABLE public.email_suppressions;` (tabuľka prázdna; founder v Supabase SQL editore, DROP cez MCP vyžaduje potvrdenie a vyprší) + `delete from supabase_migrations.schema_migrations where version='20261022100000';`.
+## 2026-10-26 — Verejný blog na www.revolis.ai + prvý článok (BUILD)
+**GO:** founder Andrej Ondruš 26. 10. 2026 — pridaj `/blog` na marketingový web a publikuj prvý článok; draft PR, NEZLÚČUJ, nenasadzuj. RAU: `GO_REQUIRED` BUILD revolis (trigger publish → P17/P18 nespustené). Prime Directive: akvizičný obsah (SEO + dôvera makléra); Constitution v2 Q1 = founder GO na publikáciu článku, Q8 = článok je hotový, timing nie je „príliš skoro".
+**Čo:** `apps/marketing` listing `/blog` + `/blog/ceny-nehnutelnosti-2026-sadzby-nove-ltv` (TS modul, markdown renderer bez MDX), sitemap + `seo.test.ts`, verification `marketing-blog.verification.test.ts`. CRM `/blog` ostáva redirect na `/landing`.
+**Dôkaz:** marketing vitest blog+seo 10 PASS; CRM verification blog+lemon 2 PASS; `next build --webpack` routy `/blog` a článok; lokálny `next start :3001` HTTP 200/200/404 + sitemap s oboma URL. NEMERANÉ: CI na pushnutom heade, Vercel Preview (`cursor/*` vypnutý v vercel.json).
+**BUILD/BACKLOG:** BUILD (founder GO).
+**Rollback:** revert PR. Žiadna migrácia, PROD nedotknuté.
 
 ## 2026-10-22 — Doručiteľnosť a odhlásenie: F-02 bypass + F-01 potlačenie/List-Unsubscribe + bounce/complaint (BUILD, override vetom Q1)
 **GO:** founder „GO GDPR-ADVISOR. GO stena doručiteľnosť a odhlásenie." Prime Directive: nepriamy (reputácia domény a právne riziko outreachu); Stripe krok C ostáva priorita #1. Constitution v2 Q1 (zaplatil by klient?) = NIE → podľa vety VETO max VALIDATE; founder dal výslovné GO na opravu P1 nálezov F-01/F-02, zaznamenané ako override, nie predajný argument.
