@@ -12,6 +12,48 @@
 ### Ďalší krok
 GO: otvoriť/merge PR ciphertext guard (a/alebo zlúčiť s #902).
 ---
+## Session 2026-10-25 (STENA UX cenníka + ročná zľava 17 %)
+### Dokončené
+- `PricingV2Comparison` prepracovaný (jedna dominantná cena, jednotné riadky, jeden banner), `annualDiscountPercent` v `billing/v2/format.ts` a `marketing/pricing-v2-copy.ts`.
+- Ročná zľava 17 % z katalógu na `/porovnanie-programov`, `/upgrade` a v marketingu (`FinalCTAV2`, `monthlyBillingLine`); testy 169/169.
+### Rozpracované / Pending
+- Blokované: preflight `coach-loop-graph-v3.patch` (patch je len na founderovom disku `C:\RealitkaAI`).
+- Founder: Stripe rotácia webhook secretu → „secret zosúladený" → minimálna live platba + refund; `UNSUBSCRIBE_TOKEN_SECRET` + Redeploy; Q-01; právnik (terms riadok 119 vs. 17 %); `20261016170000`.
+- Vizuálny render nového layoutu: nemerané.
+### Kľúčové súbory zmenené
+- `apps/crm/src/components/billing/v2/PricingV2Comparison.tsx`: nový layout porovnania.
+- `apps/crm/src/components/billing/v2/{format.ts,PricingV2Plans.tsx}`: ročná zľava z katalógu.
+- `apps/crm/src/components/marketing/pricing-v2-copy.ts`, `apps/crm/src/app/(marketing)/landing/sections/FinalCTAV2.tsx`: marketingový text s 17 %.
+### Ďalší krok
+Stripe krok C: founder zosúladí webhook secret, potom minimálna live platba + refund ako dôkaz.
+
+## Session 2026-10-23 (STENA LEDGER-REPAIR)
+### Dokončené
+- PROD transakcia (ROLLBACK dôkaz, potom COMMIT): 3 chýbajúce migrácie (`agency_gmail_inbound_oauth`, `lead_assignment_rules` agency_id + tenantová RLS, `morning_briefs.content_source*`) + 55 ledger riadkov; ledger 81 → 136, dôkaz v `memory/decisions.md`.
+- Odmietnuté do ledgera: 13 verzií bez prítomného efektu v PROD (zoznam + dôvody v decisions.md).
+### Rozpracované / Pending
+- Founder: `UNSUBSCRIBE_TOKEN_SECRET` + Redeploy + `RESEND_API_KEY`; Q-01 bounce; Stripe krok C; právnik; rozhodnutie o `20261016170000`.
+- `leads_demo_source_check` (`hero_email_capture`) chýba na PROD; anon write granty (105 z 143 tabuliek) čakajú na mapu ciest + test s anon kľúčom.
+- Lokálny izolovaný test migrácií: nemerané (Postgres nepovolený v prostredí).
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md`, `docs/STATUS.md`: záznam steny, SESSION blok. Kód sa nemenil.
+### Ďalší krok
+GO na stenu ANON-WRITE-MAP: úplná mapa ciest (tabuľky × anon/authenticated × kód) + test s anon kľúčom, potom jeden balík SQL.
+
+## Session 2026-10-22 (STENA PROD aktivácia doručiteľnosti)
+### Dokončené
+- PROD migrácia `apps/crm/supabase/migrations/20261022100000_email_suppressions.sql` aplikovaná, dôkaz v transakcii s ROLLBACK, ledger zapísaný.
+- Overené: PROD deployment READY na `a2e42ac`; verejné cesty `/api/resend-webhook` (405) a `/api/unsubscribe` (400 bez tokenu) dosiahnuteľné bez proxy 401.
+### Rozpracované / Pending
+- Founder: `UNSUBSCRIBE_TOKEN_SECRET` (≥ 32 znakov, Production) vo Vercel projekte `realitka-ai` + Redeploy; potvrdiť existenciu `RESEND_API_KEY`. Do tej doby je outreach e-mail fail-closed.
+- Founder: Q-01 testovací bounce / Resend delivery log.
+- Právnik: základ obchodného e-mailu fyzickej osobe, odtlačok bez soli, retencia.
+### Kľúčové súbory zmenené
+- `docs/STATUS.md`: SESSION blok prepísaný na cieľ PROD aktivácia (4/6), poznámka k stavu.
+- `memory/decisions.md`, `memory/session-summary.md`: PREPEND záznamy.
+### Ďalší krok
+Founder nastaví `UNSUBSCRIBE_TOKEN_SECRET` a spraví Redeploy; potom jedno overenie Q-01.
+
 ## Session 2026-10-23 (Agentic stacks review fixes)
 
 ### Dokončené

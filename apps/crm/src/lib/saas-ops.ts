@@ -264,11 +264,19 @@ export type AgencyBillingFacts = {
 const NO_AGENCY_FACTS: AgencyBillingFacts = { trialEndsAt: null, paysOutsideStripe: false };
 
 /**
- * Stavy, pri ktorých predplatné skončilo. `isPayingAgency()` by taký riadok
- * ešte mohol vyhodnotiť ako platiaci (stačí mu `plan` iný než free, a ten sa
- * pri zrušení nemusí prepísať), a účet by tak zostal otvorený po zrušení.
+ * Stavy, pri ktorých predplatné skončilo alebo zlyháva platba. `isPayingAgency()`
+ * by taký riadok ešte mohol vyhodnotiť ako platiaci (stačí mu `plan` iný než free,
+ * a ten sa pri `past_due` / zrušení nemusí prepísať — billing-lifecycle plán
+ * pri zlyhanej platbe zámerne necháva). Bez týchto stavov by `paysOutsideStripe`
+ * otvoril plný prístup, keď Stripe lookup pre session vráti „bez predplatného"
+ * (iný e-mail než billing, zmena e-mailu) hoci agentúra je `past_due`.
  */
-const ENDED_SUBSCRIPTION_STATES = new Set(["canceled", "unpaid", "incomplete_expired"]);
+const ENDED_SUBSCRIPTION_STATES = new Set([
+  "canceled",
+  "unpaid",
+  "incomplete_expired",
+  "past_due",
+]);
 
 export function agencyPaysOutsideStripe(row: AgencyBillingRow): boolean {
   if (ENDED_SUBSCRIPTION_STATES.has((row.subscription_status ?? "").trim().toLowerCase())) {

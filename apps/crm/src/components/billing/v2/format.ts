@@ -12,3 +12,12 @@ export function formatUserRange(minUsers: number, maxUsers: number | null): stri
   if (minUsers === maxUsers) return minUsers === 1 ? "1 maklér" : `${minUsers} makléri`;
   return `${minUsers}–${maxUsers} maklérov`;
 }
+
+/**
+ * Ročná zľava oproti mesačnej platbe v % (zaokrúhlená), počítaná z katalógu: 1 − ročná/mesačná cena.
+ * Mesačná cena je základ × 1,2, takže skutočná zľava je ≈ 16,7 % (nie 20 %) – nikdy ju nepíš natvrdo.
+ */
+export function annualDiscountPercent(band: { netCents: number; monthly: { netCents: number } }): number {
+  if (band.monthly.netCents <= 0) return 0;
+  return Math.round((1 - band.netCents / band.monthly.netCents) * 100);
+}
