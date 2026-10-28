@@ -334,14 +334,32 @@ describe("gmail pull — viac agentúr z databázy", () => {
 
   it("jedna agentúra s vypršaným tokenom sa vypne a ostatné bežia ďalej", async () => {
     const g = gmail({ refreshFails: new Set(["1//dead"]) });
-    const calls: Array<[string, string, boolean]> = [];
-    const r = await run(g, [conn(A1, "1//dead"), conn(A2, "1//alive")], {
-      deps: { onError: async (a: string, c: string, d: boolean) => void calls.push([a, c, d]) },
+    const calls: Array<[string, string, boolean, string?]> = [];
+    const deadConn = conn(A1, "1//dead");
+    const r = await run(g, [deadConn, conn(A2, "1//alive")], {
+      deps: {
+        onError: async (a: string, c: string, d: boolean, ct?: string) =>
+          void calls.push([a, c, d, ct]),
+      },
     });
     expect(r).toMatchObject({ ok: true, posted: 1 });
     expect((r as { errors: string[] }).errors[0]).toBe(`${A1.slice(0, 8)}:oauth_refresh_failed:invalid_grant`);
-    expect(calls).toEqual([[A1, "oauth_refresh_failed:invalid_grant", true]]);
+    expect(calls).toEqual([[A1, "oauth_refresh_failed:invalid_grant", true, deadConn.ciphertext]]);
     expect(g.posts.map((p) => p.agency)).toEqual([A2]);
+  });
+
+  it("po invalid_grant podá ciphertext z začiatku behu — reconnect s novým blobom sa nevypne", async () => {
+    const g = gmail({ refreshFails: new Set(["1//old"]) });
+    const old = conn(A1, "1//old");
+    const seen: string[] = [];
+    await run(g, [old], {
+      deps: {
+        onError: async (_a: string, _c: string, _d: boolean, ct?: string) => {
+          if (ct) seen.push(ct);
+        },
+      },
+    });
+    expect(seen).toEqual([old.ciphertext]);
   });
 
   it("štítok ešte neexistuje: nič sa nečíta ani nepošle a pripojenie sa nevypne", async () => {

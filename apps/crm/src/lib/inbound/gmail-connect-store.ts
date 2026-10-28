@@ -85,23 +85,51 @@ export async function loadActiveConnections(): Promise<ActiveConnection[]> {
     .map((r) => ({ agencyId: r.agency_id, ciphertext: r.refresh_token_ciphertext, labelName: r.label_name }));
 }
 
-export async function markPulled(agencyId: string): Promise<void> {
+/**
+ * Po úspešnom pulli. `expectedCiphertext` = blob, s ktorým beh začal: ak medzitým
+ * disconnect/reconnect vymenil token, update nesmie siahať na nový riadok
+ * (inak by `status=active` + prázdny ciphertext alebo cudzí token skreslil stav).
+ */
+export async function markPulled(agencyId: string, expectedCiphertext?: string): Promise<void> {
   const sb = createServiceRoleClient();
   if (!sb) return;
-  await sb
+  // Bez filtra by úspešný pull po wipe označil riadok active s prázdnym tokenom
+  // (#902) a po reconnect by „potvrdil" cudzí / nový blob bez väzby na beh.
+  let q = sb
     .from("agency_gmail_inbound_oauth")
     .update({ last_pulled_at: new Date().toISOString(), last_error: null, status: "active" })
-    .eq("agency_id", agencyId);
+    .eq("agency_id", agencyId)
+    .eq("status", "active")
+    .neq("refresh_token_ciphertext", "");
+  if (expectedCiphertext !== undefined) {
+    q = q.eq("refresh_token_ciphertext", expectedCiphertext);
+  }
+  await q;
 }
 
-/** `status: 'error'` pri vypršanom/odvolanom tokene — pull sa potom nepokúša dookola. */
-export async function markError(agencyId: string, code: string, disable: boolean): Promise<void> {
+/**
+ * `status: 'error'` pri vypršanom/odvolanom tokene — pull sa potom nepokúša dookola.
+ * `expectedCiphertext` = blob z začiatku behu: po reconnect (nový active ciphertext)
+ * nesmie starý `invalid_grant` vypnúť práve pripojený token.
+ */
+export async function markError(
+  agencyId: string,
+  code: string,
+  disable: boolean,
+  expectedCiphertext?: string,
+): Promise<void> {
   const sb = createServiceRoleClient();
   if (!sb) return;
-  await sb
+  // Neprepisuj revoked: disconnect už rozhodol (#902).
+  let q = sb
     .from("agency_gmail_inbound_oauth")
     .update({ last_error: code.slice(0, 200), ...(disable ? { status: "error" } : {}) })
-    .eq("agency_id", agencyId);
+    .eq("agency_id", agencyId)
+    .neq("status", "revoked");
+  if (expectedCiphertext !== undefined) {
+    q = q.eq("refresh_token_ciphertext", expectedCiphertext);
+  }
+  await q;
 }
 
 /** Odpojenie: ciphertext sa maže (nie len označí), zostáva stopa kedy a kto. */

@@ -1,3 +1,8 @@
+## 2026-10-21 — Gmail reconnect∩markError ciphertext guard
+- BUILD: bind markPulled/markError to pull-start ciphertext (beyond #902 revoked-only).
+- Dôkaz: vitest 47/47; report docs/reports/2026-10-21-gmail-reconnect-markerror-race.md.
+- Merge: founder GO.
+---
 ## 2026-10-25 — UX cenníka + ročná zľava z katalógu (BUILD)
 **GO:** founder „GO A, pushni to aj s marketingom" (A = ponechať ročnú zľavu 17 % všade vrátane marketingu; B = zmena cien na 80 % mesačnej ceny bola zamietnutá, bol by to Stripe/cenový zásah).
 **Čo:** `/porovnanie-programov` (`PricingV2Comparison`) prepracované: jedna dominantná cena na kartu, jednotné riadky (ročne / mesačne / kredity), jeden banner. Namiesto „Mesačne + 20 %" sa zobrazuje ročná zľava **17 %**, počítaná z katalógu (`annualDiscountPercent` = 1 − ročná/mesačná). Dôvod: mesačná cena = základ × 1,2, čiže 25 € vs 30 € = 16,7 %; natvrdo „20 %" by bolo zavádzajúce cenové tvrdenie. Rovnaké číslo na `/upgrade` (prepínač + poznámky) a v marketingu (`monthlyBillingLine`, `FinalCTAV2`). Marketingový text znie „ročne o 17 % lacnejšie" (bez slova „zľava": regresný strážca `final-cta-w2d.test.tsx` zakazuje `zľav` v texte landingu).
