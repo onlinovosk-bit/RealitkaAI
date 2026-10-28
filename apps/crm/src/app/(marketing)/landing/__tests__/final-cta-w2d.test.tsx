@@ -50,13 +50,13 @@ describe("FinalCTA: PRICING_PUBLIC_ENABLED zapnuté (cenník v3)", () => {
   const html = renderToStaticMarkup(<FinalCTA pricingV2={catalog} />);
   const t = htmlText(html);
 
-  it("vedie výsledkom a ukáže pásma 1 / 2–5 / 6–10 / 11+ s cenou z katalógu (čistá, s DPH, mesačná +20 %)", () => {
+  it("vedie výsledkom a ukáže pásma 1 / 2–5 / 6–10 / 11+ s cenou z katalógu (čistá, s DPH, mesačná, ročne o 17 % lacnejšie)", () => {
     expect(t).toContain("Neprídete o províziu");
     for (const s of [
       "1 maklér",
       "25 € mesačne bez DPH pri ročnej platbe",
       "30,75 € s DPH 23 %",
-      "30 € mesačne bez DPH pri mesačnej platbe (+20 %)",
+      "30 € mesačne bez DPH pri mesačnej platbe (ročne o 17 % lacnejšie)",
       "2–5 maklérov",
       "od 50 € mesačne bez DPH pri ročnej platbe",
       "od 61,50 € s DPH 23 %",

@@ -282,10 +282,10 @@ describe("ročné platenie a akcia 9/12 — UI", () => {
     expect(screen.getByTestId("band-team-net").textContent).toBe("od 60,00 €");
   });
 
-  it("prepínač má popisy „Ročne“ a „Mesačne (+20 %)“, predvolene je ročne", () => {
+  it("prepínač má popisy „Ročne (zľava 17 %)“ a „Mesačne“, predvolene je ročne", () => {
     render(<PricingV2Plans config={yearlyConfig()} now={PROMO_NOW} />);
-    expect(screen.getByTestId("interval-year").textContent).toBe("Ročne");
-    expect(screen.getByTestId("interval-month").textContent).toBe("Mesačne (+20 %)");
+    expect(screen.getByTestId("interval-year").textContent).toBe("Ročne (zľava 17 %)");
+    expect(screen.getByTestId("interval-month").textContent).toBe("Mesačne");
     expect(screen.getByTestId("interval-year").getAttribute("aria-checked")).toBe("true");
   });
 
@@ -332,7 +332,7 @@ describe("ročné platenie a akcia 9/12 — UI", () => {
     expect(screen.queryByTestId("promo-note")).toBeNull();
   });
 
-  it("prepnutie na mesačne: bez akcie, cena = základ × 1,2, poznámka o +20 %", async () => {
+  it("prepnutie na mesačne: bez akcie, cena = základ × 1,2, poznámka o ročnej zľave", async () => {
     render(<PricingV2Plans config={yearlyConfig()} now={PROMO_NOW} />);
     const user = userEvent.setup();
     await setUsers("3");
@@ -340,7 +340,7 @@ describe("ročné platenie a akcia 9/12 — UI", () => {
     expect(screen.queryByTestId("promo-note")).toBeNull();
     expect(screen.getByTestId("selected-net").textContent).toBe("78,00 €");
     expect(screen.getByTestId("selected-gross").textContent).toBe("95,94 €");
-    expect(screen.getByTestId("monthly-note").textContent).toContain("20 %");
+    expect(screen.getByTestId("monthly-note").textContent).toContain("17 %");
     // a späť na ročné: akcia sa vráti
     await user.click(screen.getByTestId("interval-year"));
     expect(screen.getByTestId("promo-note")).toBeTruthy();
