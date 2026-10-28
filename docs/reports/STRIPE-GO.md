@@ -79,14 +79,15 @@ Interval `month`, ak stĺpec nehovorí inak. Jednorazové nemajú interval. Sumy
 ### Tiers licencie (centy bez DPH; `quantity` = počet maklérov)
 
 Pri `graduated` sa `flat_amount` pripočíta **raz**, keď množstvo zasiahne daný tier; `unit_amount` sa násobí počtom kusov v tieri.
-Preto 1 = 25 €, 2–5 = 25 + 40 = 65 € a od 6. makléra sa pripočítava cena za kus.
+Preto 1 = 25 €, 2 = 25 + 25 = 50 €, 3–5 = 50 + 15 = 65 € (strop Team, GO B 2026-10-21) a od 6. makléra sa pripočítava cena za kus.
 
 `STRIPE_PRICE_V3_SEAT_YEARLY` (12 × základ):
 
 | tier `up_to` | `flat_amount` | `unit_amount` |
 |---|---|---|
 | 1 | 30000 | 0 |
-| 5 | 48000 | 0 |
+| 2 | 30000 | 0 |
+| 5 | 18000 | 0 |
 | 10 | 0 | 10800 |
 | 20 | 0 | 7200 |
 | inf | 0 | 6000 |
@@ -96,12 +97,13 @@ Preto 1 = 25 €, 2–5 = 25 + 40 = 65 € a od 6. makléra sa pripočítava cen
 | tier `up_to` | `flat_amount` | `unit_amount` |
 |---|---|---|
 | 1 | 3000 | 0 |
-| 5 | 4800 | 0 |
+| 2 | 3000 | 0 |
+| 5 | 1800 | 0 |
 | 10 | 0 | 1080 |
 | 20 | 0 | 720 |
 | inf | 0 | 600 |
 
-Kontrolné body (bez DPH): n=1 → 25 € základ (ročne 300 €, mesačne 30 €); n=3 a 5 → 65 € (780 € / 78 €); n=6 → 74 € (888 € / 88,80 €);
+Kontrolné body (bez DPH): n=1 → 25 € základ (ročne 300 €, mesačne 30 €); n=2 → 50 € (600 € / 60 €); n=3 a 5 → 65 € (780 € / 78 €); n=6 → 74 € (888 € / 88,80 €);
 n=10 → 110 € (1 320 € / 132 €); n=11 → 116 € (1 392 € / 139,20 €); n=20 → 170 € (2 040 € / 204 €); n=21 → 175 € (2 100 € / 210 €);
 n=30 → 220 € (2 640 € / 264 €). Test `stripe-expected-prices.verification.test.ts` prepočíta graduated výpočet z JSON tiers
 a porovná s `licenseNetCents(n, interval)` pre n = 1…60 (ročne aj mesačne).

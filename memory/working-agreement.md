@@ -89,6 +89,10 @@ PRACOVNÁ DOHODA s founderom (memory/working-agreement.md): STENY, NIE SKRUTKY.
 6) KAŽDÁ správa o hotovom bloku (a odpoveď na „kde sme") ZAČÍNA riadkom `session X % (odhad, k/n) · produkt Y %` a KONČÍ riadkom `Postup: produkt Y % → Z % (±N b.)`. Y = číslo z riadku POSTUP nižšie (počíta ho hook z docs/STATUS.md, nepíš ho z hlavy); X = k/n zo zadaných blokov tejto session hotových s dôkazom (zoznam v správe). Nulový posun = 0 b. Zmenila sa tabuľka → aktualizuj docs/STATUS.md v tom istom PR.
 <!-- DIGEST:END -->
 
+<!-- TURN:START -->
+STENY, NIE SKRUTKY (plné znenie je v kontexte od štartu session; zdroj memory/working-agreement.md): 1 GO = 1 blok + dôkaz, žiadne mikro-updaty; webhooky bez zmeny stavu = ticho; memory zápis 1× na konci steny; „merguj blok X" = všetky ZELENÉ PR toho bloku v poradí závislostí. Stav iba z primárneho zdroja overeného v tomto turne. Každá odpoveď končí riadkom `📊 Session …` (`bash .claude/hooks/session-progress.sh print`; Stop hook odpoveď bez neho zablokuje).
+<!-- TURN:END -->
+
 <!-- WEBHOOK:START -->
 WEBHOOK (pracovná dohoda): toto prebudenie je šum, kým sa nezmení stav. Odpíš LEN ak: červené CI na mojom PR, konflikt, review komentár, alebo je blok hotový (vtedy jedna správa s dôkazom). Inak NEOPISUJ udalosť (žiadne „Vercel Ready", „check suite prešiel", „echo zmergovaného PR"): najviac jedna veta, alebo nič.
 <!-- WEBHOOK:END -->

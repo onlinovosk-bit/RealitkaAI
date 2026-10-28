@@ -16,10 +16,13 @@
       "billing_scheme": "tiered", "tiers_mode": "graduated",
       "tiers": [
         { "up_to": 1, "flat_amount": 30000, "unit_amount": 0 },
-        { "up_to": 5, "flat_amount": 48000, "unit_amount": 0 },
+        { "up_to": 2, "flat_amount": 30000, "unit_amount": 0 },
+        { "up_to": 5, "flat_amount": 18000, "unit_amount": 0 },
         { "up_to": 10, "flat_amount": 0, "unit_amount": 10800 },
         { "up_to": 20, "flat_amount": 0, "unit_amount": 7200 },
-        { "up_to": "inf", "flat_amount": 0, "unit_amount": 6000 }
+        { "up_to": 30, "flat_amount": 3, "unit_amount": 5333 },
+        { "up_to": 50, "flat_amount": 0, "unit_amount": 4800 },
+        { "up_to": "inf", "flat_amount": 0, "unit_amount": 3600 }
       ]
     },
     {
@@ -27,10 +30,13 @@
       "billing_scheme": "tiered", "tiers_mode": "graduated",
       "tiers": [
         { "up_to": 1, "flat_amount": 3000, "unit_amount": 0 },
-        { "up_to": 5, "flat_amount": 4800, "unit_amount": 0 },
+        { "up_to": 2, "flat_amount": 3000, "unit_amount": 0 },
+        { "up_to": 5, "flat_amount": 1800, "unit_amount": 0 },
         { "up_to": 10, "flat_amount": 0, "unit_amount": 1080 },
         { "up_to": 20, "flat_amount": 0, "unit_amount": 720 },
-        { "up_to": "inf", "flat_amount": 0, "unit_amount": 600 }
+        { "up_to": 30, "flat_amount": 0, "unit_amount": 460 },
+        { "up_to": 50, "flat_amount": 0, "unit_amount": 480 },
+        { "up_to": "inf", "flat_amount": 0, "unit_amount": 360 }
       ]
     },
     { "env": "STRIPE_PRICE_V3_PACK_50", "product": "Revolis balíky kreditov", "amount": 2600, "type": "recurring", "gate": "pricing_v2" },

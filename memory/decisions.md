@@ -1,3 +1,49 @@
+## 2026-10-26 — Verejný blog na www.revolis.ai + prvý článok (BUILD)
+**GO:** founder Andrej Ondruš 26. 10. 2026 — pridaj `/blog` na marketingový web a publikuj prvý článok; draft PR, NEZLÚČUJ, nenasadzuj. RAU: `GO_REQUIRED` BUILD revolis (trigger publish → P17/P18 nespustené). Prime Directive: akvizičný obsah (SEO + dôvera makléra); Constitution v2 Q1 = founder GO na publikáciu článku, Q8 = článok je hotový, timing nie je „príliš skoro".
+**Čo:** `apps/marketing` listing `/blog` + `/blog/ceny-nehnutelnosti-2026-sadzby-nove-ltv` (TS modul, markdown renderer bez MDX), sitemap + `seo.test.ts`, verification `marketing-blog.verification.test.ts`. CRM `/blog` ostáva redirect na `/landing`.
+**Dôkaz:** marketing vitest blog+seo 10 PASS; CRM verification blog+lemon 2 PASS; `next build --webpack` routy `/blog` a článok; lokálny `next start :3001` HTTP 200/200/404 + sitemap s oboma URL. NEMERANÉ: CI na pushnutom heade, Vercel Preview (`cursor/*` vypnutý v vercel.json).
+**BUILD/BACKLOG:** BUILD (founder GO).
+**Rollback:** revert PR. Žiadna migrácia, PROD nedotknuté.
+
+## 2026-10-22 — Doručiteľnosť a odhlásenie: F-02 bypass + F-01 potlačenie/List-Unsubscribe + bounce/complaint (BUILD, override vetom Q1)
+**GO:** founder „GO GDPR-ADVISOR. GO stena doručiteľnosť a odhlásenie." Prime Directive: nepriamy (reputácia domény a právne riziko outreachu); Stripe krok C ostáva priorita #1. Constitution v2 Q1 (zaplatil by klient?) = NIE → podľa vety VETO max VALIDATE; founder dal výslovné GO na opravu P1 nálezov F-01/F-02, zaznamenané ako override, nie predajný argument.
+**Čo:** `proxy.ts` PUBLIC_PATHS (resend-webhook, unsubscribe, notifications/unsubscribe, morning-brief/track/open|click); migrácia `20261022100000_email_suppressions.sql` (iba odtlačok adresy, RLS deny-all); `lib/email/{suppression,unsubscribe-token}.ts` (HMAC token, fail-closed); `/api/unsubscribe` (GET potvrdenie, POST zápis); `sendApprovedOutreach` kontroluje potlačenie + pätička + `List-Unsubscribe`/`-Post`; `resend-webhook`: tvrdý bounce/sťažnosť/suppressed → globálne potlačenie, 500/503 pre retry; starý `/api/notifications/unsubscribe` už len presmeruje (nemení nič). GDPR analýza: `docs/architecture/gdpr-deliverability-unsubscribe-2026-10-22.md` (6(1)(f) + test vyváženosti; skill `gdpr-advisor` neexistuje → vlastná inžinierska analýza, NIE právne stanovisko).
+**Dôkaz (zmerané v tomto turne):** vitest 5 súborov / 58 testov PASS (webhook vr. 7 nových, unsubscribe-token, unsubscribe route, proxy-deliverability-public, outreach-contract 16/16); susedné 15 súborov / 164 testov PASS; eslint na zmenených súboroch čisté; `npm run typecheck` 53 chýb ≤ baseline 54 (exit 0), `tsc` bez chýb v zmenených súboroch; `check-security.mjs` čisté. NEMERANÉ: CI na pushnutom heade, živé správanie na PROD, doručenie reálneho bounce.
+**Nerobené (čaká na GO):** aplikácia migrácie na PROD (`prod-migration`), nastavenie `UNSUBSCRIBE_TOKEN_SECRET` (≥ 32 znakov), nasadenie, merge #910. Bez migrácie + tajomstva je odchádzajúci e-mail fail-closed zablokovaný (bezpečné zlyhanie, nie tiché).
+**BUILD/BACKLOG:** BUILD (override Q1). Otvorené pre právnika: právny základ samotného obchodného e-mailu fyzickej osobe (opt-in vs. výnimka) — NEOVERENÉ; odtlačok SHA-256 bez soli je pseudonymizácia; retencia záznamu bez limitu.
+**Rollback:** revert PR; migrácia je čisto aditívna (nová tabuľka), na PROD zatiaľ neaplikovaná.
+
+## 2026-10-21 — Revolis reverse engineering & system discovery v1.0 (VALIDATE → report, bez kódu)
+**GO:** founder zadanie „REVOLIS REVERSE ENGINEERING & SYSTEM DISCOVERY v1.0" (iba čítanie, 5 výstupov). Prime Directive: nepriamy — pred ďalšou stenou vieme, čo v systéme reálne beží a čo len existuje v kóde; priamy dopad na platiaceho klienta má F-01/F-02 (doručiteľnosť a odhlásenie) a F-03/F-13 (platba musí mať účinok).
+**Čo:** `docs/discovery/2026-10-21/{ARCHITECTURE,DATA_FLOWS,INTEGRATIONS,FINDINGS,OPEN_QUESTIONS}.md` na HEAD `a04bc5e`. 29 nálezov: 3× P1 (F-01 outbound bez odhlásenia/potlačenia/bounce, F-02 proxy 401 na Resend webhook + tracking + unsubscribe — statika, živé UNKNOWN, F-03 gating no-op + kredity default-off/fail-open), 12× P2, 14× P3. 31 otvorených otázok.
+**Zmerané:** PROD Supabase: 7 agentúr, 0 so `stripe_subscription_id`, 142 tabuliek v `public` všetky s RLS zapnutým (kvalita policies nemeraná). Značky CONFIRMED / CONFIRMED-D (delegované, v turne neoverené) / INFERRED / UNKNOWN.
+**Nerobené / NOT_VERIFIED:** žiadny zápis do PROD, env ani nasadenia; testy po #908 nespustené; hodnoty PROD env, bežiace crony, Stripe Live, Resend DNS, branch protection neoverené (OPEN_QUESTIONS Q-01…Q-31).
+**BUILD/BACKLOG:** BUILD (read-only report). Ďalšia stena „doručiteľnosť a odhlásenie" = VALIDATE → BUILD až po Q-01 a `gdpr-advisor` (skill chýba). Stripe krok C ostáva priorita #1 (čaká na founderove ID).
+**Rollback:** revert PR (iba dokumenty).
+
+## 2026-10-21 — Cenník v3: Team bez skoku 1→2 (GO B) (BUILD)
+**GO:** founder „GO B" po zistení, že 2 makléri (65 €) platia viac na hlavu než 1 (25 €) a lacnejšie vyjdú dve licencie Start (50 €). Cenu určuje founder; Prime Directive: odstraňuje dôvod nekúpiť Team (priamy dopad nemeraný).
+**Čo:** licencia = 1 → 25 €, 2 → 50 €, 3–5 → 65 € (strop), 6+ bez zmeny (9 / 6 / 5 € za makléra). Mesačná platba = základ × 1,2 (2 makléri 60 €), ročná 9/12 promo: 2 makléri 450 € namiesto 600 €. Stripe graduated tiery majú 6 stupňov (year: 30000 / +30000 / +18000 flat; month: 3000 / +3000 / +1800). Team pásmo = „od 50 €", ostáva self-serve (demo-only len Kancelária a Sieť, nové pole `priceOnRequest`). ROI kalkulačka počíta Team konzervatívne na strope 65 €.
+**Dôkaz:** CRM vitest (lib, verification, components, api/billing, integration, terms, landing, billing) 405 súborov / 3157 testov PASS; marketing vitest 64 PASS; drift test JSON tiers ↔ `licenseNetCents` n = 1…60 PASS. NEOVERENÉ: tsc/lint/build (CI), živý www.revolis.ai.
+**Stripe:** v PROD ešte nič nevzniklo (0 predplatných, žiadne `STRIPE_PRICE_V3_*`) — tiery sa vytvoria už v novej podobe, nič sa nemigruje.
+
+## 2026-10-21 — Cross-agent engineering systém v1.0: revolis-verify-completion + revolis-review-plan (BUILD)
+**GO:** founder zadanie „REVOLIS CROSS-AGENT ENGINEERING SYSTEM v1.0" (Prompt Coach spec). Prime Directive: nepriamy (menej falošných „hotovo" a červených CI), priamy dopad na platiaceho klienta nemeraný; hodnotu a poradie určuje founder.
+**Čo:** `scripts/ci/revolis-verify.mjs` + `lib/verify-core.mjs` (completion: diff → kontroly → akceptačné kritériá → PASS/FAIL/BLOCKED/NOT_VERIFIED; plan-lint), Skills `.claude/skills/revolis-{verify-completion,review-plan}`, adaptéry `AGENTS.md` a `.cursor/rules/revolis-cross-agent.mdc`, kontrakt s auditom `docs/architecture/cross-agent-engineering-contract.md`. Zapojené do `prepush-gate.sh` a CI kroku „Test CI helper scripts".
+**Engineering justification:** Trigger: new-file · Decision path: new-code (jadro) + reuse (prepush-gate, kontrolor, classify-diff sa volajú, nie kopírujú) · Alternatives: nový MCP server (zamietnuté: GitHub/BUS/CI už existujú), rozšíriť `prepush-gate.sh` (zamietnuté: bash neparsuje kritériá ani stavy) · Why not reuse: žiadny existujúci nástroj neviaže diff na akceptačné kritériá a štyri stavy · Contradiction check: none.
+**Zmerané:** 27 testov jadra a adaptérov, 8 mutácií (7 červených, 1 ekvivalentná: redundantná poistka `doneAllowed`); živý beh na vlastnom diffe: pred-push brána PASS, ručné kritérium NOT_VERIFIED, DONE=NIE.
+**Medzery (nerobené):** P1 overenie vydania (`/api/healthz` bez SHA nasadenia) a P1 smerovanie modelov (dáta o cene úloh UNKNOWN) sú len návrh v kontrakte §7. Zlepšenie času/ceny/regresií **nezmerané**.
+**Rollback:** revert PR (žiadna zmena aplikácie ani PROD).
+
+## 2026-10-21 — GO STRUCTURE-FIRST-1: štruktúra pred správami — menej tokenov v Messages (BUILD)
+**GO:** founder „GO STRUCTURE-FIRST-1" po rozbore: Messages tvorili 58,9 % kontextu (≈ 589 tis.), štruktúra ≈ 80 tis.
+**Čo:** (1) `CLAUDE.md` Initialization už nenariaďuje čítať celý `/memory` (≈ 946 KB ≈ 315 tis. tokenov), ale `memory/INDEX.md` + prvý záznam `session-summary.md`. (2) `autoCompactWindow: 200000` v `.claude/settings.json`. (3) Hooky: pri prompte zostal blok `TURN` + krátky POSTUP; `WALL-RULES.md` a `progress.sh` sa pri prompte nevkladajú (plné znenie ostáva na `SessionStart`, vrátane compact; riadok `📊` vynucuje Stop hook). Zmerané: **4 884 → 1 561 B na správu (−68 %)**, SessionStart nezmenený (2 126 B + protokol). (4) Skilly `merge-gate`, `prod-migration`, `wall-close` (v kontexte len popis, telo až pri použití). (5) `.mcp.json` prázdny: `onlinovo` padal na nezbuilovanom `@revolis/mcp-shared`, `ruflo` ide cez lokálnu cestu `C:/RealitkaAI` a v cloude (aj v scheduled night-runner session 2026-09-16, MSG-20260916-000) sa nikdy nepripojil.
+**Ruflo:** nie je rozbitý — je to lokálny nástroj; nahrádzať ho v cloude netreba, nočné vlny bežia ako scheduled session + izolovaný git worktree na lane (fallback z protokolu vlny). Lokálne ho founder pridá do user scope (príkaz v `packages/mcp-onlinovo/README.md`). `.cursor/mcp.json` ostáva.
+**Nové MCP:** žiadne. Pôvodne navrhnutý „MCP s kompaktným stavom bloku" sa nerobí: CI/PR dáta idú cez GitHub MCP a ďalší server by pridal schémy do štruktúry; namiesto toho skill `merge-gate` predpisuje minimálny výstup.
+**Obsolétne:** oprava COACH filtra z rozboru — #901 zmenil COACH na ručné „GO COACH", takže filter sa už nepoužíva.
+**Nemerané:** reálny pokles podielu Messages — zmeria sa v ďalšej session (Context panel pred/po). Odhady dopadu skillov a hookov z rozboru ostávajú odhadom.
+**Rollback:** revert PR.
+
 ## 2026-10-20 — GO COACH-ONLY: Prompt Coach sa spúšťa len príkazom „GO COACH", nie automaticky (BUILD)
 **GO:** founder: Prompt Coach sa v Grok Botovi úplne zacyklil; chce ho spúšťať iba príkazom „GO COACH", nie pri každom prompte, a rovnako aj v repe.
 **Čo:** hook `working-agreement.sh` vloží blok COACH len ak správa začína „GO COACH" (nezáleží na veľkosti písmen); pri iných správach nikdy. Blok COACH v `memory/working-agreement.md` prepísaný: „GO COACH" = vrátiť iba hodnotenie formy a vylepšený prompt, zadanie NEVYKONÁVAŤ; vylepšený prompt nesmie začínať „GO COACH" (štrukturálna ochrana proti cyklu). Pôvodná automatika a značka `[COACH-PROMPT-OK]` sú tým obsolétne (zostáva v histórii).
@@ -65,6 +111,25 @@
 **Ústava v2:** BUILD. Q1 = founder povedal, že AIRAmax vyhráva týmito funkciami. Q8 = teraz. Phase 1 = EXTEND existujúceho listing generatora (Claude vision), nie nové Studio.
 **Rozhodnutie:** roadmap + `LISTING_FROM_PHOTOS_V0` (default OFF) + www copy len o LIVE funkciách. Staging / reel / pôdorys označené missing / not feasible.
 **Výstup:** `docs/strategy/2026-10-20-speed-time-saving-roadmap.md`, `docs/reports/2026-10-20-speed-time-saving.md`.
+
+## 2026-10-15 — API Cost Governor v1 (úzka BUS vrstva) — BUILD
+
+Founder GO: implementovať fail-closed USD bránu pred plateným AI volaním a potom jednu ďalšiu úlohu. Nie je to GO na merge, deploy, produkčný env, nákup kreditov ani auto-reload.
+
+**Rozhodnutie:** nový modul `packages/bus-core/src/cost-governor.ts` vedľa count capu. CLI `scripts/bus/consume.ts` ho volá pred spawnom. Defaultný katalóg je prázdny → neznámy model je BLOCK. Interné limity 0,50 / 5,00 / 25,00 USD nie sú Claude Console bonus 100 USD. Odhad a actual sú oddelené polia. CRM call site sa v tejto vlne nenapájajú.
+
+## Engineering justification: API Cost Governor
+
+- **Trigger:** new-file
+- **Decision path:** new-code
+- **Alternatives considered:** rozšíriť `execution-cap.ts` o USD (zamietnuté — count cap je 24 h okno počtu behov, USD je kalendárny UTC deň/mesiac a iný ledger); použiť `llm-usage-cost.ts` ako cenník (zamietnuté — natvrdo sadzby a fallback na Sonnet, nie overený cenník); nový orchestrátor (zamietnuté — BUS runner už existuje).
+- **Why not reuse:** count cap a control-contract denyList neriešia per-task/day/month USD hold ani actual od providera. DenyList ostáva. Governor ho nekopíruje ako druhú autoritu nad akciami, len odmieta platený spawn pri zakázanom side effecte.
+- **Expected outcome:** `bus:consume` bez platného kontraktu a snapshotu Claude nespustí. Existujúce testy `runConsumer` bez `costGate` ostávajú zelené. CRM cesty ostávajú nepokryté a sú tak označené.
+- **Related paths:** `packages/bus-core/src/cost-governor.ts`, `packages/bus-core/src/execution-cap.ts`, `scripts/bus/consume.ts`, `docs/reports/2026-10-15-api-cost-governor-v1.md`, `docs/architecture/l99-parked-concepts.md` P-MR
+- **Contradiction check:** none — P-MR (plný model router a produkčná cost telemetry) ostáva zaparkovaný. Toto GO povoľuje len BUS spawn. CRM sa neodomkýna.
+- **PR / vetva:** #847 · `cursor/api-cost-governor-v1-0b41` (draft, nemergované)
+
+**Ďalšia úloha v tom istom GO:** CHECKOUT-ENV-01 ostáva neuzavretý (kód seat + v2 stále čaká na Price ID; live Stripe dnes nečítaný). Výstup je read-only checklist `docs/reports/2026-10-15-checkout-env-01-founder-checklist.md`. Odporúčanie: najprv nový read-only verify (voľba C), nie hádanie seat cien.
 
 # Critical Decisions Log
 
