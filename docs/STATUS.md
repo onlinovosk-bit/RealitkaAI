@@ -3,12 +3,14 @@
 > **2026-10-26 BLOG:** `/blog` + prvý článok v `apps/marketing` na draft PR; PRODUCTION nezmenená. Tabuľka % sa NEMENÍ.
 
 > Aktualizuje sa **po každom uzavretom bloku** (jeden riadok zmeny hore + tabuľka). Čísla sú merané, kde je uvedený dôkaz;
-> **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-05** (GMAIL-CONNECT: pripojenie Gmailu s šifrovaným tokenom a karta v Integráciách sú v kóde, **neaktivované** — % nezmenené).
+> **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-23** (LEDGER-REPAIR: ledger 81 → 136, 3 migrácie na PROD, tabuľka % nepreratúvaná; pôvodne 2026-10-05 GMAIL-CONNECT: pripojenie Gmailu s šifrovaným tokenom a karta v Integráciách sú v kóde, **neaktivované** — % nezmenené).
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 20:45 UTC** (opt-in auto-odpoveď: migrácia na PROD + fail-closed #811; `last_contact_at` sa zapisuje #800; „Čakajú na kontakt" prestalo byť celá kniha #804).
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-05, 07:55 UTC** (FAIL-OPEN-SWEEP + TRIAL-GATE-CLOSED variant A: po vypršaní trialu je účet read-only, nie otvorený; hlavička prepočítaná z tabuľky 53 % → 51 %).
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 08:30 UTC** (EVENTS-WIRE + CRON-ALIVE, zatiaľ nezmergované).
 > **2026-10-09 AGENTIC-WAVES:** Vlna 1 (WP-1…WP-6) zmergovaná do `main` (#836–#841): bez 180 000 € fallbackov, čítač `inbound_mail_outcomes`, send-gate, inventár trás, návrh Strážcu follow-upu (BACKLOG), PROD balíky **neaplikované**. Tabuľka nižšie sa NEMENÍ (nič z toho nie je PROD dôkaz). Plán: `docs/plans/2026-10-09-agentic-waves.md`.
 
+> **2026-10-22 (PROD aktivácia doručiteľnosti):** tabuľka sa neprepočítava, produkt ostáva **≈ 51 %** (odhad; tabuľka STARÁ, posledný prepočet 2026-10-05). Migrácia `email_suppressions` je na PROD, kód nasadený; odchádzajúci outreach e-mail je fail-closed, kým founder nenastaví `UNSUBSCRIBE_TOKEN_SECRET`. Posledná aktualizácia: **2026-10-22**.
+>
 > **2026-10-16 (víkend, bez prepočtu tabuľky):** vážené **≈ 51 %** ostáva meranie z **2026-10-05**. **ZMERANÉ** `git rev-list --count origin/main --since=2026-10-05` na `9168d583` = **34** commitov. SESSION blok nižšie už má body 1, 2, 3, 4, 5, 9 a 10 odškrtnuté s PR na main (#851, #852, #855, #856, #858, #857, #854). Predaj / platby ostáva **0 %**, lebo live Stripe katalóg je v tomto behu **NEZMERANÉ** (žiaden live kľúč, `scripts/ops/stripe-verify-prices.sh` sa nespúšťal). Tabuľka sa neprepočítava, kým nie je živý nákup.
 >
 > **2026-10-08 SIGNUP-PROD:** migrácie SIGNUP-ARCH a pricing v2 stĺpce sú **aplikované na PROD** (dôkaz v `docs/architecture/2026-10-06-self-serve-signup.md`). Zavreté 2 nové cesty (zápis billing/trial stĺpcov agentúry z prehliadača; zhoda neoverený e-mail → tenant). Tabuľka nižšie sa NEPREPOČÍTAVA, kým nie je aj živý nákup (váha Predaj/platby 30).
@@ -46,6 +48,13 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
+Cieľ: UX cenníka + ročná zľava 17 % z katalógu (aj marketing)
+> % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
+- [x] 1 — `/porovnanie-programov` prepracované (jedna dominantná cena, jednotné riadky)
+- [x] 2 — Ročná zľava 17 % z katalógu (nie natvrdo 20 %) v billing UI
+- [x] 3 — Marketing + podmienky: „ročne o 17 % lacnejšie" (169/169 testov)
+- [x] 4 — Memory PREPEND + STATUS (jeden commit)
+- [ ] 5 — Push + PR #914 + zelené CI na aktuálnom heade (merge až na GO)
 Cieľ: Verejný blog na www.revolis.ai + prvý článok (draft PR)
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
 - [x] 1 — `/blog` listing + `/blog/[slug]` v `apps/marketing` (build routy + HTTP 200)
