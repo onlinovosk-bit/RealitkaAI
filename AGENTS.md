@@ -28,3 +28,10 @@ Tvrdenie agenta nie je dôkaz. Pred „hotovo" spusti
 Chýbajúci `previousState` prechod nepreskočí. `PR_READY` vyžaduje otvorený review artefakt v repe.
 Exit 0 nie je blocked ani `prReady: false`. Príkaz nerobí merge ani deploy.
 Podrobnosti: `.claude/skills/revolis-verify-completion/SKILL.md`.
+
+## Agentic stacks
+
+Jedna orchestrácia nad existujúcim verify workflow, nie druhý rámec.
+`node scripts/ci/revolis-orchestrate.mjs --fixture <file.json>` prejde Intake → Plan → Preflight → Implement → Validate → Independent review → Evidence gate → PR readiness a zavolá `probeStacks` na štyri moduly.
+Stavy sondy sú `VERIFIED`, `MISSING`, `FAILED`, `NOT_VERIFIED`. Iba `VERIFIED` je úspech. JSON neprepíše sondu.
+Príkaz nerobí merge, deploy ani post-release. Dokončenie úlohy: `.claude/skills/revolis-verify-completion/SKILL.md`.
