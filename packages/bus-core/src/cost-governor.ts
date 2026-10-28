@@ -697,3 +697,155 @@ export function contractFromBusTask(
     capability_id: options.capabilityId,
   };
 }
+
+export interface RouteQuality {
+  case_id: string;
+  metric: string;
+  score: number;
+}
+
+export interface RouteCandidate {
+  provider: string;
+  model: string;
+  /** Operator ceiling. Not a vendor rate. */
+  max_estimate_usd?: number | null;
+  price_source?: "configured_snapshot" | "unavailable" | null;
+  quality?: RouteQuality | null;
+}
+
+export interface RouteRequest {
+  candidates: readonly RouteCandidate[];
+  quality_bar: number;
+  metric: string;
+  case_id: string;
+  environment: "production" | "non_production" | "unspecified";
+  apply_switch?: boolean;
+  budget_remaining_usd: number | null;
+  retries_used: number;
+  max_retries: number;
+}
+
+export interface RouteTelemetry {
+  case_id: string;
+  metric: string;
+  quality_bar: number;
+  candidate_count: number;
+  environment: RouteRequest["environment"];
+  retries_used: number;
+  max_retries: number;
+  budget_remaining_usd: number | null;
+  selected_model: string | null;
+}
+
+export interface RouteDecision {
+  decision: "RECOMMEND" | "BLOCK" | "INCOMPLETE";
+  code: string;
+  selected: { provider: string; model: string } | null;
+  /** This function never switches a model, including outside production. */
+  applied: false;
+  reason: string;
+  telemetry: RouteTelemetry;
+}
+
+function routeTelemetry(request: RouteRequest, selectedModel: string | null): RouteTelemetry {
+  return {
+    case_id: request.case_id,
+    metric: request.metric,
+    quality_bar: request.quality_bar,
+    candidate_count: request.candidates.length,
+    environment: request.environment,
+    retries_used: request.retries_used,
+    max_retries: request.max_retries,
+    budget_remaining_usd: request.budget_remaining_usd,
+    selected_model: selectedModel === null ? null : redactSecrets(selectedModel),
+  };
+}
+
+function routeBlock(request: RouteRequest, code: string, reason: string): RouteDecision {
+  return {
+    decision: "BLOCK",
+    code,
+    selected: null,
+    applied: false,
+    reason,
+    telemetry: routeTelemetry(request, null),
+  };
+}
+
+/**
+ * Advisory route. Picks the lowest configured ceiling that meets a measured bar.
+ * Does not read a vendor price list, does not change INTERNAL_GOVERNOR_LIMITS,
+ * and does not apply a model switch.
+ */
+export function selectRoute(request: RouteRequest): RouteDecision {
+  if (request.apply_switch === true && request.environment === "production") {
+    return routeBlock(request, "production_switch_forbidden", "production model switch is not applied");
+  }
+  if (
+    !Number.isInteger(request.retries_used) ||
+    !Number.isInteger(request.max_retries) ||
+    request.retries_used < 0 ||
+    request.max_retries < 0 ||
+    request.retries_used > request.max_retries
+  ) {
+    return routeBlock(request, "retry_limit", "retry count is outside the configured bound");
+  }
+  if (typeof request.budget_remaining_usd !== "number" || !Number.isFinite(request.budget_remaining_usd)) {
+    return routeBlock(request, "budget_unknown", "remaining budget is missing; failing closed");
+  }
+  if (!request.candidates.length) {
+    return {
+      decision: "INCOMPLETE",
+      code: "no_candidates",
+      selected: null,
+      applied: false,
+      reason: "there is no candidate to compare",
+      telemetry: routeTelemetry(request, null),
+    };
+  }
+
+  const complete: Array<RouteCandidate & { max_estimate_usd: number; quality: RouteQuality }> = [];
+  for (const candidate of request.candidates) {
+    const priced = candidate.price_source === "configured_snapshot"
+      && typeof candidate.max_estimate_usd === "number"
+      && Number.isFinite(candidate.max_estimate_usd)
+      && candidate.max_estimate_usd >= 0;
+    const quality = candidate.quality;
+    const measured = !!quality
+      && quality.case_id === request.case_id
+      && quality.metric === request.metric
+      && typeof quality.score === "number"
+      && Number.isFinite(quality.score);
+    if (!priced || !measured || !quality) {
+      return {
+        decision: "INCOMPLETE",
+        code: "measurement_incomplete",
+        selected: null,
+        applied: false,
+        reason: "a candidate is missing a configured ceiling or a measurement on this case",
+        telemetry: routeTelemetry(request, null),
+      };
+    }
+    complete.push({ ...candidate, max_estimate_usd: candidate.max_estimate_usd as number, quality });
+  }
+
+  const passing = complete.filter((candidate) => candidate.quality.score >= request.quality_bar);
+  if (!passing.length) {
+    return routeBlock(request, "quality_bar_unmet", "no measured candidate meets the quality bar");
+  }
+  const affordable = passing.filter((candidate) => candidate.max_estimate_usd <= (request.budget_remaining_usd as number));
+  if (!affordable.length) {
+    return routeBlock(request, "budget_exhausted", "every candidate that meets the bar exceeds the remaining budget");
+  }
+  affordable.sort((a, b) => a.max_estimate_usd - b.max_estimate_usd || a.provider.localeCompare(b.provider) || a.model.localeCompare(b.model));
+  const best = affordable[0];
+  if (!best) return routeBlock(request, "budget_exhausted", "every candidate that meets the bar exceeds the remaining budget");
+  return {
+    decision: "RECOMMEND",
+    code: request.apply_switch === true ? "switch_not_applied" : "cheapest_passing_bar",
+    selected: { provider: best.provider, model: best.model },
+    applied: false,
+    reason: "lowest configured ceiling among candidates that meet the measured bar; switch not applied",
+    telemetry: routeTelemetry(request, best.model),
+  };
+}

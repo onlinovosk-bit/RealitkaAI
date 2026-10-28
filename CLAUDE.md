@@ -84,6 +84,9 @@ At the start of every session:
    - Opakované GO bez nového vstupu → krátka odpoveď: čo som práve overil, že sa nič nezmenilo, čo treba
      poslať. Neopakuj celý postup.
    - PROD, merge a flagy iba na explicitné GO. Merge až keď je CI na aktuálnom heade zelené.
+   - Agentické stacky: `node scripts/ci/revolis-orchestrate.mjs --fixture <file.json>`.
+     Príkaz volá `probeStacks`. `VERIFIED` je jediný úspech sondy; `MISSING`, `FAILED` a `NOT_VERIFIED` blokujú PR readiness.
+     JSON stav zásobníka sa nepočíta. Príkaz nerobí merge, deploy ani post-release.
 9. **Postup session v %** (founder, 2026-10-02). Každá odpoveď foundrovi končí riadkom
    `📊 Session (<cieľ>): NN % (a/b míľnikov) · Architektúra: Y % · ďalší míľnik: …` (formát z #801) z bloku SESSION v `docs/STATUS.md`
    (`bash .claude/hooks/session-progress.sh print`). % = hotové míľniky / všetky, odškrtnuté iba s dôkazom.

@@ -40,6 +40,23 @@ pre tento diff. Zelené CI neoprávňuje merge ani deploy.
 - Migrácia → `supabase db reset`; bez CLI/Dockeru je výsledok BLOCKED, nie PASS.
 - Zmenený zdroj bez testu a súbory mimo deklarovaného `--scope` (rozširovanie rozsahu).
 
+## Stavy úlohy
+
+Okrem štyroch stavov kontroly má úloha postupnosť, ktorú nemožno preskočiť:
+`PLANNED` → `IN_PROGRESS` → `IMPLEMENTED` → `TESTED` → `REVIEWED` → `PR_READY`
+→ `HUMAN_APPROVED` → `MERGED` → `DEPLOYED` → `PRODUCTION_VERIFIED`.
+
+`PR_READY` → `HUMAN_APPROVED` je ľudská hranica. Príkaz `workflow` ani `completion --task`
+stavy za `PR_READY` neudeľuje a merge ani deploy nevykoná. Tvrdenie v JSON
+(`assertedState`, falošné `checks`, meno aktéra) sa nepočíta: statusy kontrol berie beh.
+Samotné tvrdenie agenta nedá `PR_READY`. Chýbajúci `previousState` pri stave inom než `PLANNED` je `invalid_transition`. `independentReview.artifact` sa musí dať otvoriť ako súbor v repe; samotný reťazec a `source` iný než `agent_assertion` nestačia.
+
+```bash
+node scripts/ci/revolis-verify.mjs workflow --task task.json --run
+```
+
+Exit 0 je len keď `prReady` je true a kód nie je `blocked`. Exit 2 je blocked alebo nedostatok dôkazu. Ani jedno nie je povolenie na merge.
+
 ## Hranice
 
 Skill nič nemerguje, nenasadzuje, nezapisuje do PROD a nemení tajomstvá. To vyžaduje samostatné

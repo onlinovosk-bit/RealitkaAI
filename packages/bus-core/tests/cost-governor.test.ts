@@ -10,6 +10,7 @@ import {
   contractFromBusTask,
   defaultGovernorConfig,
   parseGovernorConfig,
+  selectRoute,
   type CostLedger,
   type GovernorConfig,
   type LedgerIo,
@@ -350,6 +351,75 @@ test("a bus task without cost counters is not a spendable contract", async () =>
   const decision = await governor({ capability_allowlist: ["bus-alive"] }).authorize(input, NOW);
   assert.equal(decision.code, "invalid_contract");
   assert.equal(decision.actual_cost_usd, null);
+});
+
+function routeRequest(over: Record<string, unknown> = {}) {
+  return {
+    quality_bar: 0.8,
+    metric: "exact_match",
+    case_id: "case-alpha",
+    environment: "non_production" as const,
+    budget_remaining_usd: 0.1,
+    retries_used: 0,
+    max_retries: 0,
+    candidates: [
+      { provider: "fixture", model: "fixture-cheap", max_estimate_usd: 0.02, price_source: "configured_snapshot" as const, quality: { case_id: "case-alpha", metric: "exact_match", score: 0.5 } },
+      { provider: "fixture", model: "fixture-mid", max_estimate_usd: 0.05, price_source: "configured_snapshot" as const, quality: { case_id: "case-alpha", metric: "exact_match", score: 0.9 } },
+      { provider: "fixture", model: "fixture-dear", max_estimate_usd: 0.2, price_source: "configured_snapshot" as const, quality: { case_id: "case-alpha", metric: "exact_match", score: 0.95 } },
+    ],
+    ...over,
+  };
+}
+
+test("route recommends the cheapest measured candidate and does not apply a switch", () => {
+  const decision = selectRoute(routeRequest());
+  assert.equal(decision.decision, "RECOMMEND");
+  assert.equal(decision.code, "cheapest_passing_bar");
+  assert.equal(decision.selected?.model, "fixture-mid");
+  assert.equal(decision.applied, false);
+  assert.equal(decision.telemetry.case_id, "case-alpha");
+  assert.equal(INTERNAL_GOVERNOR_LIMITS.per_task_usd, 0.5);
+  assert.equal(INTERNAL_GOVERNOR_LIMITS.daily_usd, 5);
+  assert.equal(INTERNAL_GOVERNOR_LIMITS.monthly_usd, 25);
+  assert.equal(INTERNAL_GOVERNOR_LIMITS.max_retries, 0);
+});
+
+test("missing price, unknown budget, exhausted budget, and a production switch fail closed", () => {
+  const incomplete = selectRoute(routeRequest({
+    candidates: [
+      { provider: "fixture", model: "fixture-mid", price_source: "unavailable", quality: { case_id: "case-alpha", metric: "exact_match", score: 0.9 } },
+    ],
+  }));
+  assert.equal(incomplete.decision, "INCOMPLETE");
+  assert.equal(incomplete.code, "measurement_incomplete");
+  assert.equal(incomplete.selected, null);
+
+  const unknown = selectRoute(routeRequest({ budget_remaining_usd: null }));
+  assert.equal(unknown.decision, "BLOCK");
+  assert.equal(unknown.code, "budget_unknown");
+
+  const exhausted = selectRoute(routeRequest({ budget_remaining_usd: 0.01 }));
+  assert.equal(exhausted.decision, "BLOCK");
+  assert.equal(exhausted.code, "budget_exhausted");
+  assert.equal(exhausted.applied, false);
+
+  const prod = selectRoute(routeRequest({ environment: "production", apply_switch: true }));
+  assert.equal(prod.decision, "BLOCK");
+  assert.equal(prod.code, "production_switch_forbidden");
+  assert.equal(prod.selected, null);
+  assert.equal(prod.applied, false);
+});
+
+test("retry bound blocks and a secret-like model id is redacted in telemetry", () => {
+  const retries = selectRoute(routeRequest({ retries_used: 1, max_retries: 0 }));
+  assert.equal(retries.code, "retry_limit");
+  const secret = selectRoute(routeRequest({
+    candidates: [
+      { provider: "fixture", model: "sk-abcdefghijklmnop", max_estimate_usd: 0.05, price_source: "configured_snapshot", quality: { case_id: "case-alpha", metric: "exact_match", score: 0.9 } },
+    ],
+  }));
+  assert.equal(secret.decision, "RECOMMEND");
+  assert.equal(secret.telemetry.selected_model?.includes("sk-"), false);
 });
 
 function openConfig(): GovernorConfig {
