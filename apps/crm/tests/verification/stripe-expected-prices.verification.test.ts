@@ -12,8 +12,8 @@
  * offline (`--fixture`) against Stripe-shaped data, including the real
  * 2026-09-22 live snapshot (docs/reports/2026-09-22-stripe-verify-prices.md).
  *
- * Cenník v3 (GO 2026-10-19): licencia = 2 tiered (graduated) ceny, akcia 9/12 = kupón,
- * balíky 50–300 a kredit 0,75 €. Tiers sa porovnávajú s PRICING_V3_SEAT_TIERS a simulácia
+ * Cenník v3: licencia = 8 tiered (graduated) cien podľa pásma a obdobia,
+ * balíky 50–300 a kredit 0,75 €. Tiers sa porovnávajú s PRICING_V3_PLAN_TIERS a simulácia
  * graduated výpočtu z JSON sa porovnáva s licenseNetCents (pricing-v2.ts).
  */
 import { spawnSync } from "node:child_process";
@@ -31,8 +31,9 @@ import {
 } from "@/lib/program-tier-pricing";
 import {
   PRICING_V2_CREDIT_NET_CENTS,
+  PRICING_V2_BAND_IDS,
   PRICING_V2_MONTHLY_PACKS,
-  PRICING_V3_PROMO_UNTIL,
+  PRICING_V3_PLAN_TIERS,
   PRICING_V3_SEAT_TIERS,
   graduatedTierNetCents,
   licenseNetCents,
@@ -41,9 +42,7 @@ import {
 import {
   PRICING_V2_CREDIT_PRICE_ENV,
   PRICING_V2_PACK_PRICE_ENV,
-  PRICING_V3_ANNUAL_PROMO_COUPON_ENV,
-  PRICING_V3_SEAT_MONTHLY_PRICE_ENV,
-  PRICING_V3_SEAT_YEARLY_PRICE_ENV,
+  PRICING_V3_PLAN_PRICE_ENV,
 } from "@/lib/pricing-v2-contract";
 
 const OPS = resolve(__dirname, "../../../../scripts/ops");
@@ -116,25 +115,27 @@ function rowsFromCode(): Row[] {
     type: "one_time",
     gate: "starter_pack",
   });
-  // Cennik v3: sumy BEZ DPH v centoch. Licencia = 2 tiered graduated ceny (quantity = pocet maklerov),
+  // Cennik v3: sumy BEZ DPH v centoch. Licencia = tiered graduated ceny po pasme a obdobi (quantity = pocet maklerov),
   // baliky mesacne, kredit jednorazovo (qty = pocet kreditov).
-  rows.push({
-    env: PRICING_V3_SEAT_YEARLY_PRICE_ENV,
-    type: "recurring",
-    interval: "year",
-    gate: "pricing_v2",
-    billing_scheme: "tiered",
-    tiers_mode: "graduated",
-    tiers: tiersForManifest(PRICING_V3_SEAT_TIERS.year),
-  });
-  rows.push({
-    env: PRICING_V3_SEAT_MONTHLY_PRICE_ENV,
-    type: "recurring",
-    gate: "pricing_v2",
-    billing_scheme: "tiered",
-    tiers_mode: "graduated",
-    tiers: tiersForManifest(PRICING_V3_SEAT_TIERS.month),
-  });
+  for (const band of PRICING_V2_BAND_IDS) {
+    rows.push({
+      env: PRICING_V3_PLAN_PRICE_ENV[band].year,
+      type: "recurring",
+      interval: "year",
+      gate: "pricing_v2",
+      billing_scheme: "tiered",
+      tiers_mode: "graduated",
+      tiers: tiersForManifest(PRICING_V3_PLAN_TIERS[band].year),
+    });
+    rows.push({
+      env: PRICING_V3_PLAN_PRICE_ENV[band].month,
+      type: "recurring",
+      gate: "pricing_v2",
+      billing_scheme: "tiered",
+      tiers_mode: "graduated",
+      tiers: tiersForManifest(PRICING_V3_PLAN_TIERS[band].month),
+    });
+  }
   for (const p of PRICING_V2_MONTHLY_PACKS) {
     rows.push({ env: PRICING_V2_PACK_PRICE_ENV[p.credits], amount: p.netCents, type: "recurring", gate: "pricing_v2" });
   }
@@ -169,9 +170,9 @@ describe("stripe-expected-prices.json ↔ program-tier-pricing.ts", () => {
     expect(rowsFromManifest().sort(byEnv)).toEqual(rowsFromCode().sort(byEnv));
   });
 
-  it("pricing v3 rows: 2 tiered licence prices + 6 packs + 1 credit, env NAMES from the frozen contract, no v2 leftovers", () => {
+  it("pricing v3 rows: 8 tiered licence prices + 6 packs + 1 credit, env NAMES from the frozen contract, no v2 leftovers", () => {
     const v3 = rowsFromManifest().filter((r) => r.gate === "pricing_v2");
-    expect(v3).toHaveLength(2 + PRICING_V2_MONTHLY_PACKS.length + 1);
+    expect(v3).toHaveLength(8 + PRICING_V2_MONTHLY_PACKS.length + 1);
     expect(v3.sort(byEnv)).toEqual(rowsFromCode().filter((r) => r.gate === "pricing_v2").sort(byEnv));
     // Manifest nesmie niest hodnoty tajomstiev: len NAZVY env a nazvy produktov.
     for (const r of v3) expect(r.env).toMatch(/^STRIPE_PRICE_V3_[A-Z0-9_]+$/);
@@ -185,43 +186,29 @@ describe("stripe-expected-prices.json ↔ program-tier-pricing.ts", () => {
   });
 });
 
-describe("cenník v3: tiers, kupón, balíky, kredit v manifeste", () => {
-  const licence = (interval: "year" | "month") =>
-    manifestFile().prices.find((r) => r.env === (interval === "year" ? PRICING_V3_SEAT_YEARLY_PRICE_ENV : PRICING_V3_SEAT_MONTHLY_PRICE_ENV))!;
+describe("cenník v3: tiers, balíky, kredit v manifeste", () => {
+  const licence = (band: (typeof PRICING_V2_BAND_IDS)[number], interval: "year" | "month") =>
+    manifestFile().prices.find((r) => r.env === PRICING_V3_PLAN_PRICE_ENV[band][interval])!;
 
-  it("licencia: jeden produkt, tiered graduated, recurring year/month, tiers presne podľa špecifikácie", () => {
-    const year = licence("year");
-    const month = licence("month");
-    for (const r of [year, month]) {
-      expect(r.product).toBe(LICENCE_PRODUCT);
-      expect(r.billing_scheme).toBe("tiered");
-      expect(r.tiers_mode).toBe("graduated");
-      expect(r.type).toBe("recurring");
-      expect(r.amount).toBeUndefined();
+  it("licencia: jeden produkt, 8 tiered graduated cien, recurring year/month, tiers presne podľa špecifikácie", () => {
+    for (const band of PRICING_V2_BAND_IDS) {
+      const year = licence(band, "year");
+      const month = licence(band, "month");
+      for (const r of [year, month]) {
+        expect(r.product).toBe(LICENCE_PRODUCT);
+        expect(r.billing_scheme).toBe("tiered");
+        expect(r.tiers_mode).toBe("graduated");
+        expect(r.type).toBe("recurring");
+        expect(r.amount).toBeUndefined();
+      }
+      expect(year.interval).toBe("year");
+      expect(month.interval).toBeUndefined();
+      expect(year.tiers).toEqual(tiersForManifest(PRICING_V3_PLAN_TIERS[band].year));
+      expect(month.tiers).toEqual(tiersForManifest(PRICING_V3_PLAN_TIERS[band].month));
     }
-    expect(year.interval).toBe("year");
-    expect(month.interval).toBeUndefined(); // predvolené = month
-    // Spec §2 doslova (nie z kódu): flat_amount sa pripočíta raz, keď množstvo zasiahne tier.
-    expect(year.tiers).toEqual([
-      { up_to: 1, flat_amount: 30000, unit_amount: 0 },
-      { up_to: 2, flat_amount: 30000, unit_amount: 0 },
-      { up_to: 5, flat_amount: 18000, unit_amount: 0 },
-      { up_to: 10, flat_amount: 0, unit_amount: 10800 },
-      { up_to: 20, flat_amount: 0, unit_amount: 7200 },
-      { up_to: 30, flat_amount: 3, unit_amount: 5333 },
-      { up_to: 50, flat_amount: 0, unit_amount: 4800 },
-      { up_to: "inf", flat_amount: 0, unit_amount: 3600 },
-    ]);
-    expect(month.tiers).toEqual([
-      { up_to: 1, flat_amount: 3000, unit_amount: 0 },
-      { up_to: 2, flat_amount: 3000, unit_amount: 0 },
-      { up_to: 5, flat_amount: 1800, unit_amount: 0 },
-      { up_to: 10, flat_amount: 0, unit_amount: 1080 },
-      { up_to: 20, flat_amount: 0, unit_amount: 720 },
-      { up_to: 30, flat_amount: 0, unit_amount: 460 },
-      { up_to: 50, flat_amount: 0, unit_amount: 480 },
-      { up_to: "inf", flat_amount: 0, unit_amount: 360 },
-    ]);
+    for (const r of manifestFile().prices.filter((row) => row.gate === "pricing_v2" && row.billing_scheme === "tiered")) {
+      expect(r.product).toBe(LICENCE_PRODUCT);
+    }
   });
 
   /** Nezávislá simulácia Stripe graduated pricing priamo z JSON tiers (up_to "inf"). */
@@ -238,45 +225,34 @@ describe("cenník v3: tiers, kupón, balíky, kredit v manifeste", () => {
     return total;
   }
 
-  it("graduated výpočet z tiers v JSON = licenseNetCents(n, interval) pre n = 1…200, ročne aj mesačne", () => {
-    const tiers = { year: licence("year").tiers!, month: licence("month").tiers! };
-    for (const interval of ["year", "month"] as const) {
-      for (let n = 1; n <= 200; n++) {
-        expect(simulateGraduated(tiers[interval], n), `${interval} n=${n}`).toBe(licenseNetCents(n, interval));
-        // nadácia (graduatedTierNetCents nad PRICING_V3_SEAT_TIERS) sa nesmie rozísť s JSON
-        expect(graduatedTierNetCents(PRICING_V3_SEAT_TIERS[interval], n), `${interval} n=${n} (kód)`).toBe(licenseNetCents(n, interval));
+  it("graduated výpočet z plan tiers v JSON = licenseNetCents(n, interval) v pásmových hraniciach", () => {
+    const ranges = { start: [1], team: [2, 5], office: [6, 10], network: [11, 20, 21, 30, 31] } as const;
+    for (const band of PRICING_V2_BAND_IDS) {
+      for (const interval of ["year", "month"] as const) {
+        for (const n of ranges[band]) {
+          expect(simulateGraduated(licence(band, interval).tiers!, n), `${band} ${interval} n=${n}`).toBe(licenseNetCents(n, interval));
+          expect(graduatedTierNetCents(PRICING_V3_PLAN_TIERS[band][interval], n), `${band} ${interval} n=${n} (kód)`).toBe(licenseNetCents(n, interval));
+        }
       }
     }
-  });
-
-  it("kontrolné body 1–20 (základ × 12 ročne, × 1,2 mesačne) a A+ od 21.", () => {
-    const base: Record<number, number> = { 1: 2500, 2: 5000, 3: 6500, 5: 6500, 6: 7400, 7: 8300, 10: 11000, 11: 11600, 20: 17000 };
-    for (const [n, b] of Object.entries(base)) {
-      expect(simulateGraduated(licence("year").tiers!, Number(n)), `year n=${n}`).toBe(b * 12);
-      expect(simulateGraduated(licence("month").tiers!, Number(n)), `month n=${n}`).toBe((b * 12) / 10);
+    for (let n = 1; n <= 200; n++) {
+      expect(graduatedTierNetCents(PRICING_V3_SEAT_TIERS.year, n)).toBe(licenseNetCents(n, "year"));
+      expect(graduatedTierNetCents(PRICING_V3_SEAT_TIERS.month, n)).toBe(licenseNetCents(n, "month"));
     }
-    expect(simulateGraduated(licence("month").tiers!, 30)).toBe(25000);
-    expect(simulateGraduated(licence("month").tiers!, 50)).toBe(34600);
-    expect(simulateGraduated(licence("month").tiers!, 100)).toBe(52600);
-    expect(simulateGraduated(licence("year").tiers!, 30)).toBe(257333);
-    expect(simulateGraduated(licence("year").tiers!, 100)).toBe(533333);
-    const year30 = simulateGraduated(licence("year").tiers!, 30);
-    expect(year30 - Math.round((year30 * 25) / 100)).toBe(193000);
   });
 
-  it("kupón akcie 9/12: 25 %, jedenkrát, do 31. 12. 2026 22:59:59Z, len na produkt licencie, env názov z kontraktu", () => {
-    const { coupons } = manifestFile();
-    expect(coupons).toHaveLength(1);
-    const c = coupons[0];
-    expect(c.env).toBe(PRICING_V3_ANNUAL_PROMO_COUPON_ENV);
-    expect(c.percent_off).toBe(25);
-    expect(c.duration).toBe("once");
-    expect(c.redeem_by_iso).toBe(PRICING_V3_PROMO_UNTIL);
-    expect(c.redeem_by).toBe(1798757999);
-    expect(c.redeem_by).toBe(Date.parse(PRICING_V3_PROMO_UNTIL) / 1000);
-    expect(c.applies_to_product).toBe(LICENCE_PRODUCT);
-    expect(c.applies_to_product).not.toBe(PACK_PRODUCT);
-    expect(c.name).not.toMatch(/pilot/i);
+  it("kontrolné body zadania: 1, 5, 6, 10, 11, 20, 21, 30, 31", () => {
+    const base: Record<number, number> = { 1: 2500, 5: 6500, 6: 7400, 10: 11000, 11: 11600, 20: 17000, 21: 17500, 30: 22000, 31: 22500 };
+    for (const [raw, b] of Object.entries(base)) {
+      const n = Number(raw);
+      const band = n === 1 ? "start" : n <= 5 ? "team" : n <= 10 ? "office" : "network";
+      expect(simulateGraduated(licence(band, "year").tiers!, n), `year n=${n}`).toBe(b * 12);
+      expect(simulateGraduated(licence(band, "month").tiers!, n), `month n=${n}`).toBe(Math.round(b * 1.2));
+    }
+  });
+
+  it("manifest zatiaľ neobsahuje zľavový kód", () => {
+    expect(manifestFile().coupons).toEqual([]);
   });
 
   it("balíky 50–300 mesačne na samostatnom produkte a kredit 0,75 € jednorazovo; staré 60/120/180/240 a 0,70 € nikde", () => {
@@ -422,24 +398,6 @@ function allExpected(): StripePrice[] {
   );
 }
 
-/** Kupón presne podľa manifestu; `over` prepíše jedno pole. */
-function coupon(over: StripeObj = {}): StripeObj {
-  const c = manifestFile().coupons[0];
-  return {
-    id: "Fixture25Promo",
-    object: "coupon",
-    name: c.name,
-    percent_off: c.percent_off,
-    amount_off: null,
-    duration: c.duration,
-    redeem_by: c.redeem_by,
-    applies_to: { products: [productId(c.applies_to_product)] },
-    livemode: true,
-    valid: true,
-    ...over,
-  };
-}
-
 /** Parent env minus any real Stripe key, so a test run can never reach live. */
 function scriptEnv(extra: Record<string, string> = {}): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = { ...process.env, ...extra };
@@ -447,7 +405,7 @@ function scriptEnv(extra: Record<string, string> = {}): NodeJS.ProcessEnv {
   return env;
 }
 
-function run(prices: StripePrice[], coupons: StripeObj[] = [coupon()]) {
+function run(prices: StripePrice[], coupons: StripeObj[] = []) {
   const dir = mkdtempSync(join(tmpdir(), "stripe-verify-"));
   const file = join(dir, "prices.json");
   // Two pages, so the fixture shape matches a paginated live list.
@@ -476,15 +434,14 @@ const isLicence = (p: StripePrice, interval: string) =>
   p.billing_scheme === "tiered" && (p.recurring as { interval: string }).interval === interval;
 /** Všetko okrem jednej licenčnej ceny (interval), aby sa dala nahradiť pokazenou. */
 const without = (prices: StripePrice[], pred: (p: StripePrice) => boolean) => prices.filter((p) => !pred(p));
-const licenceTiers = (interval: "year" | "month") =>
-  manifestFile().prices.find((r) => r.env === (interval === "year" ? PRICING_V3_SEAT_YEARLY_PRICE_ENV : PRICING_V3_SEAT_MONTHLY_PRICE_ENV))!.tiers!;
+const licenceTiers = (band: (typeof PRICING_V2_BAND_IDS)[number], interval: "year" | "month") =>
+  manifestFile().prices.find((r) => r.env === PRICING_V3_PLAN_PRICE_ENV[band][interval])!.tiers!;
 
 describe("stripe_verify_prices.py (offline, --fixture)", () => {
-  it("resolves every price and the coupon and prints a complete env patch", () => {
+  it("resolves every price and prints a complete env patch", () => {
     const { code, out } = run(allExpected());
     expect(out).toContain(`${TOTAL()}/${TOTAL()} resolved`);
     for (const r of rowsFromManifest()) expect(out).toMatch(new RegExp(`^${r.env}=price_`, "m"));
-    expect(out).toMatch(new RegExp(`^${PRICING_V3_ANNUAL_PROMO_COUPON_ENV}=Fixture25Promo$`, "m"));
     expect(code).toBe(0);
   });
 
@@ -568,8 +525,8 @@ describe("stripe_verify_prices.py (offline, --fixture)", () => {
   it("licence tiered prices: yearly and monthly resolve to two distinct prices of one product", () => {
     const { code, out } = run(allExpected());
     expect(code).toBe(0);
-    const yearly = out.match(new RegExp(`^${PRICING_V3_SEAT_YEARLY_PRICE_ENV}=(price_\\w+)$`, "m"))?.[1];
-    const monthly = out.match(new RegExp(`^${PRICING_V3_SEAT_MONTHLY_PRICE_ENV}=(price_\\w+)$`, "m"))?.[1];
+    const yearly = out.match(new RegExp(`^${PRICING_V3_PLAN_PRICE_ENV.team.year}=(price_\\w+)$`, "m"))?.[1];
+    const monthly = out.match(new RegExp(`^${PRICING_V3_PLAN_PRICE_ENV.team.month}=(price_\\w+)$`, "m"))?.[1];
     expect(yearly).toBeTruthy();
     expect(monthly).toBeTruthy();
     expect(yearly).not.toBe(monthly);
@@ -579,10 +536,10 @@ describe("stripe_verify_prices.py (offline, --fixture)", () => {
 
   it("a yearly-tiered licence billed monthly is MISSING for the yearly env and never reaches the env patch", () => {
     const prices = without(allExpected(), (p) => isLicence(p, "year"));
-    prices.push(price(null, { product: LICENCE_PRODUCT, interval: "month", tiers: licenceTiers("year") }));
+    prices.push(price(null, { product: LICENCE_PRODUCT, interval: "month", tiers: licenceTiers("team", "year") }));
     const { code, out } = run(prices);
-    expect(out).toMatch(/MISSING {2}STRIPE_PRICE_V3_SEAT_YEARLY[\s\S]*interval=1xmonth, treba 1x year/);
-    expect(out).not.toMatch(/^STRIPE_PRICE_V3_SEAT_YEARLY=/m);
+    expect(out).toMatch(/MISSING {2}STRIPE_PRICE_V3_TEAM_YEARLY[\s\S]*interval=1xmonth, treba 1x year/);
+    expect(out).not.toMatch(/^STRIPE_PRICE_V3_TEAM_YEARLY=/m);
     expect(code).toBe(1);
   });
 
@@ -601,40 +558,40 @@ describe("stripe_verify_prices.py (offline, --fixture)", () => {
       (p.product as { name: string }).name === LICENCE_PRODUCT ? { ...p, product: { id: "prod_x", name: "Iny produkt", active: true } } : p,
     );
     const { code, out } = run(renamed);
-    expect(out).toMatch(/MISSING {2}STRIPE_PRICE_V3_SEAT_(YEARLY|MONTHLY)/);
+    expect(out).toMatch(/MISSING {2}STRIPE_PRICE_V3_(START|TEAM|KANCELARIA|SIET)_(YEARLY|MONTHLY)/);
     expect(code).toBe(1);
   });
 
   it("duplicate licence price (same tiers) is AMBIG", () => {
-    const prices = [...allExpected(), price(null, { product: LICENCE_PRODUCT, interval: "year", tiers: licenceTiers("year") })];
+    const prices = [...allExpected(), price(null, { product: LICENCE_PRODUCT, interval: "year", tiers: licenceTiers("team", "year") })];
     const { code, out } = run(prices);
-    expect(out).toMatch(/AMBIG {4}STRIPE_PRICE_V3_SEAT_YEARLY/);
-    expect(out).not.toMatch(/^STRIPE_PRICE_V3_SEAT_YEARLY=/m);
+    expect(out).toMatch(/AMBIG {4}STRIPE_PRICE_V3_TEAM_YEARLY/);
+    expect(out).not.toMatch(/^STRIPE_PRICE_V3_TEAM_YEARLY=/m);
     expect(code).toBe(1);
   });
 
   it("every tier is verified: a drifted flat_amount / unit_amount / up_to is MISSING and names the tier", () => {
-    const base = licenceTiers("year");
+    const base = licenceTiers("network", "year");
     const drifts: Array<[string, ManifestTier[], RegExp]> = [
-      ["flat_amount tier 2", base.map((t, i) => (i === 1 ? { ...t, flat_amount: 47000 } : t)), /tier 2:/],
-      ["unit_amount tier 3", base.map((t, i) => (i === 2 ? { ...t, unit_amount: 10000 } : t)), /tier 3:/],
-      ["up_to tier 4", base.map((t, i) => (i === 3 ? { ...t, up_to: 25 } : t)), /tier 4:/],
-      ["unit_amount last tier", base.map((t, i) => (i === 4 ? { ...t, unit_amount: 5000 } : t)), /tier 5:/],
-      ["missing last tier", base.slice(0, 4), /pocet tiers=4|tier 4:/],
+      ["flat_amount tier 1", base.map((t, i) => (i === 0 ? { ...t, flat_amount: 47000 } : t)), /tier 1:/],
+      ["unit_amount tier 2", base.map((t, i) => (i === 1 ? { ...t, unit_amount: 10000 } : t)), /tier 2:/],
+      ["up_to tier 2", base.map((t, i) => (i === 1 ? { ...t, up_to: 25 } : t)), /tier 2:/],
+      ["unit_amount last tier", base.map((t, i) => (i === 2 ? { ...t, unit_amount: 5000 } : t)), /tier 3:/],
+      ["missing last tier", base.slice(0, 2), /pocet tiers=2|tier 2:/],
     ];
     for (const [label, tiers, reason] of drifts) {
       const prices = without(allExpected(), (p) => isLicence(p, "year"));
       prices.push(price(null, { product: LICENCE_PRODUCT, interval: "year", tiers }));
       const { code, out } = run(prices);
-      expect(out, label).toMatch(/MISSING {2}STRIPE_PRICE_V3_SEAT_YEARLY/);
+      expect(out, label).toMatch(/MISSING {2}STRIPE_PRICE_V3_SIET_YEARLY/);
       expect(out, label).toMatch(reason);
-      expect(out, label).not.toMatch(/^STRIPE_PRICE_V3_SEAT_YEARLY=/m);
+      expect(out, label).not.toMatch(/^STRIPE_PRICE_V3_SIET_YEARLY=/m);
       expect(code, label).toBe(1);
     }
   });
 
   it("tiers_mode volume, missing expanded tiers, wrong currency or test mode on the licence are MISSING", () => {
-    const monthly = licenceTiers("month");
+    const monthly = licenceTiers("team", "month");
     const variants: Array<[string, StripePrice, RegExp]> = [
       ["volume", price(null, { product: LICENCE_PRODUCT, tiers: monthly, tiersMode: "volume" }), /tiers_mode=volume, treba graduated/],
       ["no expand", price(null, { product: LICENCE_PRODUCT, tiers: monthly, omitTiers: true }), /tiers chyba v odpovedi/],
@@ -646,7 +603,7 @@ describe("stripe_verify_prices.py (offline, --fixture)", () => {
       const prices = without(allExpected(), (p) => isLicence(p, "month"));
       prices.push(bad);
       const { code, out } = run(prices);
-      expect(out, label).toMatch(/MISSING {2}STRIPE_PRICE_V3_SEAT_MONTHLY/);
+      expect(out, label).toMatch(/MISSING {2}STRIPE_PRICE_V3_TEAM_MONTHLY/);
       expect(out, label).toMatch(reason);
       expect(code, label).toBe(1);
     }
@@ -656,44 +613,8 @@ describe("stripe_verify_prices.py (offline, --fixture)", () => {
     const prices = without(allExpected(), (p) => isLicence(p, "year"));
     prices.push(price(30000, { product: LICENCE_PRODUCT, interval: "year" }));
     const { code, out } = run(prices);
-    expect(out).toMatch(/MISSING {2}STRIPE_PRICE_V3_SEAT_YEARLY/);
-    expect(out).not.toMatch(/^STRIPE_PRICE_V3_SEAT_YEARLY=/m);
-    expect(code).toBe(1);
-  });
-
-  it("coupon: missing, wrong percent_off, duration, redeem_by, applies_to or test mode is MISSING and never reaches the env patch", () => {
-    const missing = run(allExpected(), []);
-    expect(missing.out).toMatch(/MISSING {2}STRIPE_COUPON_V3_ANNUAL_PROMO/);
-    expect(missing.code).toBe(1);
-    const variants: Array<[string, StripeObj, RegExp]> = [
-      ["percent_off", { percent_off: 20 }, /percent_off=20/],
-      ["amount_off", { percent_off: null, amount_off: 1000 }, /amount_off=1000/],
-      ["duration forever", { duration: "forever" }, /duration=forever, treba once/],
-      ["duration repeating", { duration: "repeating" }, /duration=repeating/],
-      ["redeem_by", { redeem_by: 1798761599 }, /redeem_by=1798761599, treba 1798757999/],
-      ["no redeem_by", { redeem_by: null }, /redeem_by=None|redeem_by=null/],
-      ["applies_to other product", { applies_to: { products: ["prod_other"] } }, /applies_to\.products=/],
-      ["applies_to missing", { applies_to: null }, /applies_to\.products=\[\]/],
-      ["test mode", { livemode: false }, /livemode=false/],
-    ];
-    for (const [label, over, reason] of variants) {
-      const { code, out } = run(allExpected(), [coupon(over)]);
-      expect(out, label).toMatch(/MISSING {2}STRIPE_COUPON_V3_ANNUAL_PROMO/);
-      expect(out, label).toMatch(reason);
-      expect(out, label).not.toMatch(/^STRIPE_COUPON_V3_ANNUAL_PROMO=/m);
-      expect(code, label).toBe(1);
-    }
-  });
-
-  it("coupon applies_to must be the licence product, not the credit-pack product", () => {
-    const { out, code } = run(allExpected(), [coupon({ applies_to: { products: [productId(PACK_PRODUCT)] } })]);
-    expect(out).toMatch(/MISSING {2}STRIPE_COUPON_V3_ANNUAL_PROMO/);
-    expect(code).toBe(1);
-  });
-
-  it("two identical coupons are AMBIG", () => {
-    const { out, code } = run(allExpected(), [coupon(), coupon({ id: "Fixture25PromoDup" })]);
-    expect(out).toMatch(/AMBIG {4}STRIPE_COUPON_V3_ANNUAL_PROMO/);
+    expect(out).toMatch(/MISSING {2}STRIPE_PRICE_V3_START_YEARLY/);
+    expect(out).not.toMatch(/^STRIPE_PRICE_V3_START_YEARLY=/m);
     expect(code).toBe(1);
   });
 
@@ -713,13 +634,12 @@ describe("stripe_verify_prices.py (offline, --fixture)", () => {
     expect(code).toBe(1);
   });
 
-  it("--spec is offline, lists tiers and the coupon, and needs no key", () => {
+  it("--spec is offline, lists plan tiers and needs no key", () => {
     const res = spawnSync("python3", [SCRIPT, "--spec"], { encoding: "utf8", env: scriptEnv() });
     expect(res.status, res.stderr).toBe(0);
-    expect(res.stdout).toContain("tier up_to=inf  flat_amount=     0  unit_amount=  3600");
-    expect(res.stdout).toContain("tier up_to= 30  flat_amount=     3  unit_amount=  5333");
+    expect(res.stdout).toContain("STRIPE_PRICE_V3_SIET_YEARLY");
+    expect(res.stdout).toContain("tier up_to=inf  flat_amount=     0  unit_amount=  6000");
     expect(res.stdout).toContain("tier up_to=  1  flat_amount=  3000  unit_amount=     0");
-    expect(res.stdout).toContain("kupon -25 % duration=once redeem_by=2026-12-31T22:59:59Z (1798757999)");
   });
 });
 

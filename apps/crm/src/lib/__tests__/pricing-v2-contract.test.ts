@@ -4,6 +4,7 @@ import {
   PRICING_V2_CREDIT_PRICE_ENV,
   PRICING_V2_PACK_PRICE_ENV,
   PRICING_V3_ANNUAL_PROMO_COUPON_ENV,
+  PRICING_V3_PLAN_PRICE_ENV,
   PRICING_V3_SEAT_MONTHLY_PRICE_ENV,
   PRICING_V3_SEAT_PRICE_ENV,
   PRICING_V3_SEAT_YEARLY_PRICE_ENV,
@@ -15,6 +16,7 @@ import {
   readPricingV2CreditsMetadata,
   readPricingV2PlanMetadata,
   resolveAnnualPromoCouponId,
+  resolvePricingV3PlanPriceId,
 } from "@/lib/pricing-v2-contract";
 import { PRICING_V2_MONTHLY_PACKS } from "@/lib/pricing-v2";
 
@@ -127,6 +129,12 @@ describe("pricing-v2-contract: Stripe price kľúče a mapovanie", () => {
     expect(PRICING_V3_SEAT_YEARLY_PRICE_ENV).toBe("STRIPE_PRICE_V3_SEAT_YEARLY");
     expect(PRICING_V3_ANNUAL_PROMO_COUPON_ENV).toBe("STRIPE_COUPON_V3_ANNUAL_PROMO");
     expect(PRICING_V3_SEAT_PRICE_ENV).toEqual({ month: "STRIPE_PRICE_V3_SEAT_MONTHLY", year: "STRIPE_PRICE_V3_SEAT_YEARLY" });
+    expect(PRICING_V3_PLAN_PRICE_ENV).toEqual({
+      start: { month: "STRIPE_PRICE_V3_START_MONTHLY", year: "STRIPE_PRICE_V3_START_YEARLY" },
+      team: { month: "STRIPE_PRICE_V3_TEAM_MONTHLY", year: "STRIPE_PRICE_V3_TEAM_YEARLY" },
+      office: { month: "STRIPE_PRICE_V3_KANCELARIA_MONTHLY", year: "STRIPE_PRICE_V3_KANCELARIA_YEARLY" },
+      network: { month: "STRIPE_PRICE_V3_SIET_MONTHLY", year: "STRIPE_PRICE_V3_SIET_YEARLY" },
+    });
     expect(PRICING_V2_PACK_PRICE_ENV).toEqual({
       50: "STRIPE_PRICE_V3_PACK_50",
       100: "STRIPE_PRICE_V3_PACK_100",
@@ -137,14 +145,13 @@ describe("pricing-v2-contract: Stripe price kľúče a mapovanie", () => {
     });
     expect(PRICING_V2_CREDIT_PRICE_ENV).toBe("STRIPE_PRICE_V3_CREDIT");
     const names = [
-      PRICING_V3_SEAT_MONTHLY_PRICE_ENV,
-      PRICING_V3_SEAT_YEARLY_PRICE_ENV,
+      ...Object.values(PRICING_V3_PLAN_PRICE_ENV).flatMap((v) => [v.month, v.year]),
       PRICING_V3_ANNUAL_PROMO_COUPON_ENV,
       ...PRICING_V2_MONTHLY_PACKS.map((p) => PRICING_V2_PACK_PRICE_ENV[p.credits]),
       PRICING_V2_CREDIT_PRICE_ENV,
     ];
     expect(new Set(names).size).toBe(names.length);
-    expect(names).toHaveLength(2 + 1 + 6 + 1);
+    expect(names).toHaveLength(8 + 1 + 6 + 1);
     expect(names.some((n) => n.startsWith("STRIPE_PRICE_V2_"))).toBe(false);
   });
 
@@ -152,7 +159,10 @@ describe("pricing-v2-contract: Stripe price kľúče a mapovanie", () => {
     const full = { PRICING_V2_PLANS_ONLY: "false" };
     const all = missingPricingV2PriceEnvKeys(full);
     expect(all).toEqual([
-      "STRIPE_PRICE_V3_SEAT_MONTHLY",
+      "STRIPE_PRICE_V3_START_MONTHLY",
+      "STRIPE_PRICE_V3_TEAM_MONTHLY",
+      "STRIPE_PRICE_V3_KANCELARIA_MONTHLY",
+      "STRIPE_PRICE_V3_SIET_MONTHLY",
       "STRIPE_PRICE_V3_PACK_50",
       "STRIPE_PRICE_V3_PACK_100",
       "STRIPE_PRICE_V3_PACK_150",
@@ -164,13 +174,24 @@ describe("pricing-v2-contract: Stripe price kľúče a mapovanie", () => {
     const env: Record<string, string> = { ...full };
     for (const n of all) env[n] = FAKE_PRICE;
     expect(missingPricingV2PriceEnvKeys(env)).toEqual([]);
-    expect(missingPricingV2PriceEnvKeys({ ...env, STRIPE_PRICE_V3_SEAT_MONTHLY: "price_xxx" })).toEqual(["STRIPE_PRICE_V3_SEAT_MONTHLY"]);
+    expect(missingPricingV2PriceEnvKeys({ ...env, STRIPE_PRICE_V3_TEAM_MONTHLY: "price_xxx" })).toEqual(["STRIPE_PRICE_V3_TEAM_MONTHLY"]);
     expect(missingPricingV2PriceEnvKeys({ ...env, STRIPE_PRICE_V3_PACK_50: "" })).toEqual(["STRIPE_PRICE_V3_PACK_50"]);
   });
 
   it("režim „len plány“ (predvolený): vyžaduje sa iba mesačná cena licencie, balíky a kredit nie", () => {
-    expect(missingPricingV2PriceEnvKeys({})).toEqual(["STRIPE_PRICE_V3_SEAT_MONTHLY"]);
+    expect(missingPricingV2PriceEnvKeys({})).toEqual([
+      "STRIPE_PRICE_V3_START_MONTHLY",
+      "STRIPE_PRICE_V3_TEAM_MONTHLY",
+      "STRIPE_PRICE_V3_KANCELARIA_MONTHLY",
+      "STRIPE_PRICE_V3_SIET_MONTHLY",
+    ]);
     expect(missingPricingV2PriceEnvKeys({ STRIPE_PRICE_V3_SEAT_MONTHLY: FAKE_PRICE })).toEqual([]);
+    expect(missingPricingV2PriceEnvKeys({
+      STRIPE_PRICE_V3_START_MONTHLY: FAKE_PRICE,
+      STRIPE_PRICE_V3_TEAM_MONTHLY: FAKE_PRICE,
+      STRIPE_PRICE_V3_KANCELARIA_MONTHLY: FAKE_PRICE,
+      STRIPE_PRICE_V3_SIET_MONTHLY: FAKE_PRICE,
+    })).toEqual([]);
   });
 
   it("pásmo → account_tier zhodné s legacy seat tiermi", () => {
@@ -212,11 +233,41 @@ describe("pricing-v2-contract: ročné platenie", () => {
     expect(readPricingV2PlanMetadata({ ...meta, interval: "year", packCredits: "50" })).toBeNull();
   });
 
-  it("ročná cena licencie: 1 env kľúč, hlási sa samostatne od mesačnej", () => {
-    expect(missingPricingV2YearlyPriceEnvKeys({})).toEqual(["STRIPE_PRICE_V3_SEAT_YEARLY"]);
+  it("ročná cena licencie: env kľúče po pásmach, hlásia sa samostatne od mesačných", () => {
+    expect(missingPricingV2YearlyPriceEnvKeys({})).toEqual([
+      "STRIPE_PRICE_V3_START_YEARLY",
+      "STRIPE_PRICE_V3_TEAM_YEARLY",
+      "STRIPE_PRICE_V3_KANCELARIA_YEARLY",
+      "STRIPE_PRICE_V3_SIET_YEARLY",
+    ]);
     expect(missingPricingV2YearlyPriceEnvKeys({ STRIPE_PRICE_V3_SEAT_YEARLY: FAKE_PRICE })).toEqual([]);
+    expect(missingPricingV2YearlyPriceEnvKeys({
+      STRIPE_PRICE_V3_START_YEARLY: FAKE_PRICE,
+      STRIPE_PRICE_V3_TEAM_YEARLY: FAKE_PRICE,
+      STRIPE_PRICE_V3_KANCELARIA_YEARLY: FAKE_PRICE,
+      STRIPE_PRICE_V3_SIET_YEARLY: FAKE_PRICE,
+    })).toEqual([]);
     // mesačný predaj nie je dotknutý chýbajúcou ročnou cenou
-    expect(missingPricingV2PriceEnvKeys({})).not.toContain("STRIPE_PRICE_V3_SEAT_YEARLY");
+    expect(missingPricingV2PriceEnvKeys({})).not.toContain("STRIPE_PRICE_V3_TEAM_YEARLY");
+  });
+
+  it("nová env má prednosť, stará intervalová cena je iba fallback", () => {
+    expect(resolvePricingV3PlanPriceId("team", "month", { STRIPE_PRICE_V3_SEAT_MONTHLY: FAKE_PRICE })).toEqual({
+      ok: true,
+      envName: "STRIPE_PRICE_V3_SEAT_MONTHLY",
+      priceId: FAKE_PRICE,
+      fallback: true,
+    });
+    expect(resolvePricingV3PlanPriceId("team", "month", { STRIPE_PRICE_V3_TEAM_MONTHLY: "price_xxx", STRIPE_PRICE_V3_SEAT_MONTHLY: FAKE_PRICE })).toEqual({
+      ok: false,
+      envName: "STRIPE_PRICE_V3_TEAM_MONTHLY",
+    });
+    expect(resolvePricingV3PlanPriceId("team", "month", { STRIPE_PRICE_V3_TEAM_MONTHLY: "price_1TeamMonthly123" })).toEqual({
+      ok: true,
+      envName: "STRIPE_PRICE_V3_TEAM_MONTHLY",
+      priceId: "price_1TeamMonthly123",
+      fallback: false,
+    });
   });
 });
 
@@ -273,12 +324,9 @@ describe("pricing-v2-contract: kupón akcie 9/12", () => {
   const env = { STRIPE_COUPON_V3_ANNUAL_PROMO: "FAKE_COUPON_ID" };
   const before = new Date("2026-11-15T10:00:00Z");
 
-  it("ročná platba pred termínom dostane kupón", () => {
-    expect(resolveAnnualPromoCouponId("year", before, env)).toBe("FAKE_COUPON_ID");
-    expect(resolveAnnualPromoCouponId("year", new Date("2026-12-31T22:59:59Z"), env)).toBe("FAKE_COUPON_ID");
-  });
-
-  it("po termíne ani pri mesačnej platbe kupón nie je", () => {
+  it("kupón sa v tomto variante checkoutu nepoužíva", () => {
+    expect(resolveAnnualPromoCouponId("year", before, env)).toBeNull();
+    expect(resolveAnnualPromoCouponId("year", new Date("2026-12-31T22:59:59Z"), env)).toBeNull();
     expect(resolveAnnualPromoCouponId("year", new Date("2026-12-31T22:59:59.001Z"), env)).toBeNull();
     expect(resolveAnnualPromoCouponId("year", new Date("2027-03-01T00:00:00Z"), env)).toBeNull();
     expect(resolveAnnualPromoCouponId("month", before, env)).toBeNull();

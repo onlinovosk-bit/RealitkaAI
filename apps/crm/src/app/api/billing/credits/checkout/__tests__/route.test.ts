@@ -30,19 +30,26 @@ const SEAT_ENV = {
   STRIPE_PRICE_CREDITS_MEGA: "price_1Abcdefgh00007",
 };
 const V3_ENV: Record<string, string> = {
-  STRIPE_PRICE_V3_SEAT_MONTHLY: "price_1Abcdefgh12341",
-  STRIPE_PRICE_V3_SEAT_YEARLY: "price_1Abcdefgh12342",
-  STRIPE_COUPON_V3_ANNUAL_PROMO: "promo_synthetic_9of12",
-  STRIPE_PRICE_V3_PACK_50: "price_1Abcdefgh12345",
-  STRIPE_PRICE_V3_PACK_100: "price_1Abcdefgh12346",
-  STRIPE_PRICE_V3_PACK_150: "price_1Abcdefgh12347",
-  STRIPE_PRICE_V3_PACK_200: "price_1Abcdefgh12348",
-  STRIPE_PRICE_V3_PACK_250: "price_1Abcdefgh12349",
-  STRIPE_PRICE_V3_PACK_300: "price_1Abcdefgh12351",
-  STRIPE_PRICE_V3_CREDIT: "price_1Abcdefgh12350",
+  STRIPE_PRICE_V3_START_MONTHLY: "price_1Abcdefgh12341",
+  STRIPE_PRICE_V3_START_YEARLY: "price_1Abcdefgh12342",
+  STRIPE_PRICE_V3_TEAM_MONTHLY: "price_1Abcdefgh12343",
+  STRIPE_PRICE_V3_TEAM_YEARLY: "price_1Abcdefgh12344",
+  STRIPE_PRICE_V3_KANCELARIA_MONTHLY: "price_1Abcdefgh12345",
+  STRIPE_PRICE_V3_KANCELARIA_YEARLY: "price_1Abcdefgh12346",
+  STRIPE_PRICE_V3_SIET_MONTHLY: "price_1Abcdefgh12347",
+  STRIPE_PRICE_V3_SIET_YEARLY: "price_1Abcdefgh12348",
+  STRIPE_PRICE_V3_SEAT_MONTHLY: "price_1Abcdefgh12998",
+  STRIPE_PRICE_V3_SEAT_YEARLY: "price_1Abcdefgh12999",
+  STRIPE_PRICE_V3_PACK_50: "price_1Abcdefgh12445",
+  STRIPE_PRICE_V3_PACK_100: "price_1Abcdefgh12446",
+  STRIPE_PRICE_V3_PACK_150: "price_1Abcdefgh12447",
+  STRIPE_PRICE_V3_PACK_200: "price_1Abcdefgh12448",
+  STRIPE_PRICE_V3_PACK_250: "price_1Abcdefgh12449",
+  STRIPE_PRICE_V3_PACK_300: "price_1Abcdefgh12451",
+  STRIPE_PRICE_V3_CREDIT: "price_1Abcdefgh12450",
 };
 
-/** Pred koncom akcie 9/12 (ročný checkout vyžaduje aj kupón). */
+/** Stabilný čas pre testy ročného checkoutu. */
 function beforePromoEnd() {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-12-31T22:59:59Z"));
@@ -185,14 +192,15 @@ describe("POST /api/billing/credits/checkout — PRICING_V2_ENABLED zapnuté", (
     expect(h.createV2).not.toHaveBeenCalled();
   });
 
-  it("fail-closed: bez mesačnej licencie v3 je checkout 503 prices_not_configured (žiadne v2 env ho nenahradia)", async () => {
+  it("fail-closed: neplatná plánová mesačná licencia v3 je checkout 503 prices_not_configured (staré v2 env ju nenahradia)", async () => {
+    vi.stubEnv("STRIPE_PRICE_V3_TEAM_MONTHLY", "price_xxx");
     vi.stubEnv("STRIPE_PRICE_V3_SEAT_MONTHLY", "");
     vi.stubEnv("STRIPE_PRICE_V2_TEAM", "price_1OldV2Team00001");
     const res = await call({ checkoutType: "pricing_v2", seats: 3, interval: "month" });
     expect(res.status).toBe(503);
     const body = await res.json();
     expect(body.code).toBe("prices_not_configured");
-    expect(body.missingPriceEnvKeys).toEqual(["STRIPE_PRICE_V3_SEAT_MONTHLY"]);
+    expect(body.missingPriceEnvKeys).toEqual(["STRIPE_PRICE_V3_TEAM_MONTHLY"]);
     expect(h.createV2).not.toHaveBeenCalled();
   });
 
@@ -320,32 +328,19 @@ describe("POST /api/billing/credits/checkout — ročné platenie", () => {
   });
 
   it("chýbajúca ročná cena = 503 prices_not_configured s názvom premennej; mesačný nákup funguje", async () => {
+    vi.stubEnv("STRIPE_PRICE_V3_TEAM_YEARLY", "price_xxx");
     vi.stubEnv("STRIPE_PRICE_V3_SEAT_YEARLY", "");
     const bad = await call({ checkoutType: "pricing_v2", seats: 3, interval: "year" });
     expect(bad.status).toBe(503);
     const body = await bad.json();
     expect(body.code).toBe("prices_not_configured");
-    expect(body.missingPriceEnvKeys).toEqual(["STRIPE_PRICE_V3_SEAT_YEARLY"]);
+    expect(body.missingPriceEnvKeys).toEqual(["STRIPE_PRICE_V3_TEAM_YEARLY"]);
     expect(h.createV2).not.toHaveBeenCalled();
     const ok = await call({ checkoutType: "pricing_v2", seats: 3, interval: "month" });
     expect(ok.status).toBe(200);
   });
 
-  it("fail-closed: počas akcie 9/12 ročný checkout bez kupónu je 503 s názvom STRIPE_COUPON_V3_ANNUAL_PROMO; mesačný ide", async () => {
-    vi.stubEnv("STRIPE_COUPON_V3_ANNUAL_PROMO", "");
-    const bad = await call({ checkoutType: "pricing_v2", seats: 3, interval: "year" });
-    expect(bad.status).toBe(503);
-    const body = await bad.json();
-    expect(body.code).toBe("prices_not_configured");
-    expect(body.missingPriceEnvKeys).toEqual(["STRIPE_COUPON_V3_ANNUAL_PROMO"]);
-    expect(JSON.stringify(body)).not.toContain("promo_synthetic");
-    expect(h.createV2).not.toHaveBeenCalled();
-    expect((await call({ checkoutType: "pricing_v2", seats: 3, interval: "month" })).status).toBe(200);
-  });
-
-  it("po skončení akcie ročný checkout kupón nepotrebuje", async () => {
-    vi.setSystemTime(new Date("2027-01-02T10:00:00Z"));
-    vi.stubEnv("STRIPE_COUPON_V3_ANNUAL_PROMO", "");
+  it("ročný checkout kupón nepotrebuje", async () => {
     const res = await call({ checkoutType: "pricing_v2", seats: 3, interval: "year" });
     expect(res.status).toBe(200);
   });

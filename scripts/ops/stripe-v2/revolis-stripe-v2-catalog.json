@@ -1,57 +1,143 @@
 {
   "catalog_version": "revolis_v3_2026_10_21",
-  "source": "onlinovosk-bit/RealitkaAI: apps/crm/src/lib/pricing-v2.ts (PRICING_V3_SEAT_TIERS, balíky, kredit), pricing-v2-contract.ts (env názvy), scripts/ops/stripe-expected-prices.json; cenník v3, variant A+ od 21. makléra, GO Andreja 2026-10-21. Pásma 1–20 ostávajú vrátane GO B (#908).",
+  "source": "onlinovosk-bit/RealitkaAI: apps/crm/src/lib/pricing-v2.ts (PRICING_V3_PLAN_TIERS, balíky, kredit), pricing-v2-contract.ts (env názvy), scripts/ops/stripe-expected-prices.json; cenník v3 s plánovými Price ID.",
   "currency": "eur",
   "tax_behavior": "exclusive",
   "gross_example_vat_rate_percent": 23,
   "gross_example_scope": "Slovenský príklad len pri uplatnení 23 % DPH. Skutočná faktúra závisí od zákazníka a daňového nastavenia.",
   "items": [
     {
-      "sku": "licence_month",
+      "sku": "licence_start_month",
       "name": "Revolis licencia",
-      "description": "Licencia podľa počtu maklérov (quantity = počet maklérov). Mesačná platba bez ročného záväzku.",
+      "description": "Start licencia pre 1 makléra. Mesačná platba bez ročného záväzku.",
       "kind": "seat_license_tiered",
       "tax_code_group": "plan",
       "billing_scheme": "tiered",
       "tiers_mode": "graduated",
-      "tiers": [
-        { "up_to": 1, "flat_amount": 3000, "unit_amount": 0 },
-        { "up_to": 2, "flat_amount": 3000, "unit_amount": 0 },
-        { "up_to": 5, "flat_amount": 1800, "unit_amount": 0 },
-        { "up_to": 10, "flat_amount": 0, "unit_amount": 1080 },
-        { "up_to": 20, "flat_amount": 0, "unit_amount": 720 },
-        { "up_to": 30, "flat_amount": 0, "unit_amount": 460 },
-        { "up_to": 50, "flat_amount": 0, "unit_amount": 480 },
-        { "up_to": "inf", "flat_amount": 0, "unit_amount": 360 }
-      ],
+      "tiers": [{ "up_to": 1, "flat_amount": 3000, "unit_amount": 0 }],
       "recurring_interval": "month",
-      "lookup_key": "revolis_v3_licence_month",
-      "env_key": "STRIPE_PRICE_V3_SEAT_MONTHLY",
+      "lookup_key": "revolis_v3_start_month",
+      "env_key": "STRIPE_PRICE_V3_START_MONTHLY",
       "checkout_policy": "self_serve_after_v3_release"
     },
     {
-      "sku": "licence_year",
+      "sku": "licence_start_year",
       "name": "Revolis licencia",
-      "description": "Licencia podľa počtu maklérov (quantity = počet maklérov). Ročná platba. Pri 1–20 = 12 × základ; od 21. platí graduated tarifa A+.",
+      "description": "Start licencia pre 1 makléra. Ročná platba.",
+      "kind": "seat_license_tiered",
+      "tax_code_group": "plan",
+      "billing_scheme": "tiered",
+      "tiers_mode": "graduated",
+      "tiers": [{ "up_to": 1, "flat_amount": 30000, "unit_amount": 0 }],
+      "recurring_interval": "year",
+      "lookup_key": "revolis_v3_start_year",
+      "env_key": "STRIPE_PRICE_V3_START_YEARLY",
+      "checkout_policy": "self_serve_after_v3_release",
+      "product_sku": "licence_start_month"
+    },
+    {
+      "sku": "licence_team_month",
+      "name": "Revolis licencia",
+      "description": "Team licencia pre 2–5 maklérov. Mesačná platba bez ročného záväzku.",
+      "kind": "seat_license_tiered",
+      "tax_code_group": "plan",
+      "billing_scheme": "tiered",
+      "tiers_mode": "graduated",
+      "tiers": [{ "up_to": 5, "flat_amount": 7800, "unit_amount": 0 }],
+      "recurring_interval": "month",
+      "lookup_key": "revolis_v3_team_month",
+      "env_key": "STRIPE_PRICE_V3_TEAM_MONTHLY",
+      "checkout_policy": "self_serve_after_v3_release",
+      "product_sku": "licence_start_month"
+    },
+    {
+      "sku": "licence_team_year",
+      "name": "Revolis licencia",
+      "description": "Team licencia pre 2–5 maklérov. Ročná platba.",
+      "kind": "seat_license_tiered",
+      "tax_code_group": "plan",
+      "billing_scheme": "tiered",
+      "tiers_mode": "graduated",
+      "tiers": [{ "up_to": 5, "flat_amount": 78000, "unit_amount": 0 }],
+      "recurring_interval": "year",
+      "lookup_key": "revolis_v3_team_year",
+      "env_key": "STRIPE_PRICE_V3_TEAM_YEARLY",
+      "checkout_policy": "self_serve_after_v3_release",
+      "product_sku": "licence_start_month"
+    },
+    {
+      "sku": "licence_kancelaria_month",
+      "name": "Revolis licencia",
+      "description": "Kancelária licencia pre 6–10 maklérov. Mesačná platba bez ročného záväzku.",
       "kind": "seat_license_tiered",
       "tax_code_group": "plan",
       "billing_scheme": "tiered",
       "tiers_mode": "graduated",
       "tiers": [
-        { "up_to": 1, "flat_amount": 30000, "unit_amount": 0 },
-        { "up_to": 2, "flat_amount": 30000, "unit_amount": 0 },
-        { "up_to": 5, "flat_amount": 18000, "unit_amount": 0 },
-        { "up_to": 10, "flat_amount": 0, "unit_amount": 10800 },
-        { "up_to": 20, "flat_amount": 0, "unit_amount": 7200 },
-        { "up_to": 30, "flat_amount": 3, "unit_amount": 5333 },
-        { "up_to": 50, "flat_amount": 0, "unit_amount": 4800 },
-        { "up_to": "inf", "flat_amount": 0, "unit_amount": 3600 }
+        { "up_to": 5, "flat_amount": 7800, "unit_amount": 0 },
+        { "up_to": 10, "flat_amount": 0, "unit_amount": 1080 }
+      ],
+      "recurring_interval": "month",
+      "lookup_key": "revolis_v3_kancelaria_month",
+      "env_key": "STRIPE_PRICE_V3_KANCELARIA_MONTHLY",
+      "checkout_policy": "self_serve_after_v3_release",
+      "product_sku": "licence_start_month"
+    },
+    {
+      "sku": "licence_kancelaria_year",
+      "name": "Revolis licencia",
+      "description": "Kancelária licencia pre 6–10 maklérov. Ročná platba.",
+      "kind": "seat_license_tiered",
+      "tax_code_group": "plan",
+      "billing_scheme": "tiered",
+      "tiers_mode": "graduated",
+      "tiers": [
+        { "up_to": 5, "flat_amount": 78000, "unit_amount": 0 },
+        { "up_to": 10, "flat_amount": 0, "unit_amount": 10800 }
       ],
       "recurring_interval": "year",
-      "lookup_key": "revolis_v3_licence_year",
-      "env_key": "STRIPE_PRICE_V3_SEAT_YEARLY",
+      "lookup_key": "revolis_v3_kancelaria_year",
+      "env_key": "STRIPE_PRICE_V3_KANCELARIA_YEARLY",
       "checkout_policy": "self_serve_after_v3_release",
-      "product_sku": "licence_month"
+      "product_sku": "licence_start_month"
+    },
+    {
+      "sku": "licence_siet_month",
+      "name": "Revolis licencia",
+      "description": "Sieť licencia pre 11+ maklérov. Mesačná platba bez ročného záväzku.",
+      "kind": "seat_license_tiered",
+      "tax_code_group": "plan",
+      "billing_scheme": "tiered",
+      "tiers_mode": "graduated",
+      "tiers": [
+        { "up_to": 10, "flat_amount": 13200, "unit_amount": 0 },
+        { "up_to": 20, "flat_amount": 0, "unit_amount": 720 },
+        { "up_to": "inf", "flat_amount": 0, "unit_amount": 600 }
+      ],
+      "recurring_interval": "month",
+      "lookup_key": "revolis_v3_siet_month",
+      "env_key": "STRIPE_PRICE_V3_SIET_MONTHLY",
+      "checkout_policy": "self_serve_after_v3_release",
+      "product_sku": "licence_start_month"
+    },
+    {
+      "sku": "licence_siet_year",
+      "name": "Revolis licencia",
+      "description": "Sieť licencia pre 11+ maklérov. Ročná platba.",
+      "kind": "seat_license_tiered",
+      "tax_code_group": "plan",
+      "billing_scheme": "tiered",
+      "tiers_mode": "graduated",
+      "tiers": [
+        { "up_to": 10, "flat_amount": 132000, "unit_amount": 0 },
+        { "up_to": 20, "flat_amount": 0, "unit_amount": 7200 },
+        { "up_to": "inf", "flat_amount": 0, "unit_amount": 6000 }
+      ],
+      "recurring_interval": "year",
+      "lookup_key": "revolis_v3_siet_year",
+      "env_key": "STRIPE_PRICE_V3_SIET_YEARLY",
+      "checkout_policy": "self_serve_after_v3_release",
+      "product_sku": "licence_start_month"
     },
     {
       "sku": "credits_50_month",
@@ -157,17 +243,6 @@
       "checkout_policy": "hidden_until_enforcement"
     }
   ],
-  "coupons": [
-    {
-      "sku": "annual_promo",
-      "name": "Prvý rok 9 z 12 mesiacov (-25 %)",
-      "percent_off": 25,
-      "duration": "once",
-      "redeem_by": 1798757999,
-      "redeem_by_iso": "2026-12-31T22:59:59Z",
-      "applies_to_product_sku": "licence_month",
-      "env_key": "STRIPE_COUPON_V3_ANNUAL_PROMO"
-    }
-  ],
-  "annual_billing_note": "Licencia: jeden produkt, dve Price s billing_scheme=tiered a tiers_mode=graduated. Pri 1–20 makléroch mesačná = základ × 1,2 a ročná = 12 × základ (GO B #908: 2 makléri základ 50 €, 3–5 základ 65 €). Od 21. (variant A+, 2026-10-21) sú obdobia nezávislé graduated tarify; pásmo 21–30 ročne má flat_amount 3 centy (0,03 €) a unit_amount 5333. Akcia do 31. 12. 2026: kupón percent_off=25, duration=once, len pri ročnej platbe (pri 1–20 je to 9 z 12 mesiacov; od 21. je to −25 % z ročnej sumy, zaokrúhlené na cent). Server pridáva kupón do Checkout Session; kupón sa neviaže na mesačnú cenu ani na balíky. Balík kreditov sa s ročnou licenciou nekombinuje. lookup_key revolis_v3_licence_month a revolis_v3_licence_year sa nemenia; mení sa catalog_version, aby sa staré tiery nenašli ako aktuálny katalóg."
+  "coupons": [],
+  "annual_billing_note": "Licencia: jeden produkt, osem Price s billing_scheme=tiered a tiers_mode=graduated podľa pásma a obdobia. Quantity ostáva počet maklérov. Mesačná platba = základ × 1,2; ročná platba = 12 × základ. Promo kupóny nie sú súčasťou tohto katalógu."
 }

@@ -5,14 +5,13 @@ Uses only Python's standard library. No command in this script can create live
 Stripe objects. It deliberately does not configure tax registrations or update
 existing customers, subscriptions, environment variables, or checkout code.
 
-Katalog v3: jeden produkt "Revolis licencia" s dvoma tiered (graduated) cenami, kupon akcie 9/12,
+Katalog v3: jeden produkt "Revolis licencia" s osmimi planovymi tiered (graduated) cenami,
 balíky kreditov na samostatnom produkte a jednorazový kredit. Zápis iba v TEST režime
 (--test-create + sk_test_ kľúč z env STRIPE_TEST_SECRET_KEY alebo skrytého promptu).
 """
 
 import argparse
 import base64
-import calendar
 from decimal import Decimal, ROUND_HALF_UP
 import getpass
 import json
@@ -28,27 +27,30 @@ from urllib.request import Request, urlopen
 CATALOG_PATH = Path(__file__).with_name("revolis-stripe-v2-catalog.json")
 API = "https://api.stripe.com/v1"
 CATALOG_VERSION = "revolis_v3_2026_10_21"
-# Termin akcie 9/12: 2026-12-31T22:59:59Z (= 23:59:59 Europe/Bratislava).
-PROMO_REDEEM_BY = calendar.timegm((2026, 12, 31, 22, 59, 59))
-assert PROMO_REDEEM_BY == 1798757999
 
-# Tiers licencie (centy bez DPH). Zdroj pravdy: apps/crm/src/lib/pricing-v2.ts PRICING_V3_SEAT_TIERS;
+# Tiers licencie (centy bez DPH). Zdroj pravdy: apps/crm/src/lib/pricing-v2.ts PRICING_V3_PLAN_TIERS;
 # zhodu strazi apps/crm/tests/verification/stripe-v2-catalog.verification.test.ts.
 # Tvar: (up_to, flat_amount, unit_amount); up_to "inf" = bez hornej hranice.
-SEAT_TIERS = {
-    "month": [
-        (1, 3000, 0), (2, 3000, 0), (5, 1800, 0), (10, 0, 1080), (20, 0, 720),
-        (30, 0, 460), (50, 0, 480), ("inf", 0, 360),
-    ],
-    "year": [
-        (1, 30000, 0), (2, 30000, 0), (5, 18000, 0), (10, 0, 10800), (20, 0, 7200),
-        (30, 3, 5333), (50, 0, 4800), ("inf", 0, 3600),
-    ],
+PLAN_TIERS = {
+    "licence_start_month": [(1, 3000, 0)],
+    "licence_start_year": [(1, 30000, 0)],
+    "licence_team_month": [(5, 7800, 0)],
+    "licence_team_year": [(5, 78000, 0)],
+    "licence_kancelaria_month": [(5, 7800, 0), (10, 0, 1080)],
+    "licence_kancelaria_year": [(5, 78000, 0), (10, 0, 10800)],
+    "licence_siet_month": [(10, 13200, 0), (20, 0, 720), ("inf", 0, 600)],
+    "licence_siet_year": [(10, 132000, 0), (20, 0, 7200), ("inf", 0, 6000)],
 }
 # sku -> (suma v centoch | None pre tiered, kredity | None)
 EXPECTED = {
-    "licence_month": (None, None),
-    "licence_year": (None, None),
+    "licence_start_month": (None, None),
+    "licence_start_year": (None, None),
+    "licence_team_month": (None, None),
+    "licence_team_year": (None, None),
+    "licence_kancelaria_month": (None, None),
+    "licence_kancelaria_year": (None, None),
+    "licence_siet_month": (None, None),
+    "licence_siet_year": (None, None),
     "credits_50_month": (2600, 50),
     "credits_100_month": (5100, 100),
     "credits_150_month": (7400, 150),
@@ -91,7 +93,7 @@ def validate():
     assert len({x["env_key"] for x in items}) == len(items)
     for x in items:
         sku = x["sku"]
-        assert x["lookup_key"] == "revolis_v3_" + sku, sku
+        assert x["lookup_key"].startswith("revolis_v3_"), sku
         assert x["env_key"].startswith("STRIPE_PRICE_V3_"), sku
         assert x["tax_code_group"] in ("plan", "credit"), sku
         # Zdielany produkt: Price s product_sku ukazuje na produkt prvej polozky a nesie jeho nazov.
@@ -101,12 +103,10 @@ def validate():
             assert base["name"] == x["name"], sku
             assert base["tax_code_group"] == x["tax_code_group"], sku
         if x["kind"] == "seat_license_tiered":
-            interval = x["recurring_interval"]
-            assert sku == "licence_" + interval, sku
             assert x["name"] == LICENCE_PRODUCT_NAME, sku
             assert x["billing_scheme"] == "tiered" and x["tiers_mode"] == "graduated", sku
             assert "unit_amount_cents" not in x, sku
-            assert tiers_of(x) == SEAT_TIERS[interval], sku
+            assert tiers_of(x) == PLAN_TIERS[sku], sku
         else:
             assert x["unit_amount_cents"] == EXPECTED[sku][0], sku
             credits = x.get("credits_per_cycle", x.get("credits_per_unit"))
@@ -119,26 +119,16 @@ def validate():
             assert x["recurring_interval"] == "month", sku
         elif x["kind"] == "one_time_credit":
             assert sku == "credit_unit_one_time" and x["recurring_interval"] is None
-    # Pri 1–20: mesacna = zaklad x 1,2; rocna = 12 x zaklad = 10 x mesacna.
-    # Od 21. (variant A+) su obdobia nezavisle; vztah 10x neplati.
-    for n in range(1, 21):
-        assert graduated_cents(SEAT_TIERS["year"], n) == 10 * graduated_cents(SEAT_TIERS["month"], n), n
-    assert graduated_cents(SEAT_TIERS["month"], 30) == 25000
-    assert graduated_cents(SEAT_TIERS["month"], 50) == 34600
-    assert graduated_cents(SEAT_TIERS["month"], 100) == 52600
-    assert graduated_cents(SEAT_TIERS["year"], 30) == 257333
-    assert graduated_cents(SEAT_TIERS["year"], 100) == 533333
-    year_30 = graduated_cents(SEAT_TIERS["year"], 30)
-    discount_30 = int((Decimal(year_30) * Decimal("0.25")).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
-    assert year_30 - discount_30 == 193000
+    assert graduated_cents(PLAN_TIERS["licence_start_month"], 1) == 3000
+    assert graduated_cents(PLAN_TIERS["licence_start_year"], 1) == 30000
+    assert graduated_cents(PLAN_TIERS["licence_team_month"], 5) == 7800
+    assert graduated_cents(PLAN_TIERS["licence_team_year"], 5) == 78000
+    assert graduated_cents(PLAN_TIERS["licence_kancelaria_month"], 10) == 13200
+    assert graduated_cents(PLAN_TIERS["licence_kancelaria_year"], 10) == 132000
+    assert graduated_cents(PLAN_TIERS["licence_siet_month"], 30) == 26400
+    assert graduated_cents(PLAN_TIERS["licence_siet_year"], 30) == 264000
     coupons = catalog["coupons"]
-    assert len(coupons) == 1
-    c = coupons[0]
-    assert (c["sku"], c["percent_off"], c["duration"]) == ("annual_promo", 25, "once")
-    assert c["redeem_by"] == PROMO_REDEEM_BY
-    assert c["env_key"] == "STRIPE_COUPON_V3_ANNUAL_PROMO"
-    base = next(i for i in items if i["sku"] == c["applies_to_product_sku"])
-    assert base["name"] == LICENCE_PRODUCT_NAME and "product_sku" not in base
+    assert coupons == []
     return catalog
 
 
@@ -166,11 +156,15 @@ def show(catalog):
         if x["kind"] == "seat_license_tiered":
             print(f"{x['sku']} | {tier_summary(x)}")
     print("n | mesacne EUR | rocne EUR (bez DPH)")
-    for n in (1, 2, 3, 5, 6, 10, 11, 20, 21, 30, 50):
-        print(f"{n} | {eur(graduated_cents(SEAT_TIERS['month'], n))} | {eur(graduated_cents(SEAT_TIERS['year'], n))}")
-    c = catalog["coupons"][0]
-    print(f"\nKupon {c['sku']}: -{c['percent_off']} %, duration={c['duration']}, "
-          f"redeem_by={c['redeem_by_iso']} ({c['redeem_by']}), len produkt {LICENCE_PRODUCT_NAME}")
+    examples = [
+        ("start", 1, "licence_start_month", "licence_start_year"),
+        ("team", 5, "licence_team_month", "licence_team_year"),
+        ("kancelaria", 10, "licence_kancelaria_month", "licence_kancelaria_year"),
+        ("siet", 30, "licence_siet_month", "licence_siet_year"),
+    ]
+    for label, n, month_sku, year_sku in examples:
+        print(f"{label} {n} | {eur(graduated_cents(PLAN_TIERS[month_sku], n))} | {eur(graduated_cents(PLAN_TIERS[year_sku], n))}")
+    print("\nKupony: ziadne v tomto katalogu")
     print("\nSKU | bez DPH EUR | vzor s 23 % DPH EUR | kredity | EUR/kredit")
     for x in catalog["items"]:
         if x["kind"] == "seat_license_tiered":
@@ -237,16 +231,6 @@ class StripeTest:
     def prices_for(self, lookup_key):
         response = self.request("GET", "/prices", {"lookup_keys[]": lookup_key, "limit": 100})
         return response["data"]
-
-    def coupons(self):
-        result = []
-        params = {"limit": 100}
-        while True:
-            page = self.request("GET", "/coupons", params)
-            result.extend(page["data"])
-            if not page.get("has_more"):
-                return result
-            params["starting_after"] = page["data"][-1]["id"]
 
 
 def product_params(item, tax_code, version):
@@ -321,56 +305,6 @@ def check_existing(item, product, price, tax_code, product_sku=None):
         raise ValueError(f"Price {item['sku']} existuje, ale parametre nesedia: {actual}")
 
 
-def coupon_params(coupon, product_id, version):
-    """Kupon akcie 9/12: percent_off, duration=once, redeem_by, len na produkt licencie."""
-    return {
-        "name": coupon["name"],
-        "percent_off": coupon["percent_off"],
-        "duration": coupon["duration"],
-        "redeem_by": coupon["redeem_by"],
-        "applies_to[products][0]": product_id,
-        "metadata[revolis_sku]": coupon["sku"],
-        "metadata[pricing_version]": version,
-    }
-
-
-def find_coupon(coupons, coupon, version):
-    """Kupon z tohto katalogu podla metadata (idempotencia); viac zhod = chyba."""
-    found = [c for c in coupons if c.get("metadata", {}).get("revolis_sku") == coupon["sku"]
-             and c.get("metadata", {}).get("pricing_version") == version]
-    if len(found) > 1:
-        raise ValueError(f"Viac kuponov {coupon['sku']} v tejto verzii katalogu.")
-    return found[0] if found else None
-
-
-def check_existing_coupon(coupon, found, product_id):
-    products = (found.get("applies_to") or {}).get("products") or []
-    actual = (found.get("percent_off"), found.get("amount_off"), found.get("duration"),
-              found.get("redeem_by"), products)
-    expected = (coupon["percent_off"], None, coupon["duration"], coupon["redeem_by"], [product_id])
-    if actual != expected:
-        raise ValueError(f"Kupon {coupon['sku']} existuje, ale parametre nesedia: {actual}")
-
-
-def ensure_coupons(stripe, catalog, known, idempotency_prefix, livemode_error):
-    """Zalozi chybajuci kupon (alebo overi existujuci). Spolocne pre test aj live; vrati {env_key: coupon_id}."""
-    ids = {}
-    existing = stripe.coupons()
-    for coupon in catalog["coupons"]:
-        product = known[coupon["applies_to_product_sku"]]
-        found = find_coupon(existing, coupon, catalog["catalog_version"])
-        if found is None:
-            found = stripe.request(
-                "POST", "/coupons", coupon_params(coupon, product["id"], catalog["catalog_version"]),
-                f"{idempotency_prefix}{catalog['catalog_version']}:{coupon['sku']}:coupon",
-            )
-            livemode_error(found, "kupon")
-        check_existing_coupon(coupon, found, product["id"])
-        ids[coupon["env_key"]] = found["id"]
-        print(f"{coupon['sku']}: {found['id']}")
-    return ids
-
-
 def create_test_catalog(catalog, args):
     key = get_test_key()
     stripe = StripeTest(key)
@@ -422,11 +356,6 @@ def create_test_catalog(catalog, args):
         ids[item["env_key"]] = price["id"]
         print(f"{sku}: {product['id']} / {price['id']}")
 
-    def refuse_live(obj, what):
-        if obj.get("livemode") is True:
-            raise ValueError(f"Stripe vytvoril {what} v live režime; zastavené.")
-
-    ids.update(ensure_coupons(stripe, catalog, known, "", refuse_live))
     if args.output:
         Path(args.output).write_text(json.dumps({
             "stripe_account": account["id"], "catalog_version": catalog["catalog_version"],
@@ -443,7 +372,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--inspect-account", action="store_true", help="iba prečítať ID testovacieho Stripe účtu")
-    group.add_argument("--test-create", action="store_true", help="vytvoriť produkty, ceny a kupón výlučne v test režime")
+    group.add_argument("--test-create", action="store_true", help="vytvoriť produkty a ceny výlučne v test režime")
     parser.add_argument("--expect-account", help="požadované Stripe acct_...; povinné pri zápise")
     parser.add_argument("--plan-tax-code", help="potvrdený Stripe Tax kód produktu pre plány")
     parser.add_argument("--credit-tax-code", help="potvrdený Stripe Tax kód produktu pre kredity")

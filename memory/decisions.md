@@ -1,3 +1,9 @@
+## 2026-10-22 — Pricing v3: 1 produkt, 8 plánových Price ID, bez kupónov (BUILD)
+**GO:** founder zadanie presunúť pricing v3 z generických `STRIPE_PRICE_V3_SEAT_MONTHLY/YEARLY` na Price ID podľa plánu a obdobia; bez Stripe API volaní, bez objektov, bez PROD zmien a bez merge.
+**Čo:** licencia ostáva jeden Stripe Product `Revolis licencia`; pridáva sa 8 env názvov `STRIPE_PRICE_V3_{START,TEAM,KANCELARIA,SIET}_{MONTHLY,YEARLY}`. Nová env má prednosť; neplatná nastavená hodnota fail-closed; ak nová env chýba, stará intervalová env funguje ako dočasný fallback. Checkout stále posiela `quantity = počet maklérov`; pásmo sa odvodí z počtu maklérov.
+**Ceny:** Start 25 €, Team 65 €, Kancelária 65 € + 9 € nad 5, Sieť 110 € + 6 € pre 11–20 a +5 € od 21; mesačné platenie = +20 %, ročné = 12× mesačný základ. Promo/kupóny nie sú súčasťou tejto zmeny.
+**Dôkaz:** completion gate PASS (`661` related testov, `473` billing testov), `npx vitest run billing pricing-v2` PASS (`471`), `stripe-v2-catalog.verification` PASS (`9`), `npm run typecheck` PASS na baseline 54, `npm run lint` PASS, `npm run build` PASS.
+**Rollback:** revert PR; staré fallback env sú zachované, takže konfiguráciu možno ponechať bez okamžitého Vercel zásahu.
 ## 2026-10-26 — Verejný blog na www.revolis.ai + prvý článok (BUILD)
 **GO:** founder Andrej Ondruš 26. 10. 2026 — pridaj `/blog` na marketingový web a publikuj prvý článok; draft PR, NEZLÚČUJ, nenasadzuj. RAU: `GO_REQUIRED` BUILD revolis (trigger publish → P17/P18 nespustené). Prime Directive: akvizičný obsah (SEO + dôvera makléra); Constitution v2 Q1 = founder GO na publikáciu článku, Q8 = článok je hotový, timing nie je „príliš skoro".
 **Čo:** `apps/marketing` listing `/blog` + `/blog/ceny-nehnutelnosti-2026-sadzby-nove-ltv` (TS modul, markdown renderer bez MDX), sitemap + `seo.test.ts`, verification `marketing-blog.verification.test.ts`. CRM `/blog` ostáva redirect na `/landing`.

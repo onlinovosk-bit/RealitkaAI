@@ -1,18 +1,17 @@
 /**
  * Cenník v3 (GO 2026-10-19) — rozhranie pre vlnu W2 (vetvy A–D), upravené v PR1 „Cenník v3“.
  *
- * Licencia = jedna Price na interval (mesačná, ročná) s `billing_scheme=tiered`, quantity = počet maklérov.
- * Akcia 9/12 = Stripe kupón `STRIPE_COUPON_V3_ANNUAL_PROMO` len pri `interval=year` a pred termínom.
+ * Licencia = jedna Price na pásmo a interval s `billing_scheme=tiered`, quantity = počet maklérov.
  * Čisté funkcie bez Stripe a bez DB. Ceny a pásma sú v `pricing-v2.ts` (W1).
  * Špecifikácia: docs/pricing/2026-10-05-pricing-v2-w2-contract.md
  */
 import { isValidStripePriceId } from "@/lib/program-tier-pricing";
 import {
   PRICING_V2_CREDIT_NET_CENTS,
-  isAnnualPromoActive,
   isPricingV2Interval,
   isPricingV2PlansOnly,
   PRICING_V2_MONTHLY_PACKS,
+  PRICING_V2_BAND_IDS,
   resolvePricingV2BandResult,
   type PricingV2BandId,
   type PricingV2Catalog,
@@ -28,8 +27,20 @@ export const PRICING_V2_CHECKOUT_TYPE_CREDITS = "pricing_v2_credits" as const;
 export const PRICING_V3_SEAT_MONTHLY_PRICE_ENV = "STRIPE_PRICE_V3_SEAT_MONTHLY";
 /** Licencia, ročná (`recurring.interval=year`, tiered graduated, 12 × základ). */
 export const PRICING_V3_SEAT_YEARLY_PRICE_ENV = "STRIPE_PRICE_V3_SEAT_YEARLY";
-/** ID Stripe kupónu akcie 9/12 (`percent_off=25`, `duration=once`, `redeem_by` 2026-12-31T22:59:59Z). */
+/** Historický názov kupónu; nový checkout ho nepoužíva. */
 export const PRICING_V3_ANNUAL_PROMO_COUPON_ENV = "STRIPE_COUPON_V3_ANNUAL_PROMO";
+
+export const PRICING_V3_PLAN_PRICE_ENV: Record<PricingV2BandId, Record<PricingV2Interval, string>> = {
+  start: { month: "STRIPE_PRICE_V3_START_MONTHLY", year: "STRIPE_PRICE_V3_START_YEARLY" },
+  team: { month: "STRIPE_PRICE_V3_TEAM_MONTHLY", year: "STRIPE_PRICE_V3_TEAM_YEARLY" },
+  office: { month: "STRIPE_PRICE_V3_KANCELARIA_MONTHLY", year: "STRIPE_PRICE_V3_KANCELARIA_YEARLY" },
+  network: { month: "STRIPE_PRICE_V3_SIET_MONTHLY", year: "STRIPE_PRICE_V3_SIET_YEARLY" },
+};
+
+export const PRICING_V3_PLAN_PRICE_ENV_BY_INTERVAL: Record<PricingV2Interval, string[]> = {
+  month: PRICING_V2_BAND_IDS.map((band) => PRICING_V3_PLAN_PRICE_ENV[band].month),
+  year: PRICING_V2_BAND_IDS.map((band) => PRICING_V3_PLAN_PRICE_ENV[band].year),
+};
 
 export const PRICING_V3_SEAT_PRICE_ENV: Record<PricingV2Interval, string> = {
   month: PRICING_V3_SEAT_MONTHLY_PRICE_ENV,
@@ -65,10 +76,39 @@ export function resolveAnnualPromoCouponId(
   now: Date = new Date(),
   env: Record<string, string | undefined> = process.env,
 ): string | null {
-  if (interval !== "year" || !isAnnualPromoActive(now)) return null;
-  const id = env[PRICING_V3_ANNUAL_PROMO_COUPON_ENV]?.trim();
-  if (!id || /x{3,}/i.test(id)) return null;
-  return id;
+  void interval;
+  void now;
+  void env;
+  return null;
+}
+
+export type PricingV3PlanPriceResolution =
+  | { ok: true; envName: string; priceId: string; fallback: boolean }
+  | { ok: false; envName: string };
+
+export function resolvePricingV3PlanPriceId(
+  bandId: PricingV2BandId,
+  interval: PricingV2Interval,
+  env: Record<string, string | undefined> = process.env,
+): PricingV3PlanPriceResolution {
+  const envName = PRICING_V3_PLAN_PRICE_ENV[bandId][interval];
+  const rawPlan = env[envName]?.trim();
+  if (rawPlan) {
+    return isValidStripePriceId(rawPlan) ? { ok: true, envName, priceId: rawPlan, fallback: false } : { ok: false, envName };
+  }
+  const fallbackEnvName = PRICING_V3_SEAT_PRICE_ENV[interval];
+  const fallback = env[fallbackEnvName]?.trim();
+  if (isValidStripePriceId(fallback)) return { ok: true, envName: fallbackEnvName, priceId: fallback, fallback: true };
+  return { ok: false, envName };
+}
+
+export function missingPricingV3PlanPriceEnvKeys(
+  interval: PricingV2Interval,
+  env: Record<string, string | undefined> = process.env,
+): string[] {
+  return PRICING_V2_BAND_IDS.map((band) => resolvePricingV3PlanPriceId(band, interval, env))
+    .filter((r): r is { ok: false; envName: string } => !r.ok)
+    .map((r) => r.envName);
 }
 
 /** Chybové kódy checkout API (pole `code` v odpovedi; text pre človeka je samostatný). */
@@ -241,7 +281,7 @@ export const PRICING_V2_AGENCY_MODEL = "v2" as const;
 
 /** Chýbajúca ročná cena licencie (ročné platenie sa ponúka len keď nechýba). */
 export function missingPricingV2YearlyPriceEnvKeys(env: Record<string, string | undefined> = process.env): string[] {
-  return [PRICING_V3_SEAT_YEARLY_PRICE_ENV].filter((name) => !isValidStripePriceId(env[name]));
+  return missingPricingV3PlanPriceEnvKeys("year", env);
 }
 
 /**
@@ -251,7 +291,7 @@ export function missingPricingV2YearlyPriceEnvKeys(env: Record<string, string | 
  */
 export function missingPricingV2PriceEnvKeys(env: Record<string, string | undefined> = process.env): string[] {
   const names = [
-    PRICING_V3_SEAT_MONTHLY_PRICE_ENV,
+    ...missingPricingV3PlanPriceEnvKeys("month", env),
     ...(isPricingV2PlansOnly(env) ? [] : [...PACK_SIZES.map((size) => PRICING_V2_PACK_PRICE_ENV[size]), PRICING_V2_CREDIT_PRICE_ENV]),
   ];
   return names.filter((name) => !isValidStripePriceId(env[name]));

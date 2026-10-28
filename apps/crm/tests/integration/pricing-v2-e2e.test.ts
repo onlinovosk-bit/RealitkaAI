@@ -193,6 +193,14 @@ import { submitPricingV2Checkout } from "@/components/billing/v2/checkout";
 import { readPricingV2Config } from "@/components/billing/v2/usePricingV2Config";
 
 const PRICE = {
+  STRIPE_PRICE_V3_START_MONTHLY: "price_v3StartMonthA",
+  STRIPE_PRICE_V3_START_YEARLY: "price_v3StartYearAA",
+  STRIPE_PRICE_V3_TEAM_MONTHLY: "price_v3TeamMonthAA",
+  STRIPE_PRICE_V3_TEAM_YEARLY: "price_v3TeamYearAAA",
+  STRIPE_PRICE_V3_KANCELARIA_MONTHLY: "price_v3OfficeMonth",
+  STRIPE_PRICE_V3_KANCELARIA_YEARLY: "price_v3OfficeYearA",
+  STRIPE_PRICE_V3_SIET_MONTHLY: "price_v3NetworkMon",
+  STRIPE_PRICE_V3_SIET_YEARLY: "price_v3NetworkYrA",
   STRIPE_PRICE_V3_SEAT_MONTHLY: "price_v3SeatMonthAAA",
   STRIPE_PRICE_V3_SEAT_YEARLY: "price_v3SeatYearBBB",
   STRIPE_COUPON_V3_ANNUAL_PROMO: "promo_v3NineOfTwelve",
@@ -206,6 +214,11 @@ const PRICE = {
 };
 const SEAT_M = PRICE.STRIPE_PRICE_V3_SEAT_MONTHLY;
 const SEAT_Y = PRICE.STRIPE_PRICE_V3_SEAT_YEARLY;
+const START_M = PRICE.STRIPE_PRICE_V3_START_MONTHLY;
+const TEAM_M = PRICE.STRIPE_PRICE_V3_TEAM_MONTHLY;
+const TEAM_Y = PRICE.STRIPE_PRICE_V3_TEAM_YEARLY;
+const OFFICE_M = PRICE.STRIPE_PRICE_V3_KANCELARIA_MONTHLY;
+const NETWORK_M = PRICE.STRIPE_PRICE_V3_SIET_MONTHLY;
 
 const AG = "ag-1";
 let evtSeq = 0;
@@ -295,6 +308,13 @@ async function doCheckout(body: Record<string, unknown>) {
 const agency = () => db.agencies.find((a) => a.id === AG)!;
 const grants = () => db.ledger.filter((l) => l.kind === "grant");
 
+function monthlyPriceForBand(band: string): string {
+  if (band === "start") return START_M;
+  if (band === "team") return TEAM_M;
+  if (band === "office") return OFFICE_M;
+  return NETWORK_M;
+}
+
 beforeEach(() => {
   evtSeq = 0;
   h.subStatus = "active";
@@ -335,7 +355,7 @@ describe("(a) požiadavka -> checkout -> webhook -> entitlements -> prvý grant"
     expect(json.ok).toBe(true);
     expect(params.mode).toBe("subscription");
     expect(params.line_items).toEqual([
-      { price: SEAT_M, quantity: 3 },
+      { price: TEAM_M, quantity: 3 },
       { price: PRICE.STRIPE_PRICE_V3_PACK_100, quantity: 1 },
     ]);
     expect(params.discounts).toBeUndefined();
@@ -362,7 +382,7 @@ describe("(a) požiadavka -> checkout -> webhook -> entitlements -> prvý grant"
     const cat = buildPricingV2Catalog();
     const team = cat.bands.find((b) => b.id === "team")!;
     const pack = cat.packs.find((p) => p.credits === 100)!;
-    expect([team.netCents, team.grossCents, pack.netCents, pack.grossCents]).toEqual([5000, 6150, 5100, 6273]);
+    expect([team.netCents, team.grossCents, pack.netCents, pack.grossCents]).toEqual([6500, 7995, 5100, 6273]);
   });
 
   it("webhook zapíše licensed_users = seats = quantity zo Stripe a pásmo z nej, aj keď sa metadáta líšia", async () => {
@@ -461,9 +481,8 @@ describe("(c2) ročné platenie: kredity sa prideľujú mesačne, plán ostáva 
     const { res, params } = await doCheckout({ checkoutType: "pricing_v2", seats: 3, interval: "year" });
     expect(res.status).toBe(200);
     expect(params.mode).toBe("subscription");
-    expect(params.line_items).toEqual([{ price: SEAT_Y, quantity: 3 }]);
-    // pred 31. 12. 2026 22:59:59Z: kupón 9/12, nikdy allow_promotion_codes
-    expect(params.discounts).toEqual([{ coupon: PRICE.STRIPE_COUPON_V3_ANNUAL_PROMO }]);
+    expect(params.line_items).toEqual([{ price: TEAM_Y, quantity: 3 }]);
+    expect(params.discounts).toBeUndefined();
     expect(params.allow_promotion_codes).toBeUndefined();
     expect(params.metadata.interval).toBe("year");
 
@@ -485,15 +504,13 @@ describe("(c2) ročné platenie: kredity sa prideľujú mesačne, plán ostáva 
   it("akcia 9/12: ročný checkout po termíne a mesačný checkout kedykoľvek kupón nenesie", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-12-31T22:59:59Z"));
-    expect((await doCheckout({ checkoutType: "pricing_v2", seats: 5, interval: "year" })).params.discounts).toEqual([
-      { coupon: PRICE.STRIPE_COUPON_V3_ANNUAL_PROMO },
-    ]);
+    expect((await doCheckout({ checkoutType: "pricing_v2", seats: 5, interval: "year" })).params.discounts).toBeUndefined();
     expect((await doCheckout({ checkoutType: "pricing_v2", seats: 5, interval: "month" })).params.discounts).toBeUndefined();
     vi.setSystemTime(new Date("2026-12-31T23:00:00Z"));
     const late = await doCheckout({ checkoutType: "pricing_v2", seats: 5, interval: "year" });
     expect(late.res.status).toBe(200);
     expect(late.params.discounts).toBeUndefined();
-    expect(late.params.line_items).toEqual([{ price: SEAT_Y, quantity: 5 }]);
+    expect(late.params.line_items).toEqual([{ price: TEAM_Y, quantity: 5 }]);
   });
 
   it("subscription.updated s ročnou cenou licencie nezmení plán na 'free' a prepíše pásmo podľa quantity; neznáma cena stále nič nemení", async () => {
@@ -730,7 +747,7 @@ describe("(i) hraničné počty maklérov celým reťazcom", () => {
     const { res, params } = await doCheckout({ checkoutType: "pricing_v2", seats: users, interval: "month", packCredits: null });
     expect(res.status).toBe(200);
     expect(params.metadata.bandId).toBe(band);
-    expect(params.line_items).toEqual([{ price: SEAT_M, quantity: users }]);
+    expect(params.line_items).toEqual([{ price: monthlyPriceForBand(band), quantity: users }]);
     await handlePricingCheckoutWebhook(sessionEvent(params.metadata));
     expect(agency()).toMatchObject({
       pricing_band: band,
@@ -830,11 +847,11 @@ describe("tenant izolácia a tajomstvá", () => {
   });
 
   it("chýbajúce ceny -> 503 prices_not_configured, len NÁZVY env, nie hodnoty", async () => {
-    vi.stubEnv("STRIPE_PRICE_V3_SEAT_MONTHLY", "price_xxx");
+    vi.stubEnv("STRIPE_PRICE_V3_TEAM_MONTHLY", "price_xxx");
     const { res, json } = await doCheckout({ checkoutType: "pricing_v2", seats: 3, interval: "month", packCredits: null });
     expect(res.status).toBe(503);
     expect(json.code).toBe("prices_not_configured");
-    expect(json.missingPriceEnvKeys).toEqual(["STRIPE_PRICE_V3_SEAT_MONTHLY"]);
+    expect(json.missingPriceEnvKeys).toEqual(["STRIPE_PRICE_V3_TEAM_MONTHLY"]);
     expect(h.created).toHaveLength(0);
     const all = JSON.stringify(json) + JSON.stringify(await (await configGET()).json());
     for (const v of Object.values(PRICE)) expect(all).not.toContain(v);
@@ -889,7 +906,7 @@ describe("ŠVY A -> B: reálne handlery trás A -> reálny klientský parser B",
   });
 
   it("503 prices_not_configured -> 'nie je dostupné'", async () => {
-    vi.stubEnv("STRIPE_PRICE_V3_SEAT_MONTHLY", "");
+    vi.stubEnv("STRIPE_PRICE_V3_TEAM_MONTHLY", "price_xxx");
     stubFetchToRoute();
     const out = await submitPricingV2Checkout({ checkoutType: "pricing_v2", seats: 3, packCredits: null, interval: "month" });
     expect(out).toMatchObject({ kind: "error", code: "prices_not_configured" });
@@ -905,7 +922,7 @@ describe("ŠVY A -> B: reálne handlery trás A -> reálny klientský parser B",
     const cfg = readPricingV2Config(await (await configGET()).json());
     expect(cfg?.enabled).toBe(true);
     expect(cfg?.checkoutAvailable).toBe(true);
-    expect(cfg?.catalog?.bands.map((b) => b.grossCents)).toEqual([3075, 6150, 9102, 14268]);
+    expect(cfg?.catalog?.bands.map((b) => b.grossCents)).toEqual([3075, 7995, 9102, 14268]);
   });
 
   it("[ŠEV] výnimka v checkout (profil bez agency_id) -> 503 checkout_failed: klient ukáže 'nedostupné', nie 'skontrolujte počet'", async () => {

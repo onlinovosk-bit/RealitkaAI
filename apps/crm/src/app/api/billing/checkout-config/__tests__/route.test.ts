@@ -1,18 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const V3_ENV: Record<string, string> = {
-  STRIPE_PRICE_V3_SEAT_MONTHLY: "price_1Abcdefgh12341",
-  STRIPE_PRICE_V3_SEAT_YEARLY: "price_1Abcdefgh12342",
-  STRIPE_PRICE_V3_PACK_50: "price_1Abcdefgh12345",
-  STRIPE_PRICE_V3_PACK_100: "price_1Abcdefgh12346",
-  STRIPE_PRICE_V3_PACK_150: "price_1Abcdefgh12347",
-  STRIPE_PRICE_V3_PACK_200: "price_1Abcdefgh12348",
-  STRIPE_PRICE_V3_PACK_250: "price_1Abcdefgh12349",
-  STRIPE_PRICE_V3_PACK_300: "price_1Abcdefgh12351",
-  STRIPE_PRICE_V3_CREDIT: "price_1Abcdefgh12350",
+  STRIPE_PRICE_V3_START_MONTHLY: "price_1Abcdefgh12341",
+  STRIPE_PRICE_V3_START_YEARLY: "price_1Abcdefgh12342",
+  STRIPE_PRICE_V3_TEAM_MONTHLY: "price_1Abcdefgh12343",
+  STRIPE_PRICE_V3_TEAM_YEARLY: "price_1Abcdefgh12344",
+  STRIPE_PRICE_V3_KANCELARIA_MONTHLY: "price_1Abcdefgh12345",
+  STRIPE_PRICE_V3_KANCELARIA_YEARLY: "price_1Abcdefgh12346",
+  STRIPE_PRICE_V3_SIET_MONTHLY: "price_1Abcdefgh12347",
+  STRIPE_PRICE_V3_SIET_YEARLY: "price_1Abcdefgh12348",
+  STRIPE_PRICE_V3_PACK_50: "price_1Abcdefgh12445",
+  STRIPE_PRICE_V3_PACK_100: "price_1Abcdefgh12446",
+  STRIPE_PRICE_V3_PACK_150: "price_1Abcdefgh12447",
+  STRIPE_PRICE_V3_PACK_200: "price_1Abcdefgh12448",
+  STRIPE_PRICE_V3_PACK_250: "price_1Abcdefgh12449",
+  STRIPE_PRICE_V3_PACK_300: "price_1Abcdefgh12451",
+  STRIPE_PRICE_V3_CREDIT: "price_1Abcdefgh12450",
 };
 const PLANS_ONLY_ENV = Object.entries(V3_ENV).filter(([k]) => !k.includes("PACK") && !k.endsWith("CREDIT"));
-const COUPON_ENV = "promo_synthetic_9of12";
 
 async function get() {
   const { GET } = await import("@/app/api/billing/checkout-config/route");
@@ -66,7 +71,7 @@ describe("GET /api/billing/checkout-config", () => {
 
   it("flag on, prices missing: checkoutAvailable false and only NAMES are listed", async () => {
     vi.stubEnv("PRICING_V2_ENABLED", "1");
-    vi.stubEnv("STRIPE_PRICE_V3_SEAT_MONTHLY", V3_ENV.STRIPE_PRICE_V3_SEAT_MONTHLY);
+    vi.stubEnv("STRIPE_PRICE_V3_START_MONTHLY", V3_ENV.STRIPE_PRICE_V3_START_MONTHLY);
     vi.stubEnv("PRICING_V2_PLANS_ONLY", "false");
     const v2 = (await get()).pricingV2 as {
       enabled: boolean;
@@ -77,17 +82,22 @@ describe("GET /api/billing/checkout-config", () => {
     expect(v2.enabled).toBe(true);
     expect(v2.checkoutAvailable).toBe(false);
     expect(v2.missingPriceEnvKeys).toContain("STRIPE_PRICE_V3_PACK_50");
-    expect(v2.missingPriceEnvKeys).not.toContain("STRIPE_PRICE_V3_SEAT_MONTHLY");
+    expect(v2.missingPriceEnvKeys).not.toContain("STRIPE_PRICE_V3_START_MONTHLY");
     expect(v2.missingPriceEnvKeys.every((n) => /^STRIPE_PRICE_V3_[A-Z0-9_]+$/.test(n))).toBe(true);
     expect(v2.catalog.bands).toHaveLength(4);
     expect(JSON.stringify(v2)).not.toContain("price_1Abcdefgh");
   });
 
-  it("flag on, mesačná licencia chýba: checkout fail-closed (checkoutAvailable false), názov v zozname", async () => {
+  it("flag on, mesačné licencie chýbajú: checkout fail-closed (checkoutAvailable false), názvy v zozname", async () => {
     vi.stubEnv("PRICING_V2_ENABLED", "on");
     const v2 = (await get()).pricingV2 as { checkoutAvailable: boolean; missingPriceEnvKeys: string[]; yearlyAvailable: boolean };
     expect(v2.checkoutAvailable).toBe(false);
-    expect(v2.missingPriceEnvKeys).toEqual(["STRIPE_PRICE_V3_SEAT_MONTHLY"]);
+    expect(v2.missingPriceEnvKeys).toEqual([
+      "STRIPE_PRICE_V3_START_MONTHLY",
+      "STRIPE_PRICE_V3_TEAM_MONTHLY",
+      "STRIPE_PRICE_V3_KANCELARIA_MONTHLY",
+      "STRIPE_PRICE_V3_SIET_MONTHLY",
+    ]);
     expect(v2.yearlyAvailable).toBe(false);
   });
 
@@ -110,9 +120,9 @@ describe("GET /api/billing/checkout-config", () => {
     expect(v2.missingPriceEnvKeys).toEqual([]);
     expect(v2.catalog.version).toBe("v3");
     expect(v2.catalog.vatPercent).toBe(23);
-    expect(v2.catalog.bands.find((b) => b.id === "team")).toMatchObject({ netCents: 5000, grossCents: 6150 });
-    expect(v2.catalog.tiers.year).toHaveLength(8);
-    expect(v2.catalog.tiers.month).toHaveLength(8);
+    expect(v2.catalog.bands.find((b) => b.id === "team")).toMatchObject({ netCents: 6500, grossCents: 7995 });
+    expect(v2.catalog.tiers.year).toHaveLength(5);
+    expect(v2.catalog.tiers.month).toHaveLength(5);
     expect(v2.catalog.packs.map((p) => p.credits)).toEqual([50, 100, 150, 200, 250, 300]);
   });
 
@@ -148,37 +158,33 @@ describe("GET /api/billing/checkout-config", () => {
     expect(v2.catalog.packs).toHaveLength(6);
   });
 
-  it("ročné platenie: yearlyAvailable je true až keď existuje ročná licencia a (počas akcie) kupón; katalóg nesie ročnú cenu", async () => {
+  it("ročné platenie: yearlyAvailable je true až keď existujú ročné licencie; katalóg nesie ročnú cenu", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-10-19T08:00:00Z"));
     vi.stubEnv("PRICING_V2_ENABLED", "on");
-    vi.stubEnv("STRIPE_PRICE_V3_SEAT_MONTHLY", V3_ENV.STRIPE_PRICE_V3_SEAT_MONTHLY);
+    for (const [k, v] of Object.entries(V3_ENV).filter(([key]) => key.endsWith("_MONTHLY"))) vi.stubEnv(k, v);
     const none = (await get()).pricingV2 as { yearlyAvailable: boolean; checkoutAvailable: boolean };
     expect(none.yearlyAvailable).toBe(false);
     expect(none.checkoutAvailable).toBe(true); // mesačný predaj nie je dotknutý
 
-    vi.stubEnv("STRIPE_PRICE_V3_SEAT_YEARLY", V3_ENV.STRIPE_PRICE_V3_SEAT_YEARLY);
-    // ročná cena je, ale kupón 9/12 chýba -> ročné sa neponúka (zákazník by zaplatil 12 z 12)
+    vi.stubEnv("STRIPE_PRICE_V3_START_YEARLY", V3_ENV.STRIPE_PRICE_V3_START_YEARLY);
     expect(((await get()).pricingV2 as { yearlyAvailable: boolean }).yearlyAvailable).toBe(false);
-
-    vi.stubEnv("STRIPE_COUPON_V3_ANNUAL_PROMO", COUPON_ENV);
+    for (const [k, v] of Object.entries(V3_ENV).filter(([key]) => key.endsWith("_YEARLY"))) vi.stubEnv(k, v);
     const all = (await get()).pricingV2 as {
       yearlyAvailable: boolean;
       catalog: { promo: { active: boolean }; bands: Array<{ id: string; annual: { netCents: number; grossCents: number } }> };
     };
     expect(all.yearlyAvailable).toBe(true);
-    expect(all.catalog.promo.active).toBe(true);
+    expect(all.catalog.promo.active).toBe(false);
     expect(all.catalog.bands.find((b) => b.id === "start")?.annual).toMatchObject({ netCents: 30000, grossCents: 36900 });
     expect(JSON.stringify(all)).not.toContain("price_1Abcdefgh");
-    expect(JSON.stringify(all)).not.toContain(COUPON_ENV);
   });
 
-  it("po skončení akcie kupón nie je potrebný: ročné platenie je dostupné len s ročnou cenou", async () => {
+  it("ročné platenie je dostupné len s ročnými cenami", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2027-01-02T08:00:00Z"));
     vi.stubEnv("PRICING_V2_ENABLED", "on");
-    vi.stubEnv("STRIPE_PRICE_V3_SEAT_MONTHLY", V3_ENV.STRIPE_PRICE_V3_SEAT_MONTHLY);
-    vi.stubEnv("STRIPE_PRICE_V3_SEAT_YEARLY", V3_ENV.STRIPE_PRICE_V3_SEAT_YEARLY);
+    for (const [k, v] of Object.entries(V3_ENV)) vi.stubEnv(k, v);
     const v2 = (await get()).pricingV2 as { yearlyAvailable: boolean; catalog: { promo: { active: boolean } } };
     expect(v2.yearlyAvailable).toBe(true);
     expect(v2.catalog.promo.active).toBe(false);
