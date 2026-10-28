@@ -12,8 +12,66 @@
 ### Ďalší krok
 GO: otvoriť/merge PR ciphertext guard (a/alebo zlúčiť s #902).
 ---
+## Session 2026-10-26 (GO marketing /blog + prvý článok)
+RAU route: GO_REQUIRED BUILD revolis
+### Dokončené
+- `apps/marketing` `/blog` + `/blog/ceny-nehnutelnosti-2026-sadzby-nove-ltv` (TS dáta, markdown renderer, navy/gold chrome).
+- Sitemap + `seo.test.ts` + `blog.test.tsx` + CRM verification; lokálny HTTP 200/404 smoke.
+- Draft PR proti `main` (merge/deploy nie).
+### Rozpracované / Pending
+- Merge a nasadenie `revolis-marketing` čakajú na samostatné GO. Vercel Preview pre `cursor/*` je vypnutý.
+### Kľúčové súbory zmenené
+- `apps/marketing/lib/blog.ts`, `lib/markdown.tsx`, `lib/site.ts`, `app/blog/**`, `components/blog/BlogChrome.tsx`
+- `apps/marketing/__tests__/{blog.test.tsx,seo.test.ts,palette.test.ts}`
+- `apps/crm/tests/verification/marketing-blog.verification.test.ts`
+- `docs/reports/2026-10-26-marketing-blog.md`
+### Ďalší krok
+Review draft PR; merge + deploy len na GO.
 
 ---
+## Session 2026-10-22 (STENA doručiteľnosť a odhlásenie)
+### Dokončené
+- Kód: `apps/crm/src/proxy.ts` (verejné cesty), `lib/email/{suppression,unsubscribe-token}.ts`, `app/api/unsubscribe/route.ts`, `app/api/resend-webhook/route.ts` (bounce/complaint/suppressed), `lib/outreach-store.ts` (kontrola potlačenia + List-Unsubscribe), `lib/morning-brief/generators/email-html.ts` (podpísaný odkaz), `app/api/notifications/unsubscribe/route.ts` (len redirect).
+- Migrácia (iba súbor, neaplikovaná): `supabase/migrations/20261022100000_email_suppressions.sql`.
+- Testy: 58 PASS v 5 dotknutých súboroch, 164 PASS v susedných; lint, typecheck (53 ≤ 54), check-security čisté.
+- GDPR + Constitution v2: `docs/architecture/gdpr-deliverability-unsubscribe-2026-10-22.md` (BUILD, override Q1).
+### Rozpracované / Pending
+- Founder GO: migrácia na PROD (skill `prod-migration`) → `UNSUBSCRIBE_TOKEN_SECRET` vo Vercel → nasadenie → merge #910 (po zelenom CI).
+- Právnik: základ obchodného e-mailu fyzickej osobe, odtlačok bez soli, retencia.
+- Q-01 (Resend delivery log) a Stripe krok C ostávajú na founderovi.
+### Kľúčové súbory zmenené
+- viď Dokončené + `docs/STATUS.md` (míľnik 7), `memory/decisions.md`, `memory/session-summary.md`.
+### Ďalší krok
+GO na aplikáciu migrácie + tajomstva + nasadenie (jedna stena), potom overenie jedným testovacím bounce.
+
+---
+## Session 2026-10-21 (REVERSE ENGINEERING & SYSTEM DISCOVERY v1.0)
+### Dokončené
+- `docs/discovery/2026-10-21/`: ARCHITECTURE, DATA_FLOWS, INTEGRATIONS, FINDINGS (29 nálezov, 3× P1), OPEN_QUESTIONS (31 otázok). Iba čítanie; žiadna zmena kódu, PROD ani env.
+### Rozpracované / Pending
+- Q-01: živé `curl -i` na `/api/resend-webhook` bez cookie (potvrdí/vyvráti F-02).
+- Stripe krok C: founder pošle ID cien/kupónu, 7. webhook udalosť, A/B/C pre 21+; env + redeploy len na GO.
+- Skill `gdpr-advisor` chýba (podmienka steny doručiteľnosti).
+- Pricing testy po #908 nespustené (NOT_VERIFIED).
+### Kľúčové súbory zmenené
+- `docs/discovery/2026-10-21/*.md` (5 nových), `docs/STATUS.md` (SESSION blok), `memory/decisions.md`, `memory/session-summary.md`.
+### Ďalší krok
+Q-01 (read-only), potom GO na stenu „doručiteľnosť a odhlásenie".
+
+---
+## Session 2026-10-21 (merge origin/main do API Cost Governor)
+### Dokončené
+- `git fetch origin main` → `ddea820c`. Merge do `cursor/api-cost-governor-v1-0b41` mal textový konflikt len v `memory/decisions.md` a `memory/session-summary.md`.
+- Obe strany zachované, najnovšie navrchu. `git diff --numstat origin/main -- memory/` pred týmto záznamom: decisions `19 0`, session `50 0`.
+- Klasifikácia: `docs/reports/2026-10-21-merge-main-conflicts.md`. PR #847 sa do `main` nemerguje.
+### Rozpracované / Pending
+- Tri zámery v histórii ostávajú vedľa seba: checkout voľba A/B/C (seat/v2) verzus neskorší STRIPE-C (`STRIPE_PRICE_V3_SEAT_MONTHLY`); „GO B" cenníka nie je checkout voľba B; starší záznam hovorí, že `20261020050000` nie je v PROD, novší hovorí, že je. Tento beh to znova nemeral.
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md`: oba logy.
+- `docs/reports/2026-10-21-merge-main-conflicts.md`: klasifikácia.
+### Ďalší krok
+Live Stripe verify ostáva STOP, kým restricted kľúč nie je v prostredí inak než textom v chate. Samostatné GO.
+
 ## Session 2026-10-21 (CROSS-AGENT ENGINEERING v1.0)
 ### Dokončené
 - `scripts/ci/revolis-verify.mjs`, `scripts/ci/lib/verify-core.mjs`: completion + plan-lint, 27 testov v `scripts/ci/__tests__/revolis-verify.test.mjs`, 8 mutácií.
@@ -134,6 +192,56 @@ Founder review #892; merge a `LISTING_FROM_PHOTOS_V0=1` len na výslovné GO.
 ### Ďalší krok
 Founder review draft PR; merge a PROD flag len na výslovné GO.
 RAU route: GO_REQUIRED BUILD revolis
+
+## Session 2026-10-16 (Stripe verify — placeholder, bez API)
+### Dokončené
+- `git pull origin cursor/api-cost-governor-v1-0b41`: Already up to date, HEAD `760d5530`.
+- `STRIPE_SECRET_KEY` ostal UNSET. Placeholder `rk_live_...` sa do env nezapísal a verify skript sa nespustil.
+### Rozpracované / Pending
+- Live počty seat a v2 cien neznáme. B neaktivované. Odporúčanie: A, kým nie je skutočný restricted kľúč mimo chatu.
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-15-stripe-verify-prices-readonly.md`: druhý pokus bez HTTP.
+### Ďalší krok
+Restricted kľúč musí byť v prostredí inak než textom v chate. Potom `bash scripts/ops/stripe-verify-prices.sh` a hneď unset.
+
+## Session 2026-10-15 (Stripe verify C — STOP, kľúč chýba)
+### Dokončené
+- `docs/reports/2026-10-15-stripe-verify-prices-readonly.md`: `env -u STRIPE_SECRET_KEY bash scripts/ops/stripe-verify-prices.sh` exit 2. Žiadny GET na Stripe. Restricted `rk_live_` kľúč nie je v procese ani v env súboroch. `apps/crm/.env.local` má len triedu `sk_test` a nespúšťal sa. Stripe MCP needsAuth, nepoužitý.
+### Rozpracované / Pending
+- Live počty seat a v2 cien neznáme. Vercel env nečítaný. B neaktivované. Odporúčanie kým nie je výpis: A.
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-15-stripe-verify-prices-readonly.md`: STOP bez tajomstva.
+### Ďalší krok
+Restricted kľúč (Prices: Read) musí byť v prostredí inak než vložením do chatu. Potom znova ten istý skript.
+
+## Session 2026-10-15 (odporúčanie checkout A/B/C)
+### Dokončené
+- Odporúčanie zapísané do `docs/reports/2026-10-15-checkout-env-01-founder-checklist.md`: najprv C (read-only Stripe verify). Ak výpis stále nemá seat ani v2 Price ID, zvoliť A. B až s pomenovaným v2 cenníkom a klientom, ktorý dnes platí kartou.
+### Rozpracované / Pending
+- Founder ešte nevybral A/B/C. Live Stripe a Vercel env ostávajú nečítané.
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-15-checkout-env-01-founder-checklist.md`: spresnené odporúčanie.
+### Ďalší krok
+Founder spustí `bash scripts/ops/stripe-verify-prices.sh` s restricted kľúčom na čítanie a výstup uloží do nového reportu. Kľúč nepatri do chatu.
+
+## Session 2026-10-15 (API Cost Governor v1 + checkout checklist)
+### Dokončené
+- `packages/bus-core/src/cost-governor.ts`: ALLOW/WARN/DOWNGRADE/ESCALATE/BLOCK, prázdny default katalóg, odhad oddelený od actual.
+- `scripts/bus/consume.ts`: CLI brána pred plateným spawnom. Knižničný `runConsumer` bez `costGate` sa nemení.
+- Testy: 53/53 a plný bus beh 227/227 pod `NODE_OPTIONS=--experimental-strip-types` (Node v22.14.0). `npm run bus:test` na tomto Node bez flagu padá na `.ts` extension (exit 1). `tsc -p packages/bus-core/tsconfig.json --noEmit` exit 0.
+- `docs/reports/2026-10-15-api-cost-governor-v1.md`
+- `docs/reports/2026-10-15-checkout-env-01-founder-checklist.md` — read-only, žiadne Price ID.
+### Rozpracované / Pending
+- CRM LLM cesty Governorom nepokryté.
+- File ledger nie je bezpečný pre dva OS procesy.
+- CHECKOUT-ENV-01 čaká na foundera (voľba A/B/C). Live Stripe a Vercel env dnes nečítané.
+- Merge a deploy nerobené.
+### Kľúčové súbory zmenené
+- `packages/bus-core/src/cost-governor.ts`: nová USD politika.
+- `scripts/bus/consume.ts`: costGate pred executorom.
+- `memory/decisions.md`: engineering justification.
+### Ďalší krok
+Founder zvolí A (checkout zostane zatvorený), B (človek založí v2 ceny) alebo C (najprv read-only Stripe verify). Odporúčanie je C. Samostatné GO. Agent ceny nevytvára.
 ## Session 2026-10-19 (GO PR1 Cenník v3)
 ### Dokončené
 - Draft PR #884 `feat/pricing-v3` (needs-founder, NEMERGOVAŤ): licencia podľa počtu maklérov (start 25 €, team 65 €, office 65 € + 9 € × (n−5), network 110 €/170 € vzorec), mesačne ×1,2, ročne 12×, akcia 9/12 do 2026-12-31T22:59:59Z cez kupón, balíky 50–300 a kredit 0,75 €, `PRICING_PUBLIC_ENABLED` (predvolene vypnuté), garancia „100 % do 30 dní", Stripe katalóg/skripty/verify s tiers + kupónom, `docs/reports/STRIPE-GO.md`. Lokálne: vitest 3530 passed (padá len 9 súborov vyžadujúcich lokálnu DB), tsc 54 = baseline, ratchet 0 nových. Metóda: základ + 3 paralelné vetvy (billing / skripty / UI), spojené do jednej.

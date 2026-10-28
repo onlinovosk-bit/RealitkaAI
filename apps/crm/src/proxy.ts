@@ -38,6 +38,19 @@ const PUBLIC_PATHS = new Set([
   "/api/concierge/properties",
   "/api/concierge/callback",
   "/api/concierge/freebusy",
+  // Doručiteľnosť a odhlásenie (EMAIL-SUPPRESSION-01, nález F-02). Volajú ich
+  // cudzí aktéri bez session — Resend, poštový klient, schránka príjemcu — a
+  // bez tejto výnimky ich proxy zahodila 401 ešte pred route handlerom. Každá
+  // má vlastné overenie:
+  //   resend-webhook         — podpis Standard Webhooks (RESEND_WEBHOOK_SECRET, 503 bez neho)
+  //   unsubscribe            — HMAC token (UNSUBSCRIBE_TOKEN_SECRET); GET nič nemení
+  //   notifications/unsubscribe — starý odkaz, iba presmeruje na nastavenia
+  //   morning-brief/track/*  — UUID briefu, zapisuje len cez RPC record_brief_*
+  "/api/resend-webhook",
+  "/api/unsubscribe",
+  "/api/notifications/unsubscribe",
+  "/api/morning-brief/track/open",
+  "/api/morning-brief/track/click",
 ]);
 
 const CRON_PATH_PREFIX = "/api/agents";

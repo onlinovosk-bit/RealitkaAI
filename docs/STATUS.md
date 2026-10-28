@@ -1,5 +1,7 @@
 # Revolis.AI — STAV NA JEDNEJ STRÁNKE
 
+> **2026-10-26 BLOG:** `/blog` + prvý článok v `apps/marketing` na draft PR; PRODUCTION nezmenená. Tabuľka % sa NEMENÍ.
+
 > Aktualizuje sa **po každom uzavretom bloku** (jeden riadok zmeny hore + tabuľka). Čísla sú merané, kde je uvedený dôkaz;
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-05** (GMAIL-CONNECT: pripojenie Gmailu s šifrovaným tokenom a karta v Integráciách sú v kóde, **neaktivované** — % nezmenené).
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 20:45 UTC** (opt-in auto-odpoveď: migrácia na PROD + fail-closed #811; `last_contact_at` sa zapisuje #800; „Čakajú na kontakt" prestalo byť celá kniha #804).
@@ -44,16 +46,13 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: Stripe krok C — nájsť a odstrániť zmeraný blokátor platieb
+Cieľ: Verejný blog na www.revolis.ai + prvý článok (draft PR)
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] 1 — Prečítaná celá cesta kódu checkout → webhook; zistené, ktoré env premenné kód SKUTOČNE číta
-- [x] 2 — Zmeraný stav Vercel Production (17 Stripe/pricing premenných, len názvy a ciele; hodnoty nečítané)
-- [x] 3 — Blokátor pomenovaný: chýba `STRIPE_PRICE_V3_SEAT_MONTHLY`; osem `STRIPE_PRICE_V2_*` je mŕtvych
-- [x] 4 — Zmeraný stav platieb v PROD: 7 agentúr, 0 so `stripe_subscription_id`; spor „1 vs 3 platiace" uzavretý na 0 cez Stripe
-- [x] 5 — Kód overený zelený (69/69) → blokátor je konfigurácia, nie kód
-- [x] 6 — Opravené zastarané dokumenty: riadok Stripe v STATUS.md a plán z 2026-10-16
-- [ ] 7 — Founder vytvorí cenu v LIVE Stripe + pridá `STRIPE_PRICE_V3_SEAT_MONTHLY` + redeploy → `checkoutAvailable: true`
-- [ ] 8 — Testovací nákup end-to-end: platba → webhook → `agencies.subscription_status`
+- [x] 1 — `/blog` listing + `/blog/[slug]` v `apps/marketing` (build routy + HTTP 200)
+- [x] 2 — Prvý článok `ceny-nehnutelnosti-2026-sadzby-nove-ltv` v kóde (CTA register, zdroje, bez pilot)
+- [x] 3 — Sitemap + `seo.test.ts` obsahujú `/blog` a slug (10 PASS blog+seo)
+- [x] 4 — Draft PR proti `main` (merge/deploy nie)
+- [ ] 5 — Merge + nasadenie `revolis-marketing` (samostatné GO)
 <!-- SESSION:END -->
 
 ## Hotové 2026-10-07 — s dôkazom (REALVIA-SEC-01)

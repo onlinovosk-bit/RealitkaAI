@@ -157,7 +157,8 @@ export type ConsumerRefusalCode =
   | "execution_unknown"
   | "unprovable_first_run"
   | "capability_gone"
-  | "daily_cap_reached";
+  | "daily_cap_reached"
+  | "cost_governor";
 
 /** Refusals worth telling the sender about. The rest are silent no-ops. */
 const REPORTABLE: ReadonlySet<ConsumerRefusalCode> = new Set<ConsumerRefusalCode>([
@@ -166,6 +167,7 @@ const REPORTABLE: ReadonlySet<ConsumerRefusalCode> = new Set<ConsumerRefusalCode
   "founder_decision_pending",
   "no_capability",
   "lost_text_in_authority_field",
+  "cost_governor",
 ]);
 
 export type ConsumerDecision =
