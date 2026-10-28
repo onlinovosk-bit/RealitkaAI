@@ -5,8 +5,8 @@
 //                                      [--criteria kriteria.json] [--run] [--out dir]
 //   node scripts/ci/revolis-verify.mjs plan-lint <plan.md>
 //
-// Kód výstupu: 0 = hotovo smie byť potvrdené / plán je v poriadku
-//              1 = FAIL (kontrola zlyhala alebo plán porušuje pravidlo)
+// Kód výstupu: 0 = odvodený stav naozaj podporuje hotovo (workflow: prReady a kód nie je blocked)
+//              1 = FAIL (kontrola zlyhala, neplatný prechod, alebo plán porušuje pravidlo)
 //              2 = BLOCKED alebo NOT_VERIFIED (nedostatok dôkazu — nie je to PASS)
 //
 // Nič nemení: číta git, spúšťa existujúce kontroly (vitest, eslint, prepush-gate) a píše
@@ -16,8 +16,8 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import {
-  STATUS, aggregate, evaluateCriteria, lintPlan, planChecks, renderMarkdown,
-  scopeCheck, statusFromRun, untestedChanges,
+  STATUS, aggregate, evaluateCriteria, evaluateWorkflow, lintPlan, planChecks, renderMarkdown,
+  scopeCheck, statusFromRun, untestedChanges, workflowExitCode,
 } from "./lib/verify-core.mjs";
 
 const ROOT = resolve(new URL("../..", import.meta.url).pathname);
@@ -73,7 +73,20 @@ function completion() {
   const agg = aggregate({ checks, criteria, scope: scopeRes, untested });
 
   const report = { base, files, checks, criteria, scope: scopeRes, ...agg };
-  const md = renderMarkdown(report);
+  let md = renderMarkdown(report);
+  let workflowExit = null;
+  const taskPath = arg("task", "");
+  if (taskPath) {
+    const task = JSON.parse(readFileSync(resolve(taskPath), "utf8"));
+    const wf = evaluateWorkflow({
+      assertedState: task.assertedState ?? null,
+      previousState: task.previousState ?? null,
+      evidence: evidenceFromTask(task, { files, checks, criteria, scopeStatus: scopeRes.status, untested }),
+    });
+    report.workflow = wf;
+    md += `\n## Stav úlohy\n\nEfektívny stav: **${wf.effectiveState}** · kód: \`${wf.code}\` · PR ready: ${wf.prReady ? "áno" : "nie"} · merge: nie · deploy: nie\n`;
+    workflowExit = workflowExitCode(wf);
+  }
   console.log(md);
 
   const out = arg("out");
@@ -82,7 +95,55 @@ function completion() {
     writeFileSync(join(resolve(out), "verify-completion.json"), JSON.stringify(report, null, 2));
     writeFileSync(join(resolve(out), "verify-completion.md"), md);
   }
+  if (workflowExit !== null) process.exit(workflowExit);
   process.exit(agg.overall === STATUS.FAIL ? 1 : agg.doneAllowed ? 0 : 2);
+}
+
+function evidenceFromTask(task, measured) {
+  return {
+    started: measured.files.length > 0 || Boolean(task.started),
+    author: task.author,
+    filesChanged: measured.files,
+    checks: measured.checks,
+    criteria: measured.criteria,
+    scopeStatus: measured.scopeStatus,
+    untested: measured.untested,
+    independentReview: task.independentReview ?? null,
+    humanApproval: task.humanApproval ?? null,
+    mergeEvidence: task.mergeEvidence ?? null,
+    deployEvidence: task.deployEvidence ?? null,
+    productionEvidence: task.productionEvidence ?? null,
+  };
+}
+
+function workflow() {
+  const taskPath = arg("task", "");
+  if (!taskPath) { console.error("použitie: workflow --task <file.json> [--run]"); process.exit(2); }
+  const task = JSON.parse(readFileSync(resolve(taskPath), "utf8"));
+  const base = arg("base", "origin/main");
+  const scope = Array.isArray(task.scope) ? task.scope : [];
+  const criteriaIn = Array.isArray(task.criteria) ? task.criteria : [];
+  const files = changedFiles(base);
+  const checks = planChecks(files).map((c) => runCheck(c, flag("run")));
+  const untested = untestedChanges(files, (p) => existsSync(join(ROOT, p)));
+  const scopeRes = scopeCheck(files, scope);
+  const criteria = evaluateCriteria(criteriaIn, checks);
+  const wf = evaluateWorkflow({
+    assertedState: task.assertedState ?? null,
+    previousState: task.previousState ?? null,
+    evidence: evidenceFromTask(task, { files, checks, criteria, scopeStatus: scopeRes.status, untested }),
+  });
+  console.log(`# Stav úlohy: **${wf.effectiveState}**`);
+  console.log("");
+  console.log(`Kód: \`${wf.code}\``);
+  console.log(`Tvrdený stav: ${wf.assertedState ?? "(žiadny)"}`);
+  console.log(`PR ready: ${wf.prReady ? "áno" : "nie"}`);
+  console.log("Merge: nie. Deploy: nie.");
+  if (wf.blockers.length) console.log(`Blokéry: ${wf.blockers.map((b) => b.code).join(", ")}`);
+  console.log("");
+  console.log("_Stavy kontrol pochádzajú z behu, nie z JSON tvrdenia. Tvrdenie agenta samo osebe stav neposunie._");
+  if (!task.assertedState) process.exit(2);
+  process.exit(workflowExitCode(wf));
 }
 
 function planLint() {
@@ -97,4 +158,5 @@ function planLint() {
 const cmd = process.argv[2];
 if (cmd === "completion") completion();
 else if (cmd === "plan-lint") planLint();
-else { console.error("použitie: revolis-verify.mjs completion|plan-lint ..."); process.exit(2); }
+else if (cmd === "workflow") workflow();
+else { console.error("použitie: revolis-verify.mjs completion|plan-lint|workflow ..."); process.exit(2); }
