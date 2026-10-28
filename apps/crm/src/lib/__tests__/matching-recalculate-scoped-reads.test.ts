@@ -171,3 +171,30 @@ describe("recalculateAllMatches truncation", () => {
     expect(res.totalRows).toBe(0);
   });
 });
+
+describe("recalculateMatchesForLead", () => {
+  it("reads the lead and properties through the caller's client", async () => {
+    const { client, ops } = scopedClient();
+    getLeadMock.mockResolvedValue(LEAD);
+    listPropertiesMock.mockResolvedValue([PROPERTY]);
+
+    const res = await recalculateMatchesForLead("lead-1", client);
+
+    expect(getLeadMock).toHaveBeenCalledWith("lead-1", client);
+    expect(listPropertiesMock).toHaveBeenCalledWith(undefined, client);
+    expect(ops.map((o) => o.op)).toEqual(["delete", "insert"]);
+    expect(res.inserted).toBe(1);
+  });
+
+  it("no properties read → keeps the lead's stored matches", async () => {
+    const { client, ops } = scopedClient();
+    getLeadMock.mockResolvedValue(LEAD);
+    listPropertiesMock.mockResolvedValue([]);
+
+    const res = await recalculateMatchesForLead("lead-1", client);
+
+    expect(ops).toEqual([]);
+    expect(res.inserted).toBe(0);
+    expect(forLeadMock).not.toHaveBeenCalled();
+  });
+});

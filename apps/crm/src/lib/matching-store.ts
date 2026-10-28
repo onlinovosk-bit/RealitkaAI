@@ -347,6 +347,11 @@ export async function recalculateMatchesForLead(
       "[matching-store] property list hit LIST_MAX — skipping lead recalculate to avoid match wipe",
       { leadId, propertiesCount: properties.length, cap: PROPERTIES_LIST_MAX },
     );
+  // An empty read is not evidence that no property fits: keep what is stored.
+  // Same guard as recalculateMatchesForProperty / recalculateAllMatches.
+  // listProperties soft-fails to [] in production on DB errors — without this
+  // guard a lead save would DELETE every match for that lead and insert 0.
+  if (properties.length === 0) {
     return { mode: "lead" as const, leadId, inserted: 0 };
   }
 
