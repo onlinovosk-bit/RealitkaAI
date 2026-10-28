@@ -28,6 +28,7 @@ import {
   FileExecutionCounter,
   FileExecutionLedger,
   resolveClaudeBinary,
+  buildConsumerCostGate,
   runConsumer,
   runWatch,
   type ClaudeExecutor,
@@ -913,4 +914,102 @@ test("the real fact source reads this repository, with nothing injected", async 
 
   assert.equal(outcomes[0]!.action, "executed");
   assert.equal(outcomes[0]!.action === "executed" && outcomes[0]!.reply, head);
+});
+
+test("the CLI cost gate blocks a paid spawn when no price snapshot is configured", async (t) => {
+  const bus = await harness();
+  t.after(() => bus.close());
+  await seedTask(bus.client);
+  const calls: string[] = [];
+  const ledgerFile = path.join(bus.busRoot, "cost-ledger.json");
+  const cost = buildConsumerCostGate({
+    model: "sonnet",
+    timeoutMs: 30_000,
+    ledgerFile,
+    env: {},
+  });
+  const outcomes = await runConsumer({
+    client: bus.client,
+    executor: stubExecutor("BUS ALIVE", calls),
+    ledger: bus.ledger,
+    model: "sonnet",
+    timeoutMs: 30_000,
+    postBlockers: false,
+    ...cost,
+  });
+  assert.equal(calls.length, 0);
+  assert.equal(outcomes[0]?.action, "blocked");
+  assert.equal(outcomes[0]?.action === "blocked" && outcomes[0].code, "cost_governor");
+});
+
+test("an allowed gate settles provider cost separately from the estimate", async (t) => {
+  const bus = await harness();
+  t.after(() => bus.close());
+  await seedTask(bus.client, {
+    counters: {
+      estimated_cost_usd: 0.1,
+      max_cost_usd: 0.1,
+      daily_remaining_usd: 5,
+      monthly_remaining_usd: 25,
+    },
+  });
+  const calls: string[] = [];
+  const ledgerFile = path.join(bus.busRoot, "cost-ledger.json");
+  const configFile = path.join(bus.busRoot, "governor.json");
+  await writeFile(
+    configFile,
+    JSON.stringify({
+      version: "1.0.0",
+      limits: {
+        per_task_usd: 0.5,
+        daily_usd: 5,
+        monthly_usd: 25,
+        warn_remaining_ratio: 0.2,
+        max_retries: 0,
+        max_timeout_ms: 600_000,
+      },
+      catalog: {
+        version: "1.0.0",
+        as_of: "2026-10-15",
+        source_label: "configured_snapshot_not_vendor_live",
+        entries: [{ provider: "anthropic", model: "sonnet", max_estimate_usd: 0.4 }],
+      },
+      capability_allowlist: ["bus-alive"],
+    }),
+  );
+  const cost = buildConsumerCostGate({
+    model: "sonnet",
+    timeoutMs: 30_000,
+    ledgerFile,
+    env: { REVOLIS_COST_GOVERNOR_CONFIG: configFile },
+  });
+  const executor: ClaudeExecutor = async (prompt) => {
+    calls.push(prompt);
+    return {
+      reply: "BUS ALIVE",
+      sessionId: "stub-session",
+      model: "stub",
+      numTurns: 1,
+      durationMs: 1,
+      costUsd: null,
+      command: "stub-executor (not a real Claude Code process)",
+    };
+  };
+  const outcomes = await runConsumer({
+    client: bus.client,
+    executor,
+    ledger: bus.ledger,
+    model: "sonnet",
+    timeoutMs: 30_000,
+    postBlockers: false,
+    ...cost,
+  });
+  assert.equal(outcomes[0]?.action, "executed");
+  assert.equal(calls.length, 1);
+  const raw = await readFile(ledgerFile, "utf8");
+  const rows = JSON.parse(raw) as Array<{ estimated_cost_usd: number; actual_cost_usd: number | null; cost_source: string | null }>;
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0]?.estimated_cost_usd, 0.1);
+  assert.equal(rows[0]?.actual_cost_usd, null);
+  assert.equal(rows[0]?.cost_source, "unavailable");
 });

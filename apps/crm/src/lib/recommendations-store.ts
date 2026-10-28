@@ -1,7 +1,17 @@
 ﻿import { supabaseClient, getSupabaseClient } from "@/lib/supabase/client";
 import { resolveTenantSupabase } from "@/lib/supabase/resolve-client";
-import { listLeads } from "@/lib/leads-store";
+import { listLeads, LEADS_LIST_MAX } from "@/lib/leads-store";
 import { generateRecommendationsForLead, type GeneratedRecommendation, type SimpleMatch } from "@/lib/recommendations-engine";
+
+/**
+ * listLeads hard-caps at LEADS_LIST_MAX per page. A full page is not proof the
+ * tenant inventory ends there — clear-all then rebuild from that page would
+ * permanently drop ai_recommendations for off-page leads. Empty reads (prod
+ * soft-fail on DB error / missing agency) would wipe the entire table.
+ */
+function leadInventoryUnsafeForGlobalClear(leadsCount: number): boolean {
+  return leadsCount === 0 || leadsCount >= LEADS_LIST_MAX;
+}
 
 export type PersistedRecommendation = {
   id: string;
@@ -221,6 +231,19 @@ export async function recalculateAllRecommendations(
     listLeads(undefined, scoped),
     listPersistedMatches(scoped),
   ]);
+
+  // Empty or full LIST_MAX page ≠ complete tenant set — refuse global wipe/rebuild.
+  if (leadInventoryUnsafeForGlobalClear(leads.length)) {
+    console.warn(
+      "[recommendations-store] lead list empty or hit LIST_MAX — skipping all recalculate to avoid recommendation wipe",
+      { leadsCount: leads.length, cap: LEADS_LIST_MAX },
+    );
+    return {
+      totalLeads: leads.length,
+      totalMatches: matches.length,
+      totalRows: 0,
+    };
+  }
 
   await clearRecommendations(scoped);
 

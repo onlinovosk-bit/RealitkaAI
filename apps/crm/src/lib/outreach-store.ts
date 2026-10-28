@@ -20,7 +20,11 @@ import { insertAgentDraft } from "@/lib/inbound/insert-agent-draft";
 import { OUTREACH_AGENT_ID } from "@/lib/inbound/draft-view";
 import type { SendMessageInput, SendMessageResult } from "@/lib/multi-channel-sender";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { checkSuppression, hashEmail } from "@/lib/email/suppression";
+import { unsubscribeUrl } from "@/lib/email/unsubscribe-token";
 import { logAiRecommendation, hashRecommendationDedupePart } from "@/lib/moat-capture/log-ai-recommendation";
+
+const OUTREACH_BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.revolis.ai";
 
 type OutreachConfig = {
   dailyLimit: number;
@@ -407,6 +411,23 @@ export async function sendApprovedOutreach(input: SendMessageInput): Promise<Sen
 
   const correlationId = String(input.meta?.correlation_id ?? randomUUID());
   const agencyId = (await fetchLeadAgencyId(input.leadId)) ?? SYSTEM_USAGE_AGENCY_ID;
+
+  // EMAIL-SUPPRESSION-01: zoznam odhlásených a nedoručiteľných adries. Fail-closed:
+  // bez zápisového klienta, bez tajomstva odhlasovacieho odkazu alebo pri chybe
+  // čítania sa neodošle nič — odoslanie na odhlásenú adresu je horšie než zdržané.
+  const admin = createServiceRoleClient();
+  if (!admin) return fail("Chýba service role klient — zoznam odhlásených sa nedá overiť, odoslanie zastavené.");
+  const suppression = await checkSuppression(admin as SupabaseClient, input.to, agencyId);
+  if (suppression.suppressed) {
+    return fail(
+      suppression.reason === "lookup_failed"
+        ? "Zoznam odhlásených sa nepodarilo overiť — odoslanie zastavené."
+        : "Adresa je na zozname odhlásených alebo nedoručiteľných — odoslanie zastavené.",
+    );
+  }
+  const unsubUrl = unsubscribeUrl(OUTREACH_BASE_URL, { t: "o", h: hashEmail(input.to), a: agencyId });
+  if (!unsubUrl) return fail("Chýba UNSUBSCRIBE_TOKEN_SECRET — bez odhlasovacieho odkazu sa neodosiela.");
+
   const quota = await checkOutreachQuota(input.leadId, agencyId, correlationId);
   if (quota) return fail(quota.error);
 
@@ -415,7 +436,12 @@ export async function sendApprovedOutreach(input: SendMessageInput): Promise<Sen
     from,
     to: input.to,
     subject,
-    text: input.body,
+    // Schválený text zostáva nedotknutý; pätička sa pridáva až za neho.
+    text: `${input.body}\n\n--\nNechcete dostávať ďalšie správy? Odhlásiť sa môžete tu: ${unsubUrl}`,
+    headers: {
+      "List-Unsubscribe": `<${unsubUrl}>`,
+      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+    },
     tags: [{ name: "lead_id", value: input.leadId }],
   });
   const resendError = (sendResult as { error?: { message?: string } | null }).error;
