@@ -331,6 +331,14 @@ export async function recalculateMatchesForLead(
     throw new Error("Lead nebol nájdený.");
   }
 
+  // An empty read is not evidence that no property fits: keep what is stored.
+  // Same guard as recalculateMatchesForProperty / recalculateAllMatches.
+  // listProperties soft-fails to [] in production on DB errors — without this
+  // guard a lead save would DELETE every match for that lead and insert 0.
+  if (properties.length === 0) {
+    return { mode: "lead" as const, leadId, inserted: 0 };
+  }
+
   const matches = getMatchingPropertiesForLead(lead, properties, 35);
 
   try {
