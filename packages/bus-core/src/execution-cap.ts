@@ -5,6 +5,9 @@
  * an unbounded number of Claude invocations or GitHub operations. Founder
  * decision, 2026-09-21: a hard ceiling on *task executions*, not on turns, and
  * reaching it stops automatic execution rather than merely warning.
+ *
+ * USD authorization lives in `cost-governor.ts`. This counter is not a price,
+ * a budget, or an actual spend figure.
  */
 
 export const DAILY_EXECUTION_CAP = 100;

@@ -1,9 +1,16 @@
 # Revolis.AI — STAV NA JEDNEJ STRÁNKE
 
+> **2026-10-26 BLOG:** `/blog` + prvý článok v `apps/marketing` na draft PR; PRODUCTION nezmenená. Tabuľka % sa NEMENÍ.
+
 > Aktualizuje sa **po každom uzavretom bloku** (jeden riadok zmeny hore + tabuľka). Čísla sú merané, kde je uvedený dôkaz;
+> **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-23** (LEDGER-REPAIR: ledger 81 → 136, 3 migrácie na PROD, tabuľka % nepreratúvaná; pôvodne 2026-10-05 GMAIL-CONNECT: pripojenie Gmailu s šifrovaným tokenom a karta v Integráciách sú v kóde, **neaktivované** — % nezmenené).
+> **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 20:45 UTC** (opt-in auto-odpoveď: migrácia na PROD + fail-closed #811; `last_contact_at` sa zapisuje #800; „Čakajú na kontakt" prestalo byť celá kniha #804).
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-05, 07:55 UTC** (FAIL-OPEN-SWEEP + TRIAL-GATE-CLOSED variant A: po vypršaní trialu je účet read-only, nie otvorený; hlavička prepočítaná z tabuľky 53 % → 51 %).
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 08:30 UTC** (EVENTS-WIRE + CRON-ALIVE, zatiaľ nezmergované).
+> **2026-10-09 AGENTIC-WAVES:** Vlna 1 (WP-1…WP-6) zmergovaná do `main` (#836–#841): bez 180 000 € fallbackov, čítač `inbound_mail_outcomes`, send-gate, inventár trás, návrh Strážcu follow-upu (BACKLOG), PROD balíky **neaplikované**. Tabuľka nižšie sa NEMENÍ (nič z toho nie je PROD dôkaz). Plán: `docs/plans/2026-10-09-agentic-waves.md`.
 
+> **2026-10-22 (PROD aktivácia doručiteľnosti):** tabuľka sa neprepočítava, produkt ostáva **≈ 51 %** (odhad; tabuľka STARÁ, posledný prepočet 2026-10-05). Migrácia `email_suppressions` je na PROD, kód nasadený; odchádzajúci outreach e-mail je fail-closed, kým founder nenastaví `UNSUBSCRIBE_TOKEN_SECRET`. Posledná aktualizácia: **2026-10-22**.
+>
 > **2026-10-16 (víkend, bez prepočtu tabuľky):** vážené **≈ 51 %** ostáva meranie z **2026-10-05**. **ZMERANÉ** `git rev-list --count origin/main --since=2026-10-05` na `9168d583` = **34** commitov. SESSION blok nižšie už má body 1, 2, 3, 4, 5, 9 a 10 odškrtnuté s PR na main (#851, #852, #855, #856, #858, #857, #854). Predaj / platby ostáva **0 %**, lebo live Stripe katalóg je v tomto behu **NEZMERANÉ** (žiaden live kľúč, `scripts/ops/stripe-verify-prices.sh` sa nespúšťal). Tabuľka sa neprepočítava, kým nie je živý nákup.
 >
 > **2026-10-08 SIGNUP-PROD:** migrácie SIGNUP-ARCH a pricing v2 stĺpce sú **aplikované na PROD** (dôkaz v `docs/architecture/2026-10-06-self-serve-signup.md`). Zavreté 2 nové cesty (zápis billing/trial stĺpcov agentúry z prehliadača; zhoda neoverený e-mail → tenant). Tabuľka nižšie sa NEPREPOČÍTAVA, kým nie je aj živý nákup (váha Predaj/platby 30).
@@ -21,8 +28,8 @@
 
 | blok | váha | stav | skóre | čo blokuje |
 |---|---|---|---|---|
-| **Predaj / platby (Stripe)** | 30 | **0 z 10 cien** na live účte · kód: zrušenie / zmena miest / zlyhaná platba sa premieta do `agencies` (**TESTED**, 15 testov + mutation proof 9/9, PLATBY-E2E; PROD neoverené) · chýbajúci `STRIPE_WEBHOOK_SECRET` sa hlási · **brána po vypršaní už vynucuje** (read-only režim, #817; predtým `canUseFullApp = true` natvrdo) | **0 %** | **founder: krok C v Stripe + `STRIPE_WEBHOOK_SECRET` + endpoint v Stripe** |
-| Príjem e-mailov → lead | 30 | parser ✅ · diagnostika (#743) ✅ · log schránok + trvalá stopa (#774) ✅ **nasadené a funguje** (23 riadkov od 1. 10. 19:41) · `unknown_source` → BACKLOG (dáta nepodporujú) | 80 % | nič — čaká na reálne portálové maily |
+| **Predaj / platby (Stripe)** | 30 | **Blokátor zmeraný 2026-10-20:** vo Vercel Production chýba `STRIPE_PRICE_V3_SEAT_MONTHLY` → checkout vracia **503**. Osem `STRIPE_PRICE_V2_*`, ktoré tam sú, **kód už nečíta** (cenník prešiel na v3). `STRIPE_SECRET_KEY` aj `STRIPE_WEBHOOK_SECRET` v produkcii **sú**. PROD: 7 agentúr, **0 so `stripe_subscription_id`** (jediné `active` je ručné `manual_plan`). Kód zelený: 69/69 testov. Rozpis: `docs/reports/2026-10-20-stripe-krok-c-blokator.md` | **0 %** | **founder: vytvoriť v LIVE Stripe `revolis_v3_licence_month` + pridať `STRIPE_PRICE_V3_SEAT_MONTHLY` do Vercelu + redeploy** |
+| Príjem e-mailov → lead | 30 | parser ✅ · diagnostika (#743) ✅ · log schránok + trvalá stopa (#774) ✅ **nasadené a funguje** (23 riadkov od 1. 10. 19:41) · `unknown_source` → BACKLOG (dáta nepodporujú) · **Gmail connect** (GMAIL-CONNECT): kód + šifrovaný token + karta Integrácie hotové, **neaktivované** — čaká na Google client, súhlas majiteľa a kľúče | 80 % | nič — čaká na reálne portálové maily |
 | AI návrh + odoslanie | 15 | triage ✅ · návrh ✅ · odoslanie ❌ · **opt-in tesní**: migrácia `auto_response_enabled DEFAULT false` aplikovaná na PROD 2026-10-02 (overené `information_schema`, 7 agentúr nedotknutých, rollback v `supabase_migrations`) + fail-closed v kóde (#811, čaká na merge) | 67 % | founder: Resend DNS + reply-to + súhlas referenčného klienta |
 | **AI vrstva (BRI, skóre, briefy)** | *(v „Schéma + nasadenie")* | **crony BEŽIA** (meraná stopa v `cron_runs`) · zapisovateľ eventov zapojený (#786) · `events` stále 0 do nasadenia · **`leads.last_contact_at` konečne niekto zapisuje** (#800, bolo 0 z 520 riadkov) · ranný brief už nevydáva počet riadkov za meranie (#804: `pendingContact`/`hotPending` → `number \| null`) | 45 % | merge #786 + nasadenie; prvý reálny kontakt rozbehne stopu |
 | Tenantová izolácia | 15 | 28 z 40 ciest zavretých | 70 % | nič naliehavé (zoznam nižšie) |
@@ -41,18 +48,38 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: Preflight audit dodávky + tri opravy na PROD-ceste (Realvia príčiny, pravda v cron_runs, BRI ON CONFLICT)
+Cieľ: UX cenníka + ročná zľava 17 % z katalógu (aj marketing)
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] 1 — Vlny A/B: reporty z meraných dát, nie z agentov (#882 zmergovaný)
-- [x] 2 — Realvia: druh zlyhania ide do `realvia_metrics.meta` bez migrácie (#885 → `26eafd9`)
-- [x] 3 — Preflight audit dodávky A–J, read-only, merané v PROD (`docs/reports/2026-10-20-preflight-audit-dodavky.md`)
-- [x] 4 — CRON-TRUTH-01: `cron_runs` už nehlási `failed` pri legitímnom „nič na výstupe" (#888 → `d25c101`)
-- [x] 5 — BRI-ONCONFLICT: obe skórovacie funkcie cielia na existujúci kľúč (#889 → `5ab3da4`; migrácia NEAPLIKOVANÁ na PROD, čaká na GO)
-- [x] 6 — Zápis do memory (PREPEND, `+9 −0` a `+19 −0`) + tento blok SESSION
+- [x] 1 — `/porovnanie-programov` prepracované (jedna dominantná cena, jednotné riadky)
+- [x] 2 — Ročná zľava 17 % z katalógu (nie natvrdo 20 %) v billing UI
+- [x] 3 — Marketing + podmienky: „ročne o 17 % lacnejšie" (169/169 testov)
+- [x] 4 — Memory PREPEND + STATUS (jeden commit)
+- [ ] 5 — Push + PR #914 + zelené CI na aktuálnom heade (merge až na GO)
+Cieľ: Verejný blog na www.revolis.ai + prvý článok (draft PR)
+> % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
+- [x] 1 — `/blog` listing + `/blog/[slug]` v `apps/marketing` (build routy + HTTP 200)
+- [x] 2 — Prvý článok `ceny-nehnutelnosti-2026-sadzby-nove-ltv` v kóde (CTA register, zdroje, bez pilot)
+- [x] 3 — Sitemap + `seo.test.ts` obsahujú `/blog` a slug (10 PASS blog+seo)
+- [x] 4 — Draft PR proti `main` (merge/deploy nie)
+- [ ] 5 — Merge + nasadenie `revolis-marketing` (samostatné GO)
 <!-- SESSION:END -->
 
+## Hotové 2026-10-07 — s dôkazom (REALVIA-SEC-01)
+- **Realviine prihlasovacie údaje už nekončia v logoch ani v DB.** `collectRequestHeaders` redagovala
+  `authorization` a `*secret*`, ale **nie `identifikator`/`identifikator2`** — a tie sú primárna produkčná
+  autentifikácia Realvie. Tá istá mapa šla do logu pri každom doručení aj do `realvia_webhook_logs.headers_json`.
+  Diera bola pritom **zamknutá testom**, ktorý výpis credentialu priamo prikazoval (`toBe('id1')`).
+- **Diagnostika nie je verejná.** `?dump=headers` bol bez autentifikácie (vypisoval Vercel metadáta nasadenia);
+  teraz za `CRON_SECRET`, rovnako ako `diag=config`. Verejný health check bez parametra zostáva zámerne.
+- **Heartbeat vidí aj spracovanie, nie len prítok.** Dovtedy merel iba to, či webhooky prichádzajú. Doplnené
+  pending/failed front, posledný beh workera a properties za 24 h + signály `realvia_queue_failed_jobs`
+  a `realvia_worker_stale_2h` (oba len keď tenant Realviu naozaj používa).
+- **Dôkaz:** 3205 testov prešlo (8 zlyhaní = nemenná množina RLS/integračných testov vyžadujúcich lokálnu
+  Supabase, CI ich nespúšťa), typecheck 49 proti baseline 54 (žiadna pridaná chyba), lint exit 0.
+- **Bez vplyvu na tabuľku nižšie** — Realvia prítok nie je ani jeden z piatich vážených blokov, takže % sa nemení.
+
 ## Čo potrebujem od teba (zoradené podľa dopadu)
-1. **Stripe krok C + webhook** — vytvoriť ceny (a vo Vercel nastaviť `STRIPE_WEBHOOK_SECRET`; v Stripe overiť endpoint `/api/billing/webhook` s udalosťami `checkout.session.completed`, `customer.subscription.created/updated/deleted`, `invoice.paid`, `invoice.payment_failed`): `bash scripts/ops/stripe-verify-prices.sh --spec` → potom pošli výstup `…verify-prices.sh`; overenie spravím ja. *(+30 bodov, jediný krok, ktorý odblokuje platiaceho klienta)*
+1. **Stripe krok C** — v LIVE Stripe vytvoriť cenu `revolis_v3_licence_month` (tiered graduated, `tax_behavior=exclusive`) podľa `scripts/ops/stripe-v2/revolis-stripe-v2-catalog.json`, pridať jej `price_…` do Vercel Production ako **`STRIPE_PRICE_V3_SEAT_MONTHLY`** a spraviť redeploy. Potom poslať výstup `GET /api/billing/checkout-config` (len booleany a názvy premenných) — čakám `pricingV2.checkoutAvailable: true`. *(+30 bodov, jediný krok, ktorý odblokuje platiaceho klienta)*
 2. ~~Merge #774~~ ✅ hotovo (`3dc3119`) a **nasadené v produkcii** (overené: deployment READY, 23 riadkov v `inbound_mail_outcomes`, nové `to_agency_mailbox` v logoch, 0× `mail_outcome_write_failed`).
 3. **Vercel**: Pro **netreba kvôli cronom** — tie bežia, dokázané dvoma riadkami v `cron_runs`
    (`recompute-bri` 03:36:49, `morning-brief` 06:30:30, obe 2026-10-02, každý vo svojom okne s posunom 30–57 min).

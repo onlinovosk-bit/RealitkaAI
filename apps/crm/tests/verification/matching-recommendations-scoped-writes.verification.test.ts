@@ -51,6 +51,13 @@ describe("[verification] Matching + recommendations scoped writes (R3 remediatio
     // Must not reintroduce delete-then-insert on the lead path.
     expect(matchingStore).not.toMatch(
       /recalculateLead:delete[\s\S]*recalculateLead:insert/,
+  it("recalculateAllRecommendations fail-closed before clear on empty or LIST_MAX lead page", () => {
+    const recommendationsStore = readFileSync(join(CRM_ROOT, "src/lib/recommendations-store.ts"), "utf8");
+
+    expect(recommendationsStore).toContain("LEADS_LIST_MAX");
+    expect(recommendationsStore).toContain("leadInventoryUnsafeForGlobalClear");
+    expect(recommendationsStore).toMatch(
+      /leadInventoryUnsafeForGlobalClear\(leads\.length\)[\s\S]*clearRecommendations/,
     );
   });
 });

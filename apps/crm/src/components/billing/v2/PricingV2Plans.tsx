@@ -4,6 +4,7 @@ import { useState } from "react";
 import { SLATE_HORIZON, WORKDESK_CARD } from "@/lib/slate-horizon-theme";
 import {
   annualPromoNetCents,
+  illustrativeAnnualMonthlyNetCents,
   isAnnualPromoActive,
   licenseNetCents,
   priceFromNetCents,
@@ -13,7 +14,7 @@ import {
 import type { PricingV2ConfigPayload } from "@/lib/pricing-v2-contract";
 import { ANNUAL_PROMO_HEADLINE, GUARANTEE_TEXT } from "@/components/marketing/guarantee-copy";
 import { buildPlanRequest, PRICING_V2_MESSAGES, submitPricingV2Checkout } from "./checkout";
-import { formatEurCents, formatUserRange } from "./format";
+import { annualDiscountPercent, formatEurCents, formatUserRange } from "./format";
 
 /** Funkcie plánov (rovnaký zoznam ako na marketingovom webe). Kľúč = id pásma. */
 export const PLAN_FEATURES: Record<string, string[]> = {
@@ -68,13 +69,17 @@ export default function PricingV2Plans({ config, initialUsers = 1, navigate = de
   const yearly = yearlyOffered && interval === "year";
   const promoActive = yearly && isAnnualPromoActive(now ?? new Date());
   const vat = catalog.vatPercent;
+  const discountPct = catalog.bands[0] ? annualDiscountPercent(catalog.bands[0]) : 0;
 
   // Živý prepočet: suma, ktorú zaplatí zákazník za obdobie (pri akcii prvá ročná faktúra = 9 × základ).
   const regularNet = validUsers ? licenseNetCents(users, yearly ? "year" : "month") : null;
   const chargedNet = validUsers ? (promoActive ? annualPromoNetCents(users) : regularNet) : null;
   const charged = chargedNet === null ? null : priceFromNetCents(chargedNet, vat);
   const regular = regularNet === null ? null : priceFromNetCents(regularNet, vat);
-  const baseMonthly = validUsers ? priceFromNetCents(licenseNetCents(users, "year") / 12, vat) : null;
+  const yearNet = validUsers ? licenseNetCents(users, "year") : null;
+  const annualMonthlyIsExact = yearNet !== null && yearNet % 12 === 0;
+  // Od 21. makléra ročná suma nie je deliteľná 12. `illustrativeAnnualMonthlyNetCents` je len text, nie položka faktúry.
+  const baseMonthly = yearNet === null ? null : priceFromNetCents(illustrativeAnnualMonthlyNetCents(users), vat);
 
   const per = yearly ? "rok" : "mes.";
   const cardAmount = (band: (typeof catalog.bands)[number]) => (yearly ? band : band.monthly);
@@ -176,7 +181,7 @@ export default function PricingV2Plans({ config, initialUsers = 1, navigate = de
                   color: interval === value ? "#fff" : SLATE_HORIZON.ink,
                 }}
               >
-                {value === "year" ? "Ročne" : "Mesačne (+20 %)"}
+                {value === "year" ? `Ročne (zľava ${discountPct} %)` : "Mesačne"}
               </button>
             ))}
           </div>
@@ -212,7 +217,7 @@ export default function PricingV2Plans({ config, initialUsers = 1, navigate = de
       )}
       {!yearly && yearlyOffered && (
         <p data-testid="monthly-note" className="mb-4 text-xs" style={{ color: SLATE_HORIZON.muted }}>
-          Mesačná platba bez ročného záväzku je o 20 % vyššia ako pri ročnej platbe.
+          Ročná platba je o {discountPct} % lacnejšia ako mesačná bez záväzku.
         </p>
       )}
       {yearly && (
@@ -266,7 +271,7 @@ export default function PricingV2Plans({ config, initialUsers = 1, navigate = de
                 s {vat} % DPH / mes.
               </div>
               <p className="text-xs mt-1" style={{ color: SLATE_HORIZON.muted }}>
-                {yearly ? "pri ročnej platbe" : "pri mesačnej platbe (+20 %)"}
+                {yearly ? `pri ročnej platbe (zľava ${discountPct} %)` : "pri mesačnej platbe"}
               </p>
               <p className="text-xs mt-2" style={{ color: SLATE_HORIZON.muted }}>
                 {band.monthlyCredits} kreditov mesačne pre kanceláriu
@@ -310,7 +315,9 @@ export default function PricingV2Plans({ config, initialUsers = 1, navigate = de
             )}
             {yearly && (
               <p data-testid="selected-base-monthly" className="text-xs mt-1" style={{ color: SLATE_HORIZON.muted }}>
-                Bežná cena pri ročnej platbe: {formatEurCents(baseMonthly.netCents)} bez DPH mesačne.
+                {annualMonthlyIsExact
+                  ? `Bežná cena pri ročnej platbe: ${formatEurCents(baseMonthly.netCents)} bez DPH mesačne.`
+                  : `Orientačne ${formatEurCents(baseMonthly.netCents)} bez DPH mesačne pri ročnej platbe. Fakturovaná je ročná suma.`}
               </p>
             )}
             {selectedPack && (

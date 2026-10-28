@@ -60,12 +60,12 @@ describe("pricing-v2-copy (cenník v3)", () => {
 
   it("riadky pásiem presne podľa cenníka v3 (nezávislý oracle zo spec §1)", () => {
     const c = buildPricingV2Catalog();
-    // [rozsah, základ pri ročnej platbe, s DPH 23 %, mesačná platba +20 %, kredity]
+    // [rozsah, základ pri ročnej platbe, s DPH 23 %, mesačná platba, ročne o 17 % lacnejšie, kredity]
     const expected = [
-      ["1 maklér", "25 € mesačne bez DPH pri ročnej platbe", "30,75 € s DPH 23 %", "30 € mesačne bez DPH pri mesačnej platbe (+20 %)", "25 kreditov mesačne pre celú kanceláriu"],
-      ["2–5 maklérov", "65 € mesačne bez DPH pri ročnej platbe", "79,95 € s DPH 23 %", "78 € mesačne bez DPH pri mesačnej platbe (+20 %)", "60 kreditov mesačne pre celú kanceláriu"],
-      ["6–10 maklérov", "od 74 € mesačne bez DPH pri ročnej platbe", "od 91,02 € s DPH 23 %", "od 88,80 € mesačne bez DPH pri mesačnej platbe (+20 %)", "120 kreditov mesačne pre celú kanceláriu"],
-      ["11 a viac maklérov", "od 116 € mesačne bez DPH pri ročnej platbe", "od 142,68 € s DPH 23 %", "od 139,20 € mesačne bez DPH pri mesačnej platbe (+20 %)", "175 kreditov mesačne pre celú kanceláriu"],
+      ["1 maklér", "25 € mesačne bez DPH pri ročnej platbe", "30,75 € s DPH 23 %", "30 € mesačne bez DPH pri mesačnej platbe (ročne o 17 % lacnejšie)", "25 kreditov mesačne pre celú kanceláriu"],
+      ["2–5 maklérov", "od 50 € mesačne bez DPH pri ročnej platbe", "od 61,50 € s DPH 23 %", "od 60 € mesačne bez DPH pri mesačnej platbe (ročne o 17 % lacnejšie)", "60 kreditov mesačne pre celú kanceláriu"],
+      ["6–10 maklérov", "od 74 € mesačne bez DPH pri ročnej platbe", "od 91,02 € s DPH 23 %", "od 88,80 € mesačne bez DPH pri mesačnej platbe (ročne o 17 % lacnejšie)", "120 kreditov mesačne pre celú kanceláriu"],
+      ["11 a viac maklérov", "od 116 € mesačne bez DPH pri ročnej platbe", "od 142,68 € s DPH 23 %", "od 139,20 € mesačne bez DPH pri mesačnej platbe (ročne o 17 % lacnejšie)", "175 kreditov mesačne pre celú kanceláriu"],
     ];
     c.bands.forEach((b, i) => {
       expect(n(usersRangeLabel(b))).toBe(expected[i][0]);

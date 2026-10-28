@@ -362,7 +362,7 @@ describe("(a) požiadavka -> checkout -> webhook -> entitlements -> prvý grant"
     const cat = buildPricingV2Catalog();
     const team = cat.bands.find((b) => b.id === "team")!;
     const pack = cat.packs.find((p) => p.credits === 100)!;
-    expect([team.netCents, team.grossCents, pack.netCents, pack.grossCents]).toEqual([6500, 7995, 5100, 6273]);
+    expect([team.netCents, team.grossCents, pack.netCents, pack.grossCents]).toEqual([5000, 6150, 5100, 6273]);
   });
 
   it("webhook zapíše licensed_users = seats = quantity zo Stripe a pásmo z nej, aj keď sa metadáta líšia", async () => {
@@ -905,7 +905,7 @@ describe("ŠVY A -> B: reálne handlery trás A -> reálny klientský parser B",
     const cfg = readPricingV2Config(await (await configGET()).json());
     expect(cfg?.enabled).toBe(true);
     expect(cfg?.checkoutAvailable).toBe(true);
-    expect(cfg?.catalog?.bands.map((b) => b.grossCents)).toEqual([3075, 7995, 9102, 14268]);
+    expect(cfg?.catalog?.bands.map((b) => b.grossCents)).toEqual([3075, 6150, 9102, 14268]);
   });
 
   it("[ŠEV] výnimka v checkout (profil bez agency_id) -> 503 checkout_failed: klient ukáže 'nedostupné', nie 'skontrolujte počet'", async () => {

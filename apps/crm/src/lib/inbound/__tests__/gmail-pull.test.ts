@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -15,8 +16,10 @@ import {
   memorySeenStore,
   readGmailInboundConfig,
   runGmailInboundPull,
+  runGmailInboundPullAll,
   type GmailMessage,
 } from "../gmail-pull";
+import { encryptToken } from "../gmail-connect";
 
 const AGENCY = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
 const ALIAS = "demo-test@revolis.ai";
@@ -134,7 +137,7 @@ describe("gmail inbound pull (mock-first)", () => {
       },
     });
     expect(result).toMatchObject({ ok: true, skipped: "disabled", posted: 0 });
-    expect(readGmailInboundConfig({}).error).toBe("disabled");
+    expect(readGmailInboundConfig({})).toEqual({ error: "disabled" });
   });
 
   it("source contract: acquire pipeline only, no leads insert, no calendar tokens", () => {
@@ -258,5 +261,132 @@ describe("gmail inbound pull — dokončenie (trvalý dedup, hranice čítania)"
       payload: { headers: [], mimeType: "text/html", body: { data: big } },
     };
     expect(mapGmailMessageToAcquire(html, MAILBOX).email.html.length).toBe(MAX_BODY_CHARS);
+  });
+});
+
+describe("gmail pull — viac agentúr z databázy", () => {
+  const KEY = randomBytes(32);
+  const A1 = "aaaaaaaa-0000-4000-8000-000000000001";
+  const A2 = "bbbbbbbb-0000-4000-8000-000000000002";
+  const MB = (id: string) => ({ agencyId: id, email: `${id.slice(0, 4)}@revolis.ai` });
+  const ENV_ALL = {
+    GMAIL_INBOUND_PULL_ENABLED: "true",
+    GOOGLE_GMAIL_INBOUND_CLIENT_ID: "cid",
+    GOOGLE_GMAIL_INBOUND_CLIENT_SECRET: "csecret",
+    GMAIL_INBOUND_TOKEN_KEY: KEY.toString("base64"),
+    ACQUIRE_SHARED_SECRET: "acq",
+    NEXT_PUBLIC_APP_URL: "https://crm.test",
+  };
+  const conn = (agencyId: string, token: string, labelName = "Revolis") => ({
+    agencyId,
+    ciphertext: encryptToken(token, KEY),
+    labelName,
+  });
+
+  function gmail(opts: { labels?: { id: string; name: string }[]; refreshFails?: Set<string> } = {}) {
+    const refreshTokens: string[] = [];
+    const posts: { agency: string; id: string }[] = [];
+    const fetchFn: typeof fetch = async (input, init) => {
+      const url = String(input);
+      if (url === GMAIL_TOKEN_URL) {
+        const rt = new URLSearchParams(String(init?.body)).get("refresh_token") ?? "";
+        refreshTokens.push(rt);
+        if (opts.refreshFails?.has(rt)) return jsonResponse({ error: "invalid_grant" }, 400);
+        return jsonResponse({ ...fixtures.token_readonly, access_token: `access-for-${rt}` });
+      }
+      if (url.endsWith("/labels")) return jsonResponse({ labels: opts.labels ?? [{ id: "Label_9", name: "revolis" }] });
+      if (url.includes("/messages?")) return jsonResponse({ messages: [{ id: "msg-plain-inquiry" }] });
+      if (url.includes("/messages/msg-plain-inquiry")) {
+        return jsonResponse({ ...(fixtures.message_plain_inquiry as object), labelIds: ["Label_9"] });
+      }
+      if (url === "https://crm.test/api/acquire/email") {
+        const body = JSON.parse(String(init?.body)) as { mailbox: { agencyId: string } };
+        const rid = (init?.headers as Record<string, string>)["x-revolis-request-id"];
+        posts.push({ agency: body.mailbox.agencyId, id: rid });
+        return jsonResponse({ ok: true });
+      }
+      throw new Error(`unexpected_fetch:${url}`);
+    };
+    return { fetchFn, refreshTokens, posts };
+  }
+
+  const run = (g: ReturnType<typeof gmail>, connections: ReturnType<typeof conn>[], extra: Record<string, unknown> = {}) =>
+    runGmailInboundPullAll({
+      env: { ...ENV_ALL, ...(extra.env as object) },
+      fetch: g.fetchFn,
+      loadMailbox: async (id) => MB(id),
+      seenStore: memorySeenStore(),
+      loadConnections: async () => connections,
+      onPulled: async () => undefined,
+      onError: async () => undefined,
+      ...(extra.deps as object),
+    });
+
+  it("dešifruje token každej agentúry, nájde štítok podľa názvu a každej pošle len jej správy", async () => {
+    const g = gmail();
+    const r = await run(g, [conn(A1, "1//tok-one"), conn(A2, "1//tok-two")]);
+    expect(r).toMatchObject({ ok: true, agencies: 2, pulled: 2, posted: 2, errors: [] });
+    expect(g.refreshTokens).toEqual(["1//tok-one", "1//tok-two"]);
+    expect(g.posts.map((p) => p.agency)).toEqual([A1, A2]);
+    expect(g.posts[0].id).toContain(`gmail-pull:${A1}:`);
+    expect(g.posts[1].id).toContain(`gmail-pull:${A2}:`);
+  });
+
+  it("jedna agentúra s vypršaným tokenom sa vypne a ostatné bežia ďalej", async () => {
+    const g = gmail({ refreshFails: new Set(["1//dead"]) });
+    const calls: Array<[string, string, boolean]> = [];
+    const r = await run(g, [conn(A1, "1//dead"), conn(A2, "1//alive")], {
+      deps: { onError: async (a: string, c: string, d: boolean) => void calls.push([a, c, d]) },
+    });
+    expect(r).toMatchObject({ ok: true, posted: 1 });
+    expect((r as { errors: string[] }).errors[0]).toBe(`${A1.slice(0, 8)}:oauth_refresh_failed:invalid_grant`);
+    expect(calls).toEqual([[A1, "oauth_refresh_failed:invalid_grant", true]]);
+    expect(g.posts.map((p) => p.agency)).toEqual([A2]);
+  });
+
+  it("štítok ešte neexistuje: nič sa nečíta ani nepošle a pripojenie sa nevypne", async () => {
+    const g = gmail({ labels: [{ id: "L1", name: "INBOX" }] });
+    const errs: string[] = [];
+    const r = await run(g, [conn(A1, "1//t")], { deps: { onError: async (_a: string, c: string) => void errs.push(c) } });
+    expect(r).toMatchObject({ ok: true, pulled: 0, posted: 0 });
+    expect(g.posts).toHaveLength(0);
+    expect(errs).toEqual([]);
+  });
+
+  it("bez kľúča tokenu sa nič nečíta; poškodený blob označí iba tú agentúru", async () => {
+    const g = gmail();
+    expect(await run(g, [conn(A1, "1//t")], { env: { GMAIL_INBOUND_TOKEN_KEY: "" } })).toEqual({ ok: false, error: "missing_token_key" });
+    expect(g.refreshTokens).toHaveLength(0);
+    const bad = { agencyId: A1, ciphertext: "v1.x.y.z", labelName: "Revolis" };
+    const r = await run(g, [bad, conn(A2, "1//ok")]);
+    expect(r).toMatchObject({ ok: true, posted: 1 });
+    expect((r as { errors: string[] }).errors).toContain(`${A1.slice(0, 8)}:token_undecryptable`);
+  });
+
+  it("bez pripojení a bez env záznamu je to čisté preskočenie; vypnutý príznak nečíta nič", async () => {
+    const g = gmail();
+    expect(await run(g, [])).toMatchObject({ ok: true, skipped: "no_connections", agencies: 0 });
+    expect(await run(g, [conn(A1, "1//t")], { env: { GMAIL_INBOUND_PULL_ENABLED: "false" } })).toMatchObject({ ok: true, skipped: "disabled" });
+    expect(g.refreshTokens).toHaveLength(0);
+  });
+
+  it("pilotný záznam z env beží, len ak tá agentúra nemá vlastné pripojenie v DB", async () => {
+    const legacy = {
+      GOOGLE_GMAIL_INBOUND_REFRESH_TOKEN: "1//legacy",
+      GOOGLE_GMAIL_INBOUND_LABEL_ID: "Label_9",
+      GOOGLE_GMAIL_INBOUND_AGENCY_ID: A1,
+    };
+    const g1 = gmail();
+    await run(g1, [conn(A1, "1//db")], { env: legacy });
+    expect(g1.refreshTokens).toEqual(["1//db"]);
+    const g2 = gmail();
+    await run(g2, [conn(A2, "1//db2")], { env: legacy });
+    expect(g2.refreshTokens).toEqual(["1//db2", "1//legacy"]);
+  });
+
+  it("chyba čítania pripojení sa nezamlčí", async () => {
+    const g = gmail();
+    const r = await run(g, [], { deps: { loadConnections: async () => { throw new Error("connections_read_failed"); } } });
+    expect(r).toEqual({ ok: false, error: "connections_read_failed" });
   });
 });

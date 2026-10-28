@@ -3,6 +3,7 @@
 // Builds the full HTML email with tracking pixel
 // ================================================================
 import type { MorningBriefData } from '@/types/morning-brief'
+import { unsubscribeUrl } from '@/lib/email/unsubscribe-token'
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.revolis.ai'
 
@@ -150,7 +151,7 @@ export function renderBriefEmail(brief: MorningBriefData): string {
     <div class="ftr">
       <a href="${BASE_URL}/settings/notifications">Upraviť nastavenia</a>
       &nbsp;·&nbsp;
-      <a href="${BASE_URL}/api/notifications/unsubscribe?profile=${brief.profileId}">Odhlásiť</a>
+      <a href="${unsubscribeUrl(BASE_URL, { t: 'b', p: brief.profileId }) ?? `${BASE_URL}/settings/notifications`}">Odhlásiť</a>
       &nbsp;·&nbsp;
       <a href="${BASE_URL}/leads">Všetky leady</a>
     </div>

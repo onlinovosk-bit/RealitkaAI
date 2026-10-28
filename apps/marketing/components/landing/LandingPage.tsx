@@ -51,11 +51,11 @@ export default function LandingPage() {
         <div className="wrap">
           <p className="eyebrow">Pre realitných maklérov a majiteľov RK na Slovensku</p>
           <h1>
-            Získajte viac klientov. Uzatvárajte viac obchodov. <em>Bez chaosu.</em>
+            Inzerát hotový za minúty. <em>Dopyty v CRM bez prepisovania.</em>
           </h1>
           <p className="lead">
-            Revolis každé ráno vyberie najdôležitejšie príležitosti, zoradí záujemcov podľa pripravenosti kúpiť a povie Vášmu tímu,{' '}
-            <strong>komu volať ako prvému</strong> — ešte pred prvou kávou.
+            Revolis uloží dopyty z portálových e-mailov a pripraví text inzerátu z parametrov
+            nehnuteľnosti — Vy máte čas na obhliadky a nábery, nie na administratívu.
           </p>
           <div className="hero-cta">
             <a className="btn btn-lg" href={CALENDLY_DEMO_URL} target="_blank" rel="noopener noreferrer">
@@ -66,9 +66,6 @@ export default function LandingPage() {
             </a>
           </div>
           <p className="micro">15–20 minút · žiadne záväzky · bez kreditnej karty</p>
-          <p className="micro" style={{ marginTop: 6 }}>
-            // prvý klient: ~10 h týždenne späť už v prvom mesiaci
-          </p>
         </div>
       </div>
 
@@ -84,25 +81,25 @@ export default function LandingPage() {
       <section id="pains">
         <div className="wrap">
           <p className="eyebrow">Poznáte to?</p>
-          <h2>Strácate klientov, lebo nemáte prehľad.</h2>
+          <h2>Strácate čas, ktorý patrí na obhliadky a nábery.</h2>
           <p className="sub">
-            Nové dopyty pribúdajú, času je menej — a najdôležitejší klient ostane zakopaný v tabuľke, kým neodíde ku konkurencii.
+            Nové dopyty pribúdajú, inzeráty treba písať — a hodiny padnú na administratívu namiesto predaja.
           </p>
           <div className="pains">
             <div className="pain">
               <span className="pk">01 / RÝCHLOSŤ</span>
-              <h3>Konkurencia odpovedá skôr</h3>
-              <p>Klient ide k tomu, kto zareaguje prvý a pôsobí profesionálne. Nie k tomu, kto je objektívne lepší.</p>
+              <h3>Inzerát píšete namiesto náberu</h3>
+              <p>Kým skladáte text z parametrov, predávajúci môže ísť ku kolegovi, ktorý ponuku zverejnil skôr.</p>
             </div>
             <div className="pain">
-              <span className="pk">02 / PRIORITY</span>
-              <h3>Neviete, komu volať ako prvému</h3>
-              <p>Máte kontakty, ale neviete, kto je pripravený kúpiť — a s kým len strácate hodiny.</p>
+              <span className="pk">02 / PREPISOVANIE</span>
+              <h3>Dopyty prepisujete z e-mailov</h3>
+              <p>Meno, telefón, odkaz na inzerát — z každého portálového e-mailu ručne do tabuľky.</p>
             </div>
             <div className="pain">
               <span className="pk">03 / ČAS</span>
-              <h3>Hodiny denne pri inzerátoch</h3>
-              <p>Príprava jedného inzerátu zoberie 20–30 minút. A aj tak volajú skôr zvedavci než kupci.</p>
+              <h3>Hodiny denne pri administratíve</h3>
+              <p>Triedenie dopytov a písanie inzerátov žerie čas, ktorý chýba na obhliadke.</p>
             </div>
             <div className="pain">
               <span className="pk">04 / CHAOS</span>
@@ -222,6 +219,7 @@ export default function LandingPage() {
         <div className="wrap">
           <span>© 2026 Revolis — ONLINOVO s.r.o.</span>
           <span>
+            <a href="/blog">Blog</a> ·{' '}
             <a href="https://app.revolis.ai/privacy-policy">Ochrana osobných údajov</a> ·{' '}
             <a href="https://app.revolis.ai/terms">VOP</a> · <a href="mailto:info@revolis.ai">info@revolis.ai</a>
           </span>

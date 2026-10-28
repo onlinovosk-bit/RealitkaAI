@@ -1,5 +1,7 @@
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { pickAgencyMailbox, type MailboxRow } from "./mailbox-routing";
+import { decryptToken, DEFAULT_LABEL_NAME } from "./gmail-connect";
+import { loadActiveConnections, markError, markPulled, type ActiveConnection } from "./gmail-connect-store";
 
 export const GMAIL_READONLY_SCOPE = "https://www.googleapis.com/auth/gmail.readonly";
 export const GMAIL_TOKEN_URL = "https://oauth2.googleapis.com/token";
@@ -17,7 +19,9 @@ export type GmailInboundConfig = {
   clientId: string;
   clientSecret: string;
   refreshToken: string;
-  labelId: string;
+  /** Zadané ID štítka (legacy env). Ak chýba, nájde sa podľa `labelName` cez Gmail API. */
+  labelId?: string;
+  labelName?: string;
   agencyId: string;
   acquireSecret: string;
   acquireUrl: string;
@@ -204,12 +208,15 @@ export async function loadMailboxForAgency(agencyId: string): Promise<InboundMai
 }
 
 export function memorySeenStore(set: Set<string> = new Set()): SeenStore {
+  // Kľúč nesie agentúru, rovnako ako (agency_id, gmail_message_id) v databáze: rovnaké Gmail ID
+  // u dvoch agentúr sú dve rôzne správy.
+  const key = (agencyId: string, id: string) => `${agencyId}\u0000${id}`;
   return {
-    async filterSeen(_agencyId, ids) {
-      return new Set(ids.filter((id) => set.has(id)));
+    async filterSeen(agencyId, ids) {
+      return new Set(ids.filter((id) => set.has(key(agencyId, id))));
     },
-    async markSeen(_agencyId, ids) {
-      for (const id of ids) set.add(id);
+    async markSeen(agencyId, ids) {
+      for (const id of ids) set.add(key(agencyId, id));
     },
   };
 }
@@ -250,11 +257,11 @@ function isPermanentAcquireRejection(status: number): boolean {
   return status >= 400 && status < 500 && status !== 401 && status !== 408 && status !== 429;
 }
 
-async function listLabeledIds(cfg: GmailInboundConfig, access: string, fetchFn: FetchFn, lookbackDays: number) {
+async function listLabeledIds(labelId: string, access: string, fetchFn: FetchFn, lookbackDays: number) {
   const ids: string[] = [];
   let pageToken: string | undefined;
   for (let page = 0; page < MAX_PAGES; page += 1) {
-    const res = await fetchFn(gmailListUrl(cfg.labelId, { pageToken, lookbackDays }), {
+    const res = await fetchFn(gmailListUrl(labelId, { pageToken, lookbackDays }), {
       headers: { Authorization: `Bearer ${access}` },
     });
     if (!res.ok) throw new Error("gmail_list_failed");
@@ -266,27 +273,39 @@ async function listLabeledIds(cfg: GmailInboundConfig, access: string, fetchFn: 
   return ids;
 }
 
-export async function runGmailInboundPull(deps: {
-  env?: NodeJS.Dict<string>;
-  fetch: FetchFn;
-  loadMailbox?: (agencyId: string) => Promise<InboundMailbox | null>;
-  seenStore?: SeenStore;
-}): Promise<PullResult> {
-  const env = deps.env ?? process.env;
-  const cfg = readGmailInboundConfig(env);
-  if ("error" in cfg) {
-    if (cfg.error === "disabled") return { ok: true, skipped: "disabled", pulled: 0, posted: 0, errors: [] };
-    return { ok: false, error: cfg.error };
-  }
-  // Bez pamäte spracovaných správ by sme schránku čítali dookola. Radšej nič, než čítať naslepo.
-  const store = deps.seenStore ?? supabaseSeenStore();
-  if (!store) return { ok: false, error: "seen_store_unavailable" };
+/** Nájde ID štítka podľa názvu (bez ohľadu na veľkosť písmen). `null` = štítok ešte nevznikol. */
+export async function resolveLabelId(access: string, labelName: string, fetchFn: FetchFn): Promise<string | null> {
+  const res = await fetchFn(`${GMAIL_API_BASE}/labels`, { headers: { Authorization: `Bearer ${access}` } });
+  if (!res.ok) throw new Error("gmail_labels_failed");
+  const json = (await res.json()) as { labels?: { id?: string; name?: string }[] };
+  const wanted = labelName.trim().toLowerCase();
+  return json.labels?.find((l) => l.name?.trim().toLowerCase() === wanted)?.id ?? null;
+}
+
+async function pullWithConfig(
+  cfg: GmailInboundConfig,
+  deps: {
+    env: NodeJS.Dict<string>;
+    fetch: FetchFn;
+    loadMailbox?: (agencyId: string) => Promise<InboundMailbox | null>;
+    store: SeenStore;
+  },
+): Promise<PullResult> {
   const mailbox = await (deps.loadMailbox ?? loadMailboxForAgency)(cfg.agencyId);
   if (!mailbox) return { ok: false, error: "mailbox_not_found" };
+  const store = deps.store;
 
   try {
     const access = await refreshGmailAccessToken(cfg, deps.fetch);
-    const ids = await listLabeledIds(cfg, access, deps.fetch, lookbackDaysFrom(env.GOOGLE_GMAIL_INBOUND_LOOKBACK_DAYS));
+    const labelId = cfg.labelId || (await resolveLabelId(access, cfg.labelName || DEFAULT_LABEL_NAME, deps.fetch));
+    // Zákazník ešte nevytvoril štítok / filter: nie je čo čítať a nečítame NIČ iné.
+    if (!labelId) return { ok: true, skipped: "label_not_found", pulled: 0, posted: 0, errors: [] };
+    const ids = await listLabeledIds(
+      labelId,
+      access,
+      deps.fetch,
+      lookbackDaysFrom(deps.env.GOOGLE_GMAIL_INBOUND_LOOKBACK_DAYS),
+    );
     const seen = await store.filterSeen(cfg.agencyId, ids);
     const fresh = ids.filter((id) => !seen.has(id));
     let posted = 0;
@@ -304,7 +323,7 @@ export async function runGmailInboundPull(deps: {
           continue;
         }
         const msg = (await getRes.json()) as GmailMessage;
-        if (!(msg.labelIds ?? []).includes(cfg.labelId)) {
+        if (!(msg.labelIds ?? []).includes(labelId)) {
           outsideLabel += 1;
           done.push({ id, outcome: "outside_label" });
           continue;
@@ -340,4 +359,135 @@ export async function runGmailInboundPull(deps: {
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "pull_failed" };
   }
+}
+
+/** Jedna agentúra z premenných prostredia (pôvodný pilotný režim). */
+export async function runGmailInboundPull(deps: {
+  env?: NodeJS.Dict<string>;
+  fetch: FetchFn;
+  loadMailbox?: (agencyId: string) => Promise<InboundMailbox | null>;
+  seenStore?: SeenStore;
+}): Promise<PullResult> {
+  const env = deps.env ?? process.env;
+  const cfg = readGmailInboundConfig(env);
+  if ("error" in cfg) {
+    if (cfg.error === "disabled") return { ok: true, skipped: "disabled", pulled: 0, posted: 0, errors: [] };
+    return { ok: false, error: cfg.error };
+  }
+  // Bez pamäte spracovaných správ by sme schránku čítali dookola. Radšej nič, než čítať naslepo.
+  const store = deps.seenStore ?? supabaseSeenStore();
+  if (!store) return { ok: false, error: "seen_store_unavailable" };
+  return pullWithConfig(cfg, { env, fetch: deps.fetch, loadMailbox: deps.loadMailbox, store });
+}
+
+export type PullAllResult =
+  | {
+      ok: true;
+      skipped?: string;
+      agencies: number;
+      pulled: number;
+      posted: number;
+      errors: string[];
+      alreadySeen: number;
+      outsideLabel: number;
+    }
+  | { ok: false; error: string };
+
+function readPullBase(env: NodeJS.Dict<string>):
+  | { clientId: string; clientSecret: string; acquireSecret: string; acquireUrl: string }
+  | { error: string } {
+  if (env.GMAIL_INBOUND_PULL_ENABLED?.trim() !== "true") return { error: "disabled" };
+  const clientId = env.GOOGLE_GMAIL_INBOUND_CLIENT_ID?.trim() ?? "";
+  const clientSecret = env.GOOGLE_GMAIL_INBOUND_CLIENT_SECRET?.trim() ?? "";
+  const acquireSecret = env.ACQUIRE_SHARED_SECRET?.trim() ?? "";
+  const base = (env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/$/, "");
+  if (!clientId || !clientSecret) return { error: "missing_oauth_env" };
+  if (!acquireSecret || !base) return { error: "missing_acquire_env" };
+  return { clientId, clientSecret, acquireSecret, acquireUrl: `${base}/api/acquire/email` };
+}
+
+/**
+ * Všetky pripojené agentúry (DB) + prípadný pilotný záznam z env. Každá agentúra beží izolovane:
+ * chyba jednej nezastaví ostatné a nikdy sa neprelejú tokeny ani správy medzi agentúrami.
+ */
+export async function runGmailInboundPullAll(deps: {
+  env?: NodeJS.Dict<string>;
+  fetch: FetchFn;
+  loadMailbox?: (agencyId: string) => Promise<InboundMailbox | null>;
+  seenStore?: SeenStore;
+  loadConnections?: () => Promise<ActiveConnection[]>;
+  onPulled?: (agencyId: string) => Promise<void>;
+  onError?: (agencyId: string, code: string, disable: boolean) => Promise<void>;
+}): Promise<PullAllResult> {
+  const env = deps.env ?? process.env;
+  const base = readPullBase(env);
+  if ("error" in base) {
+    if (base.error === "disabled") {
+      return { ok: true, skipped: "disabled", agencies: 0, pulled: 0, posted: 0, errors: [], alreadySeen: 0, outsideLabel: 0 };
+    }
+    return { ok: false, error: base.error };
+  }
+  const store = deps.seenStore ?? supabaseSeenStore();
+  if (!store) return { ok: false, error: "seen_store_unavailable" };
+
+  let connections: ActiveConnection[];
+  try {
+    connections = await (deps.loadConnections ?? loadActiveConnections)();
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "connections_read_failed" };
+  }
+
+  const jobs: GmailInboundConfig[] = [];
+  const errors: string[] = [];
+  if (connections.length > 0) {
+    const key = Buffer.from(env.GMAIL_INBOUND_TOKEN_KEY?.trim() ?? "", "base64");
+    if (key.length !== 32) return { ok: false, error: "missing_token_key" };
+    for (const c of connections) {
+      try {
+        jobs.push({
+          clientId: base.clientId,
+          clientSecret: base.clientSecret,
+          refreshToken: decryptToken(c.ciphertext, key),
+          labelName: c.labelName,
+          agencyId: c.agencyId,
+          acquireSecret: base.acquireSecret,
+          acquireUrl: base.acquireUrl,
+        });
+      } catch {
+        errors.push(`${c.agencyId.slice(0, 8)}:token_undecryptable`);
+        await (deps.onError ?? markError)(c.agencyId, "token_undecryptable", true).catch(() => undefined);
+      }
+    }
+  }
+  // Pilotný záznam z env len ak tá agentúra nemá vlastné pripojenie (DB má prednosť).
+  const legacy = readGmailInboundConfig(env);
+  if (!("error" in legacy) && !jobs.some((j) => j.agencyId === legacy.agencyId)) jobs.push(legacy);
+
+  const total = { agencies: 0, pulled: 0, posted: 0, alreadySeen: 0, outsideLabel: 0 };
+  for (const cfg of jobs) {
+    total.agencies += 1;
+    const r = await pullWithConfig(cfg, { env, fetch: deps.fetch, loadMailbox: deps.loadMailbox, store });
+    const short = cfg.agencyId.slice(0, 8);
+    const isDb = connections.some((c) => c.agencyId === cfg.agencyId);
+    if (!r.ok) {
+      errors.push(`${short}:${r.error}`);
+      // invalid_grant = token vypršal/odvolaný: pripojenie sa vypne, aby sa nezúfalo opakovalo.
+      const dead = r.error.includes("invalid_grant");
+      if (isDb) await (deps.onError ?? markError)(cfg.agencyId, r.error, dead).catch(() => undefined);
+      continue;
+    }
+    total.pulled += r.pulled;
+    total.posted += r.posted;
+    total.alreadySeen += r.alreadySeen ?? 0;
+    total.outsideLabel += r.outsideLabel ?? 0;
+    for (const e of r.errors) errors.push(`${short}:${e}`);
+    if (isDb) await (deps.onPulled ?? markPulled)(cfg.agencyId).catch(() => undefined);
+  }
+  if (jobs.length === 0) {
+    return { ok: true, skipped: errors.length ? undefined : "no_connections", ...total, errors };
+  }
+  if (errors.length === jobs.length && total.pulled === 0 && total.posted === 0 && errors.every((e) => !e.includes("acquire"))) {
+    return { ok: false, error: errors[0] };
+  }
+  return { ok: true, ...total, errors };
 }
