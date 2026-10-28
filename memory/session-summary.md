@@ -1,3 +1,27 @@
+## Session 2026-10-12 (critical-bug automation)
+### Dokončené
+- MEMORIES cleanup: merged/rejected>30d entries removed; fresh look on closed #443–#495
+- Fix matching recalculate wipe window (upsert-then-orphan-delete) — PR #843
+- Report: `docs/reports/2026-10-12-matching-recalculate-no-wipe.md`
+### Rozpracované / Pending
+- PR #843 awaiting review
+- Noted (no PR): WP-2 send routes missing trial/feature gate; saas-ops getFeatureFlagsForPlan DEV OVERRIDE; grant-engine expire repair stale purchased snapshot
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/matching-store.ts`: persistRecalculatedMatches upsert-then-orphan-delete
+- `apps/crm/src/lib/__tests__/matching-recalculate-no-wipe.test.ts`: lock wipe regression
+### Ďalší krok
+Review/merge PR #843; next candidate GO: add requireFeature/requireActiveAppAccess to ghostwriter + confirm-viewing
+
+## Session 2026-10-12 (critical bug recheck closed PRs #443–#495)
+### Dokončené
+- `docs/reports/2026-10-12-critical-bug-recheck-closed-prs.md`: 7 closed-without-merge bugs re-verified on `main` @ `cf0ddd7c`.
+- 6 FIXED elsewhere (#776/#719/#734/#767/#752/#722); **1 STILL PRESENT**: matching recalculate delete+insert-timeout silent wipe (#444 finding 2).
+### Rozpracované / Pending
+- GO: fix PR — matching-store: do not ACK after delete if insert times out (transaction / fail 5xx / restore).
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-12-critical-bug-recheck-closed-prs.md`: audit report.
+### Ďalší krok
+GO: jeden PR — matching recalculate delete-then-insert timeout (data loss).
 ## Session 2026-10-25 (STENA UX cenníka + ročná zľava 17 %)
 ### Dokončené
 - `PricingV2Comparison` prepracovaný (jedna dominantná cena, jednotné riadky, jeden banner), `annualDiscountPercent` v `billing/v2/format.ts` a `marketing/pricing-v2-copy.ts`.
