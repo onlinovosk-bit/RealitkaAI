@@ -51,6 +51,10 @@ const PUBLIC_PATHS = new Set([
   "/api/notifications/unsubscribe",
   "/api/morning-brief/track/open",
   "/api/morning-brief/track/click",
+  // Starter Pack download link z fulfillment emailu (HMAC token + DB purchase
+  // check v route). Kupujúci často ešte nemá Revolis session — bez allowlistu
+  // proxy vráti 401 pred overením tokenu a zaplatený balík sa nedá stiahnuť.
+  "/api/starter-pack/download",
 ]);
 
 const CRON_PATH_PREFIX = "/api/agents";
