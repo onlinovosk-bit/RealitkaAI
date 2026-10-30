@@ -11,16 +11,7 @@ import { syncAgencyBillingLifecycle } from "@/lib/billing-lifecycle";
 import { describeError } from "@/lib/log-safe";
 
 /** Seat / top-up / starter-pack / pricing v2 — fulfilled only by handlePricingCheckoutWebhook. */
-function isPricingCheckoutSession(event: Stripe.Event): boolean {
-  const checkoutType = (event.data.object as Stripe.Checkout.Session).metadata?.checkoutType;
-  // Cenník v2: plní aj checkout.session.async_payment_succeeded (asynchrónna platba).
-  if (
-    event.type === "checkout.session.async_payment_succeeded" &&
-    (checkoutType === PRICING_V2_CHECKOUT_TYPE_PLAN || checkoutType === PRICING_V2_CHECKOUT_TYPE_CREDITS)
-  ) {
-    return true;
-  }
-  if (event.type !== "checkout.session.completed") return false;
+function isPricingCheckoutType(checkoutType: string | undefined): boolean {
   return (
     checkoutType === PRICING_V2_CHECKOUT_TYPE_PLAN ||
     checkoutType === PRICING_V2_CHECKOUT_TYPE_CREDITS ||
@@ -28,6 +19,22 @@ function isPricingCheckoutSession(event: Stripe.Event): boolean {
     checkoutType === "credit_topup" ||
     checkoutType === "starter_pack"
   );
+}
+
+/**
+ * Fail-closed gate for every checkout type this handler fulfills.
+ * Includes async_payment_succeeded for legacy seat/top-up/starter_pack — without that,
+ * a failed async fulfill returned false but the route still ACKed 200 and Stripe stopped retrying.
+ */
+function isPricingCheckoutSession(event: Stripe.Event): boolean {
+  if (
+    event.type !== "checkout.session.completed" &&
+    event.type !== "checkout.session.async_payment_succeeded"
+  ) {
+    return false;
+  }
+  const checkoutType = (event.data.object as Stripe.Checkout.Session).metadata?.checkoutType;
+  return isPricingCheckoutType(checkoutType);
 }
 
 export async function POST(request: Request) {
