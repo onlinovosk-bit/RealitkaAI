@@ -614,26 +614,39 @@ type SubscriptionLike = {
 /**
  * Počet maklérov (quantity položky licencie), z neho odvodené pásmo a balík z položiek predplatného.
  * `seatQuantity: null` = žiadna, nejednoznačná (viac položiek licencie) alebo neplatná quantity.
+ * `pricesFullyResolved: false` = aspoň jedna položka nemá známu v2/v3 cenu v env — `packCredits: 0`
+ * potom NEZNÁMENÁ „bez balíka“ (môže ísť o rotovanú/chýbajúcu pack Price ID).
  */
 export function readPricingV2SubscriptionItems(
   subscription: SubscriptionLike,
   env: Env = process.env,
-): { band: PricingV2BandId | null; seatQuantity: number | null; packCredits: number } {
+): {
+  band: PricingV2BandId | null;
+  seatQuantity: number | null;
+  packCredits: number;
+  pricesFullyResolved: boolean;
+} {
   const quantities: Array<number | null> = [];
   let packCredits = 0;
+  let pricesFullyResolved = true;
   for (const item of subscription.items?.data ?? []) {
     const role = resolvePricingV2PriceRole(item?.price?.id, env);
-    if (role?.kind === "seat") {
+    if (!role) {
+      pricesFullyResolved = false;
+      continue;
+    }
+    if (role.kind === "seat") {
       const q = item.quantity;
       quantities.push(typeof q === "number" && Number.isSafeInteger(q) && q >= 1 ? q : null);
     }
-    if (role?.kind === "pack") packCredits = role.credits;
+    if (role.kind === "pack") packCredits = role.credits;
   }
   const seatQuantity = quantities.length === 1 ? quantities[0] : null;
   return {
     band: seatQuantity === null ? null : resolvePricingV2Band(seatQuantity),
     seatQuantity,
     packCredits,
+    pricesFullyResolved,
   };
 }
 
@@ -764,7 +777,7 @@ export async function applyPricingV2SubscriptionEvent(
 
   // updated: stav predplatného sa prenáša vždy (past_due = žiadne ďalšie granty).
   const update: Record<string, unknown> = { subscription_status: status, billing_updated_at: now };
-  const { band, seatQuantity, packCredits } = readPricingV2SubscriptionItems(subscription);
+  const { band, seatQuantity, packCredits, pricesFullyResolved } = readPricingV2SubscriptionItems(subscription);
   if (band && seatQuantity !== null) {
     // Zmena quantity v Stripe (dokúpenie/zrušenie miesta) prepíše počet maklérov aj pásmo.
     const users = clampLicensedUsers(seatQuantity, (agency.licensed_users as number | null) ?? 1);
@@ -772,7 +785,16 @@ export async function applyPricingV2SubscriptionEvent(
     update.account_tier = PRICING_V2_BAND_ACCOUNT_TIER[band];
     update.licensed_users = users;
     update.seats = users;
-    update.pack_credits = packCredits;
+    // Balík: 0 zapisuj len keď sú všetky price ID známe (seat-only = zákazník balík zrušil).
+    // Neznáma pack/addon cena pri platnej licencii → NEprepisuj pack_credits na 0 (mesačný grant
+    // = pásmo + pack_credits; inak tichá strata plateného balíka pri rotácii env Price ID).
+    if (pricesFullyResolved || packCredits > 0) {
+      update.pack_credits = packCredits;
+    } else {
+      console.warn("[pricing-v2] subscription.updated has unresolved price IDs; preserving pack_credits", {
+        subscriptionId: eventSubscription.id,
+      });
+    }
   } else {
     console.warn("[pricing-v2] subscription.updated without a single v2 seat item; only status synced", {
       subscriptionId: eventSubscription.id,

@@ -1087,12 +1087,38 @@ describe("subscription lifecycle for v3 prices (kritériá 4, 5)", () => {
       band: "network",
       seatQuantity: 21,
       packCredits: 200,
+      pricesFullyResolved: true,
     });
     expect(readPricingV2SubscriptionItems(items([PRICE.STRIPE_PRICE_V3_PACK_200]))).toEqual({
       band: null,
       seatQuantity: null,
       packCredits: 200,
+      pricesFullyResolved: true,
     });
+    expect(readPricingV2SubscriptionItems(items([SEAT, 3], ["price_not_in_env"]))).toEqual({
+      band: "team",
+      seatQuantity: 3,
+      packCredits: 0,
+      pricesFullyResolved: false,
+    });
+  });
+
+  it("updated: unrecognized pack/addon price must not wipe pack_credits (grant = band + pack)", async () => {
+    // Seat env matches; pack line uses a rotated/unknown Price ID → previously wrote pack_credits: 0.
+    liveSub("active", [SEAT, 10], ["price_rotated_pack_unknown"]);
+    expect(monthlyGrantAmountForAgency(db.agencies[0] as never)).toBe(220);
+    const ok = await applyPricingV2SubscriptionEvent(
+      subEvent("customer.subscription.updated", items([SEAT, 10], ["price_rotated_pack_unknown"])),
+    );
+    expect(ok).toBe(true);
+    expect(db.agencies[0]).toMatchObject({
+      pricing_band: "office",
+      licensed_users: 10,
+      seats: 10,
+      pack_credits: 100,
+      subscription_status: "active",
+    });
+    expect(monthlyGrantAmountForAgency(db.agencies[0] as never)).toBe(220);
   });
 
   it("clampLicensedUsers pásmo neorezáva: quantity je pravda, neplatná hodnota ide na zálohu (min. 1)", () => {
