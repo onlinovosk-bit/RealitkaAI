@@ -1,3 +1,61 @@
+## Session 2026-10-31 (meta-prompt Agentic Creative Prompt Stack uložený do repa)
+### Dokončené
+- „GO uložiť do repa“: meta-prompt v1.1 uložený ako `docs/prompts/agentic/creative-agentic-prompt-stack-v1.1.md` (hlavička Status/Repo/Cesta/Jazyk podľa susedného stacku, telo bez zmeny; 0 výskytov „Smolko“).
+- Zápis v `memory/decisions.md` (VALIDATE/BACKLOG, skóre Konštitúcie sa nevymýšľalo).
+- Blok SESSION v `docs/STATUS.md` nahradený cieľom tejto steny.
+### Rozpracované / Pending
+- INI-5: „GO Q1 / GO Q4 / NIE“ a „merguj 842“ (PR #842 teraz nesie tri docs-only celky: plán INI-5, CRO audit s náhľadom, meta-prompt).
+- Prvé reálne použitie meta-promptu: vyplnený `<brief>`, pomenovaný Compliance Owner a právny preset s dátumom a zdrojom (inak `NOT_VERIFIED`).
+- Reálne volanie Anthropic API: v prostredí nie je kľúč, founder ho uloží v nastaveniach prostredia (nová session).
+- Vstupy majiteľa 1–4 z časti 6 CRO auditu (nie sú blokujúce).
+- Otvorené z predchádzajúcich blokov: Stripe krok C (`bash scripts/ops/stripe-verify-prices.sh --spec`), ručný P&L single set, dôvod zastavenia Meta, medzera `resolveAuthority` NaN, Anthropic DPA + `/legal/sub-processors`.
+### Kľúčové súbory zmenené
+- `docs/prompts/agentic/creative-agentic-prompt-stack-v1.1.md`: nový meta-prompt (iba dokument, nič sa nespúšťa ani nenasadzuje).
+- `memory/decisions.md`: záznam 2026-10-31 (VALIDATE/BACKLOG).
+- `memory/session-summary.md`: tento záznam (PREPEND).
+- `docs/STATUS.md`: blok SESSION nahradený cieľom uloženia meta-promptu.
+### Ďalší krok
+Stripe krok C (priorita #1 podľa Prime Directive): founder spustí `bash scripts/ops/stripe-verify-prices.sh --spec` a pošle výstup.
+
+---
+
+## Session 2026-10-28 (CRO audit Boreal + Caribbean)
+### Dokončené
+- „merguj 834“: PR #834 (GA4 audit 10/10) zmergovaný, squash `e9ece0f`, CI 6/6 zelené na hlave `0c4f039` (overené v tom istom turne).
+- INI-5 plán geo-holdout testu pre PMax: `docs/onlinovo/2026-10-09-inc5-pmax-holdout-plan.md` v PR #842 (draft). Čaká na „GO Q1 / GO Q4 / NIE“.
+- Analýza ceny Boreal 100 ml (31,90 € / 33,90 € / 32,90 €): výpočet je len v chate, v repozitári je iba záver v `memory/decisions.md`.
+- „GO CRO“: `docs/onlinovo/2026-10-28-cro-audit-boreal-caribbean.md` (verdikt VALIDATE, nie VERIFIED; backlog QW-1/2/3, HI-1/2/3, MF-1/2; experimenty E1–E3; texty; mobil M1–M7; otázky pre majiteľa; kotvy dôkazov).
+- Off-Shoptet náhľad `docs/onlinovo/mockups/2026-10-28-boreal-price-header-offer-block.html` (HI-1, QW-2, QW-3), označený „NÁVRH — nenasadené“. Overené v prehliadači: 375 px bez horizontálneho rolovania, svetlý aj tmavý režim, bez chýb v konzole.
+- Zápis v `memory/decisions.md`.
+### Rozpracované / Pending
+- INI-5: „GO Q1 / GO Q4 / NIE“ a „merguj 842“ (PR #842 teraz nesie dva docs-only celky: plán INI-5 a CRO audit s náhľadom).
+- Reálne volanie Anthropic API: v prostredí nie je kľúč, founder ho uloží v nastaveniach prostredia (nová session).
+- Vstupy majiteľa 1–4 z časti 6 auditu (nie sú blokujúce): 1) export GA4 alebo obnova Supermetrics (trial skončil 23.10.), 2) export objednávok zo Shoptetu za 28 dní (profitový baseline MF-2), 3) reálny náklad testera a báza DPH, 4) pravidlá testera.
+- Nezmerané: mobil vizuálne (F), podiel Yodeyma stránok na návštevnosti (N).
+- Otvorené z predchádzajúcich blokov: Stripe krok C (`bash scripts/ops/stripe-verify-prices.sh --spec`), ručný P&L single set, dôvod zastavenia Meta, medzera `resolveAuthority` NaN, Anthropic DPA + `/legal/sub-processors`.
+- Dôkazy z tejto session (scrapy stránok, Leadhub dotazy) boli v dočasnom adresári. Zachované sú len ako kotvy v časti 11 auditu.
+### Kľúčové súbory zmenené
+- `docs/onlinovo/2026-10-28-cro-audit-boreal-caribbean.md`: nový audit (iba čítanie, nič sa nenasadilo).
+- `docs/onlinovo/mockups/2026-10-28-boreal-price-header-offer-block.html`: nový náhľad hlavičky a bloku ponuky.
+- `memory/decisions.md`: záznam 2026-10-28 (VALIDATE, nie BUILD).
+- `memory/session-summary.md`: tento záznam (PREPEND).
+- `docs/STATUS.md`: blok SESSION nahradený cieľom CRO.
+### Ďalší krok
+Stripe krok C (priorita #1 podľa Prime Directive): founder spustí `bash scripts/ops/stripe-verify-prices.sh --spec` a pošle výstup.
+
+## Session 2026-10-12 (INI-5 plán testu s kontrolnou skupinou)
+### Dokončené
+- „merguj 834“: PR #834 (GA4 audit 10/10) zmergovaný, squash `e9ece0f`, CI 6/6 zelené na hlave `0c4f039` (overené v tom istom turne).
+- `docs/onlinovo/2026-10-09-inc5-pmax-holdout-plan.md`: plán geo-holdout testu pre PMax (rozhodnutie „A“): prah rentability, návrh pokusu, A/A šum a sila z exportu, pravidlá TRIM/HOLD/KEEP, cena, Q4 variant ako výnimka, kroky, otvorené neznáme, Príloha A (priradenie 12 párov).
+- Zápis v `memory/decisions.md`.
+### Rozpracované / Pending
+- Rozhodnutie foundera: „GO Q1“ / „GO Q4“ / „NIE“ (predvolené: návrh, v Ads sa nič nemení). Čítacia kontrola v Ads (PSČ/okresy, Brand polohy, Experiments) pre PPC správcu do 18. 12.
+- Stripe krok C čaká na výstup `bash scripts/ops/stripe-verify-prices.sh`; ručný P&L na jednu množinu (Vybavená); dôvod zastavenia Meta; `resolveAuthority` s NaN čaká na vlastné GO.
+### Kľúčové súbory zmenené
+- `docs/onlinovo/2026-10-09-inc5-pmax-holdout-plan.md`, `memory/decisions.md`, `memory/session-summary.md`.
+### Ďalší krok
+Stripe krok C (Prime Directive): founder pošle výstup `scripts/ops/stripe-verify-prices.sh`; overenie spravím ja.
+
 ## Session 2026-10-25 (STENA UX cenníka + ročná zľava 17 %)
 ### Dokončené
 - `PricingV2Comparison` prepracovaný (jedna dominantná cena, jednotné riadky, jeden banner), `annualDiscountPercent` v `billing/v2/format.ts` a `marketing/pricing-v2-copy.ts`.

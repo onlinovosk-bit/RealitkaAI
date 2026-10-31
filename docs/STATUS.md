@@ -48,20 +48,14 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: UX cenníka + ročná zľava 17 % z katalógu (aj marketing)
+Cieľ: Meta-prompt „Agentic Creative Prompt Stack“ v1.1 uložený do repa (iba dokument, nič sa nespúšťa ani nenasadí)
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] 1 — `/porovnanie-programov` prepracované (jedna dominantná cena, jednotné riadky)
-- [x] 2 — Ročná zľava 17 % z katalógu (nie natvrdo 20 %) v billing UI
-- [x] 3 — Marketing + podmienky: „ročne o 17 % lacnejšie" (169/169 testov)
-- [x] 4 — Memory PREPEND + STATUS (jeden commit)
-- [ ] 5 — Push + PR #914 + zelené CI na aktuálnom heade (merge až na GO)
-Cieľ: Verejný blog na www.revolis.ai + prvý článok (draft PR)
-> % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] 1 — `/blog` listing + `/blog/[slug]` v `apps/marketing` (build routy + HTTP 200)
-- [x] 2 — Prvý článok `ceny-nehnutelnosti-2026-sadzby-nove-ltv` v kóde (CTA register, zdroje, bez pilot)
-- [x] 3 — Sitemap + `seo.test.ts` obsahujú `/blog` a slug (10 PASS blog+seo)
-- [x] 4 — Draft PR proti `main` (merge/deploy nie)
-- [ ] 5 — Merge + nasadenie `revolis-marketing` (samostatné GO)
+- [x] 1 — `docs/prompts/agentic/creative-agentic-prompt-stack-v1.1.md`: 310 riadkov, telo identické so zdrojom (`diff` → BODY_IDENTICAL), hlavička so Status / Repo / Rozsah („iba dokument“), 0 výskytov „Smolko“
+- [x] 2 — `memory/decisions.md`: záznam 2026-10-31 (VALIDATE dokumentu, nie BUILD; PREPEND +9 −0)
+- [x] 3 — `memory/session-summary.md`: záznam session (PREPEND +21 −0)
+- [x] 4 — `docs/STATUS.md`: tento blok SESSION (tabuľka s váhami sa nemení, je STARÁ)
+- [x] 5 — Kontrola pred pushom: memory logy bez zmazaných riadkov, nič v repe neodkazuje na `docs/prompts/agentic/` (žiadny test ani skript ho neskenuje)
+- [ ] 6 — Jeden commit a jeden push na vetvu PR #842, popis PR aktualizovaný (draft), CI na novom heade overené. Nič nezmergované, nič nenasadené
 <!-- SESSION:END -->
 
 ## Hotové 2026-10-07 — s dôkazom (REALVIA-SEC-01)
