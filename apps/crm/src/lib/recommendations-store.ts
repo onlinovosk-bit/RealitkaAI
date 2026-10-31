@@ -13,6 +13,10 @@ function leadInventoryUnsafeForGlobalClear(leadsCount: number): boolean {
   return leadsCount === 0 || leadsCount >= LEADS_LIST_MAX;
 }
 
+type MatchRead =
+  | { ok: true; matches: SimpleMatch[] }
+  | { ok: false };
+
 export type PersistedRecommendation = {
   id: string;
   leadId: string | null;
@@ -38,13 +42,18 @@ function getDemoRecommendationsStore() {
   return globalRecommendationsStore.__realitkaDemoRecommendations;
 }
 
+/**
+ * Match inventory for recommendation rebuild. Soft-failing to [] on DB error
+ * used to look like "no matches" and triggered clear+rebuild — wiping every
+ * property_match recommendation. Fail closed instead: caller must skip wipe.
+ */
 async function listPersistedMatches(
   scoped?: import("@supabase/supabase-js").SupabaseClient | null,
-): Promise<SimpleMatch[]> {
+): Promise<MatchRead> {
   const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
-    return [];
+    return { ok: true, matches: [] };
   }
 
   const { data, error } = await supabase
@@ -52,17 +61,24 @@ async function listPersistedMatches(
     .select("*")
     .order("score", { ascending: false });
 
-  if (error || !data) {
-    console.error("listPersistedMatches error:", error?.message);
-    return [];
+  if (error) {
+    console.error("listPersistedMatches error:", error.message);
+    return { ok: false };
+  }
+  if (!data) {
+    console.error("listPersistedMatches error: empty response");
+    return { ok: false };
   }
 
-  return data.map((item: any) => ({
-    leadId: item.lead_id,
-    propertyId: item.property_id,
-    matchScore: Number(item.score ?? 0),
-    reasons: Array.isArray(item.reasons) ? item.reasons : [],
-  }));
+  return {
+    ok: true,
+    matches: data.map((item: any) => ({
+      leadId: item.lead_id,
+      propertyId: item.property_id,
+      matchScore: Number(item.score ?? 0),
+      reasons: Array.isArray(item.reasons) ? item.reasons : [],
+    })),
+  };
 }
 
 export async function listRecommendations(
@@ -183,7 +199,7 @@ export async function recalculateRecommendationsForLead(
   leadId: string,
   scoped?: import("@supabase/supabase-js").SupabaseClient | null,
 ) {
-  const [leads, matches] = await Promise.all([
+  const [leads, matchRead] = await Promise.all([
     listLeads(undefined, scoped),
     listPersistedMatches(scoped),
   ]);
@@ -192,6 +208,15 @@ export async function recalculateRecommendationsForLead(
 
   if (!lead) {
     throw new Error("Lead nebol nájdený.");
+  }
+
+  // Uncertain match inventory must not DELETE this lead's recommendations.
+  if (!matchRead.ok) {
+    console.warn(
+      "[recommendations-store] match read failed — skipping lead recalculate to avoid recommendation wipe",
+      { leadId },
+    );
+    return { leadId, inserted: 0 };
   }
 
   const supabase = await resolveTenantSupabase(scoped);
@@ -214,7 +239,7 @@ export async function recalculateRecommendationsForLead(
     }
   }
 
-  const leadMatches = matches.filter((item) => item.leadId === leadId);
+  const leadMatches = matchRead.matches.filter((item) => item.leadId === leadId);
   const recommendations = generateRecommendationsForLead(lead, leadMatches);
   const result = await insertRecommendations(recommendations, scoped);
 
@@ -227,7 +252,7 @@ export async function recalculateRecommendationsForLead(
 export async function recalculateAllRecommendations(
   scoped?: import("@supabase/supabase-js").SupabaseClient | null,
 ) {
-  const [leads, matches] = await Promise.all([
+  const [leads, matchRead] = await Promise.all([
     listLeads(undefined, scoped),
     listPersistedMatches(scoped),
   ]);
@@ -240,10 +265,25 @@ export async function recalculateAllRecommendations(
     );
     return {
       totalLeads: leads.length,
-      totalMatches: matches.length,
+      totalMatches: 0,
       totalRows: 0,
     };
   }
+
+  // Failed match read ≠ "no matches" — refuse clear-all (would drop every property_match row).
+  if (!matchRead.ok) {
+    console.warn(
+      "[recommendations-store] match read failed — skipping all recalculate to avoid recommendation wipe",
+      { leadsCount: leads.length },
+    );
+    return {
+      totalLeads: leads.length,
+      totalMatches: 0,
+      totalRows: 0,
+    };
+  }
+
+  const matches = matchRead.matches;
 
   await clearRecommendations(scoped);
 
