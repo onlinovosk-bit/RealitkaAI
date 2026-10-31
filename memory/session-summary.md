@@ -1,3 +1,24 @@
+## Session 2026-10-31 (meta-prompt Agentic Creative Prompt Stack uložený do repa)
+### Dokončené
+- „GO uložiť do repa“: meta-prompt v1.1 uložený ako `docs/prompts/agentic/creative-agentic-prompt-stack-v1.1.md` (hlavička Status/Repo/Cesta/Jazyk podľa susedného stacku, telo bez zmeny; 0 výskytov „Smolko“).
+- Zápis v `memory/decisions.md` (VALIDATE/BACKLOG, skóre Konštitúcie sa nevymýšľalo).
+- Blok SESSION v `docs/STATUS.md` nahradený cieľom tejto steny.
+### Rozpracované / Pending
+- INI-5: „GO Q1 / GO Q4 / NIE“ a „merguj 842“ (PR #842 teraz nesie tri docs-only celky: plán INI-5, CRO audit s náhľadom, meta-prompt).
+- Prvé reálne použitie meta-promptu: vyplnený `<brief>`, pomenovaný Compliance Owner a právny preset s dátumom a zdrojom (inak `NOT_VERIFIED`).
+- Reálne volanie Anthropic API: v prostredí nie je kľúč, founder ho uloží v nastaveniach prostredia (nová session).
+- Vstupy majiteľa 1–4 z časti 6 CRO auditu (nie sú blokujúce).
+- Otvorené z predchádzajúcich blokov: Stripe krok C (`bash scripts/ops/stripe-verify-prices.sh --spec`), ručný P&L single set, dôvod zastavenia Meta, medzera `resolveAuthority` NaN, Anthropic DPA + `/legal/sub-processors`.
+### Kľúčové súbory zmenené
+- `docs/prompts/agentic/creative-agentic-prompt-stack-v1.1.md`: nový meta-prompt (iba dokument, nič sa nespúšťa ani nenasadzuje).
+- `memory/decisions.md`: záznam 2026-10-31 (VALIDATE/BACKLOG).
+- `memory/session-summary.md`: tento záznam (PREPEND).
+- `docs/STATUS.md`: blok SESSION nahradený cieľom uloženia meta-promptu.
+### Ďalší krok
+Stripe krok C (priorita #1 podľa Prime Directive): founder spustí `bash scripts/ops/stripe-verify-prices.sh --spec` a pošle výstup.
+
+---
+
 ## Session 2026-10-28 (CRO audit Boreal + Caribbean)
 ### Dokončené
 - „merguj 834“: PR #834 (GA4 audit 10/10) zmergovaný, squash `e9ece0f`, CI 6/6 zelené na hlave `0c4f039` (overené v tom istom turne).
