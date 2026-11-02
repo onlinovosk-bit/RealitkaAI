@@ -88,20 +88,28 @@ export async function loadActiveConnections(): Promise<ActiveConnection[]> {
 export async function markPulled(agencyId: string): Promise<void> {
   const sb = createServiceRoleClient();
   if (!sb) return;
+  // Pull drží token v pamäti. Medzitým môže disconnect zmazať ciphertext a dať status=revoked.
+  // Bez filtra by úspešný pull riadok znova označil active s prázdnym tokenom → UI „pripojené",
+  // ďalšie behy nič nečíta (tiché straty dopytov).
   await sb
     .from("agency_gmail_inbound_oauth")
     .update({ last_pulled_at: new Date().toISOString(), last_error: null, status: "active" })
-    .eq("agency_id", agencyId);
+    .eq("agency_id", agencyId)
+    .eq("status", "active")
+    .neq("refresh_token_ciphertext", "");
 }
 
 /** `status: 'error'` pri vypršanom/odvolanom tokene — pull sa potom nepokúša dookola. */
 export async function markError(agencyId: string, code: string, disable: boolean): Promise<void> {
   const sb = createServiceRoleClient();
   if (!sb) return;
+  // Neprepisuj revoked: disconnect už rozhodol; chyba z doťahujúceho pullu by inak
+  // prekryla „odpojené" stavom „error".
   await sb
     .from("agency_gmail_inbound_oauth")
     .update({ last_error: code.slice(0, 200), ...(disable ? { status: "error" } : {}) })
-    .eq("agency_id", agencyId);
+    .eq("agency_id", agencyId)
+    .neq("status", "revoked");
 }
 
 /** Odpojenie: ciphertext sa maže (nie len označí), zostáva stopa kedy a kto. */
