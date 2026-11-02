@@ -2,8 +2,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
  * Global AI recommendations recalculate must not DELETE ai_recommendations
- * when listLeads is empty (prod soft-fail) or hits LEADS_LIST_MAX (truncated
- * inventory) — otherwise off-page / all rows are wiped with HTTP 200.
+ * when listLeads is empty (prod soft-fail), hits LEADS_LIST_MAX (truncated
+ * lead page), or the match read hits MATCHES_READ_MAX (PostgREST page) —
+ * otherwise off-page / off-cap rows are wiped with HTTP 200.
+ *
+ * Per-lead recalculate must read matches via lead_id filter, not the global
+ * top-MATCHES_READ_MAX page (a lead below that cut looked like "no matches").
  */
 
 const listLeadsMock = vi.hoisted(() => vi.fn());
@@ -34,27 +38,43 @@ vi.mock("@/lib/recommendations-engine", () => ({
   ],
 }));
 
-import { recalculateAllRecommendations } from "../recommendations-store";
+import {
+  MATCHES_READ_MAX,
+  recalculateAllRecommendations,
+  recalculateRecommendationsForLead,
+} from "../recommendations-store";
 
-function scopedClient() {
-  const ops: { op: string; rows?: unknown[] }[] = [];
+type MatchResult = { data: unknown[] | null; error: { message: string } | null };
+
+function scopedClient(matchResult: MatchResult = { data: [], error: null }) {
+  const ops: { op: string; table?: string; filter?: string; rows?: unknown[] }[] = [];
   const done = Promise.resolve({ error: null, data: [] });
   const client = {
     from: (table: string) => {
       if (table === "lead_property_matches") {
-        return {
-          select: () => ({
-            order: async () => ({ data: [], error: null }),
-          }),
+        const chain: {
+          select: () => typeof chain;
+          eq: (col: string, val: string) => typeof chain;
+          order: () => typeof chain;
+          limit: () => Promise<MatchResult>;
+        } = {
+          select: () => chain,
+          eq: (col: string, val: string) => {
+            ops.push({ op: "match-eq", table, filter: `${col}=${val}` });
+            return chain;
+          },
+          order: () => chain,
+          limit: async () => matchResult,
         };
+        return chain;
       }
       return {
         delete: () => {
-          ops.push({ op: "delete" });
+          ops.push({ op: "delete", table });
           return { not: () => done, eq: () => done };
         },
         insert: (rows: unknown[]) => {
-          ops.push({ op: "insert", rows });
+          ops.push({ op: "insert", table, rows });
           return done;
         },
       };
@@ -81,7 +101,7 @@ describe("recalculateAllRecommendations fail-closed", () => {
 
     const res = await recalculateAllRecommendations(client);
 
-    expect(ops).toEqual([]);
+    expect(ops.filter((o) => o.op === "delete")).toEqual([]);
     expect(res.totalRows).toBe(0);
     expect(res.totalLeads).toBe(0);
   });
@@ -94,12 +114,29 @@ describe("recalculateAllRecommendations fail-closed", () => {
 
     const res = await recalculateAllRecommendations(client);
 
-    expect(ops).toEqual([]);
+    expect(ops.filter((o) => o.op === "delete")).toEqual([]);
     expect(res.totalRows).toBe(0);
     expect(res.totalLeads).toBe(500);
   });
 
-  it("under LIST_MAX with leads → delete then insert", async () => {
+  it("MATCHES_READ_MAX match page → no global delete (avoids off-page match wipe)", async () => {
+    const fullPage = Array.from({ length: MATCHES_READ_MAX }, (_, i) => ({
+      lead_id: `lead-${i % 50}`,
+      property_id: `prop-${i}`,
+      score: 90,
+      reasons: [],
+    }));
+    const { client, ops } = scopedClient({ data: fullPage, error: null });
+    listLeadsMock.mockResolvedValue([LEAD]);
+
+    const res = await recalculateAllRecommendations(client);
+
+    expect(ops.filter((o) => o.op === "delete")).toEqual([]);
+    expect(res.totalRows).toBe(0);
+    expect(res.totalMatches).toBe(MATCHES_READ_MAX);
+  });
+
+  it("under LIST_MAX with leads and under match cap → delete then insert", async () => {
     const { client, ops } = scopedClient();
     listLeadsMock.mockResolvedValue([LEAD]);
 
@@ -108,5 +145,31 @@ describe("recalculateAllRecommendations fail-closed", () => {
     expect(ops.map((o) => o.op)).toEqual(["delete", "insert"]);
     expect(res.totalRows).toBe(1);
     expect(res.totalLeads).toBe(1);
+  });
+});
+
+describe("recalculateRecommendationsForLead match scope", () => {
+  it("reads matches filtered by lead_id (not global top page then filter)", async () => {
+    const { client, ops } = scopedClient({
+      data: [
+        {
+          lead_id: "lead-1",
+          property_id: "prop-1",
+          score: 88,
+          reasons: ["fit"],
+        },
+      ],
+      error: null,
+    });
+    listLeadsMock.mockResolvedValue([LEAD]);
+
+    const res = await recalculateRecommendationsForLead("lead-1", client);
+
+    expect(ops.some((o) => o.op === "match-eq" && o.filter === "lead_id=lead-1")).toBe(
+      true,
+    );
+    expect(ops.map((o) => o.op)).toContain("delete");
+    expect(ops.map((o) => o.op)).toContain("insert");
+    expect(res.inserted).toBe(1);
   });
 });
