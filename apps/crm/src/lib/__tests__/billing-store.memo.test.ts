@@ -113,4 +113,60 @@ describe('billing-store perf hotfix', () => {
       warnSpy.mockRestore();
     }
   });
+
+  it('canceled-only leftover must NOT set hasSubscription (invoice clients stay on paysOutsideStripe)', async () => {
+    subscriptionsList.mockResolvedValue({
+      data: [
+        {
+          id: 'sub_canceled',
+          status: 'canceled',
+          currency: 'eur',
+          items: { data: [] },
+        },
+        {
+          id: 'sub_expired',
+          status: 'incomplete_expired',
+          currency: 'eur',
+          items: { data: [] },
+        },
+      ],
+    });
+    const { getCurrentBillingStatus } = await loadBillingStore();
+    const status = await getCurrentBillingStatus();
+    expect(status.hasCustomer).toBe(true);
+    expect(status.hasSubscription).toBe(false);
+    expect(status.subscription).toBeNull();
+  });
+
+  it('prefers active over past_due / incomplete when several statuses exist', async () => {
+    subscriptionsList.mockResolvedValue({
+      data: [
+        {
+          id: 'sub_incomplete',
+          status: 'incomplete',
+          currency: 'eur',
+          items: { data: [{ id: 'si_1', price: { id: 'price_1', product: 'prod_1', unit_amount: 0 }, quantity: 1 }] },
+        },
+        {
+          id: 'sub_active',
+          status: 'active',
+          currency: 'eur',
+          items: {
+            data: [
+              {
+                id: 'si_2',
+                price: { id: 'price_2', product: 'prod_2', unit_amount: 5000, recurring: { interval: 'month' } },
+                quantity: 3,
+              },
+            ],
+          },
+        },
+      ],
+    });
+    const { getCurrentBillingStatus } = await loadBillingStore();
+    const status = await getCurrentBillingStatus();
+    expect(status.hasSubscription).toBe(true);
+    expect(status.subscription?.id).toBe('sub_active');
+    expect(status.subscription?.status).toBe('active');
+  });
 });
