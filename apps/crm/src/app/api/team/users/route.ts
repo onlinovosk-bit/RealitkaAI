@@ -5,11 +5,19 @@ import { sendOnboardingEmail } from "@/lib/send-onboarding-email";
 import { createActivity } from "@/lib/activities-store";
 import { createClient } from "@/lib/supabase/server";
 import { checkAiRateLimit } from "@/lib/ai/rate-guard";
+import { DB_ROLES, type DbRole } from "@/lib/role-config";
+
+// Same allowlist as /api/invite — body.role must not mint founder/admin/senior.
+const CREATABLE_ROLES: readonly DbRole[] = [
+  DB_ROLES.OWNER,
+  DB_ROLES.MANAGER,
+  DB_ROLES.AGENT,
+];
 
 const CreateUserBody = z.object({
   fullName: z.string().min(1).max(200),
   email: z.string().email().max(254),
-  role: z.string().min(1).max(100),
+  role: z.enum([DB_ROLES.OWNER, DB_ROLES.MANAGER, DB_ROLES.AGENT]),
   phone: z.string().max(30).optional(),
   teamId: z.string().uuid().nullable().optional(),
 });
@@ -52,13 +60,28 @@ export async function POST(request: Request) {
     }
     const body = parsed.data;
 
-    // Enforce caller's own agency — prevents privilege escalation via body.agencyId
+    // Owner/founder only — an agent must not mint owner/manager rows that
+    // `linkProfileToAuthUser` later attaches on login (privilege escalation).
     const { data: callerProfile } = await supabase
       .from("profiles")
-      .select("agency_id")
+      .select("role, agency_id")
       .eq("auth_user_id", user.id)
       .maybeSingle();
-    const agencyId: string = callerProfile?.agency_id ?? (rawBody.agencyId as string | undefined) ?? "";
+    if (callerProfile?.role !== "owner" && callerProfile?.role !== "founder") {
+      return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+    }
+    if (!callerProfile.agency_id) {
+      return NextResponse.json(
+        { ok: false, error: "Váš profil nemá priradenú agentúru." },
+        { status: 403 },
+      );
+    }
+    // Agency comes only from the caller profile — never from the request body.
+    const agencyId = callerProfile.agency_id;
+
+    if (!CREATABLE_ROLES.includes(body.role)) {
+      return NextResponse.json({ ok: false, error: "Neplatná rola." }, { status: 400 });
+    }
 
     const profile = await createProfile({
       agencyId,
