@@ -135,12 +135,18 @@ describe("POST /api/billing/webhook", () => {
       expect((await POST(request())).status).toBe(500);
     });
 
-    it("async_payment_succeeded for a legacy type keeps today's behaviour (not guarded)", async () => {
-      mockVerify.mockReturnValueOnce(v2Event("checkout.session.async_payment_succeeded", "seat"));
-      mockPricing.mockResolvedValueOnce(false);
-      const { POST } = await import("@/app/api/billing/webhook/route");
-      expect((await POST(request())).status).toBe(200);
-    });
+    it.each(["seat", "credit_topup", "starter_pack"])(
+      "async_payment_succeeded for legacy %s failed fulfillment -> 500 (no silent ACK)",
+      async (checkoutType) => {
+        mockVerify.mockReturnValueOnce(
+          v2Event("checkout.session.async_payment_succeeded", checkoutType),
+        );
+        mockPricing.mockResolvedValueOnce(false);
+        const { POST } = await import("@/app/api/billing/webhook/route");
+        expect((await POST(request())).status).toBe(500);
+        expect(mockLegacy).not.toHaveBeenCalled();
+      },
+    );
 
     it("legacy top-up failure is still a 500 whatever the PRICING_V2_ENABLED value (kritérium 1)", async () => {
       for (const flag of [undefined, "", "true"]) {
