@@ -33,16 +33,24 @@ export async function POST(request: Request) {
 
     const body = await request.json();
 
-    // Enforce caller's own agency — prevents privilege escalation via body.agencyId
+    // Owner/founder only; agency always from caller profile (ignore client agency claim).
     const { data: callerProfile } = await supabase
       .from("profiles")
-      .select("agency_id")
+      .select("role, agency_id")
       .eq("auth_user_id", user.id)
       .maybeSingle();
-    const agencyId: string = callerProfile?.agency_id ?? body.agencyId ?? "";
+    if (callerProfile?.role !== "owner" && callerProfile?.role !== "founder") {
+      return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+    }
+    if (!callerProfile.agency_id) {
+      return NextResponse.json(
+        { ok: false, error: "Váš profil nemá priradenú agentúru." },
+        { status: 403 },
+      );
+    }
 
     const team = await createTeam({
-      agencyId,
+      agencyId: callerProfile.agency_id,
       name: body.name,
     }, supabase);
 
