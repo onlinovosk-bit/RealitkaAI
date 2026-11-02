@@ -566,6 +566,11 @@ describe("(e) zmena quantity / pásma cez subscription.updated", () => {
   });
 
   it("quantity v Stripe 3 -> 11 -> 5 -> 1: pásmo sa prepisuje oboma smermi (network, team, start)", async () => {
+    // Pin checkout to October so the Nov cycle is a new period. Without this,
+    // a real-clock November run grants Team (60) at checkout and the cycle
+    // is a same-month no-op, so the last grant stays 60 instead of Start (25).
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-10T10:00:00Z"));
     const { params } = await doCheckout({ checkoutType: "pricing_v2", seats: 3, interval: "month", packCredits: null });
     await handlePricingCheckoutWebhook(sessionEvent(params.metadata));
     const seen: Array<[unknown, unknown, unknown]> = [];
@@ -579,7 +584,6 @@ describe("(e) zmena quantity / pásma cez subscription.updated", () => {
       [1, "start", "starter"],
     ]);
     // grant sleduje nové pásmo
-    vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-11-01T05:00:00Z"));
     await runMonthlyCreditCycle();
     expect(grants().at(-1)?.amount).toBe(25);
