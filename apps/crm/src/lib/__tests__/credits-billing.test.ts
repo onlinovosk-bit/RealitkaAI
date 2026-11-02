@@ -36,6 +36,13 @@ vi.mock("@/lib/credits/grant-engine", () => ({
     grantMonthlyCreditsForAgencyMock(...args),
 }));
 
+const fulfillStarterPackPurchaseMock = vi.fn();
+
+vi.mock("@/lib/starter-pack/fulfillment", () => ({
+  fulfillStarterPackPurchase: (...args: unknown[]) =>
+    fulfillStarterPackPurchaseMock(...args),
+}));
+
 describe("credits-billing", () => {
   const envBackup = { ...process.env };
 
@@ -60,6 +67,11 @@ describe("credits-billing", () => {
     mockDeleteEq.mockResolvedValue({ error: null });
     applyCreditPurchaseMock.mockResolvedValue({ ok: true, credited: 150, skipped: false });
     grantMonthlyCreditsForAgencyMock.mockResolvedValue({ granted: 100, skipped: false });
+    fulfillStarterPackPurchaseMock.mockResolvedValue({
+      code: "SP-TEST",
+      downloadUrl: "https://example.test/download",
+      skipped: false,
+    });
 
     mockFrom.mockImplementation((table: string) => {
       if (table === "credit_ledger") {
@@ -391,7 +403,7 @@ describe("credits-billing", () => {
       );
     });
 
-    it("ACKs unpaid seat/topup without fulfilling (waits for async_payment_succeeded)", async () => {
+    it("ACKs unpaid seat/topup/starter_pack without fulfilling (waits for async_payment_succeeded)", async () => {
       const seat = await handlePricingCheckoutWebhook({
         type: "checkout.session.completed",
         data: {
@@ -427,6 +439,55 @@ describe("credits-billing", () => {
       } as never);
       expect(topup).toBe(true);
       expect(applyCreditPurchaseMock).not.toHaveBeenCalled();
+
+      const starter = await handlePricingCheckoutWebhook({
+        type: "checkout.session.completed",
+        data: {
+          object: {
+            id: "cs_starter_unpaid",
+            payment_status: "unpaid",
+            customer_details: { email: "buyer@example.com" },
+            metadata: { checkoutType: "starter_pack" },
+          },
+        },
+      } as never);
+      expect(starter).toBe(true);
+      expect(fulfillStarterPackPurchaseMock).not.toHaveBeenCalled();
+    });
+
+    it("fulfills starter_pack on async_payment_succeeded once paid", async () => {
+      const handled = await handlePricingCheckoutWebhook({
+        type: "checkout.session.async_payment_succeeded",
+        data: {
+          object: {
+            id: "cs_starter_async",
+            payment_status: "paid",
+            customer_email: "buyer@example.com",
+            metadata: { checkoutType: "starter_pack" },
+          },
+        },
+      } as never);
+
+      expect(handled).toBe(true);
+      expect(fulfillStarterPackPurchaseMock).toHaveBeenCalledWith({
+        stripeSessionId: "cs_starter_async",
+        customerEmail: "buyer@example.com",
+      });
+    });
+
+    it("returns false when starter_pack fulfill fails after paid (Stripe must retry)", async () => {
+      fulfillStarterPackPurchaseMock.mockResolvedValueOnce(null);
+      const handled = await handlePricingCheckoutWebhook({
+        type: "checkout.session.async_payment_succeeded",
+        data: {
+          object: {
+            id: "cs_starter_fail",
+            payment_status: "paid",
+            metadata: { checkoutType: "starter_pack" },
+          },
+        },
+      } as never);
+      expect(handled).toBe(false);
     });
 
     it("fulfills legacy seat on async_payment_succeeded once paid", async () => {
