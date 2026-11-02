@@ -51,4 +51,14 @@ describe("[verification] Matching + recommendations scoped writes (R3 remediatio
       /leadInventoryUnsafeForGlobalClear\(leads\.length\)[\s\S]*clearRecommendations/,
     );
   });
+
+  it("recalculate recommendations fail-closed before clear when match read fails", () => {
+    const recommendationsStore = readFileSync(join(CRM_ROOT, "src/lib/recommendations-store.ts"), "utf8");
+
+    expect(recommendationsStore).toContain("match read failed");
+    expect(recommendationsStore).toMatch(/if \(!matchRead\.ok\)[\s\S]*clearRecommendations/);
+    expect(recommendationsStore).toMatch(
+      /recalculateRecommendationsForLead\([\s\S]*if \(!matchRead\.ok\)[\s\S]*inserted: 0/,
+    );
+  });
 });
