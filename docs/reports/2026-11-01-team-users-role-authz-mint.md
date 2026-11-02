@@ -32,3 +32,4 @@ Team create routes never got the owner/founder + invitable-role gates that `/api
 ## Validation
 
 - `npx vitest run src/app/api/team/users/__tests__/route.test.ts src/app/api/team/teams/__tests__/route.test.ts tests/verification/tasks-team-scoped-writes.verification.test.ts`
+- CI run 41360181366 (`7c52f963`) failed one unrelated test: `tests/integration/pricing-v2-e2e.test.ts` quantity-band grant (`expected 60 to be 25`). Checkout used the real November clock, so Team’s 60-credit grant was already in the November period and the Nov 1 cycle was a no-op. Test now pins checkout to `2026-10-10` (same pattern as neighboring cases). Security routes unchanged. Local re-run: 74 passed.
