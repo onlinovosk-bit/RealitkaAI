@@ -1,3 +1,12 @@
+## 2026-11-03 — BUILD: profiles PATCH founder mint block
+- Verdict: BUILD (correctness / entitlement escalation).
+- Finding: owner could mint `role=founder` via `PATCH /api/profiles/[id]` (service_role) after #935; unlocks protocol_authority.
+- Fix: ASSIGNABLE_ROLES owner/manager/agent; refuse self role on profile PK + auth uid.
+- Evidence: vitest 10/10; report `docs/reports/2026-11-03-critical-bug-hunt-auth-unsubscribe-capture.md`.
+- Branch: `cursor/critical-bug-remediation-8d1d` @ `43d8f131`. No PROD/merge without founder GO.
+
+---
+
 ## 2026-10-31 — Meta-prompt „Agentic Creative Prompt Stack“ v1.1 uložený do repa: VALIDATE (dokument), nie BUILD
 **GO:** founder „GO uložiť do repa“ (po doručení meta-promptu). Prime Directive: nepriamy — dokument, 0 h produktového vývoja; Stripe krok C ostáva priorita #1. Konštitúcia v2: 12-otázkové skóre sa v tejto session nerobilo a nevymýšľam ho; zaradenie je konzervatívne VALIDATE/BACKLOG, lebo ide o interný pracovný kontrakt a nie je dôkaz, že niekto za výstup zaplatí.
 **Čo:** `docs/prompts/agentic/creative-agentic-prompt-stack-v1.1.md` (vedľa `revolis-api-cost-governor-stack-v1.0.md`). Meta-prompt, ktorý inej AI zadá napísať Agentic Prompt Stack pre obsah, scenáre, video kreatívu, UGC a reklamy. Stupne S0–S11 a S7b s jednotnou JSON obálkou (`stage`, `attempt`, `status` PASS/FAIL/BLOCKED/NOT_VERIFIED/STOP, `inputs_used`, `outputs`, `assumptions`, `missing_inputs`, `risks`, `next_stage_ready`), brány GO-1 až GO-4 s pomenovaným Compliance Ownerom, nezávislé kritiky S7/S7b/S8, výlučne reálne UGC, zastavenie pri chýbajúcom ★ vstupe a KPI s experimentmi namiesto sľubov virality alebo zisku. Telo promptu je totožné so súborom odovzdaným founderovi; pribudla iba hlavička Status/Repo/Cesta/Jazyk.
