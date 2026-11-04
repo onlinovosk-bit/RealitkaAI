@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { getProfileById, updateProfile } from "@/lib/team-store";
+import { DB_ROLES, type DbRole } from "@/lib/role-config";
 
 type ProfileInput = {
   fullName: string;
@@ -14,6 +15,14 @@ type ProfileInput = {
 function isOwnerRole(role: string | null | undefined): boolean {
   return role === "owner" || role === "founder";
 }
+
+// Same allowlist as /api/invite and /api/team/users. `founder` unlocks
+// protocol_authority / enterprise tier gates — must not be mintable here.
+const ASSIGNABLE_ROLES: readonly DbRole[] = [
+  DB_ROLES.OWNER,
+  DB_ROLES.MANAGER,
+  DB_ROLES.AGENT,
+];
 
 export async function GET(
   _req: Request,
@@ -52,13 +61,13 @@ export async function PATCH(
 
   const { data: callerProfile } = await supabase
     .from("profiles")
-    .select("agency_id, role")
+    .select("id, agency_id, role")
     .eq("auth_user_id", user.id)
     .maybeSingle();
 
   const { id } = await params;
 
-  if (id !== user.id) {
+  if (id !== user.id && id !== callerProfile?.id) {
     // Fail-closed: null agency_id must not patch other profiles.
     if (!callerProfile?.agency_id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -89,11 +98,20 @@ export async function PATCH(
       );
     }
     // Owners must not escalate themselves via this route either.
-    if (id === user.id && wantsRoleChange) {
+    // Compare both auth uid (legacy profiles.id = auth.uid()) and profile PK
+    // (modern rows where id ≠ auth_user_id).
+    if ((id === user.id || id === callerProfile?.id) && wantsRoleChange) {
       return NextResponse.json(
         { error: "Vlastnú rolu nie je možné meniť cez tento endpoint." },
         { status: 403 },
       );
+    }
+    if (
+      wantsRoleChange &&
+      (typeof body.role !== "string" ||
+        !ASSIGNABLE_ROLES.includes(body.role as DbRole))
+    ) {
+      return NextResponse.json({ error: "Neplatná rola." }, { status: 400 });
     }
   }
 
