@@ -102,9 +102,9 @@ describe("/api/profiles/[id]", () => {
     expect(mocks.createAdminClient).not.toHaveBeenCalled();
   });
 
-  it("PATCH refuses self role change even for owner", async () => {
+  it("PATCH refuses self role change even for owner (legacy id = auth.uid)", async () => {
     mocks.maybeSingle.mockResolvedValue({
-      data: { agency_id: AGENCY, role: "owner" },
+      data: { id: "profile-owner", agency_id: AGENCY, role: "owner" },
     });
 
     const res = await PATCH(patchRequest({ role: "founder" }), {
@@ -113,9 +113,37 @@ describe("/api/profiles/[id]", () => {
     expect(res.status).toBe(403);
   });
 
+  it("PATCH refuses self role change by profile PK (id ≠ auth.uid)", async () => {
+    mocks.maybeSingle.mockResolvedValue({
+      data: { id: "profile-owner", agency_id: AGENCY, role: "owner" },
+    });
+
+    const res = await PATCH(patchRequest({ role: "founder" }), {
+      params: Promise.resolve({ id: "profile-owner" }),
+    });
+    expect(res.status).toBe(403);
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+  });
+
+  it("PATCH refuses minting founder/admin/senior even for owner", async () => {
+    mocks.maybeSingle.mockResolvedValue({
+      data: { id: "profile-owner", agency_id: AGENCY, role: "owner" },
+    });
+    mocks.getProfileById.mockResolvedValue({
+      id: "target-1",
+      agencyId: AGENCY,
+    });
+
+    const res = await PATCH(patchRequest({ role: "founder" }), {
+      params: Promise.resolve({ id: "target-1" }),
+    });
+    expect(res.status).toBe(400);
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+  });
+
   it("PATCH allows owner to change teammate role via admin client", async () => {
     mocks.maybeSingle.mockResolvedValue({
-      data: { agency_id: AGENCY, role: "owner" },
+      data: { id: "profile-owner", agency_id: AGENCY, role: "owner" },
     });
     mocks.getProfileById.mockResolvedValue({
       id: "target-1",
