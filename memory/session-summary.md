@@ -1,3 +1,19 @@
+## Session 2026-11-03 (critical bug hunt auth/unsub/capture)
+### Dokončené
+- Hunt CRITICAL auth/permissions/deliverability/capture on main `24d0eed6`; report `docs/reports/2026-11-03-critical-bug-hunt-auth-unsubscribe-capture.md`.
+- NEW CRITICAL: `PATCH /api/profiles/[id]` founder mint → unpaid protocol_authority; fixed on `cursor/critical-bug-remediation-8d1d` (`43d8f131`) with ASSIGNABLE_ROLES + self-PK guard; vitest 10/10.
+### Rozpracované / Pending
+- Parent must open PR + Slack (subagent cannot). Founder GO merge after green CI.
+- Tracked still open: #938 #937 #934 #933 #930 #924 #923 #911 #902 #843 #859 #881.
+### Kľúčové súbory zmenené
+- `apps/crm/src/app/api/profiles/[id]/route.ts`: role allowlist + self-PK refuse.
+- `docs/reports/2026-11-03-critical-bug-hunt-auth-unsubscribe-capture.md`: hunt report.
+### Ďalší krok
+Open PR from `cursor/critical-bug-remediation-8d1d` and wait for CI + founder merge GO.
+RAU route: GO_REQUIRED FIX revolis (hunt keyword wipe; no PROD)
+
+---
+
 ## Session 2026-10-31 (meta-prompt Agentic Creative Prompt Stack uložený do repa)
 ### Dokončené
 - „GO uložiť do repa“: meta-prompt v1.1 uložený ako `docs/prompts/agentic/creative-agentic-prompt-stack-v1.1.md` (hlavička Status/Repo/Cesta/Jazyk podľa susedného stacku, telo bez zmeny; 0 výskytov „Smolko“).
