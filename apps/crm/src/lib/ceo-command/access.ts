@@ -3,14 +3,13 @@ export type CeoCommandProfile = {
   ui_role?: string | null;
 };
 
-/** Owner-only CEO Command — ui_role owner_vision/owner_protocol alebo role owner. */
+/**
+ * Owner-only CEO Command — DB role only.
+ * Do not treat billing ui_role (owner_vision/owner_protocol) as identity:
+ * checkout/webhook can stamp those onto an agent payer without elevating role.
+ */
 export function isCeoCommandOwner(profile: CeoCommandProfile | null | undefined): boolean {
   if (!profile) return false;
-  const uiRole = (profile.ui_role ?? "").trim();
   const role = (profile.role ?? "").trim().toLowerCase();
-  return (
-    role === "owner" ||
-    uiRole === "owner_vision" ||
-    uiRole === "owner_protocol"
-  );
+  return role === "owner" || role === "founder";
 }
