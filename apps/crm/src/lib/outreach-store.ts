@@ -321,7 +321,12 @@ export async function prepareOutreachDraft(input: {
     return { ok: false, status: 422, error: `Lead má nepodporovaný stav pre outreach (${lead.status}).` };
   }
 
-  const agencyId = (await fetchLeadAgencyId(lead.id)) ?? SYSTEM_USAGE_AGENCY_ID;
+  // Rovnaká brána ako pri odoslaní: bez skutočnej agentúry by draft, kvóta aj
+  // neskorší List-Unsubscribe skončili pod SYSTEM_USAGE_AGENCY_ID.
+  const agencyId = await fetchLeadAgencyId(lead.id);
+  if (!agencyId) {
+    return { ok: false, status: 503, error: "Agentúra leadu sa nedá overiť — draft sa nevytvorí." };
+  }
   const quota = await checkOutreachQuota(lead.id, agencyId, randomUUID());
   if (quota) return quota;
 
@@ -410,7 +415,13 @@ export async function sendApprovedOutreach(input: SendMessageInput): Promise<Sen
   if (!resend) return fail("Chýba RESEND_API_KEY.");
 
   const correlationId = String(input.meta?.correlation_id ?? randomUUID());
-  const agencyId = (await fetchLeadAgencyId(input.leadId)) ?? SYSTEM_USAGE_AGENCY_ID;
+  // EMAIL-SUPPRESSION-01: agentúra musí byť skutočná. Fallback na SYSTEM_USAGE_AGENCY_ID
+  // by kontroloval/zapisoval potlačenie pod cudzím scope — odhlásenie u agentúry by sa
+  // prehliadlo a List-Unsubscribe by viazal odhlásenie na systémové UUID.
+  const agencyId = await fetchLeadAgencyId(input.leadId);
+  if (!agencyId) {
+    return fail("Agentúra leadu sa nedá overiť — odoslanie zastavené.");
+  }
 
   // EMAIL-SUPPRESSION-01: zoznam odhlásených a nedoručiteľných adries. Fail-closed:
   // bez zápisového klienta, bez tajomstva odhlasovacieho odkazu alebo pri chybe
