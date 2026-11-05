@@ -134,6 +134,69 @@ describe("/api/settings/auth-email-tests", () => {
     expect(mocks.resetPasswordForEmail).not.toHaveBeenCalled();
   });
 
+  it("rejects agent with billing ui_role owner_vision from recovery-link takeover", async () => {
+    mocks.resolveProfileForAuthUser.mockResolvedValue({
+      profile: {
+        id: "profile-1",
+        role: "agent",
+        ui_role: "owner_vision",
+        account_tier: "enterprise",
+        agency_id: AGENCY_A,
+      },
+      profileMissingAgency: false,
+    });
+    mockAdminProfilesLookup({
+      id: "owner-profile",
+      agency_id: AGENCY_A,
+      email: "owner@example.com",
+    });
+
+    const response = await POST(request("recovery-link", "owner@example.com"));
+
+    expect(response.status).toBe(403);
+    expect(mocks.generateLink).not.toHaveBeenCalled();
+    const body = await response.json();
+    expect(body.recoveryLink).toBeUndefined();
+  });
+
+  it("rejects agent with billing ui_role from invite", async () => {
+    mocks.resolveProfileForAuthUser.mockResolvedValue({
+      profile: {
+        id: "profile-1",
+        role: "agent",
+        ui_role: "owner_protocol",
+        account_tier: "protocol_authority",
+        agency_id: AGENCY_A,
+      },
+      profileMissingAgency: false,
+    });
+
+    const response = await POST(request("invite", "newbie@example.com", { fullName: "Nový" }));
+
+    expect(response.status).toBe(403);
+    expect(mocks.inviteUserByEmail).not.toHaveBeenCalled();
+  });
+
+  it("GET reports canManageUsers false when only billing ui_role is elevated", async () => {
+    mocks.resolveProfileForAuthUser.mockResolvedValue({
+      profile: {
+        id: "profile-1",
+        role: "agent",
+        ui_role: "owner_vision",
+        agency_id: AGENCY_A,
+      },
+      profileMissingAgency: false,
+    });
+
+    const response = await GET();
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      ok: true,
+      canManageUsers: false,
+    });
+  });
+
   it("allows an owner to send recovery to a same-agency account", async () => {
     mocks.getUser.mockResolvedValue({ data: { user: OWNER } });
     mocks.resolveProfileForAuthUser.mockResolvedValue({
