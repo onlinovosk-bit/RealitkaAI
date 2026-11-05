@@ -1,8 +1,17 @@
 ﻿import { supabaseClient, getSupabaseClient } from "@/lib/supabase/client";
 import { resolveTenantSupabase } from "@/lib/supabase/resolve-client";
-import { listLeads, getLead } from "@/lib/leads-store";
-import { listProperties, getProperty } from "@/lib/properties-store";
+import { listLeads, getLead, LEADS_LIST_MAX } from "@/lib/leads-store";
+import { listProperties, getProperty, PROPERTIES_LIST_MAX } from "@/lib/properties-store";
 import { getMatchingPropertiesForLead, getMatchingLeadsForProperty } from "@/lib/matching";
+
+/**
+ * listLeads / listProperties hard-cap at LIST_MAX per page. A full page is not
+ * proof the tenant inventory ends there — treating it as complete then
+ * DELETE+INSERT silently drops matches that pointed at off-page rows.
+ */
+function inventoryMayBeTruncated(leadsCount: number, propertiesCount: number): boolean {
+  return leadsCount >= LEADS_LIST_MAX || propertiesCount >= PROPERTIES_LIST_MAX;
+}
 
 export type PersistedLeadPropertyMatch = {
   id: string;
@@ -331,6 +340,13 @@ export async function recalculateMatchesForLead(
     throw new Error("Lead nebol nájdený.");
   }
 
+  // Full page ≠ full inventory (PROPERTIES_LIST_MAX). Mutating would wipe
+  // matches to properties outside the first page (auto-recalc on lead save).
+  if (inventoryMayBeTruncated(0, properties.length)) {
+    console.warn(
+      "[matching-store] property list hit LIST_MAX — skipping lead recalculate to avoid match wipe",
+      { leadId, propertiesCount: properties.length, cap: PROPERTIES_LIST_MAX },
+    );
   // An empty read is not evidence that no property fits: keep what is stored.
   // Same guard as recalculateMatchesForProperty / recalculateAllMatches.
   // listProperties soft-fails to [] in production on DB errors — without this
@@ -431,6 +447,16 @@ export async function recalculateMatchesForProperty(
     return { mode: "property" as const, propertyId, inserted: 0 };
   }
 
+  // Full page ≠ full inventory (LEADS_LIST_MAX). Mutating would wipe matches
+  // to leads outside the first page.
+  if (inventoryMayBeTruncated(leads.length, 0)) {
+    console.warn(
+      "[matching-store] lead list hit LIST_MAX — skipping property recalculate to avoid match wipe",
+      { propertyId, leadsCount: leads.length, cap: LEADS_LIST_MAX },
+    );
+    return { mode: "property" as const, propertyId, inserted: 0 };
+  }
+
   const leadMatches = getMatchingLeadsForProperty(property, leads, 35);
 
   try {
@@ -517,6 +543,25 @@ export async function recalculateAllMatches(
   // recalculation read nothing, deleted every match and wrote 0.
   if (leads.length === 0 || properties.length === 0) {
     return { mode: "all" as const, totalRows: 0, totalLeads: leads.length, totalProperties: properties.length };
+  }
+
+  // A full LIST_MAX page is not the full tenant set — refuse global wipe/rebuild.
+  if (inventoryMayBeTruncated(leads.length, properties.length)) {
+    console.warn(
+      "[matching-store] lead/property list hit LIST_MAX — skipping all recalculate to avoid match wipe",
+      {
+        leadsCount: leads.length,
+        propertiesCount: properties.length,
+        leadsCap: LEADS_LIST_MAX,
+        propertiesCap: PROPERTIES_LIST_MAX,
+      },
+    );
+    return {
+      mode: "all" as const,
+      totalRows: 0,
+      totalLeads: leads.length,
+      totalProperties: properties.length,
+    };
   }
 
   try {

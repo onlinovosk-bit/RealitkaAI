@@ -21,10 +21,12 @@ vi.mock("@/lib/supabase/client", () => ({ supabaseClient: {}, getSupabaseClient:
 vi.mock("@/lib/leads-store", () => ({
   listLeads: (...a: unknown[]) => listLeadsMock(...a),
   getLead: (...a: unknown[]) => getLeadMock(...a),
+  LEADS_LIST_MAX: 500,
 }));
 vi.mock("@/lib/properties-store", () => ({
   listProperties: (...a: unknown[]) => listPropertiesMock(...a),
   getProperty: (...a: unknown[]) => getPropertyMock(...a),
+  PROPERTIES_LIST_MAX: 500,
 }));
 vi.mock("@/lib/matching", () => ({
   getMatchingPropertiesForLead: (...a: unknown[]) => forLeadMock(...a),
@@ -113,6 +115,60 @@ describe("recalculateMatchesForProperty", () => {
     await recalculateMatchesForProperty("prop-1", client);
 
     expect(ops).toEqual([]);
+  });
+
+  it("LIST_MAX lead page → keeps stored matches (no wipe of off-page leads)", async () => {
+    const { client, ops } = scopedClient();
+    getPropertyMock.mockResolvedValue(PROPERTY);
+    listLeadsMock.mockResolvedValue(
+      Array.from({ length: 500 }, (_, i) => ({ id: `lead-${i}` })),
+    );
+
+    const res = await recalculateMatchesForProperty("prop-1", client);
+
+    expect(ops).toEqual([]);
+    expect(res.inserted).toBe(0);
+  });
+});
+
+describe("recalculateMatchesForLead", () => {
+  it("LIST_MAX property page → keeps stored matches (no wipe of off-page properties)", async () => {
+    const { client, ops } = scopedClient();
+    getLeadMock.mockResolvedValue(LEAD);
+    listPropertiesMock.mockResolvedValue(
+      Array.from({ length: 500 }, (_, i) => ({ id: `prop-${i}` })),
+    );
+
+    const res = await recalculateMatchesForLead("lead-1", client);
+
+    expect(ops).toEqual([]);
+    expect(res.inserted).toBe(0);
+  });
+
+  it("under LIST_MAX still deletes and inserts", async () => {
+    const { client, ops } = scopedClient();
+    getLeadMock.mockResolvedValue(LEAD);
+    listPropertiesMock.mockResolvedValue([PROPERTY]);
+
+    const res = await recalculateMatchesForLead("lead-1", client);
+
+    expect(ops.map((o) => o.op)).toEqual(["delete", "insert"]);
+    expect(res.inserted).toBe(1);
+  });
+});
+
+describe("recalculateAllMatches truncation", () => {
+  it("LIST_MAX on either side → no global delete", async () => {
+    const { client, ops } = scopedClient();
+    listLeadsMock.mockResolvedValue([LEAD]);
+    listPropertiesMock.mockResolvedValue(
+      Array.from({ length: 500 }, (_, i) => ({ id: `prop-${i}` })),
+    );
+
+    const res = await recalculateAllMatches(client);
+
+    expect(ops).toEqual([]);
+    expect(res.totalRows).toBe(0);
   });
 });
 
