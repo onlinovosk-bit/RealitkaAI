@@ -4,6 +4,22 @@ import { listLeads, LEADS_LIST_MAX } from "@/lib/leads-store";
 import { generateRecommendationsForLead, type GeneratedRecommendation, type SimpleMatch } from "@/lib/recommendations-engine";
 
 /**
+ * Types owned by recommendations-engine (generateRecommendationsForLead).
+ * Recalculate must DELETE only these — never scoring_* (ai-scoring-store) or
+ * manual/admin rows (assignment/custom/…) sharing ai_recommendations.
+ */
+export const ENGINE_RECOMMENDATION_TYPES = [
+  "next_best_action",
+  "follow_up",
+  "showing",
+  "reminder",
+  "offer_follow_up",
+  "property_match",
+  "missing_inventory_match",
+  "priority_lead",
+] as const;
+
+/**
  * listLeads hard-caps at LEADS_LIST_MAX per page. A full page is not proof the
  * tenant inventory ends there — clear-all then rebuild from that page would
  * permanently drop ai_recommendations for off-page leads. Empty reads (prod
@@ -151,6 +167,10 @@ export async function listRecommendations(
   }));
 }
 
+function isEngineRecommendationType(type: string): boolean {
+  return (ENGINE_RECOMMENDATION_TYPES as readonly string[]).includes(type);
+}
+
 async function clearRecommendations(
   scoped?: import("@supabase/supabase-js").SupabaseClient | null,
 ) {
@@ -158,14 +178,19 @@ async function clearRecommendations(
 
   if (!supabase) {
     const store = getDemoRecommendationsStore();
-    store.splice(0, store.length);
+    for (let i = store.length - 1; i >= 0; i -= 1) {
+      if (isEngineRecommendationType(store[i].recommendationType)) {
+        store.splice(i, 1);
+      }
+    }
     return;
   }
 
+  // Type-scoped: scoring_* + manual rows share this table and must survive.
   const { error } = await supabase
     .from("ai_recommendations")
     .delete()
-    .not("id", "is", null);
+    .in("recommendation_type", [...ENGINE_RECOMMENDATION_TYPES]);
 
   if (error) {
     throw new Error(error.message);
@@ -246,10 +271,12 @@ export async function recalculateRecommendationsForLead(
   const supabase = await resolveTenantSupabase(scoped);
 
   if (supabase) {
+    // Only engine-owned types — scoring_* / manual recommendations for this lead stay.
     const { error: deleteError } = await supabase
       .from("ai_recommendations")
       .delete()
-      .eq("lead_id", leadId);
+      .eq("lead_id", leadId)
+      .in("recommendation_type", [...ENGINE_RECOMMENDATION_TYPES]);
 
     if (deleteError) {
       throw new Error(deleteError.message);
@@ -257,7 +284,10 @@ export async function recalculateRecommendationsForLead(
   } else {
     const store = getDemoRecommendationsStore();
     for (let i = store.length - 1; i >= 0; i -= 1) {
-      if (store[i].leadId === leadId) {
+      if (
+        store[i].leadId === leadId &&
+        isEngineRecommendationType(store[i].recommendationType)
+      ) {
         store.splice(i, 1);
       }
     }

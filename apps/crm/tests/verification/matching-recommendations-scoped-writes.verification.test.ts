@@ -73,4 +73,19 @@ describe("[verification] Matching + recommendations scoped writes (R3 remediatio
       /recalculateRecommendationsForLead\([\s\S]*listPersistedMatchesForLead\(leadId/,
     );
   });
+
+  it("recommendation recalculate deletes only ENGINE_RECOMMENDATION_TYPES (not scoring_*)", () => {
+    const recommendationsStore = readFileSync(join(CRM_ROOT, "src/lib/recommendations-store.ts"), "utf8");
+
+    expect(recommendationsStore).toContain("ENGINE_RECOMMENDATION_TYPES");
+    expect(recommendationsStore).toMatch(
+      /\.delete\(\)[\s\S]*\.in\("recommendation_type", \[\.\.\.ENGINE_RECOMMENDATION_TYPES\]\)/,
+    );
+    expect(recommendationsStore).toMatch(
+      /\.eq\("lead_id", leadId\)[\s\S]*\.in\("recommendation_type", \[\.\.\.ENGINE_RECOMMENDATION_TYPES\]\)/,
+    );
+    expect(recommendationsStore).not.toMatch(
+      /\.delete\(\)\s*\n\s*\.not\("id", "is", null\)/,
+    );
+  });
 });
