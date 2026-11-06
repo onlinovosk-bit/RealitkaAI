@@ -13,6 +13,18 @@ function leadInventoryUnsafeForGlobalClear(leadsCount: number): boolean {
   return leadsCount === 0 || leadsCount >= LEADS_LIST_MAX;
 }
 
+/**
+ * PostgREST / Supabase `max_rows` (apps/crm/supabase/config.toml). A full page
+ * of lead_property_matches is not proof the tenant match set ends there —
+ * clear-all then rebuild from that page drops property_match recommendations
+ * for pairs outside the top page (ordered by score).
+ */
+export const MATCHES_READ_MAX = 1000;
+
+function matchInventoryUnsafeForGlobalClear(matchesCount: number): boolean {
+  return matchesCount >= MATCHES_READ_MAX;
+}
+
 export type PersistedRecommendation = {
   id: string;
   leadId: string | null;
@@ -38,6 +50,15 @@ function getDemoRecommendationsStore() {
   return globalRecommendationsStore.__realitkaDemoRecommendations;
 }
 
+function mapMatchRows(data: any[]): SimpleMatch[] {
+  return data.map((item: any) => ({
+    leadId: item.lead_id,
+    propertyId: item.property_id,
+    matchScore: Number(item.score ?? 0),
+    reasons: Array.isArray(item.reasons) ? item.reasons : [],
+  }));
+}
+
 async function listPersistedMatches(
   scoped?: import("@supabase/supabase-js").SupabaseClient | null,
 ): Promise<SimpleMatch[]> {
@@ -50,19 +71,47 @@ async function listPersistedMatches(
   const { data, error } = await supabase
     .from("lead_property_matches")
     .select("*")
-    .order("score", { ascending: false });
+    .order("score", { ascending: false })
+    .limit(MATCHES_READ_MAX);
 
   if (error || !data) {
     console.error("listPersistedMatches error:", error?.message);
     return [];
   }
 
-  return data.map((item: any) => ({
-    leadId: item.lead_id,
-    propertyId: item.property_id,
-    matchScore: Number(item.score ?? 0),
-    reasons: Array.isArray(item.reasons) ? item.reasons : [],
-  }));
+  return mapMatchRows(data);
+}
+
+/**
+ * Per-lead match read. Must not load the global top-MATCHES_READ_MAX page and
+ * filter in memory — a lead whose matches sit below that global cut would look
+ * like "no matches", then DELETE + rebuild would replace property_match rows
+ * with missing_inventory_match. Matching writes at most ~35 rows per lead, so
+ * a lead-scoped select stays under the PostgREST page cap.
+ */
+async function listPersistedMatchesForLead(
+  leadId: string,
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+): Promise<SimpleMatch[]> {
+  const supabase = await resolveTenantSupabase(scoped);
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("lead_property_matches")
+    .select("*")
+    .eq("lead_id", leadId)
+    .order("score", { ascending: false })
+    .limit(MATCHES_READ_MAX);
+
+  if (error || !data) {
+    console.error("listPersistedMatchesForLead error:", error?.message);
+    return [];
+  }
+
+  return mapMatchRows(data);
 }
 
 export async function listRecommendations(
@@ -183,9 +232,9 @@ export async function recalculateRecommendationsForLead(
   leadId: string,
   scoped?: import("@supabase/supabase-js").SupabaseClient | null,
 ) {
-  const [leads, matches] = await Promise.all([
+  const [leads, leadMatches] = await Promise.all([
     listLeads(undefined, scoped),
-    listPersistedMatches(scoped),
+    listPersistedMatchesForLead(leadId, scoped),
   ]);
 
   const lead = leads.find((item) => item.id === leadId);
@@ -214,7 +263,6 @@ export async function recalculateRecommendationsForLead(
     }
   }
 
-  const leadMatches = matches.filter((item) => item.leadId === leadId);
   const recommendations = generateRecommendationsForLead(lead, leadMatches);
   const result = await insertRecommendations(recommendations, scoped);
 
@@ -237,6 +285,19 @@ export async function recalculateAllRecommendations(
     console.warn(
       "[recommendations-store] lead list empty or hit LIST_MAX — skipping all recalculate to avoid recommendation wipe",
       { leadsCount: leads.length, cap: LEADS_LIST_MAX },
+    );
+    return {
+      totalLeads: leads.length,
+      totalMatches: matches.length,
+      totalRows: 0,
+    };
+  }
+
+  // Full PostgREST match page ≠ complete match inventory — refuse clear-all.
+  if (matchInventoryUnsafeForGlobalClear(matches.length)) {
+    console.warn(
+      "[recommendations-store] match list hit MATCHES_READ_MAX — skipping all recalculate to avoid recommendation wipe",
+      { matchesCount: matches.length, cap: MATCHES_READ_MAX },
     );
     return {
       totalLeads: leads.length,

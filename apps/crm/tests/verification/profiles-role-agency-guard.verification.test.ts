@@ -40,4 +40,17 @@ describe("[verification] profiles role/agency privilege freeze", () => {
     expect(route).toMatch(/Vlastnú rolu nie je možné meniť/);
     expect(route).toMatch(/iba majiteľ/);
   });
+
+  it("profiles/[id] PATCH allowlists assignable roles (no founder mint)", () => {
+    const route = readFileSync(
+      join(CRM_ROOT, "src/app/api/profiles/[id]/route.ts"),
+      "utf8",
+    );
+    expect(route).toContain("ASSIGNABLE_ROLES");
+    expect(route).toContain("DB_ROLES.OWNER");
+    expect(route).toContain("DB_ROLES.MANAGER");
+    expect(route).toContain("DB_ROLES.AGENT");
+    expect(route).toMatch(/Neplatná rola/);
+    expect(route).toMatch(/id === callerProfile\?\.id/);
+  });
 });

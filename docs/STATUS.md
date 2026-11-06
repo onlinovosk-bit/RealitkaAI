@@ -48,20 +48,13 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: UX cenníka + ročná zľava 17 % z katalógu (aj marketing)
+Cieľ: Critical hunt auth/unsub/capture + fix founder mint on profiles PATCH
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] 1 — `/porovnanie-programov` prepracované (jedna dominantná cena, jednotné riadky)
-- [x] 2 — Ročná zľava 17 % z katalógu (nie natvrdo 20 %) v billing UI
-- [x] 3 — Marketing + podmienky: „ročne o 17 % lacnejšie" (169/169 testov)
-- [x] 4 — Memory PREPEND + STATUS (jeden commit)
-- [ ] 5 — Push + PR #914 + zelené CI na aktuálnom heade (merge až na GO)
-Cieľ: Verejný blog na www.revolis.ai + prvý článok (draft PR)
-> % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] 1 — `/blog` listing + `/blog/[slug]` v `apps/marketing` (build routy + HTTP 200)
-- [x] 2 — Prvý článok `ceny-nehnutelnosti-2026-sadzby-nove-ltv` v kóde (CTA register, zdroje, bez pilot)
-- [x] 3 — Sitemap + `seo.test.ts` obsahujú `/blog` a slug (10 PASS blog+seo)
-- [x] 4 — Draft PR proti `main` (merge/deploy nie)
-- [ ] 5 — Merge + nasadenie `revolis-marketing` (samostatné GO)
+- [x] 1 — Hunt report in-repo: `docs/reports/2026-11-03-critical-bug-hunt-auth-unsubscribe-capture.md` (main head `24d0eed6`)
+- [x] 2 — NEW CRITICAL fixed: `ASSIGNABLE_ROLES` + self-PK guard on `PATCH /api/profiles/[id]` (`43d8f131`)
+- [x] 3 — Vitest 10/10: profiles route unit + `profiles-role-agency-guard.verification.test.ts`
+- [x] 4 — Memory PREPEND (session-summary + decisions) + push `cursor/critical-bug-remediation-8d1d`
+- [ ] 5 — Parent opens PR + Slack; CI green; founder merge GO (no PROD)
 <!-- SESSION:END -->
 
 ## Hotové 2026-10-07 — s dôkazom (REALVIA-SEC-01)

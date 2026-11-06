@@ -48,16 +48,15 @@ const SEED_NOTIFICATIONS = [
 ];
 
 describe("[verification] CEO Command role gating", () => {
-  it("allows owner_vision and owner_protocol ui_role", () => {
-    expect(isCeoCommandOwner({ ui_role: "owner_vision" })).toBe(true);
-    expect(isCeoCommandOwner({ ui_role: "owner_protocol" })).toBe(true);
-  });
-
-  it("allows role owner regardless of ui_role", () => {
+  it("allows DB owner/founder only — billing ui_role is not identity", () => {
+    expect(isCeoCommandOwner({ role: "owner" })).toBe(true);
+    expect(isCeoCommandOwner({ role: "founder" })).toBe(true);
     expect(isCeoCommandOwner({ role: "owner", ui_role: "agent" })).toBe(true);
+    expect(isCeoCommandOwner({ ui_role: "owner_vision" })).toBe(false);
+    expect(isCeoCommandOwner({ ui_role: "owner_protocol", role: "agent" })).toBe(false);
   });
 
-  it("denies agent ui_role without owner role", () => {
+  it("denies agent without owner/founder DB role", () => {
     expect(isCeoCommandOwner({ ui_role: "agent", role: "agent" })).toBe(false);
     expect(isCeoCommandOwner({ ui_role: "agent_team" })).toBe(false);
     expect(isCeoCommandOwner(null)).toBe(false);

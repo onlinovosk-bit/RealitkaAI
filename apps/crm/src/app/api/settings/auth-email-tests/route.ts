@@ -41,11 +41,12 @@ async function getAuthenticatedUser() {
     "id, agency_id, auth_user_id, email, role, ui_role, account_tier",
     user.email,
   );
-  const canManageUsers =
-    profile?.role === "owner" ||
-    profile?.role === "founder" ||
-    profile?.ui_role === "owner_vision" ||
-    profile?.ui_role === "owner_protocol";
+  // Identity admin only — billing ui_role (owner_vision/owner_protocol) is a
+  // paid-tier UX flag written onto the checkout payer's profile even when
+  // profiles.role stays "agent". Trusting ui_role here lets that agent mint
+  // recovery action_links for any same-agency teammate (account takeover).
+  const role = (profile?.role ?? "").trim().toLowerCase();
+  const canManageUsers = role === "owner" || role === "founder";
 
   return { supabase, user, profile: (profile as CallerProfile | null) ?? null, canManageUsers, error: null };
 }

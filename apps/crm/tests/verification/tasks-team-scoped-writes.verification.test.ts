@@ -29,6 +29,20 @@ describe("[verification] Tasks + team scoped writes (R2 remediation)", () => {
     expect(assignRoute).toContain("createClient()");
   });
 
+  it("team create routes require owner/founder and stamp caller agency only", () => {
+    const teamsRoute = readFileSync(join(CRM_ROOT, "src/app/api/team/teams/route.ts"), "utf8");
+    const usersRoute = readFileSync(join(CRM_ROOT, "src/app/api/team/users/route.ts"), "utf8");
+
+    expect(usersRoute).toContain('callerProfile?.role !== "owner"');
+    expect(usersRoute).toContain('callerProfile?.role !== "founder"');
+    expect(usersRoute).not.toMatch(/agency_id\s*\?\?\s*/);
+    expect(usersRoute).toContain("const agencyId = callerProfile.agency_id");
+    expect(usersRoute).toMatch(/createProfile\(\{\s*agencyId,/);
+    expect(teamsRoute).toContain('callerProfile?.role !== "owner"');
+    expect(teamsRoute).not.toMatch(/agency_id\s*\?\?\s*/);
+    expect(teamsRoute).toContain("agencyId: callerProfile.agency_id");
+  });
+
   it("store writers accept optional scoped client", () => {
     const tasksStore = readFileSync(join(CRM_ROOT, "src/lib/tasks-store.ts"), "utf8");
     const teamStore = readFileSync(join(CRM_ROOT, "src/lib/team-store.ts"), "utf8");
