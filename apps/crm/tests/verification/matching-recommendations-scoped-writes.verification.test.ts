@@ -51,4 +51,26 @@ describe("[verification] Matching + recommendations scoped writes (R3 remediatio
       /leadInventoryUnsafeForGlobalClear\(leads\.length\)[\s\S]*clearRecommendations/,
     );
   });
+
+  it("recalculateAllRecommendations fail-closed before clear when match page hits MATCHES_READ_MAX", () => {
+    const recommendationsStore = readFileSync(join(CRM_ROOT, "src/lib/recommendations-store.ts"), "utf8");
+
+    expect(recommendationsStore).toContain("MATCHES_READ_MAX");
+    expect(recommendationsStore).toContain("matchInventoryUnsafeForGlobalClear");
+    expect(recommendationsStore).toMatch(
+      /matchInventoryUnsafeForGlobalClear\(matches\.length\)[\s\S]*clearRecommendations/,
+    );
+  });
+
+  it("per-lead recommendation recalculate scopes match read by lead_id", () => {
+    const recommendationsStore = readFileSync(join(CRM_ROOT, "src/lib/recommendations-store.ts"), "utf8");
+
+    expect(recommendationsStore).toContain("listPersistedMatchesForLead");
+    expect(recommendationsStore).toMatch(
+      /listPersistedMatchesForLead\([\s\S]*\.eq\("lead_id", leadId\)/,
+    );
+    expect(recommendationsStore).toMatch(
+      /recalculateRecommendationsForLead\([\s\S]*listPersistedMatchesForLead\(leadId/,
+    );
+  });
 });
