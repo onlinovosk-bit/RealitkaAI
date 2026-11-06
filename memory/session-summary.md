@@ -1,3 +1,22 @@
+## Session 2026-11-06 (UPTM Governance v1.1 + Ownership self-audit)
+### Dokončené
+- UPTM Governance Decision v1.1 (PAPER-ONLY, LIVE_TRADING=FALSE): päť dokumentov `docs/governance/01–05` v repe `onlinovosk-bit/onlinovosk-bit-uptm`, commit `f24ebe1`, draft PR #35 (nezmergovaný, čaká na „merguj 35“). Evidence Audit, porovnanie limitov A–D (odporúčanie B), architektúra Risk Governora, špecifikácia Expected Value Gate (G1–G6, prahy značené D/P/U), backlog P0–P7 s ODHADMI.
+- Stripe krok C: read-only metadáta Vercel Production env (bez decrypt). Zúžené na jeden chýbajúci vstup: HODNOTA `PRICING_V2_ENABLED` (alebo `pricingV2.enabled` z `GET /api/billing/checkout-config`).
+- Self-audit podľa Directive v1.0 §8: 3 agenti + bodové overenie (flag default OFF, 10 crons mimo vercel.json aj .github, dvojitý gmail-pull, 19 crons vo vercel.json).
+### Rozpracované / Pending
+- UPTM rozhodnutia foundera D1–D5 (sada limitov, hodnota per-trade, referenčné equity, P-parametre EV gate, hranica procesu, autentifikácia reštartu). Risk Governor implementácia = BACKLOG do dokončenia Stripe kroku C + samostatné GO na každú fázu.
+- STRIPE-C-RECONCILE: founder dodá `pricingV2.enabled` (jeden curl na `checkout-config`) alebo výslovné GO na decrypt iba `PRICING_V2_ENABLED`; live vs test price ID overí `bash scripts/ops/stripe-verify-prices.sh --spec`.
+- `docs/STATUS.md` tabuľka % je STARÁ (posledný prepočet 2026-10-05); Stripe 0 % je v rozpore s metadátami Vercel env, revidované číslo sa NEUVÁDZA bez merania.
+- Predchádzajúci záznam (2026-11-03) „Parent must open PR“ je PREKONANÝ: PR #939 je zmergovaný, obsah overený na `main` (`ASSIGNABLE_ROLES` v `profiles/[id]/route.ts:21,112`).
+- Poznámka: vzdialená vetva `claude/ai-workflow-architecture-prompts-iwvo57` ukazovala na `f94b1b11` (#802), ktorý JE predok `main` (overené po prehĺbení plytkého klonu); push je fast-forward.
+### Kľúčové súbory zmenené
+- `memory/session-summary.md`, `memory/decisions.md`, `docs/STATUS.md`: záznam tejto steny (iba dokumenty).
+- UPTM repo (iný repozitár, PR #35): `docs/governance/01-evidence-audit-report.md`, `02-risk-limits-comparison.md`, `03-risk-governor-architecture-proposal.md`, `04-expected-value-gate-specification.md`, `05-implementation-backlog.md`.
+### Ďalší krok
+STRIPE-C-RECONCILE: founder pošle hodnotu `pricingV2.enabled` (curl `GET /api/billing/checkout-config`). Potom read-only zosúladenie a PR, ktorý nechá verifikačný skript čítať flag.
+
+---
+
 ## Session 2026-11-03 (critical bug hunt auth/unsub/capture)
 ### Dokončené
 - Hunt CRITICAL auth/permissions/deliverability/capture on main `24d0eed6`; report `docs/reports/2026-11-03-critical-bug-hunt-auth-unsubscribe-capture.md`.

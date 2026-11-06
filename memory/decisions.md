@@ -1,3 +1,13 @@
+## 2026-11-06 — UPTM Governance Decision v1.1 (paper-only) + Directive v1.0 „Proactive Ownership“: BACKLOG (implementácia Risk Governora), BUILD (iba dokumenty)
+**GO:** founder „UPTM – GOVERNANCE DECISION v1.1“ (PAPER-ONLY / NO LIVE AUTHORIZATION) a „FOUNDER DIRECTIVE — PROACTIVE OWNERSHIP & EXECUTION v1.0“. Prime Directive: UPTM je mimo Revolisu; kód Risk Governora sa nezačína pred dokončením Stripe kroku C (priorita #1).
+**Čo:** (1) Päť analytických dokumentov v UPTM repe (draft PR #35, `f24ebe1`): Evidence Audit, Risk Limits Comparison (A status quo 3,75/7,50/15/22,50/37,50; B 1/2/6 % = 5/—/10/15*/30 kde 15 € je môj predpoklad; C 2,5/5/10/15/25; D 2,5/—/5/—/15), architektúra Risk Governora (Strategy Engine, Risk Governor, Execution Gateway), EV Gate (EV_net = p·G − (1−p)·R − K; prahy označené D odvodené / P politika foundera / U neznáme), backlog P0–P7 (ODHADY: P1–P5 spolu 11–18 osobodní, P6 paper demo 4–8 týždňov, P7 nový Red Team LIVE). Odporúčanie: B s L_max vrátane nákladov ≤ 5 €. (2) Directive v1.0 prijatá ako spôsob práce: vlastníctvo celého reťazca, plán ≠ implementácia, CI zelené ≠ funkčné v PROD, správy vo formáte A–F.
+**Dôkaz (zmerané v tomto turne):** UPTM repo čisté, HEAD `f24ebe1`; RealitkaAI `HEAD == origin/main == 3fae5cd`; `f94b1b11` je predok `main` (`git merge-base --is-ancestor` po prehĺbení plytkého klonu); PR #939 zmergovaný a `ASSIGNABLE_ROLES` je na `main` (`profiles/[id]/route.ts:21,112`); Vercel `filter_project_envs` (iba metadáta, BEZ decrypt): prítomné `PRICING_V2_ENABLED`, `STRIPE_PRICE_V3_SEAT_MONTHLY`/`_YEARLY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`; chýbajú `STRIPE_PRICE_SOLO_SEAT`, `_TEAM_SEAT`, `_OFFICE_SEAT`.
+**Nerobené (čaká na GO):** akákoľvek zmena `uptm/config.py`, kód Risk Governora, broker API, eToro, LIVE_TRADING (ostáva FALSE), zápis do Stripe alebo Vercel, decrypt env hodnôt, merge PR #35.
+**BUILD/BACKLOG:** Risk Governor implementácia = BACKLOG (veto načasovania: najprv Stripe krok C + samostatné ľudské GO na každú fázu). Dokumenty = BUILD (0 h produktového vývoja Revolisu).
+**Rollback:** revert commitu (RealitkaAI); zatvorenie draft PR #35 (UPTM).
+
+---
+
 ## 2026-11-03 — BUILD: profiles PATCH founder mint block
 - Verdict: BUILD (correctness / entitlement escalation).
 - Finding: owner could mint `role=founder` via `PATCH /api/profiles/[id]` (service_role) after #935; unlocks protocol_authority.
