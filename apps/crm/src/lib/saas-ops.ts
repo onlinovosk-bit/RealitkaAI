@@ -279,6 +279,11 @@ const ENDED_SUBSCRIPTION_STATES = new Set([
 ]);
 
 export function agencyPaysOutsideStripe(row: AgencyBillingRow): boolean {
+  // Ručne pridelený / fakturovaný plán je zdroj pravdy mimo Stripe. Leftover
+  // `subscription_status` (canceled/past_due po skúšobnom Stripe checkoute)
+  // ho nesmie prebiť — inak by referenčný klient po triali spadol do read-only,
+  // hoci `manual_plan` stále platí.
+  if ((row.manual_plan ?? "").trim()) return true;
   if (ENDED_SUBSCRIPTION_STATES.has((row.subscription_status ?? "").trim().toLowerCase())) {
     return false;
   }

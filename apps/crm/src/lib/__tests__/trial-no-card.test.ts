@@ -148,6 +148,35 @@ describe("vypnut sa ma iba tomu, kto neplati", () => {
     expect(agencyPaysOutsideStripe({ manual_plan: "market_vision", subscription_status: null })).toBe(true);
   });
 
+  it("manual_plan drží paysOutsideStripe aj pri leftover canceled/past_due v DB", () => {
+    // Fakturovaný klient (Smolko) + skúšobný Stripe checkout, ktorý skončil canceled:
+    // ended status nesmie prebiť ručný plán — inak trialGraceFrom → limited.
+    expect(
+      agencyPaysOutsideStripe({
+        manual_plan: "market_vision",
+        subscription_status: "canceled",
+        plan: "Pro",
+        account_tier: "pro",
+      }),
+    ).toBe(true);
+    expect(
+      agencyPaysOutsideStripe({
+        manual_plan: "protocol_authority",
+        subscription_status: "past_due",
+      }),
+    ).toBe(true);
+
+    const state = trialGraceFrom(
+      trialInput({
+        paysOutsideStripe: true,
+        hasSubscription: false,
+        nowMs: NOW + 400 * DAY,
+      }),
+    );
+    expect(state.state).toBe("active");
+    expect(accessLevelFrom(state.state)).toBe("full");
+  });
+
   it("past_due s leftover plan nie je paysOutsideStripe (session bez Stripe customera)", () => {
     // billing-lifecycle pri payment_failed nechá plan/tier; isPayingAgency=true.
     // Ak session nenájde Stripe customera (billing e-mail ≠ login), hasSubscription
