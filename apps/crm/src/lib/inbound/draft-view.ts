@@ -1,10 +1,13 @@
 // Client-safe view of an inbound AI reply draft (no server imports here —
 // the lead detail page renders it).
 
+import { RETURN_SIGNAL_AGENT_ID } from '../signals/return-signal'
+
 export const INBOUND_AUTOREPLY_AGENT_ID = 'REVOLIS-INBOUND-AUTOREPLY'
 export const FOLLOWUP_SWEEP_AGENT_ID = 'REVOLIS-FOLLOWUP-SWEEP'
 export const DEAD_LEAD_AGENT_ID = 'REVOLIS-DEAD-LEAD-CAMPAIGN'
 export const OUTREACH_AGENT_ID = 'REVOLIS-OUTREACH'
+export { RETURN_SIGNAL_AGENT_ID }
 
 /** Agents whose drafts a broker may approve and send. */
 export const APPROVABLE_DRAFT_AGENTS: readonly string[] = [
@@ -12,6 +15,7 @@ export const APPROVABLE_DRAFT_AGENTS: readonly string[] = [
   FOLLOWUP_SWEEP_AGENT_ID,
   DEAD_LEAD_AGENT_ID,
   OUTREACH_AGENT_ID,
+  RETURN_SIGNAL_AGENT_ID,
 ]
 
 /** Channels the approve path can send on. WhatsApp/LinkedIn drafts stay manual. */

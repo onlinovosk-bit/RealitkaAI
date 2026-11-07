@@ -59,6 +59,7 @@ export type UsageMetricName =
   // sa preto, že do 2026-10-15 nebolo kde to nastaviť a tabuľka mala nula
   // riadkov — bez tohto čísla sa nedá povedať, či sa to po nasadení zmenilo.
   | "morning_brief_settings_save"
+  | "public_property_view"
   // Verejný demo formulár (hero + AI Odhadca). Počíta sa až po 2xx z
   // capture-lead. Meno metriky je voľný text v RPC, migrácia netreba.
   | "demo_public_capture";
