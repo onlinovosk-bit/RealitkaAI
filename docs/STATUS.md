@@ -50,13 +50,13 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: UPTM Governance v1.1 (paper-only) + Ownership self-audit
+Cieľ: Hardening runtime konfigurácie Claude (permissions, SQL guard, konektory) — jeden PR
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] 1 — UPTM Governance v1.1 docs 01–05 + draft PR #35 (`f24ebe1`)
-- [x] 2 — Stripe krok C: Vercel prod env metadata, read-only, bez decrypt (zúženie na jeden vstup)
-- [x] 3 — Self-audit podľa Directive §8: 3 agenti + bodové overenie
-- [ ] 4 — Memory PREPEND + STATUS + draft PR (tento PR), CI zelené
-- [ ] 5 — Founder: hodnota `pricingV2.enabled` → STRIPE-C-RECONCILE
+- [x] 1 — `.claude/hooks/sql-readonly-guard.mjs`: test SELECT prejde, DDL/zápis/viac príkazov/zlý vstup → ask
+- [x] 2 — `.claude/settings.json` + `apps/crm/.claude/settings.json`: platný JSON, užšie git pravidlá, nové deny/ask
+- [x] 3 — memory PREPEND (`decisions.md`, `session-summary.md`) a tento blok
+- [ ] 4 — Jeden commit, jeden push, draft PR, CI na heade
+- [ ] 5 — Dedikované CCR prostredie (čaká na samostatné schválenie foundera)
 <!-- SESSION:END -->
 
 ## Hotové 2026-10-07 — s dôkazom (REALVIA-SEC-01)
