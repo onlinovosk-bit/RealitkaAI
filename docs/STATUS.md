@@ -55,7 +55,7 @@ Cieľ: Hardening runtime konfigurácie Claude (permissions, SQL guard, konektory
 - [x] 1 — `.claude/hooks/sql-readonly-guard.mjs`: test SELECT prejde, DDL/zápis/viac príkazov/zlý vstup → ask
 - [x] 2 — `.claude/settings.json` + `apps/crm/.claude/settings.json`: platný JSON, užšie git pravidlá, nové deny/ask
 - [x] 3 — memory PREPEND (`decisions.md`, `session-summary.md`) a tento blok
-- [ ] 4 — Jeden commit, jeden push, draft PR, CI na heade
+- [x] 4 — Jeden commit, jeden push, draft PR, CI na heade
 - [ ] 5 — Dedikované CCR prostredie (čaká na samostatné schválenie foundera)
 <!-- SESSION:END -->
 
