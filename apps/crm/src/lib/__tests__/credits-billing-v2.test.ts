@@ -450,6 +450,33 @@ describe("legacy subscription detection (kritérium 8)", () => {
     expect(hasLegacySubscription({ pricing_model: null, subscription_status: "canceled", stripe_subscription_id: "sub_old" })).toBe(false);
   });
 
+  it("incomplete_expired leftover is terminal (not live) even with stripe_subscription_id", () => {
+    // Concrete lockout: lifecycle writes raw incomplete_expired + free; v2 revoke fails/retries.
+    // Before fix, second clause (stripe_id && status != canceled) treated it as live →
+    // createPricingV2CheckoutSession returned subscription_exists / legacy_subscription forever.
+    expect(
+      hasLegacySubscription({
+        pricing_model: null,
+        subscription_status: "incomplete_expired",
+        stripe_subscription_id: "sub_abandoned",
+      }),
+    ).toBe(false);
+    expect(
+      hasLivePricingV2Subscription({
+        pricing_model: "v2",
+        subscription_status: "incomplete_expired",
+        stripe_subscription_id: "sub_abandoned",
+      }),
+    ).toBe(false);
+    expect(
+      hasLivePricingV2Subscription({
+        pricing_model: "v2",
+        subscription_status: "INCOMPLETE_EXPIRED",
+        stripe_subscription_id: "sub_abandoned",
+      }),
+    ).toBe(false);
+  });
+
   it("live v2 subscription is detected separately", () => {
     expect(hasLivePricingV2Subscription({ pricing_model: "v2", subscription_status: "active" })).toBe(true);
     expect(hasLivePricingV2Subscription({ pricing_model: "v2", subscription_status: "canceled", stripe_subscription_id: "s" })).toBe(false);
@@ -530,6 +557,20 @@ describe("createPricingV2CheckoutSession", () => {
     expect(await createPricingV2CheckoutSession(planReq)).toEqual({ kind: "subscription_exists" });
     expect(h.sessionsCreate).not.toHaveBeenCalled();
     expect((await createPricingV2CheckoutSession({ checkoutType: "pricing_v2_credits", credits: 5 })).kind).toBe("ok");
+  });
+
+  it("incomplete_expired v2 leftover does not lock a fresh plan checkout", async () => {
+    db.agencies = [
+      {
+        id: AGENCY,
+        pricing_model: "v2",
+        subscription_status: "incomplete_expired",
+        stripe_subscription_id: "sub_abandoned",
+      },
+    ];
+    const out = await createPricingV2CheckoutSession(planReq);
+    expect(out.kind).toBe("ok");
+    expect(h.sessionsCreate).toHaveBeenCalledTimes(1);
   });
 
   it("unreadable agency state fails instead of guessing (no checkout)", async () => {

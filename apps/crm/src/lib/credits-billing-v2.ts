@@ -43,6 +43,13 @@ export const PRICING_V2_MAX_CREDITS_PER_PURCHASE = 999_999;
 /** Stavy, pri ktorých kancelária ešte má (alebo mala a nevyriešila) platené predplatné. */
 const LIVE_SUBSCRIPTION_STATUSES = ["active", "trialing", "past_due", "unpaid", "incomplete"];
 
+/**
+ * Terminálne stavy Stripe predplatného — nové checkout nesmú blokovať.
+ * `incomplete_expired` je rovnako mŕtve ako `canceled` (Stripe už neinkasuje).
+ * Nesmie prejsť druhou vetvou `hasLiveSubscription` cez samotné `stripe_subscription_id`.
+ */
+const TERMINAL_SUBSCRIPTION_STATUSES = new Set(["canceled", "incomplete_expired"]);
+
 function getStripe(): Stripe | null {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) return null;
@@ -264,8 +271,13 @@ export type AgencyBillingState = {
 
 function hasLiveSubscription(row: AgencyBillingState): boolean {
   const status = (row.subscription_status ?? "").toLowerCase();
+  // Terminálny leftover (canceled / incomplete_expired) nikdy nie je „živé“ —
+  // inak by createPricingV2CheckoutSession vrátil subscription_exists / legacy_subscription
+  // po zlyhanom revoke (lifecycle zapíše raw status, v2 revoke nestihne canceled).
+  if (TERMINAL_SUBSCRIPTION_STATUSES.has(status)) return false;
   if (LIVE_SUBSCRIPTION_STATUSES.includes(status)) return true;
-  return Boolean(row.stripe_subscription_id) && status !== "canceled";
+  // Neznámy/null status + stripe_subscription_id: fail-closed (radšej blokovať než druhé predplatné).
+  return Boolean(row.stripe_subscription_id);
 }
 
 /**
