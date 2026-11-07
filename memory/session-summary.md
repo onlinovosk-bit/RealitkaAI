@@ -1,3 +1,15 @@
+## Session 2026-11-07 (hardening runtime konfigurácie Claude)
+### Dokončené
+- `.claude/hooks/sql-readonly-guard.mjs`: nový PreToolUse guard pre `execute_sql` (čítanie prejde, zápis/DDL → ask, fail-closed).
+- `.claude/settings.json` + `apps/crm/.claude/settings.json`: užšie git povolenia, nové deny/ask pravidlá.
+### Rozpracované / Pending
+- Dedikované CCR prostredie (samostatné schválenie), tracing sink NOT_VERIFIED, živé overenie precedencie hook-ask vs allow.
+- Stripe krok C (nová mesačná graduated cena `revolis_v3_licence_month`) čaká na foundera; flagy ostávajú OFF.
+- Fronta PR #935, #925, #933, #934, #913 bez GO nič.
+### Kľúčové súbory zmenené
+- `.claude/hooks/sql-readonly-guard.mjs`, `.claude/settings.json`, `apps/crm/.claude/settings.json`, `memory/decisions.md`, `memory/session-summary.md`, `docs/STATUS.md`
+### Ďalší krok
+Stripe krok C: poslať ID novej mesačnej ceny alebo výstup `stripe prices retrieve <id> --expand tiers`.
 ## Session 2026-11-06 (UPTM Governance v1.1 + Ownership self-audit)
 ### Dokončené
 - UPTM Governance Decision v1.1 (PAPER-ONLY, LIVE_TRADING=FALSE): päť dokumentov `docs/governance/01–05` v repe `onlinovosk-bit/onlinovosk-bit-uptm`, commit `f24ebe1`, draft PR #35 (nezmergovaný, čaká na „merguj 35“). Evidence Audit, porovnanie limitov A–D (odporúčanie B), architektúra Risk Governora, špecifikácia Expected Value Gate (G1–G6, prahy značené D/P/U), backlog P0–P7 s ODHADMI.
