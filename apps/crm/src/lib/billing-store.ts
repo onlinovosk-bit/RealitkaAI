@@ -474,6 +474,32 @@ export async function getCurrentBillingStatus(): Promise<CurrentBillingStatus> {
   return promise;
 }
 
+/**
+ * Predplatné, ktoré má `trialGraceFrom` / saas-ops brána vyhodnocovať.
+ * Poradie = priorita (aktívne pred past_due pred incomplete).
+ * Zámerne VYNECHÁVA `canceled` / `incomplete_expired`: tie nie sú „aktuálne
+ * predplatné", len leftover pri `status: "all"`. Fallback na `data[0]` by z nich
+ * urobil `hasSubscription: true` a fakturovaného klienta po triali zamkol.
+ */
+const RELEVANT_SUBSCRIPTION_STATUSES = [
+  "active",
+  "trialing",
+  "past_due",
+  "unpaid",
+  "incomplete",
+] as const;
+
+export function pickRelevantStripeSubscription<
+  T extends { status?: string | null },
+>(subscriptions: readonly T[] | null | undefined): T | null {
+  if (!subscriptions?.length) return null;
+  for (const status of RELEVANT_SUBSCRIPTION_STATUSES) {
+    const match = subscriptions.find((item) => item.status === status);
+    if (match) return match;
+  }
+  return null;
+}
+
 async function fetchCurrentBillingStatusUncached(stripe: Stripe) {
   const customer = await findStripeCustomerByCurrentUserEmail();
 
@@ -494,11 +520,12 @@ async function fetchCurrentBillingStatusUncached(stripe: Stripe) {
     }),
   ]);
 
-  const activeSubscription =
-    subscriptions.data.find((item) => item.status === "active") ||
-    subscriptions.data.find((item) => item.status === "trialing") ||
-    subscriptions.data[0] ||
-    null;
+  // Len stavy, ktoré majú vlastnú vetvu v `trialGraceFrom` (active/grace/blocked/limited
+  // pre incomplete). `subscriptions.data[0]` sem NESMIE spadnúť: pri `status: "all"` to
+  // často bol zrušený/expirovaný leftover — `hasSubscription: true` + `canceled` potom
+  // preplo fakturovaného klienta (`paysOutsideStripe`) do read-only, hoci v Stripe už
+  // nič živé neplatí.
+  const activeSubscription = pickRelevantStripeSubscription(subscriptions.data);
 
   return {
     hasCustomer: true,
