@@ -15,6 +15,15 @@ const mockInsert = vi.fn();
 const mockUpdate = vi.fn();
 const mockDeleteEq = vi.fn();
 const mockAgencyUpdateResult = vi.fn();
+const mockSubscriptionRetrieve = vi.fn();
+
+vi.mock("stripe", () => ({
+  default: class {
+    subscriptions = {
+      retrieve: (...args: unknown[]) => mockSubscriptionRetrieve(...args),
+    };
+  },
+}));
 
 vi.mock("@/lib/supabase/admin", () => ({
   createServiceRoleClient: () => ({
@@ -50,6 +59,7 @@ describe("credits-billing", () => {
     vi.clearAllMocks();
     process.env = {
       ...envBackup,
+      STRIPE_SECRET_KEY: "sk_test_seat_live_status",
       STRIPE_PRICE_SOLO_SEAT: "price_solo",
       STRIPE_PRICE_TEAM_SEAT: "price_team",
       STRIPE_PRICE_OFFICE_SEAT: "price_office",
@@ -60,6 +70,7 @@ describe("credits-billing", () => {
       STRIPE_PRICE_CREDITS_RAST: "price_rast",
     };
 
+    mockSubscriptionRetrieve.mockResolvedValue({ id: "sub_1", status: "active" });
     mockAgencyUpdateResult.mockResolvedValue({
       data: [{ id: "agency-1" }],
       error: null,
@@ -260,7 +271,7 @@ describe("credits-billing", () => {
   });
 
   describe("applySeatCheckoutEntitlements", () => {
-    it("writes agency tier, seats, and cockpit", async () => {
+    it("writes agency tier, seats, and cockpit from live Stripe status", async () => {
       const ok = await applySeatCheckoutEntitlements({
         agencyId: "agency-1",
         authUserId: "user-1",
@@ -271,13 +282,15 @@ describe("credits-billing", () => {
         stripeSubscriptionId: "sub_1",
       });
 
-      expect(ok).toBe(true);
+      expect(ok).toEqual({ ok: true, applied: true, subscriptionStatus: "active" });
+      expect(mockSubscriptionRetrieve).toHaveBeenCalledWith("sub_1");
       expect(mockUpdate).toHaveBeenCalledWith(
         expect.objectContaining({
           seats: 4,
           account_tier: "pro",
           owner_cockpit_active: true,
           cockpit_tier: "owner",
+          subscription_status: "active",
           stripe_customer_id: "cus_1",
           stripe_subscription_id: "sub_1",
         }),
@@ -294,9 +307,78 @@ describe("credits-billing", () => {
         seatTier: "team",
         seatQuantity: 3,
         ownerCockpit: false,
+        stripeSubscriptionId: "sub_missing",
       });
 
-      expect(ok).toBe(false);
+      expect(ok).toEqual({ ok: false });
+    });
+
+    it("ACKs without writing when live subscription is revoked (stale checkout replay)", async () => {
+      mockSubscriptionRetrieve.mockResolvedValueOnce({ id: "sub_dead", status: "canceled" });
+
+      const ok = await applySeatCheckoutEntitlements({
+        agencyId: "agency-1",
+        authUserId: "user-1",
+        seatTier: "team",
+        seatQuantity: 5,
+        ownerCockpit: true,
+        stripeCustomerId: "cus_1",
+        stripeSubscriptionId: "sub_dead",
+      });
+
+      expect(ok).toEqual({
+        ok: true,
+        applied: false,
+        reason: "subscription_revoked",
+      });
+      expect(mockUpdate).not.toHaveBeenCalled();
+    });
+
+    it("writes past_due live status instead of hardcoding active", async () => {
+      mockSubscriptionRetrieve.mockResolvedValueOnce({ id: "sub_due", status: "past_due" });
+
+      const ok = await applySeatCheckoutEntitlements({
+        agencyId: "agency-1",
+        seatTier: "team",
+        seatQuantity: 3,
+        ownerCockpit: false,
+        stripeSubscriptionId: "sub_due",
+      });
+
+      expect(ok).toEqual({ ok: true, applied: true, subscriptionStatus: "past_due" });
+      expect(mockUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({ subscription_status: "past_due" }),
+        "id",
+        "agency-1",
+      );
+    });
+
+    it("fails closed when Stripe subscription retrieve fails", async () => {
+      mockSubscriptionRetrieve.mockRejectedValueOnce({ code: "resource_missing" });
+
+      const ok = await applySeatCheckoutEntitlements({
+        agencyId: "agency-1",
+        seatTier: "team",
+        seatQuantity: 3,
+        ownerCockpit: false,
+        stripeSubscriptionId: "sub_gone",
+      });
+
+      expect(ok).toEqual({ ok: false });
+      expect(mockUpdate).not.toHaveBeenCalled();
+    });
+
+    it("fails closed without subscription id", async () => {
+      const ok = await applySeatCheckoutEntitlements({
+        agencyId: "agency-1",
+        seatTier: "team",
+        seatQuantity: 3,
+        ownerCockpit: false,
+      });
+
+      expect(ok).toEqual({ ok: false });
+      expect(mockSubscriptionRetrieve).not.toHaveBeenCalled();
+      expect(mockUpdate).not.toHaveBeenCalled();
     });
   });
 
@@ -527,6 +609,7 @@ describe("credits-billing", () => {
           object: {
             id: "cs_seat_grant_fail",
             payment_status: "paid",
+            subscription: "sub_1",
             metadata: {
               checkoutType: "seat",
               agencyId: "agency-1",
@@ -539,6 +622,63 @@ describe("credits-billing", () => {
 
       expect(handled).toBe(false);
       expect(mockUpdate).toHaveBeenCalled();
+    });
+
+    it("ACKs stale seat checkout replay after cancel without restoring tier or granting", async () => {
+      mockSubscriptionRetrieve.mockResolvedValueOnce({ id: "sub_dead", status: "canceled" });
+
+      const handled = await handlePricingCheckoutWebhook({
+        type: "checkout.session.completed",
+        data: {
+          object: {
+            id: "cs_seat_replay",
+            payment_status: "paid",
+            customer: "cus_1",
+            subscription: "sub_dead",
+            metadata: {
+              checkoutType: "seat",
+              agencyId: "agency-1",
+              authUserId: "user-1",
+              seatTier: "team",
+              seatQuantity: "5",
+              ownerCockpit: "true",
+            },
+          },
+        },
+      } as never);
+
+      expect(handled).toBe(true);
+      expect(mockUpdate).not.toHaveBeenCalled();
+      expect(grantMonthlyCreditsForAgencyMock).not.toHaveBeenCalled();
+    });
+
+    it("writes past_due seat entitlement but skips initial grant", async () => {
+      mockSubscriptionRetrieve.mockResolvedValueOnce({ id: "sub_due", status: "past_due" });
+
+      const handled = await handlePricingCheckoutWebhook({
+        type: "checkout.session.completed",
+        data: {
+          object: {
+            id: "cs_seat_past_due",
+            payment_status: "paid",
+            subscription: "sub_due",
+            metadata: {
+              checkoutType: "seat",
+              agencyId: "agency-1",
+              seatTier: "team",
+              seatQuantity: "3",
+            },
+          },
+        },
+      } as never);
+
+      expect(handled).toBe(true);
+      expect(mockUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({ subscription_status: "past_due" }),
+        "id",
+        "agency-1",
+      );
+      expect(grantMonthlyCreditsForAgencyMock).not.toHaveBeenCalled();
     });
 
     it("ignores legacy checkout events", async () => {
