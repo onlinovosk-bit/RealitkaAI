@@ -39,15 +39,23 @@ vi.mock("@/lib/recommendations-engine", () => ({
 }));
 
 import {
+  ENGINE_RECOMMENDATION_TYPES,
   MATCHES_READ_MAX,
   recalculateAllRecommendations,
   recalculateRecommendationsForLead,
 } from "../recommendations-store";
 
 type MatchResult = { data: unknown[] | null; error: { message: string } | null };
+type Op = {
+  op: string;
+  table?: string;
+  filter?: string;
+  rows?: unknown[];
+  types?: string[];
+};
 
 function scopedClient(matchResult: MatchResult = { data: [], error: null }) {
-  const ops: { op: string; table?: string; filter?: string; rows?: unknown[] }[] = [];
+  const ops: Op[] = [];
   const done = Promise.resolve({ error: null, data: [] });
   const client = {
     from: (table: string) => {
@@ -70,8 +78,20 @@ function scopedClient(matchResult: MatchResult = { data: [], error: null }) {
       }
       return {
         delete: () => {
-          ops.push({ op: "delete", table });
-          return { not: () => done, eq: () => done };
+          const deleteOp: Op = { op: "delete", table };
+          ops.push(deleteOp);
+          const chain = {
+            not: () => done,
+            eq: (col: string, val: string) => {
+              deleteOp.filter = `${col}=${val}`;
+              return chain;
+            },
+            in: (col: string, vals: string[]) => {
+              if (col === "recommendation_type") deleteOp.types = vals;
+              return done;
+            },
+          };
+          return chain;
         },
         insert: (rows: unknown[]) => {
           ops.push({ op: "insert", table, rows });
@@ -146,6 +166,20 @@ describe("recalculateAllRecommendations fail-closed", () => {
     expect(res.totalRows).toBe(1);
     expect(res.totalLeads).toBe(1);
   });
+
+  it("global delete is scoped to engine types (scoring_* / manual survive)", async () => {
+    const { client, ops } = scopedClient();
+    listLeadsMock.mockResolvedValue([LEAD]);
+
+    await recalculateAllRecommendations(client);
+
+    const del = ops.find((o) => o.op === "delete");
+    expect(del?.types).toEqual([...ENGINE_RECOMMENDATION_TYPES]);
+    expect(del?.types).not.toContain("scoring_priority");
+    expect(del?.types).not.toContain("scoring_risk");
+    expect(del?.types).not.toContain("custom");
+    expect(del?.types).not.toContain("assignment");
+  });
 });
 
 describe("recalculateRecommendationsForLead match scope", () => {
@@ -171,5 +205,17 @@ describe("recalculateRecommendationsForLead match scope", () => {
     expect(ops.map((o) => o.op)).toContain("delete");
     expect(ops.map((o) => o.op)).toContain("insert");
     expect(res.inserted).toBe(1);
+  });
+
+  it("per-lead delete is scoped to engine types for that lead", async () => {
+    const { client, ops } = scopedClient();
+    listLeadsMock.mockResolvedValue([LEAD]);
+
+    await recalculateRecommendationsForLead("lead-1", client);
+
+    const del = ops.find((o) => o.op === "delete");
+    expect(del?.filter).toBe("lead_id=lead-1");
+    expect(del?.types).toEqual([...ENGINE_RECOMMENDATION_TYPES]);
+    expect(del?.types).not.toContain("scoring_opportunity");
   });
 });
