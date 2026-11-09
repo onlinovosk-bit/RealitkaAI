@@ -194,6 +194,33 @@ describe("vypadok Stripe nie je zistenie o klientovi", () => {
   });
 });
 
+describe("vypadok agencies read nie je zistenie o klientovi", () => {
+  it("lookupFailed na agency facts → unknown / full (nie limited ako paysOutsideStripe=false)", () => {
+    // Pred opravou: loadAgencyBillingFacts pri DB chybe vrátil NO_AGENCY_FACTS
+    // (paysOutsideStripe=false) → po triali limited. Stripe lookupFailed už fail-open;
+    // agencies musí rovnako — PROD 7/7 agentúr bez stripe_subscription_id.
+    const state = trialGraceFrom(
+      trialInput({
+        lookupFailed: true,
+        paysOutsideStripe: false,
+        hasSubscription: false,
+        nowMs: NOW + 400 * DAY,
+      }),
+    );
+    expect(state.state).toBe("unknown");
+    expect(accessLevelFrom(state.state)).toBe("full");
+  });
+
+  it("saas-ops: DB chyba agencies → AGENCY_FACTS_UNAVAILABLE + getTrialGraceState berie agency.lookupFailed", () => {
+    const src = readFileSync(join(process.cwd(), "src/lib/saas-ops.ts"), "utf8");
+    expect(src).toContain("AGENCY_FACTS_UNAVAILABLE");
+    expect(src).toMatch(/if \(error\) return AGENCY_FACTS_UNAVAILABLE/);
+    expect(src).toMatch(/catch \{\s*return AGENCY_FACTS_UNAVAILABLE/);
+    expect(src).toMatch(/input\.lookupFailed \|\| agency\.lookupFailed === true/);
+    expect(src).not.toMatch(/if \(error\) return NO_AGENCY_FACTS/);
+  });
+});
+
 describe("Stripe predplatne — stavy ostavaju nezmenene", () => {
   const withSub = (status: string, extra: Partial<TrialGraceInput> = {}) =>
     trialGraceFrom(trialInput({ hasSubscription: true, subscriptionStatus: status, ...extra }));
