@@ -1,5 +1,7 @@
 # Revolis.AI — STAV NA JEDNEJ STRÁNKE
 
+> **2026-11-06 (UPTM Governance v1.1 + self-audit):** dokumenty a draft PR #35 v UPTM repe; v Revolise sa mení iba pamäť a blok SESSION. Tabuľka % sa NEMENÍ a je STARÁ (posledný prepočet 2026-10-05). Vercel prod env metadata ukazujú `STRIPE_PRICE_V3_SEAT_MONTHLY` prítomné, takže „Stripe 0 %“ je s nimi v rozpore. Revidované číslo sa neuvádza bez merania (chýba hodnota `pricingV2.enabled`).
+
 > **2026-10-26 BLOG:** `/blog` + prvý článok v `apps/marketing` na draft PR; PRODUCTION nezmenená. Tabuľka % sa NEMENÍ.
 
 > Aktualizuje sa **po každom uzavretom bloku** (jeden riadok zmeny hore + tabuľka). Čísla sú merané, kde je uvedený dôkaz;
@@ -48,13 +50,13 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: Critical hunt auth/unsub/capture + fix founder mint on profiles PATCH
+Cieľ: UPTM Governance v1.1 (paper-only) + Ownership self-audit
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] 1 — Hunt report in-repo: `docs/reports/2026-11-03-critical-bug-hunt-auth-unsubscribe-capture.md` (main head `24d0eed6`)
-- [x] 2 — NEW CRITICAL fixed: `ASSIGNABLE_ROLES` + self-PK guard on `PATCH /api/profiles/[id]` (`43d8f131`)
-- [x] 3 — Vitest 10/10: profiles route unit + `profiles-role-agency-guard.verification.test.ts`
-- [x] 4 — Memory PREPEND (session-summary + decisions) + push `cursor/critical-bug-remediation-8d1d`
-- [ ] 5 — Parent opens PR + Slack; CI green; founder merge GO (no PROD)
+- [x] 1 — UPTM Governance v1.1 docs 01–05 + draft PR #35 (`f24ebe1`)
+- [x] 2 — Stripe krok C: Vercel prod env metadata, read-only, bez decrypt (zúženie na jeden vstup)
+- [x] 3 — Self-audit podľa Directive §8: 3 agenti + bodové overenie
+- [ ] 4 — Memory PREPEND + STATUS + draft PR (tento PR), CI zelené
+- [ ] 5 — Founder: hodnota `pricingV2.enabled` → STRIPE-C-RECONCILE
 <!-- SESSION:END -->
 
 ## Hotové 2026-10-07 — s dôkazom (REALVIA-SEC-01)
