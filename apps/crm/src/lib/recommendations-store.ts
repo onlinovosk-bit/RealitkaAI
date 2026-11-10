@@ -152,20 +152,29 @@ export async function listRecommendations(
 }
 
 async function clearRecommendations(
+  leadIds: string[],
   scoped?: import("@supabase/supabase-js").SupabaseClient | null,
 ) {
+  if (leadIds.length === 0) {
+    return;
+  }
+
   const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     const store = getDemoRecommendationsStore();
-    store.splice(0, store.length);
+    const keep = store.filter((row) => !row.leadId || !leadIds.includes(row.leadId));
+    store.splice(0, store.length, ...keep);
     return;
   }
 
+  // Scope to session-agency lead IDs. RLS allows every agency in
+  // profile_agencies_for_auth(); listLeads is single-agency — a blanket
+  // delete would wipe sibling tenants and leave them empty after rebuild.
   const { error } = await supabase
     .from("ai_recommendations")
     .delete()
-    .not("id", "is", null);
+    .in("lead_id", leadIds);
 
   if (error) {
     throw new Error(error.message);
@@ -306,7 +315,10 @@ export async function recalculateAllRecommendations(
     };
   }
 
-  await clearRecommendations(scoped);
+  await clearRecommendations(
+    leads.map((lead) => lead.id),
+    scoped,
+  );
 
   const rows = leads.flatMap((lead) => {
     const leadMatches = matches.filter((item) => item.leadId === lead.id);

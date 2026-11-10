@@ -165,6 +165,30 @@ describe("properties-store — cross-tenant negatívny kontrakt (SMO-B04)", () =
     const { listProperties } = await import("@/lib/properties-store");
     await expect(listProperties(undefined, client as never)).resolves.toEqual([]);
   });
+
+  it("listProperties filtruje agency_id v SQL (nie len post-filter po range)", async () => {
+    const eqCalls: Array<[string, unknown]> = [];
+    const client = {
+      from: () => ({
+        select: () => {
+          const chain: Record<string, unknown> = {};
+          chain.eq = (column: string, value: unknown) => {
+            eqCalls.push([column, value]);
+            return chain;
+          };
+          chain.order = () => chain;
+          chain.range = async () => ({ data: [], error: null });
+          return chain;
+        },
+      }),
+    };
+    resolveTenantSupabaseMock.mockResolvedValue(client);
+
+    const { listProperties } = await import("@/lib/properties-store");
+    await expect(listProperties(undefined, client as never)).resolves.toEqual([]);
+
+    expect(eqCalls).toContainEqual(["agency_id", AGENCY_A]);
+  });
 });
 
 describe("createProperty scoped client", () => {
