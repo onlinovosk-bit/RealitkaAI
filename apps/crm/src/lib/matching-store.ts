@@ -519,10 +519,16 @@ export async function recalculateAllMatches(
     return { mode: "all" as const, totalRows: 0, totalLeads: leads.length, totalProperties: properties.length };
   }
 
+  // Scope the clear to session-agency leads only. RLS on lead_property_matches
+  // uses profile_agencies_for_auth() (all email-linked agencies), while
+  // listLeads/listProperties filter to one session agency_id — a blanket
+  // delete().not("id","is",null) would wipe other agencies and never rebuild them.
+  const leadIds = leads.map((lead) => lead.id);
+
   try {
     const { error: deleteError } = await withMatchingTimeout(
       "recalculateAll:delete",
-      Promise.resolve(supabase.from("lead_property_matches").delete().not("id", "is", null))
+      Promise.resolve(supabase.from("lead_property_matches").delete().in("lead_id", leadIds))
     );
 
     if (deleteError) {

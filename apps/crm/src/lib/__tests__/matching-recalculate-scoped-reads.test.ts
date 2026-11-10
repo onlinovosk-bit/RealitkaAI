@@ -39,13 +39,20 @@ import {
 
 /** Records deletes/inserts on lead_property_matches. */
 function scopedClient() {
-  const ops: { op: string; rows?: unknown[] }[] = [];
+  const ops: { op: string; rows?: unknown[]; filter?: string; leadIds?: string[] }[] = [];
   const done = Promise.resolve({ error: null });
   const client = {
     from: () => ({
       delete: () => {
         ops.push({ op: "delete" });
-        const chain = { eq: () => done, not: () => done };
+        const chain = {
+          eq: () => done,
+          not: () => done,
+          in: (col: string, vals: string[]) => {
+            ops.push({ op: "delete-in", filter: col, leadIds: vals });
+            return done;
+          },
+        };
         return chain;
       },
       insert: (rows: unknown[]) => {
@@ -88,6 +95,22 @@ describe("recalculateAllMatches", () => {
 
     expect(ops).toEqual([]);
     expect(res.totalRows).toBe(0);
+  });
+
+  it("global delete is scoped to session lead IDs (not blanket RLS wipe)", async () => {
+    const { client, ops } = scopedClient();
+    listLeadsMock.mockResolvedValue([LEAD, { id: "lead-2" }]);
+    listPropertiesMock.mockResolvedValue([PROPERTY]);
+    forLeadMock.mockReturnValue([
+      { propertyId: "prop-1", matchScore: 80, reasons: ["lokalita sedí"] },
+    ]);
+
+    await recalculateAllMatches(client);
+
+    const scopedDelete = ops.find((o) => o.op === "delete-in");
+    expect(scopedDelete?.filter).toBe("lead_id");
+    expect(scopedDelete?.leadIds).toEqual(["lead-1", "lead-2"]);
+    expect(ops.filter((o) => o.op === "delete-in")).toHaveLength(1);
   });
 });
 

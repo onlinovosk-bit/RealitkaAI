@@ -73,4 +73,22 @@ describe("[verification] Matching + recommendations scoped writes (R3 remediatio
       /recalculateRecommendationsForLead\([\s\S]*listPersistedMatchesForLead\(leadId/,
     );
   });
+
+  it("global match/recommendation clear scopes delete to session lead_id set", () => {
+    const matchingStore = readFileSync(join(CRM_ROOT, "src/lib/matching-store.ts"), "utf8");
+    const recommendationsStore = readFileSync(join(CRM_ROOT, "src/lib/recommendations-store.ts"), "utf8");
+
+    expect(matchingStore).toMatch(
+      /recalculateAll:delete[\s\S]*\.delete\(\)\s*\.in\("lead_id", leadIds\)/,
+    );
+    expect(matchingStore).not.toMatch(
+      /recalculateAll:delete[\s\S]*\.not\("id", "is", null\)/,
+    );
+    expect(recommendationsStore).toMatch(
+      /\.from\("ai_recommendations"\)\s*\.delete\(\)\s*\.in\("lead_id", leadIds\)/,
+    );
+    expect(recommendationsStore).not.toMatch(
+      /\.from\("ai_recommendations"\)\s*\.delete\(\)\s*\.not\("id", "is", null\)/,
+    );
+  });
 });

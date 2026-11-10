@@ -367,9 +367,13 @@ export async function listProperties(
   const { limit, offset, columns } = resolvePropertyListPage(page);
 
   const runSelect = async (selectColumns: string, includeDescriptionInOr: boolean) => {
+    // Filter agency_id in SQL (parity with listLeads). RLS may still expose
+    // every agency in profile_agencies_for_auth(); paging then post-filtering
+    // would fill the page with sibling-tenant rows and under-read this session.
     let query = supabase
       .from("properties")
       .select(selectColumns)
+      .eq("agency_id", agencyId)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
