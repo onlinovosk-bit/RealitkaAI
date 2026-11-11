@@ -60,7 +60,7 @@ export async function handlePricingCheckoutWebhook(
       return false;
     }
 
-    const ok = await applySeatCheckoutEntitlements({
+    const result = await applySeatCheckoutEntitlements({
       agencyId,
       authUserId: meta.authUserId,
       seatTier,
@@ -74,7 +74,18 @@ export async function handlePricingCheckoutWebhook(
           : session.subscription?.id,
     });
 
-    if (!ok) return false;
+    if (!result.ok) return false;
+    // Revoked live sub (replay after cancel): ACK without restoring tier or granting.
+    if (!result.applied) return true;
+    // Past_due / trialing / incomplete: entitlement zapísaný; grant až pri active
+    // (legacy grant nepozerá subscription_status — nesmie sa spustiť mimo active).
+    if (result.subscriptionStatus !== "active") {
+      console.info("[pricing-webhook] seat initial grant skipped, subscription not active", {
+        agencyId,
+        status: result.subscriptionStatus,
+      });
+      return true;
+    }
 
     // Grant fail-closed: bez kreditov by Stripe dostal 200 a už by neopakoval.
     // Entitlement aj grant sú idempotentné → retry je bezpečný.
