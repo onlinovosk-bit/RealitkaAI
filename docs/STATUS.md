@@ -1,5 +1,7 @@
 # Revolis.AI — STAV NA JEDNEJ STRÁNKE
 
+> **2026-11-12 SEO homepage + robots + draft blog:** draft PR na `cursor/seo-homepage-robots-blog-1a71`. Title/meta homepage, CRM privacy metadata + `robots.ts`, článok `/blog/crm-pre-realitnych-maklerov` ako `published: false`. Merge/deploy/PROD nerobené. Tabuľka % sa NEMENÍ.
+
 > **2026-11-06 (UPTM Governance v1.1 + self-audit):** dokumenty a draft PR #35 v UPTM repe; v Revolise sa mení iba pamäť a blok SESSION. Tabuľka % sa NEMENÍ a je STARÁ (posledný prepočet 2026-10-05). Vercel prod env metadata ukazujú `STRIPE_PRICE_V3_SEAT_MONTHLY` prítomné, takže „Stripe 0 %“ je s nimi v rozpore. Revidované číslo sa neuvádza bez merania (chýba hodnota `pricingV2.enabled`).
 
 > **2026-10-26 BLOG:** `/blog` + prvý článok v `apps/marketing` na draft PR; PRODUCTION nezmenená. Tabuľka % sa NEMENÍ.
@@ -50,13 +52,13 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: UPTM Governance v1.1 (paper-only) + Ownership self-audit
+Cieľ: Draft PR — homepage SEO, CRM robots, blog CRM článok
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] 1 — UPTM Governance v1.1 docs 01–05 + draft PR #35 (`f24ebe1`)
-- [x] 2 — Stripe krok C: Vercel prod env metadata, read-only, bez decrypt (zúženie na jeden vstup)
-- [x] 3 — Self-audit podľa Directive §8: 3 agenti + bodové overenie
-- [ ] 4 — Memory PREPEND + STATUS + draft PR (tento PR), CI zelené
-- [ ] 5 — Founder: hodnota `pricingV2.enabled` → STRIPE-C-RECONCILE
+- [x] 1 — Homepage title/meta/OG + odstránenie „do 23. 10.“ z hero (`index.html`, `layout.tsx`)
+- [x] 2 — CRM privacy metadata + `app/robots.ts` (allow legal, disallow auth/dashboard)
+- [x] 3 — Draft článok `/blog/crm-pre-realitnych-maklerov` (`published: false`)
+- [x] 4 — Marketing vitest 75/75 vrátane `seo.test.ts`; CRM robots/privacy testy 4/4
+- [ ] 5 — Draft PR otvorený, CI na heade (merge/deploy nie)
 <!-- SESSION:END -->
 
 ## Hotové 2026-10-07 — s dôkazom (REALVIA-SEC-01)

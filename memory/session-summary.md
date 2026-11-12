@@ -1,3 +1,23 @@
+## Session 2026-11-12
+### Dokončené
+- RAU route: GO_REQUIRED (keyword false-positive na never merge/deploy/secrets); vykonaný len draft PR rozsah.
+- Homepage SEO + odstránenie deadlinu 23. 10. z title/meta/hero (`apps/marketing/public/index.html`, `app/layout.tsx`).
+- CRM privacy title/description + `apps/crm/src/app/robots.ts`.
+- Draft blog `/blog/crm-pre-realitnych-maklerov` (`published: false`).
+- Testy: marketing vitest 75/75; CRM robots/privacy 4/4.
+### Rozpracované / Pending
+- Draft PR a CI na heade. Merge/deploy/PROD čaká na samostatné FOUNDER GO.
+- Publikovanie článku (`published: true`) nie je v tomto PR.
+### Kľúčové súbory zmenené
+- `apps/marketing/public/index.html`, `apps/marketing/app/layout.tsx`: title/meta/OG, hero bez 23. 10.
+- `apps/crm/src/app/robots.ts`, `apps/crm/src/lib/app-robots.ts`: allow legal / disallow auth.
+- `apps/marketing/lib/blog.ts`: draft článok CRM pre realitných maklérov.
+### Ďalší krok
+Founder: review draft PR; publikovať článok a merge len na výslovné GO.
+RAU route: GO_REQUIRED BUILD revolis (→ draft PR only; merge/deploy nespustené)
+
+---
+
 ## Session 2026-11-06 (UPTM Governance v1.1 + Ownership self-audit)
 ### Dokončené
 - UPTM Governance Decision v1.1 (PAPER-ONLY, LIVE_TRADING=FALSE): päť dokumentov `docs/governance/01–05` v repe `onlinovosk-bit/onlinovosk-bit-uptm`, commit `f24ebe1`, draft PR #35 (nezmergovaný, čaká na „merguj 35“). Evidence Audit, porovnanie limitov A–D (odporúčanie B), architektúra Risk Governora, špecifikácia Expected Value Gate (G1–G6, prahy značené D/P/U), backlog P0–P7 s ODHADMI.
