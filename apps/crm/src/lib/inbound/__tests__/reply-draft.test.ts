@@ -15,9 +15,23 @@ const mockResendSend = vi.hoisted(() => vi.fn());
 const mockRecordFailure = vi.hoisted(() => vi.fn());
 
 vi.mock("../auto-reply", () => ({
-  AUTO_REPLY_PROMPT_VERSION: "inbound-autoreply-v1",
+  AUTO_REPLY_PROMPT_VERSION: "inbound-autoreply-v2",
   generateAutoReply: (...a: unknown[]) => mockGenerate(...a),
 }));
+
+const LLM_AUDIT = {
+  source: "llm" as const,
+  model: "claude-haiku-4-5-20251001",
+  costEur: 0.001,
+  latencyMs: 5,
+};
+
+const FALLBACK_AUDIT = {
+  source: "fallback" as const,
+  model: null,
+  costEur: null,
+  latencyMs: 3,
+};
 vi.mock("@/lib/ai-action-audit", () => ({ logAiAction: (...a: unknown[]) => mockLogAiAction(...a) }));
 vi.mock("@/lib/ai/ai-failure-record", () => ({
   recordAiFailureEvent: (...a: unknown[]) => mockRecordFailure(...a),
@@ -64,8 +78,12 @@ describe("draftInboundReply", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllEnvs();
-    mockGenerate.mockResolvedValue({ subject: "Obhliadka", body: "Dobrý deň, ozvem sa." });
-    mockLogAiAction.mockResolvedValue(undefined);
+    mockGenerate.mockResolvedValue({
+      subject: "Obhliadka",
+      body: "Dobrý deň, ozvem sa.",
+      audit: LLM_AUDIT,
+    });
+    mockLogAiAction.mockResolvedValue({ ok: true });
   });
 
   it("stores an approvable draft with the exact text and recipient", async () => {
@@ -80,7 +98,7 @@ describe("draftInboundReply", () => {
       draft: true,
       requires_approval: true,
       agent_id: "REVOLIS-INBOUND-AUTOREPLY",
-      prompt_version: "inbound-autoreply-v1",
+      prompt_version: "inbound-autoreply-v2",
       channel: "email",
       subject: "Obhliadka",
       body: "Dobrý deň, ozvem sa.",
@@ -113,7 +131,12 @@ describe("draftInboundReply", () => {
   });
 
   it("does not store the fixed fallback text when skipOnFallback is set", async () => {
-    mockGenerate.mockResolvedValue({ subject: "Ďakujeme", body: "fallback", fallback: true });
+    mockGenerate.mockResolvedValue({
+      subject: "Ďakujeme",
+      body: "fallback",
+      fallback: true,
+      audit: FALLBACK_AUDIT,
+    });
     const db = admin();
     const res = await draftInboundReply(input(db));
     expect(res).toEqual({ created: false, reason: "llm_fallback" });
@@ -121,7 +144,12 @@ describe("draftInboundReply", () => {
   });
 
   it("keeps the fallback draft when skipOnFallback is not set (webhook behaviour)", async () => {
-    mockGenerate.mockResolvedValue({ subject: "Ďakujeme", body: "fallback", fallback: true });
+    mockGenerate.mockResolvedValue({
+      subject: "Ďakujeme",
+      body: "fallback",
+      fallback: true,
+      audit: FALLBACK_AUDIT,
+    });
     const db = admin();
     const res = await draftInboundReply(input(db, { skipOnFallback: undefined }));
     expect(res.created).toBe(true);
@@ -138,7 +166,7 @@ describe("draftInboundReplySafely", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllEnvs();
-    mockGenerate.mockResolvedValue({ subject: "S", body: "B" });
+    mockGenerate.mockResolvedValue({ subject: "S", body: "B", audit: LLM_AUDIT });
   });
 
   it("kill switch stops the LLM call and the draft", async () => {
@@ -158,7 +186,7 @@ describe("draftInboundReplySafely", () => {
       reason: "error",
       failure: { reason: "unknown" },
     });
-    mockGenerate.mockResolvedValue({ subject: "S", body: "B" });
+    mockGenerate.mockResolvedValue({ subject: "S", body: "B", audit: LLM_AUDIT });
     await expect(draftInboundReplySafely(input(admin({ insertThrows: true })))).resolves.toMatchObject({
       created: false,
     });
@@ -169,7 +197,7 @@ describe("scheduleInboundReplyDraft", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllEnvs();
-    mockGenerate.mockResolvedValue({ subject: "S", body: "B" });
+    mockGenerate.mockResolvedValue({ subject: "S", body: "B", audit: LLM_AUDIT });
   });
 
   it("returns immediately and still writes the draft outside a request scope", async () => {
@@ -191,7 +219,7 @@ describe("viditeľnosť výsledku v logoch", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllEnvs();
-    mockGenerate.mockResolvedValue({ subject: "S", body: "B" });
+    mockGenerate.mockResolvedValue({ subject: "S", body: "B", audit: LLM_AUDIT });
   });
 
   /**
@@ -249,13 +277,25 @@ describe("dôvod zlyhania AI kroku (AI-FAIL-VISIBLE)", () => {
   });
 
   it("llm_fallback nesie dôvod z LLM vrstvy", async () => {
-    mockGenerate.mockResolvedValue({ subject: "S", body: "B", fallback: true, failure: BILLING });
+    mockGenerate.mockResolvedValue({
+      subject: "S",
+      body: "B",
+      fallback: true,
+      failure: BILLING,
+      audit: FALLBACK_AUDIT,
+    });
     const res = await draftInboundReply(input(admin()));
     expect(res).toEqual({ created: false, reason: "llm_fallback", failure: BILLING });
   });
 
   it("warn riadok má llm_reason a llm_http_status — llm_fallback sa dá rozlíšiť", async () => {
-    mockGenerate.mockResolvedValue({ subject: "S", body: "B", fallback: true, failure: BILLING });
+    mockGenerate.mockResolvedValue({
+      subject: "S",
+      body: "B",
+      fallback: true,
+      failure: BILLING,
+      audit: FALLBACK_AUDIT,
+    });
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
     scheduleInboundReplyDraft(input(admin()));
@@ -271,7 +311,13 @@ describe("dôvod zlyhania AI kroku (AI-FAIL-VISIBLE)", () => {
   });
 
   it("zlyhanie sa zapíše trvalo (prežije retenciu logov) — bez textu chyby", async () => {
-    mockGenerate.mockResolvedValue({ subject: "S", body: "B", fallback: true, failure: BILLING });
+    mockGenerate.mockResolvedValue({
+      subject: "S",
+      body: "B",
+      fallback: true,
+      failure: BILLING,
+      audit: FALLBACK_AUDIT,
+    });
     vi.spyOn(console, "warn").mockImplementation(() => {});
 
     scheduleInboundReplyDraft(input(admin()));
@@ -287,7 +333,7 @@ describe("dôvod zlyhania AI kroku (AI-FAIL-VISIBLE)", () => {
   });
 
   it("vytvorený návrh nič nezapisuje", async () => {
-    mockGenerate.mockResolvedValue({ subject: "S", body: "B" });
+    mockGenerate.mockResolvedValue({ subject: "S", body: "B", audit: LLM_AUDIT });
     const log = vi.spyOn(console, "log").mockImplementation(() => {});
 
     scheduleInboundReplyDraft(input(admin()));
@@ -335,7 +381,13 @@ describe("dôvod zlyhania AI kroku (AI-FAIL-VISIBLE)", () => {
   });
 
   it("zlyhanie zápisu záznamu nezhodí naplánovaný návrh", async () => {
-    mockGenerate.mockResolvedValue({ subject: "S", body: "B", fallback: true, failure: BILLING });
+    mockGenerate.mockResolvedValue({
+      subject: "S",
+      body: "B",
+      fallback: true,
+      failure: BILLING,
+      audit: FALLBACK_AUDIT,
+    });
     mockRecordFailure.mockRejectedValue(new Error("db down"));
     vi.spyOn(console, "warn").mockImplementation(() => {});
 

@@ -4,8 +4,11 @@ import { autoErrorCapture } from "./auto-error-capture";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { logAiAction } from "@/lib/ai-action-audit";
 import { authorizeSend, authorityMeta } from "@/lib/control-plane/authorize-send";
-import { OUTREACH_PROMPT_VERSION, generateOutreachEmail } from "@/lib/ai-outreach";
-import { estimateOpenAiCostFromTotalTokens } from "@/lib/ai/llm-usage-cost";
+import {
+  OUTREACH_PROMPT_VERSION,
+  generateOutreachEmail,
+  OutreachCostBlockedError,
+} from "@/lib/ai-outreach";
 import { CREDIT_ACTION_COSTS } from "@/lib/program-tier-pricing";
 import { createActivity } from "@/lib/activities-store";
 import {
@@ -326,7 +329,19 @@ export async function prepareOutreachDraft(input: {
   if (quota) return quota;
 
   const variant = pickOutboundAbVariant();
-  const generated = await generateOutreachEmail(lead, { variant });
+  let generated;
+  try {
+    generated = await generateOutreachEmail(lead, { variant });
+  } catch (err) {
+    if (err instanceof OutreachCostBlockedError) {
+      return {
+        ok: false,
+        status: 402,
+        error: `AI outreach zastavené pred plateným volaním (${err.code}): ${err.message}`,
+      };
+    }
+    throw err;
+  }
 
   logAiRecommendation({
     agencyId,
@@ -338,7 +353,20 @@ export async function prepareOutreachDraft(input: {
     modelVersion: generated.provider,
   });
 
-  const model = generated.provider.replace(/^openai:/, "") || "gpt-4.1-mini";
+  const model =
+    generated.model ??
+    (generated.provider.startsWith("openai:")
+      ? generated.provider.replace(/^openai:/, "")
+      : null);
+  const costEur =
+    typeof generated.costEur === "number" ? generated.costEur : null;
+  if (generated.provider.startsWith("openai:") && costEur == null) {
+    return {
+      ok: false,
+      status: 500,
+      error: "AI outreach: chýba costEur z model gateway po platenom volaní.",
+    };
+  }
   const draft = await insertAgentDraft({
     admin: input.admin,
     leadId: lead.id,
@@ -366,8 +394,10 @@ export async function prepareOutreachDraft(input: {
       variant,
       model,
       creditsSpent: CREDIT_ACTION_COSTS.aiEmail,
-      costEur: estimateOpenAiCostFromTotalTokens(model, generated.totalTokens ?? 0),
+      costEur,
+      latencyMs: generated.latencyMs ?? null,
     },
+    auditStrict: generated.provider.startsWith("openai:"),
   });
   if (!draft.ok) return { ok: false, status: 500, error: "Návrh sa nepodarilo uložiť." };
 

@@ -24,9 +24,23 @@ vi.mock("@/lib/bri/engine", () => ({ computeBRI: (...a: unknown[]) => mockComput
 vi.mock("@/lib/events/log-event", () => ({ logEvent: (...a: unknown[]) => mockLogEvent(...a) }));
 vi.mock("@/lib/ai-action-audit", () => ({ logAiAction: (...a: unknown[]) => mockLogAiAction(...a) }));
 vi.mock("../auto-reply", () => ({
-  AUTO_REPLY_PROMPT_VERSION: "inbound-autoreply-v1",
+  AUTO_REPLY_PROMPT_VERSION: "inbound-autoreply-v2",
   generateAutoReply: (...a: unknown[]) => mockGenerate(...a),
 }));
+
+function mockLlmReply(overrides: Record<string, unknown> = {}) {
+  return {
+    subject: "Ďakujeme",
+    body: "Dobrý deň, ozveme sa.",
+    audit: {
+      source: "llm",
+      model: "claude-haiku-4-5-20251001",
+      costEur: 0.002,
+      latencyMs: 12,
+    },
+    ...overrides,
+  };
+}
 // If anything still imported Resend, this spy would catch the send.
 vi.mock("resend", () => ({
   Resend: vi.fn().mockImplementation(() => ({ emails: { send: mockResendSend } })),
@@ -101,8 +115,8 @@ describe("processInboundLead — Tier-3 gate", () => {
     mockAdminFactory.mockReturnValue({ from: (t: string) => mockFrom(t) });
     mockComputeBRI.mockResolvedValue({ new_score: 80 });
     mockLogEvent.mockResolvedValue("evt-1");
-    mockLogAiAction.mockResolvedValue(undefined);
-    mockGenerate.mockResolvedValue({ subject: "Ďakujeme", body: "Dobrý deň, ozveme sa." });
+    mockLogAiAction.mockResolvedValue({ ok: true });
+    mockGenerate.mockResolvedValue(mockLlmReply());
     // Every channel key present: the old code would have sent on all of them.
     vi.stubEnv("RESEND_API_KEY", "re_test");
     vi.stubEnv("WHATSAPP_TOKEN", "wa_test");
@@ -130,7 +144,7 @@ describe("processInboundLead — Tier-3 gate", () => {
       draft: true,
       requires_approval: true,
       agent_id: "REVOLIS-INBOUND-AUTOREPLY",
-      prompt_version: "inbound-autoreply-v1",
+      prompt_version: "inbound-autoreply-v2",
       // Stored verbatim so the approve path sends exactly what the broker saw.
       subject: "Ďakujeme",
       body: "Dobrý deň, ozveme sa.",

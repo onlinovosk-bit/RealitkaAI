@@ -4,8 +4,9 @@
 // ================================================================
 import { callClaude, CLAUDE_HAIKU, extractJson } from '@/lib/ai/claude'
 import { cachedSystem } from '@/lib/ai/prompt-cache'
-import { withAiTimeout }                          from '@/lib/ai/fallback'
-import type { AiFailure }                         from '@/lib/ai/ai-failure'
+import { withAiTimeout } from '@/lib/ai/fallback'
+import type { AiFailure } from '@/lib/ai/ai-failure'
+import { estimateClaudeCostEur } from '@/lib/ai/llm-usage-cost'
 import { AGENT_PLACEHOLDER, NAME_PLACEHOLDER, restoreName } from '@/lib/privacy/minimize'
 
 /**
@@ -25,6 +26,13 @@ export interface AutoReplyInput {
   agentName?:   string
 }
 
+export type AutoReplyAudit = {
+  source: 'llm' | 'fallback'
+  model: string | null
+  costEur: number | null
+  latencyMs: number
+}
+
 export interface AutoReplyResult {
   subject: string
   body:    string
@@ -32,6 +40,7 @@ export interface AutoReplyResult {
   fallback?: boolean
   /** Prečo LLM zlyhal (kód dôvodu, HTTP status, request-id — nikdy text chyby). Len pri `fallback`. */
   failure?: AiFailure
+  audit: AutoReplyAudit
 }
 
 /** Default LLM budget. Callers off the hot path may allow more. */
@@ -46,10 +55,17 @@ export async function generateAutoReply(
   data: AutoReplyInput,
   opts: { timeoutMs?: number } = {},
 ): Promise<AutoReplyResult> {
+  const startedAt = Date.now()
   const fallback: AutoReplyResult = {
     fallback: true,
     subject: `Ďakujeme za váš záujem, ${data.leadName}`,
     body:    `Dobrý deň ${data.leadName},\n\nďakujeme za váš záujem. Náš maklér vás bude kontaktovať čo najskôr.\n\nS pozdravom\n${data.agentName ?? 'Revolis.AI tím'}`,
+    audit: {
+      source: 'fallback',
+      model: null,
+      costEur: null,
+      latencyMs: 0,
+    },
   }
 
   const aiCall = callClaude({
@@ -71,13 +87,21 @@ JSON: { "subject": "predmet emailu SK", "body": "text emailu SK, max 4 vety" }`,
     }],
   }, 'auto-reply').then(resp => {
     const raw = resp.content[0].type === 'text' ? resp.content[0].text : ''
-    const parsed = extractJson<AutoReplyResult>(raw)
-    // Meno klienta ani makléra prompt neopustilo — dosádzame ich tu, lokálne.
+    const parsed = extractJson<{ subject?: string; body?: string }>(raw)
     const agent = data.agentName ?? 'Revolis.AI tím'
     return {
-      ...parsed,
       subject: restoreName(restoreName(parsed.subject ?? '', data.leadName), agent, AGENT_PLACEHOLDER),
       body:    restoreName(restoreName(parsed.body ?? '', data.leadName), agent, AGENT_PLACEHOLDER),
+      audit: {
+        source: 'llm' as const,
+        model: CLAUDE_HAIKU,
+        costEur: estimateClaudeCostEur(
+          CLAUDE_HAIKU,
+          resp.usage.input_tokens,
+          resp.usage.output_tokens,
+        ),
+        latencyMs: Math.max(0, Date.now() - startedAt),
+      },
     }
   })
 
@@ -86,5 +110,22 @@ JSON: { "subject": "predmet emailu SK", "body": "text emailu SK, max 4 vety" }`,
     feature:   'inbound_auto_reply',
     onFailure: (f) => { failure = f },
   })
-  return result === fallback && failure ? { ...fallback, failure } : result
+
+  if (result === fallback || (result as AutoReplyResult).fallback) {
+    return {
+      ...fallback,
+      ...(failure ? { failure } : {}),
+      audit: {
+        source: 'fallback',
+        model: null,
+        costEur: null,
+        latencyMs: Math.max(0, Date.now() - startedAt),
+      },
+    }
+  }
+
+  return {
+    ...(result as Omit<AutoReplyResult, 'audit'>),
+    audit: (result as { audit: AutoReplyAudit }).audit,
+  }
 }
