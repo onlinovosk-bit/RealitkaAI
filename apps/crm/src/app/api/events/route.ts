@@ -23,6 +23,7 @@ import { validateBody }              from '@/lib/api-validate'
 import { logEventDetailed }          from '@/lib/events/log-event'
 import { checkIntegrity }            from '@/lib/events/integrity-monitor'
 import { recomputeBRI }              from '@/lib/events/bri-score'
+import { recordRepeatView }          from '@/lib/signals/write-return-step'
 import { ENTITY_TYPES, EVENT_TYPES } from '@/types/events'
 import type { EventType }            from '@/types/events'
 
@@ -101,7 +102,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 2. Check integrity if export action
+    // 2. A second identified view of the same listing writes the next step.
+    //    Nothing is sent. The first view only records the event.
+    if (body.eventType === 'property_viewed') {
+      sideEffects.push(
+        recordRepeatView(supabase, body.payload).catch(console.error)
+      )
+    }
+
+    // 3. Check integrity if export action
     if (INTEGRITY_EVENTS.includes(body.eventType as EventType)) {
       const entityCount = (body.payload?.count as number) ?? 1
       sideEffects.push(

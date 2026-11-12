@@ -13,6 +13,7 @@ describe("authorizeSend — the one gate for AI → client sends", () => {
     "deadlead.email.send",
     "deadlead.sms.send",
     "outreach.email.send",
+    "returnsignal.email.send",
   ]) {
     it(`${action}: refused without a human approval (403)`, () => {
       const r = authorizeSend({ action, agentId: "x", tenantId: "t", approval: null, systemState: off });

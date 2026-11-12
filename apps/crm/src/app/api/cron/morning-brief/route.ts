@@ -13,6 +13,7 @@
 import { NextRequest, NextResponse }     from 'next/server'
 import { createAdminClient }             from '@/lib/supabase/server'
 import { generateAndDeliverBrief }       from '@/lib/morning-brief/assemble'
+import { scanListingAge }                from '@/lib/signals/write-return-step'
 import { cronHttpStatus, deriveCronStatus, recordCronRun, recordUnauthorizedCronRun, vercelCronSchedule, callerUserAgent } from '@/lib/ops/cron-run'
 import {
   briefNobodyEnabledReason,
@@ -41,6 +42,14 @@ export async function GET(request: NextRequest) {
 
   const startedAt = new Date()
   const supabase = createAdminClient()
+
+  // Listing age is independent of who receives the brief. A failure here
+  // must not skip the brief, and the brief must not send these drafts.
+  try {
+    await scanListingAge(supabase)
+  } catch (err) {
+    console.error('[morning-brief cron] listing age scan failed:', err)
+  }
 
   // Dva dotazy, nie jeden: bez celkového počtu by „0 zapnutých" znamenalo
   // zároveň „nastavenia neexistujú" aj „existujú, ale sú vypnuté".
