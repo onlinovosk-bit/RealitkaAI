@@ -430,6 +430,20 @@ export function trialGraceFrom(input: TrialGraceInput): TrialGraceState {
   }
 
   if (status === "past_due" || status === "unpaid") {
+    // Fakturovaný / ručný plán je zdroj pravdy mimo Stripe. Leftover past_due
+    // (neúspešný self-serve checkout na tom istom billing e-maile) nesmie
+    // prebiť `manual_plan` do grace/blocked — inak referenčný klient po triali
+    // padne do read-only hoci stále platí faktúrou. Stripe-only účty
+    // (paysOutsideStripe=false) ostávajú na grace/blocked ako doteraz.
+    if (input.paysOutsideStripe) {
+      return {
+        state: "active",
+        trialDaysLeft: 0,
+        graceDaysLeft: 0,
+        message: "Plán je aktívny (fakturácia mimo Stripe).",
+      };
+    }
+
     const periodEnd = input.currentPeriodEndMs ?? input.nowMs;
     const graceEnd = periodEnd + input.graceDays * 86400000;
     const graceDaysLeft = diffInDays(graceEnd, input.nowMs);
@@ -451,12 +465,31 @@ export function trialGraceFrom(input: TrialGraceInput): TrialGraceState {
     };
   }
 
-  if (status === "canceled" || status === "incomplete_expired") {
+  if (status === "canceled" || status === "incomplete_expired" || status === "incomplete") {
+    // Rovnaká trieda ako #938: leftover / nedokončený Checkout. Ak agentúra
+    // platí mimo Stripe, Stripe stav ju nezamyká.
+    if (input.paysOutsideStripe) {
+      return {
+        state: "active",
+        trialDaysLeft: 0,
+        graceDaysLeft: 0,
+        message: "Plán je aktívny (fakturácia mimo Stripe).",
+      };
+    }
     return {
       state: "limited",
       trialDaysLeft: 0,
       graceDaysLeft: 0,
       message: "Predplatné nie je aktívne. Funkcie sú obmedzené.",
+    };
+  }
+
+  if (input.paysOutsideStripe) {
+    return {
+      state: "active",
+      trialDaysLeft: 0,
+      graceDaysLeft: 0,
+      message: "Plán je aktívny (fakturácia mimo Stripe).",
     };
   }
 

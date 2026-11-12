@@ -205,13 +205,61 @@ describe("vypnut sa ma iba tomu, kto neplati", () => {
     expect(accessLevelFrom(state.state)).toBe("read_only");
   });
 
-  it("Stripe predplatne ma prednost pred priznakom agentury", () => {
-    // Ked Stripe predplatne existuje, rozhoduje jeho stav — inak by zabudnuty
-    // manual_plan prebil zruseny plateny ucet.
-    const state = trialGraceFrom(
-      trialInput({ paysOutsideStripe: true, hasSubscription: true, subscriptionStatus: "canceled" }),
-    );
-    expect(state.state).toBe("limited");
+  it("manual_plan vyhrá nad leftover canceled/incomplete aj ked hasSubscription=true", () => {
+    // Po #938 canceled už pickRelevant nevráti; incomplete/past_due ešte áno.
+    // trialGraceFrom musí aj tak rešpektovať paysOutsideStripe — inak leftover
+    // Checkout zamkne fakturovaného klienta.
+    for (const status of ["canceled", "incomplete", "incomplete_expired"] as const) {
+      const state = trialGraceFrom(
+        trialInput({
+          paysOutsideStripe: true,
+          hasSubscription: true,
+          subscriptionStatus: status,
+          nowMs: NOW + 400 * DAY,
+        }),
+      );
+      expect(state.state).toBe("active");
+      expect(accessLevelFrom(state.state)).toBe("full");
+    }
+  });
+
+  it("manual_plan vyhrá nad leftover past_due/unpaid (Stripe experiment na tom istom e-maile)", () => {
+    for (const status of ["past_due", "unpaid"] as const) {
+      const state = trialGraceFrom(
+        trialInput({
+          paysOutsideStripe: true,
+          hasSubscription: true,
+          subscriptionStatus: status,
+          currentPeriodEndMs: NOW - 30 * DAY,
+          nowMs: NOW + 400 * DAY,
+        }),
+      );
+      expect(state.state).toBe("active");
+      expect(accessLevelFrom(state.state)).toBe("full");
+    }
+  });
+
+  it("past_due bez manual_plan ostáva grace/blocked (Stripe-only účet)", () => {
+    expect(
+      trialGraceFrom(
+        trialInput({
+          paysOutsideStripe: false,
+          hasSubscription: true,
+          subscriptionStatus: "past_due",
+          currentPeriodEndMs: NOW - 1 * DAY,
+        }),
+      ).state,
+    ).toBe("grace");
+    expect(
+      trialGraceFrom(
+        trialInput({
+          paysOutsideStripe: false,
+          hasSubscription: true,
+          subscriptionStatus: "past_due",
+          currentPeriodEndMs: NOW - 8 * DAY,
+        }),
+      ).state,
+    ).toBe("blocked");
   });
 });
 
