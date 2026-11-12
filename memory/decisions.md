@@ -1,3 +1,23 @@
+## 2026-11-12 — BUILD: rolling Friday deadline na homepage (draft PR #950)
+**GO:** Cloud Agent follow-up na #950: odstrániť hardcoded `23. 10.` z countdown/sticky/FAQ; nahradiť piatkom 23:59:59 Europe/Bratislava (Po–Pia tento, So–Ne ďalší); Draft, never merge/deploy.
+**Čo:** `fridayDeadline()` v `apps/marketing/lib/friday-deadline.ts` + `public/friday-deadline.js`; `index.html` labels `.js-friday-label` (fallback `do piatka`); odpočet bez `expire()` / fixného `DEADLINE`. Ponuka 0 € / 49 € nezmenená. Žiadne slovo pilot.
+**Dôkaz:** `npx vitest run` apps/marketing 82/82 (vrátane Mon / Fri 23:59 / Sat 00:00 / Sun / DST); `npx tsc --noEmit` exit 0.
+**Nerobené:** merge, LIVE, zmena `vercel.json` `cursor/*` preview, publikovanie blogu.
+**BUILD/BACKLOG:** BUILD (dátum kampane v existujúcej homepage).
+**Rollback:** revert commitu na vetve.
+
+---
+
+## 2026-11-12 — BUILD: SEO homepage + CRM robots + draft blog (draft PR)
+**GO:** Cloud Agent zadanie „Open ONE DRAFT pull request“ (explicitne never merge/deploy/secrets/Vercel).
+**Čo:** (1) www.revolis.ai title/meta/OG + von „do 23. 10.“ z hero. (2) app.revolis.ai privacy metadata + `robots.ts`. (3) Draft článok `crm-pre-realitnych-maklerov` (`published: false`).
+**Dôkaz:** `npx vitest run` apps/marketing 75/75; CRM robots/privacy 4/4; marketing tsc exit 0; CRM eslint zmenených súborov exit 0; CRM typecheck baseline PASS.
+**Nerobené:** merge, LIVE, Vercel, publikovanie článku, countdown mimo hero.
+**BUILD/BACKLOG:** BUILD (obsah/SEO v existujúcich plochách). RAU keyword GO_REQUIRED na zákazoch merge/deploy — tieto kroky sa nevykonali.
+**Rollback:** revert vetvy.
+
+---
+
 ## 2026-11-06 — UPTM Governance Decision v1.1 (paper-only) + Directive v1.0 „Proactive Ownership“: BACKLOG (implementácia Risk Governora), BUILD (iba dokumenty)
 **GO:** founder „UPTM – GOVERNANCE DECISION v1.1“ (PAPER-ONLY / NO LIVE AUTHORIZATION) a „FOUNDER DIRECTIVE — PROACTIVE OWNERSHIP & EXECUTION v1.0“. Prime Directive: UPTM je mimo Revolisu; kód Risk Governora sa nezačína pred dokončením Stripe kroku C (priorita #1).
 **Čo:** (1) Päť analytických dokumentov v UPTM repe (draft PR #35, `f24ebe1`): Evidence Audit, Risk Limits Comparison (A status quo 3,75/7,50/15/22,50/37,50; B 1/2/6 % = 5/—/10/15*/30 kde 15 € je môj predpoklad; C 2,5/5/10/15/25; D 2,5/—/5/—/15), architektúra Risk Governora (Strategy Engine, Risk Governor, Execution Gateway), EV Gate (EV_net = p·G − (1−p)·R − K; prahy označené D odvodené / P politika foundera / U neznáme), backlog P0–P7 (ODHADY: P1–P5 spolu 11–18 osobodní, P6 paper demo 4–8 týždňov, P7 nový Red Team LIVE). Odporúčanie: B s L_max vrátane nákladov ≤ 5 €. (2) Directive v1.0 prijatá ako spôsob práce: vlastníctvo celého reťazca, plán ≠ implementácia, CI zelené ≠ funkčné v PROD, správy vo formáte A–F.

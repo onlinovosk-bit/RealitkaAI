@@ -4,8 +4,10 @@ import BlogIndexPage from '../app/blog/page'
 import BlogArticlePage, { generateMetadata, generateStaticParams } from '../app/blog/[slug]/page'
 import { BlogChrome } from '../components/blog/BlogChrome'
 import {
+  CRM_ARTICLE_SLUG,
   FIRST_ARTICLE_SLUG,
   formatBlogDate,
+  getArticle,
   getPublishedArticle,
   getPublishedBlogPaths,
   listPublishedArticles,
@@ -112,5 +114,47 @@ describe('blog sitemap contract', () => {
     const urls = sitemap().map((entry) => entry.url)
     expect(urls).toContain('https://www.revolis.ai/blog')
     expect(urls).toContain(`https://www.revolis.ai${ARTICLE_PATH}`)
+  })
+
+  it('keeps the CRM article as draft and out of the public sitemap', () => {
+    const draftPath = `/blog/${CRM_ARTICLE_SLUG}`
+    expect(PUBLIC_SITEMAP_PATHS).not.toContain(draftPath)
+    expect(getPublishedBlogPaths()).not.toContain(draftPath)
+    expect(sitemap().map((entry) => entry.url)).not.toContain(`https://www.revolis.ai${draftPath}`)
+  })
+})
+
+describe('draft CRM article', () => {
+  it('stores unpublished metadata, H1, keyword and content rules', () => {
+    const article = getArticle(CRM_ARTICLE_SLUG)
+    expect(article).toBeDefined()
+    expect(getPublishedArticle(CRM_ARTICLE_SLUG)).toBeUndefined()
+    expect(article?.published).toBe(false)
+    expect(article?.slug).toBe('crm-pre-realitnych-maklerov')
+    expect(article?.title).toBe(
+      'CRM pre realitných maklérov: čo musí vedieť kancelária na Slovensku',
+    )
+    expect(article?.keyword).toBe('CRM pre realitných maklérov')
+    expect(article?.author).toBe('Andrej Ondruš')
+    expect(article?.date).toBe('2026-11-12')
+    expect(article?.description.length).toBeGreaterThan(80)
+    expect(article?.description.length).toBeLessThanOrEqual(155)
+    expect(article?.body.startsWith('# CRM pre realitných maklérov na Slovensku')).toBe(true)
+    expect(article?.body).toContain('## Prečo tabuľka a e-mailová schránka nestačia')
+    expect(article?.body).toContain('## Dopyty z realitných portálov')
+    expect(article?.body).toContain('## Evidencia kontaktov a nehnuteľností')
+    expect(article?.body).toContain('## Text inzerátu')
+    expect(article?.body).toContain('## Prechod z CSV/XLSX alebo z RealSoftu')
+    expect(article?.body).toContain('## Čo overiť pred výberom CRM')
+    expect(article?.body).toContain('## Čo to znamená pre makléra')
+    expect(article?.body).toContain('14 dní zadarmo, bez platobnej karty')
+    expect(article?.body).toContain('https://app.revolis.ai/register')
+    expect(article?.body).toContain('100 % peňazí späť do 30 dní')
+    expect(article?.body).not.toMatch(/pilot/i)
+    expect(article?.body).not.toMatch(/cenník/i)
+    expect(article?.body).not.toMatch(/\b(25|60|79|149)\s*€/)
+    const words = article!.body.trim().split(/\s+/).length
+    expect(words).toBeGreaterThanOrEqual(700)
+    expect(words).toBeLessThanOrEqual(1200)
   })
 })

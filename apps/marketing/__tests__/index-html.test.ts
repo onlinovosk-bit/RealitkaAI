@@ -53,10 +53,16 @@ describe('public/index.html — kampaň cenník v3', () => {
     expect(html).toContain('0,75 €')
   })
 
-  it('odpočet je na piatok 23. 10. 2026 12:00 (CEST) a po termíne sa texty prepnú', () => {
-    expect(html).toContain('new Date("2026-10-23T12:00:00+02:00")')
-    expect(html).toContain('data-after=')
-    expect(html).toContain('el.textContent=el.getAttribute("data-after")')
+  it('odpočet používa rolling Friday deadline bez hardcoded 23. 10.', () => {
+    expect(html).not.toMatch(/23\. 10/)
+    expect(html).not.toContain('2026-10-23')
+    expect(html).toContain("import { fridayDeadline } from '/friday-deadline.js'")
+    expect(html).toContain('class="js-friday-label"')
+    expect((html.match(/class="js-friday-label"/g) ?? []).length).toBeGreaterThanOrEqual(8)
+    expect(html).toContain('id="stickyTxt"')
+    expect(html).toContain('id="faq"')
+    expect(html).not.toContain('function expire()')
+    expect(html).not.toMatch(/\bpilot\b/i)
   })
 
   it('garancia 100 % / 30 dní, bez "+50 €", bez slova pilot a bez mena referenčného klienta', () => {
@@ -79,6 +85,22 @@ describe('public/index.html — kampaň cenník v3', () => {
     expect(html).toContain('<meta property="og:url" content="https://www.revolis.ai/">')
     expect(html).toContain('href="https://app.revolis.ai"')
     expect(html).toContain('/^utm_/i.test(k)')
+  })
+
+  it('SEO title a description bez expirovanej akcie do 23. 10.', () => {
+    const title =
+      'Revolis.ai – AI CRM pre realitných maklérov | Inzerát hotový za minúty'
+    const description =
+      'AI CRM pre realitných maklérov na Slovensku. Dopyty z portálových e-mailov sa uložia samé, text inzerátu pripraví AI. 14 dní zadarmo, bez karty. Ak nebudete spokojní, do 30 dní vrátime 100 % peňazí.'
+    expect(html).toContain(`>${title}</title>`)
+    expect(html).toContain(`data-after="${title}"`)
+    expect(html).toContain(`content="${description}"`)
+    expect(html).toContain(`data-after-content="${description}"`)
+    expect(html).toContain(`property="og:title"`)
+    expect(html).toContain(`property="og:description"`)
+    const hero = html.slice(html.indexOf('<!-- HERO -->'), html.indexOf('<!-- PAIN -->'))
+    expect(hero).not.toMatch(/23\. ?10/)
+    expect(html.match(/<title[\s\S]*?<\/title>/)?.[0]).not.toMatch(/23\. ?10/)
   })
 
   it('next.config presmeruje root na index.html cez rewrite', () => {
