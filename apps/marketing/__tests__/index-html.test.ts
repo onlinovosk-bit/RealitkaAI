@@ -81,6 +81,22 @@ describe('public/index.html — kampaň cenník v3', () => {
     expect(html).toContain('/^utm_/i.test(k)')
   })
 
+  it('SEO title a description bez expirovanej akcie do 23. 10.', () => {
+    const title =
+      'Revolis.ai – AI CRM pre realitných maklérov | Inzerát hotový za minúty'
+    const description =
+      'AI CRM pre realitných maklérov na Slovensku. Dopyty z portálových e-mailov sa uložia samé, text inzerátu pripraví AI. 14 dní zadarmo, bez karty. Ak nebudete spokojní, do 30 dní vrátime 100 % peňazí.'
+    expect(html).toContain(`>${title}</title>`)
+    expect(html).toContain(`data-after="${title}"`)
+    expect(html).toContain(`content="${description}"`)
+    expect(html).toContain(`data-after-content="${description}"`)
+    expect(html).toContain(`property="og:title"`)
+    expect(html).toContain(`property="og:description"`)
+    const hero = html.slice(html.indexOf('<!-- HERO -->'), html.indexOf('<!-- PAIN -->'))
+    expect(hero).not.toMatch(/23\. ?10/)
+    expect(html.match(/<title[\s\S]*?<\/title>/)?.[0]).not.toMatch(/23\. ?10/)
+  })
+
   it('next.config presmeruje root na index.html cez rewrite', () => {
     const cfg = readFileSync(resolve(__dirname, '../next.config.ts'), 'utf-8')
     expect(cfg).toContain("source: '/', destination: '/index.html'")

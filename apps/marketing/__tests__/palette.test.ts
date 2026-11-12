@@ -77,7 +77,7 @@ describe('marketing palette tokens', () => {
   it('does not introduce the word pilot and keeps campaign prices/CTAs', () => {
     const html = read('public/index.html')
     expect(html).not.toMatch(/pilot/i)
-    expect(html).toContain('href="https://realitka-ai.vercel.app/register"')
+    expect(html).toContain('href="https://app.revolis.ai"')
     expect(html).toContain('7 maklérov = 83 €, 10 maklérov = 110 €')
     expect(html).toContain('<link rel="canonical" href="https://www.revolis.ai/">')
   })
