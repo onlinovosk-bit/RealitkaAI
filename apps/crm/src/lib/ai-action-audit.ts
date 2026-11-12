@@ -27,23 +27,35 @@ export function hashBodyPreview(body: string): string {
   return createHash("sha256").update(body, "utf8").digest("hex").slice(0, 32);
 }
 
-export async function logAiAction(input: {
-  action: AiCreditAction | string;
-  agencyId: string | null;
-  leadId?: string | null;
-  profileId?: string | null;
-  channel?: "email" | "sms";
-  creditsSpent?: number | null;
-  costEur?: number | null;
-  model?: string | null;
-  latencyMs?: number | null;
-  actionKind?: AiAuditKind;
-  variant?: string | null;
-  subjectPreview?: string | null;
-  bodyText?: string | null;
-  meta?: Record<string, unknown>;
-}): Promise<void> {
-  await logAiActionAudit({
+export type LogAiActionOptions = {
+  /** When true, insert failure throws instead of console.warn (outreach cost path). */
+  strict?: boolean;
+};
+
+export type LogAiActionResult =
+  | { ok: true }
+  | { ok: false; error: string; code?: string };
+
+export async function logAiAction(
+  input: {
+    action: AiCreditAction | string;
+    agencyId: string | null;
+    leadId?: string | null;
+    profileId?: string | null;
+    channel?: "email" | "sms";
+    creditsSpent?: number | null;
+    costEur?: number | null;
+    model?: string | null;
+    latencyMs?: number | null;
+    actionKind?: AiAuditKind;
+    variant?: string | null;
+    subjectPreview?: string | null;
+    bodyText?: string | null;
+    meta?: Record<string, unknown>;
+  },
+  options?: LogAiActionOptions,
+): Promise<LogAiActionResult> {
+  return logAiActionAudit({
     agencyId: input.agencyId,
     leadId: input.leadId ?? null,
     profileId: input.profileId,
@@ -57,10 +69,11 @@ export async function logAiAction(input: {
     model: input.model,
     latencyMs: input.latencyMs,
     meta: { feature: input.action, ...input.meta },
-  });
+  }, options);
 }
 
-export async function logAiActionAudit(input: {
+export async function logAiActionAudit(
+  input: {
   agencyId: string | null;
   leadId: string | null;
   profileId?: string | null;
@@ -74,9 +87,18 @@ export async function logAiActionAudit(input: {
   model?: string | null;
   latencyMs?: number | null;
   meta?: Record<string, unknown>;
-}): Promise<void> {
+  },
+  options?: LogAiActionOptions,
+): Promise<LogAiActionResult> {
   const supabase = createServiceRoleClient();
-  if (!supabase) return;
+  if (!supabase) {
+    const msg = "service_role_unavailable";
+    if (options?.strict) {
+      throw new Error(`[ai-action-audit] ${msg}`);
+    }
+    console.warn("[ai-action-audit] insert:", msg);
+    return { ok: false, error: msg, code: msg };
+  }
 
   const body_hash = input.bodyText ? hashBodyPreview(input.bodyText) : null;
 
@@ -97,6 +119,12 @@ export async function logAiActionAudit(input: {
   });
 
   if (error) {
+    if (options?.strict) {
+      throw new Error(`[ai-action-audit] insert failed: ${error.message}`);
+    }
     console.warn("[ai-action-audit] insert:", error.message);
+    return { ok: false, error: error.message, code: error.code };
   }
+
+  return { ok: true };
 }

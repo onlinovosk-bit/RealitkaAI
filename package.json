@@ -9,7 +9,8 @@
     "packages/mcp-comm",
     "packages/mcp-calendar",
     "packages/mcp-telephony",
-    "packages/mcp-onlinovo"
+    "packages/mcp-onlinovo",
+    "packages/model-gateway"
   ],
   "scripts": {
     "bus": "node scripts/bus/cli.ts",

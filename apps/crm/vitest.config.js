@@ -8,6 +8,10 @@ export default defineConfig({
         __dirname,
         '../../packages/control-contract/src/index.ts',
       ),
+      '@revolis/model-gateway': resolve(
+        __dirname,
+        '../../packages/model-gateway/src/index.ts',
+      ),
       '@': resolve(__dirname, './src'),
       '@/lib': resolve(__dirname, './src/lib'),
     },

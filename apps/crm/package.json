@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.91.1",
+    "@revolis/model-gateway": "file:../../packages/model-gateway",
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.101.1",
     "@tailwindcss/postcss": "^4.2.4",

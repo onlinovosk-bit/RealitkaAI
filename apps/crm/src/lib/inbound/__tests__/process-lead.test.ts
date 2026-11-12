@@ -101,8 +101,17 @@ describe("processInboundLead — Tier-3 gate", () => {
     mockAdminFactory.mockReturnValue({ from: (t: string) => mockFrom(t) });
     mockComputeBRI.mockResolvedValue({ new_score: 80 });
     mockLogEvent.mockResolvedValue("evt-1");
-    mockLogAiAction.mockResolvedValue(undefined);
-    mockGenerate.mockResolvedValue({ subject: "Ďakujeme", body: "Dobrý deň, ozveme sa." });
+    mockLogAiAction.mockResolvedValue({ ok: true });
+    mockGenerate.mockResolvedValue({
+      subject: "Ďakujeme",
+      body: "Dobrý deň, ozveme sa.",
+      audit: {
+        source: "llm",
+        model: "claude-haiku-4-5-20251001",
+        costEur: 0.002,
+        latencyMs: 120,
+      },
+    });
     // Every channel key present: the old code would have sent on all of them.
     vi.stubEnv("RESEND_API_KEY", "re_test");
     vi.stubEnv("WHATSAPP_TOKEN", "wa_test");
@@ -147,6 +156,9 @@ describe("processInboundLead — Tier-3 gate", () => {
     const audit = mockLogAiAction.mock.calls[0][0] as Record<string, unknown>;
     expect(audit.actionKind).toBe("ai_suggested");
     expect(audit.agencyId).toBe(AGENCY_ID);
+    expect(audit.model).toBe("claude-haiku-4-5-20251001");
+    expect(audit.costEur).toBe(0.002);
+    expect(audit.latencyMs).toBe(120);
     expect(audit.meta).toMatchObject({ approval_state: "pending_human" });
     const kinds = mockLogAiAction.mock.calls.map((c) => (c[0] as { actionKind: string }).actionKind);
     expect(kinds).not.toContain("sent");

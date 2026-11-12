@@ -7,10 +7,11 @@
 // stores the AI text as a draft activity + `ai_suggested` audit row. The
 // broker sends it — nothing in this module talks to Resend or WhatsApp.
 // ================================================================
+import { logAiAction }       from '@/lib/ai-action-audit'
 import { computeBRI }        from '@/lib/bri/engine'
 import { logEvent }          from '@/lib/events/log-event'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
-import { draftInboundReply } from './reply-draft'
+import { AUTO_REPLY_PROMPT_VERSION, generateAutoReply } from './auto-reply'
 
 import { INBOUND_AUTOREPLY_AGENT_ID } from './draft-view'
 
@@ -31,8 +32,7 @@ export interface InboundLeadPayload {
 
 export interface ProcessLeadResult {
   leadId:       string
-  /** null = BRI sa nepodarilo vypočítať (nikdy nie vymyslená hodnota). */
-  briScore:     number | null
+  briScore:     number
   draftCreated: boolean
   /** Always false: sending is a human action (Tier 3). Kept for API compatibility. */
   replySent:    false
@@ -93,14 +93,10 @@ export async function processInboundLead(
 
   // 3. Compute BRI
   const bri      = await computeBRI(leadId, payload.profileId, 'lead_created')
-  // Zlyhaný výpočet nesmie vyrobiť skóre: žiadne vymyslené číslo, žiadny draft.
-  const briScore = bri?.new_score ?? null
+  const briScore = bri?.new_score ?? 50
 
   // 4. Audit event
   await logEvent({
-    // Webhook nemá session: bez service-role klienta RLS insert odmietne
-    // a udalosť zmizne v console.error (EVENTS-WRITE-PATH-01).
-    client:     admin,
     profileId:  payload.profileId,
     entityType: 'lead',
     entityId:   leadId,
@@ -113,31 +109,77 @@ export async function processInboundLead(
     },
   })
 
-  if (briScore === null || briScore < BRI_REPLY_THRESHOLD || !payload.email) {
+  if (briScore < BRI_REPLY_THRESHOLD || !payload.email) {
     return { leadId, briScore, draftCreated: false, replySent: false }
   }
 
-  // 5. AI reply → draft only (shared with the other inbound paths).
-  const draft = await draftInboundReply({
-    admin,
-    leadId,
-    agencyId,
-    profileId:      payload.profileId,
-    agentName:      profile.full_name ?? null,
-    lead: {
-      name:         payload.name,
-      email:        payload.email,
-      message:      payload.message,
-      source:       payload.source,
-      propertyType: payload.propertyType,
-      location:     payload.location,
-      budget:       payload.budget,
-    },
-    activitySource: 'webhook_inbound_lead',
+  // 5. AI reply → draft only. Input is untrusted (payload.message), so the
+  //    text must pass a human before it reaches anyone.
+  const reply = await generateAutoReply({
+    leadName:     payload.name,
+    source:       payload.source ?? 'web',
+    message:      payload.message,
+    propertyType: payload.propertyType,
+    location:     payload.location,
+    budget:       payload.budget,
+    agentName:    profile.full_name ?? undefined,
   })
-  if (!draft.created) {
+
+  const { error: draftErr } = await admin.from('activities').insert({
+    lead_id:     leadId,
+    type:        'AI návrh odpovede',
+    title:       `Návrh odpovede (AI) — ${reply.subject}`,
+    text:        `${reply.body}\n\nKanál: email\nPríjemca: ${payload.email}\nNeodoslané — vyžaduje schválenie makléra.`,
+    entity_type: 'lead',
+    entity_id:   leadId,
+    actor_name:  'AI inbound auto-reply',
+    source:      'webhook_inbound_lead',
+    severity:    'info',
+    meta: {
+      draft:             true,
+      requires_approval: true,
+      channel:           'email',
+      subject:           reply.subject,
+      // Exactly what the broker approves is exactly what gets sent.
+      body:              reply.body,
+      recipient:         payload.email,
+      agent_id:          INBOUND_AUTOREPLY_AGENT_ID,
+      prompt_version:    AUTO_REPLY_PROMPT_VERSION,
+    },
+  })
+  if (draftErr) {
     // The lead exists; losing the draft is recoverable, so report, don't fail.
+    console.error('[processInboundLead] draft insert failed:', draftErr.message)
     return { leadId, briScore, draftCreated: false, replySent: false }
+  }
+
+  const auditResult = await logAiAction(
+    {
+      action:         'ai_email',
+      agencyId,
+      leadId,
+      profileId:      payload.profileId,
+      actionKind:     'ai_suggested',
+      channel:        'email',
+      subjectPreview: reply.subject,
+      bodyText:       reply.body,
+      model:          reply.audit.model,
+      costEur:        reply.audit.costEur,
+      latencyMs:      reply.audit.latencyMs,
+      meta: {
+        agent_id:       INBOUND_AUTOREPLY_AGENT_ID,
+        prompt_version: AUTO_REPLY_PROMPT_VERSION,
+        approval_state: 'pending_human',
+        telemetry_source: reply.audit.source,
+      },
+    },
+    { strict: reply.audit.source === 'llm' },
+  )
+
+  if (reply.audit.source === 'llm' && !auditResult.ok) {
+    console.error('[processInboundLead] audit failed:', auditResult.error)
+  } else if (reply.audit.source === 'fallback' && !auditResult.ok) {
+    console.error('[processInboundLead] audit fallback row failed:', auditResult.error)
   }
 
   return { leadId, briScore, draftCreated: true, replySent: false }
