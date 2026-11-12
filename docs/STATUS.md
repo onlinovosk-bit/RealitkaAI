@@ -1,5 +1,7 @@
 # Revolis.AI — STAV NA JEDNEJ STRÁNKE
 
+> **2026-11-12 rolling Friday deadline:** follow-up na draft PR #950. Homepage countdown/sticky/FAQ bez hardcoded `23. 10.`; `fridayDeadline()` Europe/Bratislava. Merge/deploy/PROD nerobené. Tabuľka % sa NEMENÍ.
+
 > **2026-11-12 SEO homepage + robots + draft blog:** draft PR na `cursor/seo-homepage-robots-blog-1a71`. Title/meta homepage, CRM privacy metadata + `robots.ts`, článok `/blog/crm-pre-realitnych-maklerov` ako `published: false`. Merge/deploy/PROD nerobené. Tabuľka % sa NEMENÍ.
 
 > **2026-11-06 (UPTM Governance v1.1 + self-audit):** dokumenty a draft PR #35 v UPTM repe; v Revolise sa mení iba pamäť a blok SESSION. Tabuľka % sa NEMENÍ a je STARÁ (posledný prepočet 2026-10-05). Vercel prod env metadata ukazujú `STRIPE_PRICE_V3_SEAT_MONTHLY` prítomné, takže „Stripe 0 %“ je s nimi v rozpore. Revidované číslo sa neuvádza bez merania (chýba hodnota `pricingV2.enabled`).
@@ -52,13 +54,14 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: Draft PR — homepage SEO, CRM robots, blog CRM článok
+Cieľ: Draft PR — homepage SEO, CRM robots, blog CRM článok, rolling Friday deadline
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
 - [x] 1 — Homepage title/meta/OG + odstránenie „do 23. 10.“ z hero (`index.html`, `layout.tsx`)
 - [x] 2 — CRM privacy metadata + `app/robots.ts` (allow legal, disallow auth/dashboard)
 - [x] 3 — Draft článok `/blog/crm-pre-realitnych-maklerov` (`published: false`)
-- [x] 4 — Marketing vitest 75/75 vrátane `seo.test.ts`; CRM robots/privacy testy 4/4
-- [ ] 5 — Draft PR otvorený, CI na heade (merge/deploy nie)
+- [x] 4 — Marketing vitest 82/82 (friday-deadline + seo); CRM robots/privacy testy 4/4
+- [x] 5 — Rolling Friday deadline: countdown/sticky/FAQ bez hardcoded `23. 10.`
+- [ ] 6 — Draft PR #950 updated, CI na heade (merge/deploy nie)
 <!-- SESSION:END -->
 
 ## Hotové 2026-10-07 — s dôkazom (REALVIA-SEC-01)

@@ -1,3 +1,20 @@
+## Session 2026-11-12 (follow-up: rolling Friday deadline)
+### Dokončené
+- Hardcoded `23. 10.` preč z homepage countdown, sticky, FAQ a JS (`apps/marketing/public/index.html`).
+- `fridayDeadline()`: piatok 23:59:59 Europe/Bratislava; Po–Pia tento týždeň, So–Ne ďalší; zobrazenie `do piatka 13. 11.`.
+- Klient dopĺňa dátum po loade (fallback `do piatka`); žiadny fixný DEADLINE/expire.
+- Marketing vitest 82/82; tsc --noEmit exit 0.
+### Rozpracované / Pending
+- Draft PR #950 ostáva Draft. Merge/deploy/PROD čaká na FOUNDER GO.
+- Marketing Vercel preview pre `cursor/*` je v `apps/marketing/vercel.json` vypnutý (nemením).
+### Kľúčové súbory zmenené
+- `apps/marketing/lib/friday-deadline.ts`, `apps/marketing/public/friday-deadline.js`
+- `apps/marketing/public/index.html`, `apps/marketing/__tests__/friday-deadline.test.ts`, `index-html.test.ts`
+### Ďalší krok
+Founder: review draft PR #950; marketing preview len ak sa povolí `cursor/*` (samostatné GO). Merge nie.
+
+---
+
 ## Session 2026-11-12
 ### Dokončené
 - RAU route: GO_REQUIRED (keyword false-positive na never merge/deploy/secrets); vykonaný len draft PR rozsah.

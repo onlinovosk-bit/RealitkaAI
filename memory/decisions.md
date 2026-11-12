@@ -1,3 +1,13 @@
+## 2026-11-12 — BUILD: rolling Friday deadline na homepage (draft PR #950)
+**GO:** Cloud Agent follow-up na #950: odstrániť hardcoded `23. 10.` z countdown/sticky/FAQ; nahradiť piatkom 23:59:59 Europe/Bratislava (Po–Pia tento, So–Ne ďalší); Draft, never merge/deploy.
+**Čo:** `fridayDeadline()` v `apps/marketing/lib/friday-deadline.ts` + `public/friday-deadline.js`; `index.html` labels `.js-friday-label` (fallback `do piatka`); odpočet bez `expire()` / fixného `DEADLINE`. Ponuka 0 € / 49 € nezmenená. Žiadne slovo pilot.
+**Dôkaz:** `npx vitest run` apps/marketing 82/82 (vrátane Mon / Fri 23:59 / Sat 00:00 / Sun / DST); `npx tsc --noEmit` exit 0.
+**Nerobené:** merge, LIVE, zmena `vercel.json` `cursor/*` preview, publikovanie blogu.
+**BUILD/BACKLOG:** BUILD (dátum kampane v existujúcej homepage).
+**Rollback:** revert commitu na vetve.
+
+---
+
 ## 2026-11-12 — BUILD: SEO homepage + CRM robots + draft blog (draft PR)
 **GO:** Cloud Agent zadanie „Open ONE DRAFT pull request“ (explicitne never merge/deploy/secrets/Vercel).
 **Čo:** (1) www.revolis.ai title/meta/OG + von „do 23. 10.“ z hero. (2) app.revolis.ai privacy metadata + `robots.ts`. (3) Draft článok `crm-pre-realitnych-maklerov` (`published: false`).

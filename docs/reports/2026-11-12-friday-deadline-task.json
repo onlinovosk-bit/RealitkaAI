@@ -1,0 +1,40 @@
+{
+  "assertedState": "PR_READY",
+  "previousState": "REVIEWED",
+  "author": "cursor-cloud-agent",
+  "started": true,
+  "scope": [
+    "apps/marketing/**",
+    "apps/crm/src/app/**",
+    "apps/crm/src/lib/app-robots.ts",
+    "apps/crm/src/lib/app-robots.test.ts",
+    "apps/crm/tests/verification/**",
+    "apps/crm/supabase/.branches/",
+    "apps/crm/supabase/.branches/**",
+    "docs/**",
+    "memory/**"
+  ],
+  "criteria": [
+    {
+      "id": "AC1",
+      "text": "CRM robots policy and privacy metadata are covered by related vitest.",
+      "evidence": ["check:related-tests"]
+    },
+    {
+      "id": "AC2",
+      "text": "ESLint on changed CRM sources exits 0.",
+      "evidence": ["check:lint-changed"]
+    },
+    {
+      "id": "AC3",
+      "text": "Changed CRM TypeScript sources have adjacent tests.",
+      "evidence": ["check:related-tests", "check:lint-changed"]
+    }
+  ],
+  "independentReview": {
+    "status": "PASS",
+    "source": "repo_file",
+    "reviewer": "kontrolor",
+    "artifact": "docs/reports/2026-11-12-friday-deadline-review.md"
+  }
+}
