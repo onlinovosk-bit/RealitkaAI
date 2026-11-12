@@ -1,8 +1,8 @@
 import LegalPageShell from "@/components/legal/legal-page-shell";
 
 export const metadata = {
-  title: "Privacy Policy | Revolis.AI",
-  description: "Zásady ochrany osobných údajov pre Revolis.AI.",
+  title: "Ochrana osobných údajov | Revolis.ai",
+  description: "Zásady ochrany osobných údajov služby Revolis.ai pre realitných maklérov.",
 };
 
 export default function PrivacyPolicyPage() {
