@@ -32,8 +32,11 @@ export interface AgentDraftInput {
     costEur?:      number | null
     creditsSpent?: number | null
     model?:        string | null
+    latencyMs?:    number | null
     variant?:      string | null
   }
+  /** When true, failed ai_action_audit insert throws (paid LLM path). */
+  auditStrict?: boolean
 }
 
 /**
@@ -80,24 +83,40 @@ export async function insertAgentDraft(
   })
   if (error) return { ok: false, error: error.message }
 
-  await logAiAction({
-    action:         d.auditAction,
-    agencyId:       d.agencyId,
-    leadId:         d.leadId,
-    profileId:      d.profileId ?? null,
-    actionKind:     'ai_suggested',
-    channel:        d.channel === 'sms' ? 'sms' : 'email',
-    subjectPreview: d.subject,
-    bodyText:       d.body,
-    ...d.auditExtras,
-    meta: {
-      agent_id:        d.agentId,
-      prompt_version:  d.promptVersion,
-      correlation_id:  correlationId,
-      approval_state:  'pending_human',
-      planned_channel: d.channel,
-    },
-  }).catch((e) => console.error(`[insertAgentDraft] audit ${d.agentId}:`, e))
+  try {
+    const auditResult = await logAiAction(
+      {
+        action:         d.auditAction,
+        agencyId:       d.agencyId,
+        leadId:         d.leadId,
+        profileId:      d.profileId ?? null,
+        actionKind:     'ai_suggested',
+        channel:        d.channel === 'sms' ? 'sms' : 'email',
+        subjectPreview: d.subject,
+        bodyText:       d.body,
+        costEur:        d.auditExtras?.costEur,
+        creditsSpent:   d.auditExtras?.creditsSpent,
+        model:          d.auditExtras?.model,
+        latencyMs:      d.auditExtras?.latencyMs,
+        variant:        d.auditExtras?.variant,
+        meta: {
+          agent_id:        d.agentId,
+          prompt_version:  d.promptVersion,
+          correlation_id:  correlationId,
+          approval_state:  'pending_human',
+          planned_channel: d.channel,
+          telemetry_source: d.auditExtras?.model ? 'llm' : 'fallback',
+        },
+      },
+      d.auditStrict ? { strict: true } : undefined,
+    )
+    if (d.auditStrict && !auditResult.ok) {
+      throw new Error(`[insertAgentDraft] audit failed: ${auditResult.error}`)
+    }
+  } catch (e) {
+    if (d.auditStrict) throw e
+    console.error(`[insertAgentDraft] audit ${d.agentId}:`, e)
+  }
 
   return { ok: true, correlationId, activityId }
 }

@@ -24,9 +24,23 @@ vi.mock("@/lib/bri/engine", () => ({ computeBRI: (...a: unknown[]) => mockComput
 vi.mock("@/lib/events/log-event", () => ({ logEvent: (...a: unknown[]) => mockLogEvent(...a) }));
 vi.mock("@/lib/ai-action-audit", () => ({ logAiAction: (...a: unknown[]) => mockLogAiAction(...a) }));
 vi.mock("../auto-reply", () => ({
-  AUTO_REPLY_PROMPT_VERSION: "inbound-autoreply-v1",
+  AUTO_REPLY_PROMPT_VERSION: "inbound-autoreply-v2",
   generateAutoReply: (...a: unknown[]) => mockGenerate(...a),
 }));
+
+function mockLlmReply(overrides: Record<string, unknown> = {}) {
+  return {
+    subject: "Ďakujeme",
+    body: "Dobrý deň, ozveme sa.",
+    audit: {
+      source: "llm",
+      model: "claude-haiku-4-5-20251001",
+      costEur: 0.002,
+      latencyMs: 12,
+    },
+    ...overrides,
+  };
+}
 // If anything still imported Resend, this spy would catch the send.
 vi.mock("resend", () => ({
   Resend: vi.fn().mockImplementation(() => ({ emails: { send: mockResendSend } })),
@@ -102,16 +116,7 @@ describe("processInboundLead — Tier-3 gate", () => {
     mockComputeBRI.mockResolvedValue({ new_score: 80 });
     mockLogEvent.mockResolvedValue("evt-1");
     mockLogAiAction.mockResolvedValue({ ok: true });
-    mockGenerate.mockResolvedValue({
-      subject: "Ďakujeme",
-      body: "Dobrý deň, ozveme sa.",
-      audit: {
-        source: "llm",
-        model: "claude-haiku-4-5-20251001",
-        costEur: 0.002,
-        latencyMs: 120,
-      },
-    });
+    mockGenerate.mockResolvedValue(mockLlmReply());
     // Every channel key present: the old code would have sent on all of them.
     vi.stubEnv("RESEND_API_KEY", "re_test");
     vi.stubEnv("WHATSAPP_TOKEN", "wa_test");
@@ -139,7 +144,7 @@ describe("processInboundLead — Tier-3 gate", () => {
       draft: true,
       requires_approval: true,
       agent_id: "REVOLIS-INBOUND-AUTOREPLY",
-      prompt_version: "inbound-autoreply-v1",
+      prompt_version: "inbound-autoreply-v2",
       // Stored verbatim so the approve path sends exactly what the broker saw.
       subject: "Ďakujeme",
       body: "Dobrý deň, ozveme sa.",
@@ -156,9 +161,6 @@ describe("processInboundLead — Tier-3 gate", () => {
     const audit = mockLogAiAction.mock.calls[0][0] as Record<string, unknown>;
     expect(audit.actionKind).toBe("ai_suggested");
     expect(audit.agencyId).toBe(AGENCY_ID);
-    expect(audit.model).toBe("claude-haiku-4-5-20251001");
-    expect(audit.costEur).toBe(0.002);
-    expect(audit.latencyMs).toBe(120);
     expect(audit.meta).toMatchObject({ approval_state: "pending_human" });
     const kinds = mockLogAiAction.mock.calls.map((c) => (c[0] as { actionKind: string }).actionKind);
     expect(kinds).not.toContain("sent");

@@ -10,6 +10,16 @@ vi.mock("@/lib/ai/claude", () => ({
   extractJson: <T,>(text: string) => JSON.parse(text) as T,
 }));
 
+vi.mock("@/lib/ai/prompt-cache", () => ({
+  cachedSystem: (s: string) => s,
+}));
+
+vi.mock("@/lib/privacy/minimize", () => ({
+  AGENT_PLACEHOLDER: "__AGENT__",
+  NAME_PLACEHOLDER: "__NAME__",
+  restoreName: (t: string) => t,
+}));
+
 vi.mock("@/lib/ai/llm-usage-cost", () => ({
   estimateClaudeCostEur: () => 0.00123,
 }));
@@ -41,14 +51,14 @@ describe("generateAutoReply telemetry", () => {
   it("does not invent cost on timeout fallback", async () => {
     callClaudeMock.mockImplementation(
       () => new Promise(() => {
-        /* never resolves — withAiTimeout wins */
+        /* never resolves */
       }),
     );
 
-    const out = await generateAutoReply({
-      leadName: "Ján",
-      source: "web",
-    });
+    const out = await generateAutoReply(
+      { leadName: "Ján", source: "web" },
+      { timeoutMs: 30 },
+    );
 
     expect(out.audit.source).toBe("fallback");
     expect(out.audit.model).toBeNull();

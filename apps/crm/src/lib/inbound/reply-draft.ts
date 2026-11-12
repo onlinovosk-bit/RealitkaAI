@@ -98,6 +98,14 @@ export async function draftInboundReply(d: InboundReplyDraftInput): Promise<Inbo
       notes:     ['Kanál: email', `Príjemca: ${recipient}`],
     },
     auditAction: 'ai_email',
+    auditExtras: reply.audit
+      ? {
+          model: reply.audit.model,
+          costEur: reply.audit.costEur,
+          latencyMs: reply.audit.latencyMs,
+        }
+      : undefined,
+    auditStrict: reply.audit?.source === 'llm',
   })
   if (!draft.ok) {
     console.error(`[draftInboundReply] ${d.activitySource} draft insert failed:`, draft.error)
