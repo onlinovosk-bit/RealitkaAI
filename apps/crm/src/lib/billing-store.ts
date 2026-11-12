@@ -476,17 +476,21 @@ export async function getCurrentBillingStatus(): Promise<CurrentBillingStatus> {
 
 /**
  * Predplatné, ktoré má `trialGraceFrom` / saas-ops brána vyhodnocovať.
- * Poradie = priorita (aktívne pred past_due pred incomplete).
- * Zámerne VYNECHÁVA `canceled` / `incomplete_expired`: tie nie sú „aktuálne
- * predplatné", len leftover pri `status: "all"`. Fallback na `data[0]` by z nich
- * urobil `hasSubscription: true` a fakturovaného klienta po triali zamkol.
+ * Poradie = priorita (aktívne pred past_due).
+ * Zámerne VYNECHÁVA `canceled` / `incomplete_expired` / `incomplete`:
+ * - canceled / incomplete_expired — leftover po zrušení / expirovanom checkoute
+ * - incomplete — rozpracovaný Checkout (platba ešte neprebehla); rovnaká trieda
+ *   leftoveru ako incomplete_expired. Keby ostal „relevantný“, fakturovaný
+ *   `manual_plan` klient s login e-mailom zhodným so Stripe Customer by dostal
+ *   `hasSubscription: true` → `limited`, hoci `paysOutsideStripe` je true
+ *   (trialGraceFrom pri hasSubscription ignoruje manual_plan).
+ * Fallback na `data[0]` je zakázaný — pozri #938.
  */
 const RELEVANT_SUBSCRIPTION_STATUSES = [
   "active",
   "trialing",
   "past_due",
   "unpaid",
-  "incomplete",
 ] as const;
 
 export function pickRelevantStripeSubscription<
