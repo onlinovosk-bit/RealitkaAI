@@ -1,6 +1,9 @@
+import { readFileSync } from 'fs'
+import { resolve } from 'path'
 import { describe, expect, it } from 'vitest'
 import robots, { marketingSitemapUrl } from '../app/robots'
 import sitemap from '../app/sitemap'
+import { CRM_ARTICLE_SLUG } from '../lib/blog'
 import {
   MARKETING_SITE_ORIGIN,
   PUBLIC_SITEMAP_PATHS,
@@ -56,5 +59,19 @@ describe('sitemap()', () => {
     expect(urls.some((url) => url.includes('/zakulisie') || url.includes('/api/') || url.includes('app.revolis.ai'))).toBe(
       false,
     )
+    expect(PUBLIC_SITEMAP_PATHS).not.toContain(`/blog/${CRM_ARTICLE_SLUG}`)
+  })
+})
+
+describe('homepage metadata', () => {
+  it('keeps the App Router layout title and description in Slovak without the expired deadline', () => {
+    const layout = readFileSync(resolve(__dirname, '../app/layout.tsx'), 'utf-8')
+    expect(layout).toContain(
+      "title: 'Revolis.ai – AI CRM pre realitných maklérov | Inzerát hotový za minúty'",
+    )
+    expect(layout).toContain(
+      'AI CRM pre realitných maklérov na Slovensku. Dopyty z portálových e-mailov sa uložia samé, text inzerátu pripraví AI. 14 dní zadarmo, bez karty. Ak nebudete spokojní, do 30 dní vrátime 100 % peňazí.',
+    )
+    expect(layout).not.toMatch(/23\. ?10/)
   })
 })
