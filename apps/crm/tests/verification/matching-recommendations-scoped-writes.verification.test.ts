@@ -42,23 +42,35 @@ describe("[verification] Matching + recommendations scoped writes (R3 remediatio
     expect(salesFunnelStore).toContain("resolveTenantSupabase(scoped)");
   });
 
-  it("recalculateAllRecommendations fail-closed before clear on empty or LIST_MAX lead page", () => {
+  it("recalculateAllRecommendations fail-closed before persist on empty or LIST_MAX lead page", () => {
     const recommendationsStore = readFileSync(join(CRM_ROOT, "src/lib/recommendations-store.ts"), "utf8");
 
     expect(recommendationsStore).toContain("LEADS_LIST_MAX");
     expect(recommendationsStore).toContain("leadInventoryUnsafeForGlobalClear");
     expect(recommendationsStore).toMatch(
-      /leadInventoryUnsafeForGlobalClear\(leads\.length\)[\s\S]*clearRecommendations/,
+      /leadInventoryUnsafeForGlobalClear\(leads\.length\)[\s\S]*persistRecalculatedRecommendations/,
     );
   });
 
-  it("recalculateAllRecommendations fail-closed before clear when match page hits MATCHES_READ_MAX", () => {
+  it("recalculateAllRecommendations fail-closed before persist when match page hits MATCHES_READ_MAX", () => {
     const recommendationsStore = readFileSync(join(CRM_ROOT, "src/lib/recommendations-store.ts"), "utf8");
 
     expect(recommendationsStore).toContain("MATCHES_READ_MAX");
     expect(recommendationsStore).toContain("matchInventoryUnsafeForGlobalClear");
     expect(recommendationsStore).toMatch(
-      /matchInventoryUnsafeForGlobalClear\(matches\.length\)[\s\S]*clearRecommendations/,
+      /matchInventoryUnsafeForGlobalClear\(matches\.length\)[\s\S]*persistRecalculatedRecommendations/,
+    );
+  });
+
+  it("recommendation recalculate inserts before orphan delete (no wipe on insert failure)", () => {
+    const recommendationsStore = readFileSync(join(CRM_ROOT, "src/lib/recommendations-store.ts"), "utf8");
+
+    expect(recommendationsStore).toContain("persistRecalculatedRecommendations");
+    expect(recommendationsStore).toMatch(
+      /\.insert\(payload\)[\s\S]*\.select\("id"\)[\s\S]*\.delete\(\)[\s\S]*\.in\("id", orphanIds\)/,
+    );
+    expect(recommendationsStore).not.toMatch(
+      /await clearRecommendations\(scoped\);\s*\n\s*const rows = leads\.flatMap/,
     );
   });
 
