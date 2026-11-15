@@ -951,7 +951,9 @@ describe("subscription lifecycle for v3 prices (kritériá 4, 5)", () => {
     expect(db.agencies[0].account_tier).toBe("enterprise");
     expect(monthlyGrantAmountForAgency(db.agencies[0] as never)).toBe(0);
 
-    for (const status of ["unpaid", "canceled", "incomplete_expired"]) {
+    // unpaid must stay unpaid (LIVE) so a second plan Checkout cannot open beside
+    // the still-open Stripe subscription. Terminal statuses normalize to canceled.
+    for (const status of ["unpaid", "canceled", "incomplete_expired"] as const) {
       db.agencies = [V2_AGENCY()];
       db.agencyUpdates = [];
       db.profileUpdates = [];
@@ -961,12 +963,40 @@ describe("subscription lifecycle for v3 prices (kritériá 4, 5)", () => {
         subEvent("customer.subscription.updated", { status, ...items([SEAT, 10]) }),
       );
       expect(db.agencies[0]).toMatchObject({
-        subscription_status: "canceled",
+        subscription_status: status === "unpaid" ? "unpaid" : "canceled",
         account_tier: "free",
         pack_credits: 0,
       });
       expect(monthlyGrantAmountForAgency(db.agencies[0] as never)).toBe(0);
     }
+  });
+
+  it("unpaid revoke still blocks a second plan Checkout (no duplicate Stripe sub)", async () => {
+    vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_synthetic");
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://app.example.test");
+    h.getCurrentUser.mockResolvedValue({ id: "user-1", email: "broker@example.test" });
+    h.getCurrentProfile.mockResolvedValue({ id: "profile-1", agency_id: AGENCY });
+    h.sessionsCreate.mockClear();
+    liveSub("unpaid", [SEAT, 10]);
+    db.agencies = [V2_AGENCY()];
+    await applyPricingV2SubscriptionEvent(
+      subEvent("customer.subscription.updated", { status: "unpaid", ...items([SEAT, 10]) }),
+    );
+    expect(db.agencies[0]).toMatchObject({
+      subscription_status: "unpaid",
+      account_tier: "free",
+      pricing_model: "v2",
+      stripe_subscription_id: "sub_1",
+    });
+    expect(hasLivePricingV2Subscription(db.agencies[0])).toBe(true);
+    expect(
+      await createPricingV2CheckoutSession({
+        checkoutType: "pricing_v2",
+        users: 3,
+        packCredits: 100,
+      }),
+    ).toEqual({ kind: "subscription_exists" });
+    expect(h.sessionsCreate).not.toHaveBeenCalled();
   });
 
   it("recovery: active again restores the grant", async () => {

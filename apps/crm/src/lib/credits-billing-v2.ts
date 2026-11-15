@@ -679,14 +679,29 @@ async function loadLiveSubscriptionForEvent(
   }
 }
 
+/**
+ * Downgrade paid v2 entitlement to free. `subscription_status` must stay honest:
+ * mapping Stripe `unpaid` → DB `canceled` used to clear the LIVE lock in
+ * `hasLiveSubscription` while the Stripe sub was still open → a second Checkout
+ * could create a duplicate subscription beside the unpaid one.
+ * Keep `unpaid` as `unpaid` (still LIVE → `subscription_exists`). Terminal
+ * `canceled` / `incomplete_expired` normalize to `canceled`.
+ */
 async function revokePricingV2Agency(
   supabase: NonNullable<ReturnType<typeof createServiceRoleClient>>,
   agencyId: string,
   now: string,
+  stripeStatus: string = "canceled",
 ): Promise<boolean> {
+  const subscriptionStatus = stripeStatus === "unpaid" ? "unpaid" : "canceled";
   const { error } = await supabase
     .from("agencies")
-    .update({ subscription_status: "canceled", account_tier: "free", pack_credits: 0, billing_updated_at: now })
+    .update({
+      subscription_status: subscriptionStatus,
+      account_tier: "free",
+      pack_credits: 0,
+      billing_updated_at: now,
+    })
     .eq("id", agencyId);
   if (error) {
     console.warn("[pricing-v2] cancel update failed:", error.message);
@@ -742,7 +757,7 @@ export async function applyPricingV2SubscriptionEvent(
   if (event.type === "customer.subscription.deleted") {
     // Zrušenie: stav canceled (cron ani fulfillment už negrantuje) a návrat na free, ako legacy forceFree.
     // Typ udalosti je zdroj pravdy — retrieve môže ešte chvíľu vrátiť starší stav.
-    return revokePricingV2Agency(supabase, agency.id as string, now);
+    return revokePricingV2Agency(supabase, agency.id as string, now, "canceled");
   }
 
   if (event.type !== "customer.subscription.updated") return true;
@@ -756,10 +771,11 @@ export async function applyPricingV2SubscriptionEvent(
     return false;
   }
 
-  // Zrušené / unpaid / incomplete_expired: rovnaký downgrade ako pri `deleted`.
+  // unpaid / canceled / incomplete_expired: downgrade na free (granty stop).
+  // unpaid MUST remain unpaid in DB so hasLiveSubscription still blocks a second plan Checkout.
   // Stale `updated` so statusom `active` NESMIE znova aktivovať platený plán.
   if (REVOKED_SUBSCRIPTION_STATUSES.has(status)) {
-    return revokePricingV2Agency(supabase, agency.id as string, now);
+    return revokePricingV2Agency(supabase, agency.id as string, now, status);
   }
 
   // updated: stav predplatného sa prenáša vždy (past_due = žiadne ďalšie granty).
