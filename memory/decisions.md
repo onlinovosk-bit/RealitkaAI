@@ -1,3 +1,13 @@
+## 2026-11-16 — BUILD: SEO audit interné odkazy + JSON-LD + blog intro + 2 drafty (draft PR)
+**GO:** Founder Cloud Agent 16. 11. 2026 — jeden draft PR v `apps/marketing`; never merge/deploy; nemeň `vercel.json` / Vercel / 307→308 / Ahrefs.
+**Čo:** (1) interné odkazy `/blog` z homepage header+footer, `/demo`, `/balik`; článok ceny → `/demo`. (2) Homepage meta+og description (`HOMEPAGE_DESCRIPTION`; `zdarma`→`zadarmo`). (3) JSON-LD Organization+WebSite, CollectionPage, BreadcrumbList; žiadne Offer/AggregateRating. (4) Úvod `/blog` 123 slov. (5) Drafty `crm-pre-realitnych-maklerov-ako-vybrat` a `ai-inzerat-nehnutelnosti` (`published: false`); starý `crm-pre-realitnych-maklerov` ostáva.
+**Engineering justification (nový `lib/json-ld.ts`):** Trigger — verejná schema.org vrstva na existujúcich stránkach. Decision path — new-code helper + reuse blog katalógu/homepage HTML. Alternatives — JSON-LD natvrdo v každej stránke (duplicita, ťažší zákaz Offer). Why not reuse — Article JSON-LD v `[slug]` existuje, Organization/WebSite/CollectionPage/BreadcrumbList nie. Contradiction check: none.
+**Dôkaz:** marketing vitest 89/89; tsc --noEmit 0; `next build --webpack`; draft slug 404; CRM `marketing-blog.verification` 1/1; screenshoty `/opt/cursor/artifacts/seo-*.png`. Report `docs/reports/2026-11-16-seo-audit.md`.
+**Nerobené:** merge, LIVE, `vercel.json`, publikovanie (`published: true`), 307→308, Ahrefs.
+**BUILD/BACKLOG:** BUILD (SEO obsah na existujúcich plochách). RAU keyword GO_REQUIRED na `published` — drafty ostali false.
+**Rollback:** revert vetvy `cursor/seo-audit-blog-jsonld-611f`.
+
+---
 ## 2026-11-12 — BUILD: rolling Friday deadline na homepage (draft PR #950)
 **GO:** Cloud Agent follow-up na #950: odstrániť hardcoded `23. 10.` z countdown/sticky/FAQ; nahradiť piatkom 23:59:59 Europe/Bratislava (Po–Pia tento, So–Ne ďalší); Draft, never merge/deploy.
 **Čo:** `fridayDeadline()` v `apps/marketing/lib/friday-deadline.ts` + `public/friday-deadline.js`; `index.html` labels `.js-friday-label` (fallback `do piatka`); odpočet bez `expire()` / fixného `DEADLINE`. Ponuka 0 € / 49 € nezmenená. Žiadne slovo pilot.

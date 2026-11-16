@@ -15,7 +15,9 @@ concurrency:
 jobs:
   ci:
     name: Lint, test, build
-    runs-on: ubuntu-latest
+    # Playwright 1.59.1 does not install Chromium on ubuntu-latest (26.04) as of 2026-11-16.
+    # Pin 24.04 so the required smoke step can run; bump with Playwright, not with latest.
+    runs-on: ubuntu-24.04
     timeout-minutes: 35
 
     # Pridanie `permissions` token OBMEDZÍ presne na vymenované práva, takže

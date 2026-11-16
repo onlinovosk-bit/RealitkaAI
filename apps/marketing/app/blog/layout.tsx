@@ -5,14 +5,14 @@ import './blog.css'
 export const metadata: Metadata = {
   title: 'Blog — Revolis',
   description:
-    'Čo sa mení na slovenskom realitnom trhu a ako to ovplyvní nábery, hypotéky a rozhodovanie kupujúcich.',
+    'Blog pre maklérov: slovenský trh nehnuteľností, hypotéky a sadzby, legislatíva a praktické tipy k dopytom a inzerátu.',
   alternates: {
     canonical: '/blog',
   },
   openGraph: {
     title: 'Blog — Revolis',
     description:
-      'Čo sa mení na slovenskom realitnom trhu a ako to ovplyvní nábery, hypotéky a rozhodovanie kupujúcich.',
+      'Blog pre maklérov: slovenský trh nehnuteľností, hypotéky a sadzby, legislatíva a praktické tipy k dopytom a inzerátu.',
     type: 'website',
     locale: 'sk_SK',
     siteName: 'Revolis',
