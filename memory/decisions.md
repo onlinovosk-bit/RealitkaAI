@@ -1,3 +1,11 @@
+## 2026-11-16 — BUILD: otázka 9 — režim len na čítanie (draft PR #956)
+**GO:** Founder 16. 11. 2026, 11:38 — nahradiť „Po skončení sa skúšobná verzia sama vypne a nič sa neúčtuje automaticky.“ vetou „Po skončení skúšobná verzia prejde do režimu len na čítanie a nič sa neúčtuje automaticky.“
+**Čo:** Presná náhrada v Q9 checklistu a v reportoch tohto PR. Trial kód ostáva `limited` → `read_only`.
+**Dôkaz:** marketing vitest 89/89; `tsc --noEmit` 0.
+**Nerobené:** published:true, merge, LIVE. Hypotékový článok a register copy nemené.
+**Rollback:** revert commitu na `cursor/merge-crm-blog-drafts-611f`.
+
+---
 ## 2026-11-16 — BUILD: otázka 9 checklistu — skúšobná doba (draft PR #956)
 **GO:** Founder 16. 11. 2026 — „uvítacie obdobie“ von; overiť „sama vypne“ v trial kóde.
 **Čo:** `uvítacieho obdobia` → `skúšobnej doby`. Veta o vypnutí ostáva: `trialGraceFrom` po 14 dňoch → `limited` / read-only, zápis cez `requireActiveAppAccess`; bez Stripe ID v bootstrape.

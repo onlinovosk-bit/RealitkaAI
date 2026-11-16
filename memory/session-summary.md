@@ -1,3 +1,15 @@
+## Session 2026-11-16 (Q9 read-only wording)
+### Dokončené
+- Otázka 9: „sama vypne“ → „prejde do režimu len na čítanie“. Draft #956, published: false.
+### Rozpracované / Pending
+- Merge/LIVE/`published: true` čaká na GO.
+### Kľúčové súbory zmenené
+- `apps/marketing/lib/blog.ts` otázka 9
+- `docs/reports/2026-11-16-crm-blog-q9-copy.md`, `docs/reports/2026-11-16-crm-blog-merge.md`
+### Ďalší krok
+Founder: review nového znenia Q9 v #956.
+
+---
 ## Session 2026-11-16 (otázka 9 copy)
 ### Dokončené
 - Checklist Q9: skúšobná doba namiesto uvítacieho obdobia; „sama vypne“ overené v trial kóde (read-only).

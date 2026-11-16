@@ -7,7 +7,7 @@
 
 Výraz „uvítacie obdobie“ je vyhradený na iný koncept. 14-dňová skúška sa tak nenazýva.
 
-## 2) „Po skončení sa skúšobná verzia sama vypne“
+## 2) „Po skončení skúšobná verzia prejde do režimu len na čítanie“
 
 **Verdikt: FAKT, veta ostáva.** Kód po 14 dňoch vypne zápis (read-only), účet sa nemaže, nič sa nestrhne.
 
@@ -26,4 +26,4 @@ Presnosť slova „vypne“: účet sa **nevymaže**. Vypne sa zápis. To je ten
 
 ## Výsledné znenie otázky 9
 
-Revolis môžete vyskúšať 14 dní zadarmo, bez platobnej karty. Po skončení sa skúšobná verzia sama vypne a nič sa neúčtuje automaticky. Overte, či naozaj nemusíte zadávať kartu a čo sa stane s dátami po skončení skúšobnej doby.
+Revolis môžete vyskúšať 14 dní zadarmo, bez platobnej karty. Po skončení skúšobná verzia prejde do režimu len na čítanie a nič sa neúčtuje automaticky. Overte, či naozaj nemusíte zadávať kartu a čo sa stane s dátami po skončení skúšobnej doby.
