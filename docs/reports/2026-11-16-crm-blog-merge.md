@@ -1,13 +1,13 @@
 # Zlúčenie draft článkov CRM (16. 11. 2026)
 
 **Vetva:** `cursor/merge-crm-blog-drafts-611f`
-**PR:** (doplní sa po otvorení draft PR)
+**PR:** https://github.com/onlinovosk-bit/RealitkaAI/pull/956 (Draft)
 **GO:** Founder 16. 11. 2026 — zlúčiť `crm-pre-realitnych-maklerov` do `crm-pre-realitnych-maklerov-ako-vybrat`; oba nové články `published: false`; zverejnenie NEMÁ GO; never merge/deploy; nemeň `vercel.json` ani CI.
 **Base:** `main` @ `933e65b1` (PR #954).
 
 ## Odkaz na PR
 
-Doplní sa po otvorení draft PR.
+https://github.com/onlinovosk-bit/RealitkaAI/pull/956 (Draft) — vetva `cursor/merge-crm-blog-drafts-611f`.
 
 ## Čo sa zmenilo
 
