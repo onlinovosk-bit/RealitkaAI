@@ -53,7 +53,7 @@ https://github.com/onlinovosk-bit/RealitkaAI/pull/956 (Draft) — vetva `cursor/
 | `npx tsc --noEmit` apps/marketing | exit 0 |
 | `marketing-blog.verification.test.ts` | 1/1 PASS |
 
-CI na drafte PR — sledovať required check; merge nie.
+CI na heade `7afdc06d`: **Lint, test, build** pass 7m50s ([beh](https://github.com/onlinovosk-bit/RealitkaAI/actions/runs/43841421308)). Merge nie.
 
 ## Výsledné znenie zlúčeného článku (1029 slov)
 

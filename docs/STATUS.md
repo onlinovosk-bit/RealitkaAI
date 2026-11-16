@@ -63,7 +63,7 @@ Cieľ: Draft PR — zlúčiť starý CRM článok do checklistu
 - [x] 1 — Presunúť overené tvrdenia zo starého draftu do checklistu (1029 slov)
 - [x] 2 — Odstrániť `crm-pre-realitnych-maklerov` z `lib/blog.ts` a testov
 - [x] 3 — Marketing vitest 89/89, tsc 0; oba články `published: false`
-- [ ] 4 — Draft PR otvorený, CI na heade zelené (merge/deploy nie)
+- [x] 4 — Draft PR #956 otvorený, CI na heade zelené (merge/deploy nie)
 <!-- SESSION:END -->
 
 ## Hotové 2026-10-07 — s dôkazom (REALVIA-SEC-01)
