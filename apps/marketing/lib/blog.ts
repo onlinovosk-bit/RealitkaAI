@@ -13,8 +13,6 @@ export const BLOG_INDEX_PATH = '/blog' as const
 
 export const FIRST_ARTICLE_SLUG = 'ceny-nehnutelnosti-2026-sadzby-nove-ltv' as const
 
-export const CRM_ARTICLE_SLUG = 'crm-pre-realitnych-maklerov' as const
-
 export const CRM_CHECKLIST_ARTICLE_SLUG = 'crm-pre-realitnych-maklerov-ako-vybrat' as const
 
 export const AI_LISTING_ARTICLE_SLUG = 'ai-inzerat-nehnutelnosti' as const
@@ -117,89 +115,6 @@ Ak chcete najprv vidieť, ako to vyzerá, [pozrite si ukážku Revolis](/demo). 
 *Zdroje: Národná banka Slovenska (Rýchly komentár zo 4. 8. 2026, Makroprudenciálny komentár – september 2026, RRE dashboard aktualizovaný 16. 10. 2026, tlačová správa z 30. 9. 2026), Európska centrálna banka (rozhodnutie z 10. 9. 2026). Ceny NBS sú priemerné ponukové ceny (United Classifieds, NARKS, NBS).*`,
   },
   {
-    slug: CRM_ARTICLE_SLUG,
-    title: 'CRM pre realitných maklérov: čo musí vedieť kancelária na Slovensku',
-    description:
-      'CRM pre realitných maklérov na Slovensku: dopyty z portálov, evidencia kontaktov a nehnuteľností, text inzerátu a prechod z CSV/XLSX.',
-    keyword: 'CRM pre realitných maklérov',
-    author: 'Andrej Ondruš',
-    date: '2026-11-12',
-    published: false,
-    body: `# CRM pre realitných maklérov na Slovensku
-
-Kancelária, ktorá hľadá **CRM pre realitných maklérov**, zvyčajne nerieši ďalší program na učenie. Rieši to, že dopyty ostávajú v schránke, kontakty v tabuľke a inzerát sa píše ručne, kým ide maklér na obhliadku. Tento text je praktický prehľad: čo musí kancelária na Slovensku vedieť, kým si CRM vyberie, a čo z toho Revolis naozaj robí.
-
-## Prečo tabuľka a e-mailová schránka nestačia
-
-Tabuľka je dobrá na zoznam. Schránka je dobrá na správy. Ani jedna z nich nie je evidencia obchodu.
-
-Keď dopyt príde na spoločný e-mail kancelárie, ostane tam, kým ho niekto neprečíta a neprepíše. Ak ho asistentka vloží do hárku a maklér volá z telefónu, vzniknú tri oddelené záznamy: správa v schránke, riadok v tabuľke a pamäť makléra. V piatok popoludní, keď klient čaká na termín, nie je jasné, ktorý z nich platí.
-
-Tabuľka nevie, z ktorého portálu dopyt prišiel, ku ktorému inzerátu patrí a či už niekto volal. Schránka nevie, ktorú nehnuteľnosť máte v ponuke. **CRM pre realitných maklérov** má spájať tri veci: správu, človeka a nehnuteľnosť. Ak to nerobí, ostávate pri prepisovaní.
-
-Prepisovanie nie je drobnosť. Medzi doručením mailu a prvým hovorom vzniká medzera, v ktorej záujemca čaká. Kým hľadáte číslo v schránke, kolega z inej kancelárie už môže mať termín. Tabuľka túto medzeru nezmenší — len eviduje, že ste niečo neskôr dopísali.
-
-## Dopyty z realitných portálov
-
-Na Slovensku chodia dopyty predovšetkým e-mailom z inzertných portálov. Maklér ich potom ručne kopíruje: meno, telefón, odkaz na inzerát, veta od záujemcu. To je presne tá práca, ktorú tabuľka a schránka nezvládnu spoločne.
-
-Revolis vie tieto portálové e-maily prijať a uložiť ako dopyt. Rozpozná bežné slovenské portály podľa textu správy alebo podľa odosielateľa — Nehnuteľnosti.sk, TopReality, Reality.sk, Bazoš aj Byty.sk — a z tela správy vyberie kontakt, identifikátor inzerátu a text dopytu. Dopyt teda nemusíte prepisovať zo schránky do hárku.
-
-Čo to neznamená: Revolis za vás neodpovie namiesto vás bez vášho rozhodnutia. Správa ostáva vo vašej kancelárii. Úlohou CRM je dopyt uložiť tak, aby ste ho našli pri kontakte a pri nehnuteľnosti, nie aby žil iba v doručenej pošte.
-
-Ak si CRM vyberáte, overte si to na konkrétnom maili z portálu, ktorý naozaj používate. Pýtajte sa: príde správa a v evidencii pribudne dopyt s menom a telefónom, alebo ostane v schránke ako doteraz?
-
-## Evidencia kontaktov a nehnuteľností
-
-CRM pre realitných maklérov musí evidovať dve knihy naraz.
-
-Prvá je kniha ľudí: záujemcovia, predávajúci, volania, poznámky. V Revolise je to zoznam klientov a príležitostí kancelárie — meno, kontakt, zdroj, stav. Bez toho viete len to, čo je v schránke dnes, a zajtra to znova hľadáte.
-
-Druhá je kniha nehnuteľností: byty, domy, pozemky, lokalita, parametre, stav ponuky. V Revolise má kancelária evidenciu nehnuteľností so zoznamom, filtrami a kartou ponuky. Text inzerátu a dopyt z portálu dávajú zmysel až vtedy, keď viete, ku ktorej nehnuteľnosti patria.
-
-Ak evidujete len kontakty, viete komu volať, ale neviete, o čo. Ak evidujete len inzeráty v priečinku s fotkami, viete čo ponúkate, ale neviete, kto sa ozval. Kancelária potrebuje oboje na jednom mieste, inak maklér ráno skladá obraz z mailu, z Excelu a z pamäte.
-
-Praktický test pred výberom: otvorte kartu človeka a kartu nehnuteľnosti. Vidíte históriu kontaktu pri človeku a parametre ponuky pri nehnuteľnosti? Ak nie, ostávate pri tabuľke, len v inom obale.
-
-## Text inzerátu
-
-Písanie inzerátu žerie čas, ktorý patrí na náber a obhliadku. Maklér má parametre: typ, lokalitu, výmeru, cenu, stav, vybavenie. Z nich treba zložiť text na portál a často aj na sociálne siete. Keď sa to robí z čistého papiera, inzerát ide von neskôr a náber čaká.
-
-Revolis má generátor inzerátu: zadáte parametre nehnuteľnosti a pripraví sa text na portál, Facebook, Instagram a e-mail. Text sa dá pred použitím upraviť a úpravy uložiť. Nie je to tlačidlo „zverejni na portál“ — je to príprava textu z údajov, ktoré v kancelárii už máte.
-
-Ak CRM sľubuje inzerát, overte dve veci. Po prvé, či text vzniká z parametrov, nie z vymysleného marketingu. Po druhé, či maklér text vidí a upraví skôr, ako ho niekam vloží. Generátor, ktorý sa nedá opraviť, je pre kanceláriu riziko, nie úspora.
-
-## Prechod z CSV/XLSX alebo z RealSoftu
-
-Nové CRM bez starých dát je prázdna skriňa. Kancelárie bežne prichádzajú s tabuľkou kontaktov alebo s exportom z doterajšieho systému. Ľudia prechádzajú aj z RealSoftu.
-
-Revolis má import príležitostí z CSV (Excel, Google Sheets) a sprievodcu univerzálneho importu, ktorý vie prečítať CSV aj súbor .xlsx. V sprievodcovi je medzi zdrojmi aj RealSoft: stĺpce sa mapujú na kontakty a súvisiace polia. Prechod teda nie je sľub, že to niekto niekedy prenesie, ale import, ktorý kancelária spustí vo vlastnom účte.
-
-Overte si pred výberom, či viete priniesť aspoň kontakty. Ak ostanú v starom systéme, budete prvý mesiac žiť v dvoch evidenciách a prepisovanie sa len presunie, nezmizne. CSV a XLSX sú praktický most z tabuľky; kto ide z RealSoftu, potrebuje, aby ten most v novom CRM existoval.
-
-## Čo overiť pred výberom CRM
-
-Pred rozhodnutím si kancelária overí šesť vecí, nie prezentáciu.
-
-- **Dopyty z portálových e-mailov.** Príde skutočný mail z portálu a uloží sa ako dopyt s kontaktom, alebo to ostane ručné prepisovanie?
-- **Kontakty.** Máte zoznam ľudí, nie len schránku?
-- **Nehnuteľnosti.** Máte kartu ponuky s parametrami, nie len priečinok s fotkami?
-- **Text inzerátu.** Vzniká z parametrov a dá sa upraviť pred použitím?
-- **Import.** Viete priniesť CSV, XLSX alebo export z RealSoftu bez toho, aby ste začínali od nuly?
-- **Skúška bez karty.** Revolis môžete vyskúšať 14 dní zadarmo, bez platobnej karty. Ak po nákupe nebudete spokojní, platí jediná garancia, ktorú uvádzame: **100 % peňazí späť do 30 dní**.
-
-Nepýtajte sa najprv na umelú inteligenciu. Pýtajte sa, kde dnes leží dopyt, kontakt a ponuka — a koľko prepisovania ubudne v prvý týždeň. Ak na to CRM nemá jasnú odpoveď, tabuľka a schránka ostanú hlavnou evidenciou aj po nákupe.
-
-## Čo to znamená pre makléra
-
-Ráno nemáte hľadať, ktorý mail ešte nikto neprepisal. Dopyt z portálu má byť v evidencii. Keď idete na náber, parametre nehnuteľnosti máte v karte a text inzerátu viete pripraviť z nich, nie z čistého papiera. Keď prechádzate z tabuľky alebo z RealSoftu, kontakty idú importom, nie ručným prepisovaním po večeroch.
-
-**CRM pre realitných maklérov** na Slovensku teda nie je tabuľka s krajším vzhľadom. Je to miesto, kde sa stretne schránka, človek a nehnuteľnosť — a kde maklérovi ostane čas na obhliadku.
-
-Ak to chcete skúsiť na vlastných dopytoch, Revolis je **14 dní zadarmo, bez platobnej karty**. Po skončení sa nič neúčtuje automaticky. Ak by ste neskôr neboli spokojní, platí **100 % peňazí späť do 30 dní**. [Vytvoriť účet na app.revolis.ai](https://app.revolis.ai/register)
-`,
-  },
-  {
     slug: CRM_CHECKLIST_ARTICLE_SLUG,
     title: 'Ako vybrať CRM pre realitných maklérov: 10 otázok pred rozhodnutím',
     description:
@@ -218,6 +133,8 @@ Hlavná otázka tohto checklistu je **ako vybrať CRM pre realitných maklérov*
 
 Porovnávanie programov podľa mena kancelárii nepomôže, ak nevie, ktorý problém má dnes. Maklér stratí čas tam, kde dopyt ostane v maili, inzerát sa píše z čistého papiera a kontakty žijú v súkromnom hárku. Checklist nižšie tie miesta pomenúva. Každú otázku overte na vlastných dátach, nie na ukážkovom účte s vymyslenými menami.
 
+Tabuľka je dobrá na zoznam. Schránka je dobrá na správy. Ani jedna z nich nie je evidencia obchodu. Keď dopyt príde na spoločný e-mail, ostane tam, kým ho niekto neprečíta a neprepíše. Ak ho asistentka vloží do hárku a maklér volá z telefónu, vzniknú tri oddelené záznamy: správa v schránke, riadok v tabuľke a pamäť makléra. V piatok popoludní, keď klient čaká na termín, nie je jasné, ktorý z nich platí. Medzi doručením mailu a prvým hovorom vzniká medzera, v ktorej záujemca čaká.
+
 Ak na otázku nedostanete jasnú odpoveď do niekoľkých minút, ostávate pri tom, čo už máte — schránke a tabuľke.
 
 ## 1. Kam dnes padne dopyt, keď maklér nie je pri počítači?
@@ -226,17 +143,23 @@ Opýtajte sa: príde správa z portálu a niekto v kancelárii ju nájde v evide
 
 ## 2. Uloží sa portálový e-mail ako dopyt s kontaktom?
 
-Na Slovensku chodia dopyty predovšetkým e-mailom. Revolis vie tieto správy prijať a uložiť ako dopyt: rozpozná bežné portály podľa textu alebo odosielateľa — Nehnuteľnosti.sk, TopReality, Reality.sk, Bazoš aj Byty.sk — a z tela vyberie kontakt, identifikátor inzerátu a text. To nie je tlačidlo na zverejnenie ponuky. Je to príjem dopytu do evidencie.
+Na Slovensku chodia dopyty predovšetkým e-mailom z inzertných portálov. Maklér ich inak ručne kopíruje: meno, telefón, odkaz na inzerát, veta od záujemcu. Revolis vie tieto správy prijať a uložiť ako dopyt: rozpozná bežné portály podľa textu alebo odosielateľa — Nehnuteľnosti.sk, TopReality, Reality.sk, Bazoš aj Byty.sk — a z tela vyberie kontakt, identifikátor inzerátu a text.
+
+To nie je tlačidlo na zverejnenie ponuky ani odpoveď namiesto vás. Správa ostáva vo vašej kancelárii. Úlohou CRM je dopyt uložiť tak, aby ste ho našli pri kontakte a pri nehnuteľnosti, nie aby žil iba v doručenej pošte.
 
 Test: ukážte skutočný mail z vášho portálu. Pribudne dopyt s menom a telefónom, alebo ostane v schránke?
 
 ## 3. Vidíte na karte človeka aj nehnuteľnosť?
 
-Výber CRM pre realitných maklérov padá často na to, že kancelária eviduje len ľudí, alebo len inzeráty. V Revolise je zoznam klientov a príležitostí — meno, kontakt, zdroj, stav — a zvlášť evidencia nehnuteľností so zoznamom, filtrami a kartou ponuky. Ak otvoríte kartu človeka a kartu ponuky a nevidíte históriu ani parametre, ostávate pri tabuľke v inom obale.
+CRM pre realitných maklérov musí evidovať dve knihy naraz. Prvá je kniha ľudí: záujemcovia, predávajúci, volania, poznámky. V Revolise je to zoznam klientov a príležitostí — meno, kontakt, zdroj, stav. Druhá je kniha nehnuteľností: byty, domy, pozemky, lokalita, parametre, stav ponuky. V Revolise má kancelária evidenciu so zoznamom, filtrami a kartou ponuky.
+
+Ak evidujete len kontakty, viete komu volať, ale neviete, o čo. Ak evidujete len inzeráty v priečinku s fotkami, viete čo ponúkate, ale neviete, kto sa ozval. Text inzerátu a dopyt z portálu dávajú zmysel až vtedy, keď viete, ku ktorej nehnuteľnosti patria.
+
+Praktický test: otvorte kartu človeka a kartu ponuky. Vidíte históriu kontaktu a parametre? Ak nie, ostávate pri tabuľke v inom obale.
 
 ## 4. Vzniká text inzerátu z parametrov, alebo z čistého papiera?
 
-Pýtajte sa, či text vzniká z typu, lokality, výmery, ceny, stavu a vybavenia, ktoré už máte. Revolis má generátor inzerátu: zadáte parametre a pripraví sa text na portál, Facebook, Instagram a e-mail. Nie je to automatické zverejnenie na portál.
+Pýtajte sa, či text vzniká z typu, lokality, výmery, ceny, stavu a vybavenia, ktoré už máte. Revolis má generátor inzerátu: zadáte parametre a pripraví sa text na portál, Facebook, Instagram a e-mail. Nie je to automatické zverejnenie na portál. Overte, že text vzniká z parametrov, nie z vymysleného marketingu.
 
 ## 5. Dá sa text pred použitím upraviť?
 
@@ -244,7 +167,11 @@ Generátor, ktorý sa nedá opraviť, je pre kanceláriu riziko. V Revolise sa t
 
 ## 6. Ako prenesiete kontakty, ktoré už máte?
 
-Nové CRM bez starých dát je prázdna skriňa. Revolis má import príležitostí z CSV a sprievodcu, ktorý prečíta CSV aj súbor .xlsx; medzi zdrojmi je aj RealSoft. Overte, či viete priniesť aspoň kontakty. Ak ostanú v starom systéme, prvý mesiac budete žiť v dvoch evidenciách.
+Nové CRM bez starých dát je prázdna skriňa. Kancelárie bežne prichádzajú s tabuľkou kontaktov alebo s exportom z doterajšieho systému. Ľudia prechádzajú aj z RealSoftu.
+
+Revolis má import príležitostí z CSV (Excel, Google Sheets) a sprievodcu, ktorý prečíta CSV aj súbor .xlsx. V sprievodcovi je medzi zdrojmi aj RealSoft: stĺpce sa mapujú na kontakty a súvisiace polia. Prechod teda nie je sľub, že to niekto niekedy prenesie, ale import, ktorý kancelária spustí vo vlastnom účte.
+
+Overte, či viete priniesť aspoň kontakty. Ak ostanú v starom systéme, prvý mesiac budete žiť v dvoch evidenciách a prepisovanie sa len presunie, nezmizne.
 
 ## 7. Odíde správa klientovi bez vášho schválenia?
 
@@ -264,7 +191,7 @@ Praktický test: kolega povie meno alebo telefón z dnešného dopytu. Nájdete 
 
 ## Čo to znamená pre makléra
 
-Pred výberom si kancelária overí desať vecí na vlastných dátach, nie na slajde. Dopyt z portálu má skončiť v evidencii. Človek a nehnuteľnosť majú byť na jednom mieste. Text inzerátu má vzniknúť z parametrov a má sa dať opraviť. Kontakty majú ísť importom. Správa klientovi má čakať na vás.
+Pred výberom si kancelária overí desať vecí na vlastných dátach, nie na slajde. Dopyt z portálu má skončiť v evidencii, nie v troch oddelených záznamoch. Človek a nehnuteľnosť majú byť na jednom mieste. Text inzerátu má vzniknúť z parametrov a má sa dať opraviť. Kontakty z CSV, XLSX alebo RealSoftu majú ísť importom. Správa klientovi má čakať na vás.
 
 Ak chcete checklist vyskúšať na vlastných dopytoch, Revolis je **14 dní zadarmo, bez platobnej karty**. Po skončení sa nič neúčtuje automaticky. [Vytvoriť účet na app.revolis.ai](https://app.revolis.ai/register)
 `,

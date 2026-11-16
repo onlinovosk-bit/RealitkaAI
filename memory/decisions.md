@@ -1,3 +1,12 @@
+## 2026-11-16 — BUILD: zlúčiť starý CRM draft do checklistu (draft PR)
+**GO:** Founder 16. 11. 2026 — starší `crm-pre-realitnych-maklerov` zlúčiť do `…-ako-vybrat`; published: false; never merge/deploy; nemeň vercel.json ani CI.
+**Čo:** Checklist 1029 slov s presunutými faktami (portály, dve knihy, CSV/XLSX/RealSoft). Starý záznam odstránený. Refund z copy von. AI inzerát ostáva draft.
+**Dôkaz:** marketing vitest 89/89; tsc 0; marketing-blog.verification 1/1. Report `docs/reports/2026-11-16-crm-blog-merge.md`.
+**Nerobené:** published: true, merge, LIVE, vercel.json, CI.
+**BUILD/BACKLOG:** BUILD (obsah, founder schválil zlúčenie).
+**Rollback:** revert vetvy `cursor/merge-crm-blog-drafts-611f`.
+
+---
 ## 2026-11-16 — BUILD: AI Control Tower na existujúcom governore
 **GO:** Cloud Agent P0 implementácia do RealitkaAI. Bez merge, bez deploy, bez zápisu do PROD DB, bez plateného xAI.
 **Čo:** `/ai-control-tower` v CRM. `preflightCost`/`decidePreflight` ostáva jediná brána gateway (ALLOW/BLOCK/DEFER, fail-closed pri nečitateľnom ledgeri). Rozpočty projektov sú konfigurácia governora. Alerty 50/70/85/95 a burn idú cez bus-core, raz na pool+obdobie+prah. Migrácia `20261116120000_ai_control_tower.sql` je len v repe.

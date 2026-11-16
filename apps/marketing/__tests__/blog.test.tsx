@@ -8,7 +8,6 @@ import { BlogChrome } from '../components/blog/BlogChrome'
 import {
   AI_LISTING_ARTICLE_SLUG,
   BLOG_INDEX_INTRO,
-  CRM_ARTICLE_SLUG,
   CRM_CHECKLIST_ARTICLE_SLUG,
   FIRST_ARTICLE_SLUG,
   formatBlogDate,
@@ -135,7 +134,11 @@ describe('blog sitemap contract', () => {
   })
 
   it('keeps unpublished articles out of the public sitemap', () => {
-    for (const slug of [CRM_ARTICLE_SLUG, CRM_CHECKLIST_ARTICLE_SLUG, AI_LISTING_ARTICLE_SLUG]) {
+    for (const slug of [
+      'crm-pre-realitnych-maklerov',
+      CRM_CHECKLIST_ARTICLE_SLUG,
+      AI_LISTING_ARTICLE_SLUG,
+    ]) {
       const draftPath = `/blog/${slug}`
       expect(PUBLIC_SITEMAP_PATHS).not.toContain(draftPath)
       expect(getPublishedBlogPaths()).not.toContain(draftPath)
@@ -145,38 +148,10 @@ describe('blog sitemap contract', () => {
   })
 })
 
-describe('draft CRM article', () => {
-  it('stores unpublished metadata, H1, keyword and content rules', () => {
-    const article = getArticle(CRM_ARTICLE_SLUG)
-    expect(article).toBeDefined()
-    expect(getPublishedArticle(CRM_ARTICLE_SLUG)).toBeUndefined()
-    expect(article?.published).toBe(false)
-    expect(article?.slug).toBe('crm-pre-realitnych-maklerov')
-    expect(article?.title).toBe(
-      'CRM pre realitných maklérov: čo musí vedieť kancelária na Slovensku',
-    )
-    expect(article?.keyword).toBe('CRM pre realitných maklérov')
-    expect(article?.author).toBe('Andrej Ondruš')
-    expect(article?.date).toBe('2026-11-12')
-    expect(article?.description.length).toBeGreaterThan(80)
-    expect(article?.description.length).toBeLessThanOrEqual(155)
-    expect(article?.body.startsWith('# CRM pre realitných maklérov na Slovensku')).toBe(true)
-    expect(article?.body).toContain('## Prečo tabuľka a e-mailová schránka nestačia')
-    expect(article?.body).toContain('## Dopyty z realitných portálov')
-    expect(article?.body).toContain('## Evidencia kontaktov a nehnuteľností')
-    expect(article?.body).toContain('## Text inzerátu')
-    expect(article?.body).toContain('## Prechod z CSV/XLSX alebo z RealSoftu')
-    expect(article?.body).toContain('## Čo overiť pred výberom CRM')
-    expect(article?.body).toContain('## Čo to znamená pre makléra')
-    expect(article?.body).toContain('14 dní zadarmo, bez platobnej karty')
-    expect(article?.body).toContain('https://app.revolis.ai/register')
-    expect(article?.body).toContain('100 % peňazí späť do 30 dní')
-    expect(article?.body).not.toMatch(/pilot/i)
-    expect(article?.body).not.toMatch(/cenník/i)
-    expect(article?.body).not.toMatch(/\b(25|60|79|149)\s*€/)
-    const words = article!.body.trim().split(/\s+/).length
-    expect(words).toBeGreaterThanOrEqual(700)
-    expect(words).toBeLessThanOrEqual(1200)
+describe('removed older CRM draft', () => {
+  it('no longer stores crm-pre-realitnych-maklerov in the catalog', () => {
+    expect(getArticle('crm-pre-realitnych-maklerov')).toBeUndefined()
+    expect(getPublishedArticle('crm-pre-realitnych-maklerov')).toBeUndefined()
   })
 })
 
@@ -211,7 +186,7 @@ function expectDraftArticle(opts: {
 }
 
 describe('draft CRM checklist article', () => {
-  it('stores unpublished selection-checklist metadata distinct from the older CRM draft', () => {
+  it('stores unpublished selection-checklist metadata with merged portal and import claims', () => {
     expectDraftArticle({
       slug: CRM_CHECKLIST_ARTICLE_SLUG,
       title: 'Ako vybrať CRM pre realitných maklérov: 10 otázok pred rozhodnutím',
@@ -222,10 +197,21 @@ describe('draft CRM checklist article', () => {
         '## 10. Nájdete človeka, keď klient zavolá?',
       ],
     })
-    expect(getArticle(CRM_CHECKLIST_ARTICLE_SLUG)?.keyword).not.toBe(
-      getArticle(CRM_ARTICLE_SLUG)?.keyword,
+    const body = getArticle(CRM_CHECKLIST_ARTICLE_SLUG)!.body
+    expect(body).toContain('Nehnuteľnosti.sk')
+    expect(body).toContain('TopReality')
+    expect(body).toContain('Reality.sk')
+    expect(body).toContain('Bazoš')
+    expect(body).toContain('Byty.sk')
+    expect(body).toContain('Excel, Google Sheets')
+    expect(body).toContain('RealSoft')
+    expect(body).toContain('dve knihy naraz')
+    expect(body).toContain('tri oddelené záznamy')
+    expect(body).not.toMatch(/100 % peňazí/i)
+    expect(body).not.toMatch(/refund/i)
+    expect(getArticle(CRM_CHECKLIST_ARTICLE_SLUG)?.keyword).toBe(
+      'ako vybrať CRM pre realitných maklérov',
     )
-    expect(getArticle(CRM_CHECKLIST_ARTICLE_SLUG)?.slug).not.toBe(CRM_ARTICLE_SLUG)
   })
 })
 
