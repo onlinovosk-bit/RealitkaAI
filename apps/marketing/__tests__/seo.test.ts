@@ -5,7 +5,6 @@ import robots, { marketingSitemapUrl } from '../app/robots'
 import sitemap from '../app/sitemap'
 import {
   AI_LISTING_ARTICLE_SLUG,
-  CRM_ARTICLE_SLUG,
   CRM_CHECKLIST_ARTICLE_SLUG,
 } from '../lib/blog'
 import {
@@ -68,7 +67,7 @@ describe('sitemap()', () => {
     expect(urls.some((url) => url.includes('/zakulisie') || url.includes('/api/') || url.includes('app.revolis.ai'))).toBe(
       false,
     )
-    expect(PUBLIC_SITEMAP_PATHS).not.toContain(`/blog/${CRM_ARTICLE_SLUG}`)
+    expect(PUBLIC_SITEMAP_PATHS).not.toContain('/blog/crm-pre-realitnych-maklerov')
     expect(PUBLIC_SITEMAP_PATHS).not.toContain(`/blog/${CRM_CHECKLIST_ARTICLE_SLUG}`)
     expect(PUBLIC_SITEMAP_PATHS).not.toContain(`/blog/${AI_LISTING_ARTICLE_SLUG}`)
   })

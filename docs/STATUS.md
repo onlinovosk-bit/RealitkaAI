@@ -1,6 +1,8 @@
 # Revolis.AI — STAV NA JEDNEJ STRÁNKE
 
-> **2026-11-16 SEO audit (draft PR):** interné odkazy `/blog`, homepage meta+JSON-LD, úvod `/blog`, dva draft články `published: false`. Vetva `cursor/seo-audit-blog-jsonld-611f`. Merge/deploy/PROD/`vercel.json` nerobené. Tabuľka % sa NEMENÍ. Posledná aktualizácia SESSION: **2026-11-16**.
+> **2026-11-16 zlúčenie CRM draftov:** starší `crm-pre-realitnych-maklerov` ide do checklistu; `published: false`. Vetva `cursor/merge-crm-blog-drafts-611f`. Merge/LIVE/`vercel.json`/CI nerobené. Tabuľka % sa NEMENÍ. Posledná aktualizácia SESSION: **2026-11-16**.
+
+> **2026-11-16 SEO audit:** interné odkazy `/blog`, homepage meta+JSON-LD, úvod `/blog`, dva draft články. Zmergované do `main` ako `933e65b1` (#954). Tabuľka % sa NEMENÍ.
 
 > **2026-11-12 rolling Friday deadline:** follow-up na draft PR #950. Homepage countdown/sticky/FAQ bez hardcoded `23. 10.`; `fridayDeadline()` Europe/Bratislava. Merge/deploy/PROD nerobené. Tabuľka % sa NEMENÍ.
 
@@ -56,14 +58,12 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: Draft PR — SEO audit 16. 11. (odkazy, JSON-LD, blog intro, dva drafty)
+Cieľ: Draft PR — zlúčiť starý CRM článok do checklistu
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] 1 — Interné odkazy `/blog` z homepage, `/demo`, `/balik`; článok ceny → `/demo`
-- [x] 2 — Homepage meta + og:description (`HOMEPAGE_DESCRIPTION`)
-- [x] 3 — JSON-LD Organization+WebSite, BreadcrumbList, CollectionPage (bez Offer)
-- [x] 4 — Úvod `/blog` 123 slov + dva draft články `published: false`
-- [x] 5 — Marketing vitest 89/89, tsc 0, lokálny build, Playwright screenshoty
-- [x] 6 — Draft PR #954 otvorený, CI na heade zelené (merge/deploy nie)
+- [x] 1 — Presunúť overené tvrdenia zo starého draftu do checklistu (1029 slov)
+- [x] 2 — Odstrániť `crm-pre-realitnych-maklerov` z `lib/blog.ts` a testov
+- [x] 3 — Marketing vitest 89/89, tsc 0; oba články `published: false`
+- [x] 4 — Draft PR #956 otvorený, CI na heade zelené (merge/deploy nie)
 <!-- SESSION:END -->
 
 ## Hotové 2026-10-07 — s dôkazom (REALVIA-SEC-01)

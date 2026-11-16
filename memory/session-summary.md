@@ -1,3 +1,41 @@
+## Session 2026-11-16 (Q9 read-only wording)
+### Dokončené
+- Otázka 9: „sama vypne“ → „prejde do režimu len na čítanie“. Draft #956, published: false.
+### Rozpracované / Pending
+- Merge/LIVE/`published: true` čaká na GO.
+### Kľúčové súbory zmenené
+- `apps/marketing/lib/blog.ts` otázka 9
+- `docs/reports/2026-11-16-crm-blog-q9-copy.md`, `docs/reports/2026-11-16-crm-blog-merge.md`
+### Ďalší krok
+Founder: review nového znenia Q9 v #956.
+
+---
+## Session 2026-11-16 (otázka 9 copy)
+### Dokončené
+- Checklist Q9: skúšobná doba namiesto uvítacieho obdobia; „sama vypne“ overené v trial kóde (read-only).
+### Rozpracované / Pending
+- Draft PR #956. Merge/LIVE/`published: true` čaká na GO.
+### Kľúčové súbory zmenené
+- `apps/marketing/lib/blog.ts` otázka 9
+- `docs/reports/2026-11-16-crm-blog-q9-copy.md`
+### Ďalší krok
+Founder: review Q9 v #956.
+
+---
+## Session 2026-11-16 (zlúčenie CRM draftov)
+### Dokončené
+- Starší draft `crm-pre-realitnych-maklerov` zlúčený do checklistu (1029 slov) a odstránený z `lib/blog.ts`.
+- Oba nové články `published: false`. Refund z copy von.
+- Marketing vitest 89/89; tsc 0.
+### Rozpracované / Pending
+- Draft PR; CI na heade. Merge/LIVE/`published: true` čaká na FOUNDER GO.
+### Kľúčové súbory zmenené
+- `apps/marketing/lib/blog.ts`: zlúčené telo, starý záznam preč.
+- `apps/marketing/__tests__/blog.test.tsx`, `seo.test.ts`.
+### Ďalší krok
+Founder: review zlúčeného textu v reporte. Zverejnenie a merge len na výslovné GO.
+
+---
 ## Session 2026-11-16
 ### Dokončené
 - AI Control Tower v CRM na `/ai-control-tower` (`apps/crm/src/app/(dashboard)/ai-control-tower/page.tsx`).
@@ -13,7 +51,8 @@
 Founder GO na aplikáciu migrácie `20261116120000_ai_control_tower.sql` mimo tohto PR. Merge a deploy nie.
 
 ---
-
+## Session 2026-11-16
+### Dokončené
 - Interné odkazy `/blog` z homepage (header+footer „Blog pre maklérov“), `/demo` („prehľad trhu pre maklérov“), `/balik` („ďalšie tipy pre maklérov“); článok ceny → `/demo` („pozrite si ukážku Revolis“).
 - Homepage meta + og:description (`HOMEPAGE_DESCRIPTION`); JSON-LD Organization+WebSite, CollectionPage, BreadcrumbList.
 - Úvod `/blog` 123 slov; dva draft články `published: false` (checklist 773, AI inzerát 706).
