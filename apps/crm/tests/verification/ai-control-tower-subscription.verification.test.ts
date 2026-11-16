@@ -12,6 +12,9 @@ describe("[verification] AI Control Tower subscription writes", () => {
   it("POST snapshot requires profiles.is_platform_admin, not FOUNDER_EMAILS", () => {
     const route = read("apps/crm/src/app/api/ai-control-tower/snapshots/route.ts");
     expect(route).toContain("requirePlatformAdmin");
+    expect(route).toContain("createClient()");
+    expect(route).toContain("auth.getUser");
+    expect(route).toContain("incrementUsageMetric");
     expect(route).not.toMatch(/FOUNDER_EMAILS/);
     expect(route).toContain("writeManualSubscriptionSnapshot");
   });

@@ -61,7 +61,8 @@ export type UsageMetricName =
   | "morning_brief_settings_save"
   // Verejný demo formulár (hero + AI Odhadca). Počíta sa až po 2xx z
   // capture-lead. Meno metriky je voľný text v RPC, migrácia netreba.
-  | "demo_public_capture";
+  | "demo_public_capture"
+  | "ai_control_tower_snapshot";
 
 /**
  * Inkrementuje denný počítadlo cez RPC (service role).
