@@ -63,7 +63,7 @@ Cieľ: Draft PR — SEO audit 16. 11. (odkazy, JSON-LD, blog intro, dva drafty)
 - [x] 3 — JSON-LD Organization+WebSite, BreadcrumbList, CollectionPage (bez Offer)
 - [x] 4 — Úvod `/blog` 123 slov + dva draft články `published: false`
 - [x] 5 — Marketing vitest 89/89, tsc 0, lokálny build, Playwright screenshoty
-- [ ] 6 — Draft PR otvorený, CI na heade (merge/deploy nie)
+- [x] 6 — Draft PR #954 otvorený, CI na heade zelené (merge/deploy nie)
 <!-- SESSION:END -->
 
 ## Hotové 2026-10-07 — s dôkazom (REALVIA-SEC-01)
