@@ -17,6 +17,7 @@ import {
   evaluateAlerts,
   forecastToReset,
   mergeSamples,
+  samplesFromAudit,
   publishUsageAlerts,
   rateLimitFromHeaders,
   snapshotConfidence,
@@ -92,6 +93,40 @@ test("shared pool counts each sample once across projects", () => {
   assert.equal(shared.totalEur, 3);
   assert.equal(shared.byProvider.openai, 3);
   assert.equal(shared.byProject.revolis + shared.byProject.onlinovo + shared.byProject.other, shared.totalEur);
+});
+
+test("stored dedupKey collapses with the audit row and a different key still adds", () => {
+  const audit = samplesFromAudit([
+    {
+      id: "same",
+      createdAt: "2026-11-10T09:00:00.000Z",
+      costEur: 1.5,
+      model: "gpt-4o-mini",
+      meta: { provider: "openai", project: "revolis" },
+    },
+  ]);
+  assert.equal(audit[0]?.dedupKey, "audit:same");
+  const stored = samplesFromAudit([
+    {
+      id: "usage-entry-9",
+      createdAt: "2026-11-10T09:00:01.000Z",
+      costEur: 9,
+      model: "gpt-4o-mini",
+      meta: { provider: "openai", project: "revolis", dedupKey: "audit:same" },
+    },
+    {
+      id: "usage-entry-10",
+      createdAt: "2026-11-10T09:05:00.000Z",
+      costEur: 0.5,
+      model: "gpt-4o-mini",
+      meta: { provider: "openai", project: "onlinovo", dedupKey: "pool:other" },
+    },
+  ]);
+  assert.equal(stored[0]?.dedupKey, "audit:same");
+  assert.equal(stored[1]?.dedupKey, "pool:other");
+  const total = aggregateSharedPool(mergeSamples([audit, stored])).totalEur;
+  assert.equal(total, 2);
+  assert.notEqual(total, 1.5 + 9 + 0.5);
 });
 
 test("decidePreflight ALLOW, BLOCK, and DEFER", () => {

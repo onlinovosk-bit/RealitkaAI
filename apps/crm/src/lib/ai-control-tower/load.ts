@@ -135,6 +135,9 @@ async function readStoredUsage(): Promise<{ state: SourceState; rows: AuditCostR
         project: row.project_id,
         agentId: row.agent_id,
         poolId: row.pool_id,
+        ...(typeof row.dedup_key === "string" && row.dedup_key.trim() !== ""
+          ? { dedupKey: row.dedup_key }
+          : {}),
         gatewayTaskId: typeof row.dedup_key === "string" && row.dedup_key.startsWith("task:")
           ? row.dedup_key.slice("task:".length)
           : undefined,

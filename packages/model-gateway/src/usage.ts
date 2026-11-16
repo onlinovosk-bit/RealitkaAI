@@ -277,11 +277,16 @@ export function samplesFromAudit(rows: readonly AuditCostRow[]): UsageSample[] {
     const meta = row.meta ?? {};
     const provider = inferProvider(row.model, meta.provider);
     if (!provider) continue;
+    const explicitDedup = typeof meta.dedupKey === "string" ? meta.dedupKey : "";
     const taskId = typeof meta.gatewayTaskId === "string" ? meta.gatewayTaskId : null;
     const projectRaw = meta.project ?? meta.projectId;
     out.push({
       id: `audit:${row.id}`,
-      dedupKey: taskId ? `task:${taskId}` : `audit:${row.id}`,
+      dedupKey: explicitDedup.trim() !== ""
+        ? explicitDedup
+        : taskId
+          ? `task:${taskId}`
+          : `audit:${row.id}`,
       ts: row.createdAt,
       provider,
       model: row.model?.trim() ? row.model : null,
