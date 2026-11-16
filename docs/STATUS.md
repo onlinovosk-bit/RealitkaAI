@@ -1,6 +1,8 @@
 # Revolis.AI — STAV NA JEDNEJ STRÁNKE
 
-> **2026-11-16 External Subscription Capacity:** percentuálne pooly na AI Control Tower (Grok weekly shared, Claude session/weekly). Draft PR na `cursor/external-subscription-capacity-611f`. PROD migrácia **neaplikovaná**. Tabuľka % sa NEMENÍ. Posledná aktualizácia SESSION: **2026-11-16**.
+> **2026-11-16 Control Tower ledger:** `schema_migrations` 136 → 138 (`20261116120000`, `20261116140000`). DDL už bolo. Snapshoty 0. Tabuľka % sa NEMENÍ. Posledná aktualizácia SESSION: **2026-11-16**.
+
+> **2026-11-16 External Subscription Capacity:** percentuálne pooly na AI Control Tower (Grok weekly shared, Claude session/weekly). Zmergované do `main` ako `b981d704` (#957). DDL na PROD aplikované founderom; ledger opravený. Tabuľka % sa NEMENÍ. Posledná aktualizácia SESSION: **2026-11-16**.
 
 > **2026-11-16 zlúčenie CRM draftov:** starší `crm-pre-realitnych-maklerov` ide do checklistu; `published: false`. Zmergované do `main` ako `41819133` (#956). Tabuľka % sa NEMENÍ. Posledná aktualizácia SESSION: **2026-11-16**.
 
@@ -60,12 +62,12 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: External Subscription Capacity na AI Control Tower
+Cieľ: Control Tower ledger repair
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] 1 — Doména percentuálnych poolov + testy (26/26 gateway)
-- [x] 2 — Idempotentná migrácia v repe, RLS deny, izolovaný Postgres
-- [x] 3 — UI sekcia + admin formulár + POST so `is_platform_admin`
-- [x] 4 — CRM vitest/lint/typecheck/build; PR bez merge a bez PROD SQL
+- [x] 1 — Read-only preflight PROD (7/526/177, ledger 136, DDL prítomné)
+- [x] 2 — Izolovaný Postgres INSERT 2 / rerun 0
+- [x] 3 — PROD ROLLBACK dôkaz + COMMIT ledger 138
+- [x] 4 — Report + memory PREPEND
 <!-- SESSION:END -->
 
 ## Hotové 2026-10-07 — s dôkazom (REALVIA-SEC-01)

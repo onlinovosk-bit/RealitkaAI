@@ -1,3 +1,17 @@
+## Session 2026-11-16 (Control Tower ledger repair)
+### Dokončené
+- Preflight PROD: 7/526/177, ledger 136, DDL Control Tower prítomné, ledger verzie 0.
+- Izolovaný Postgres INSERT 2 / rerun 0 / unique_violation PASS.
+- PROD ledger 136 → 138 (`20261116120000`, `20261116140000`). Snapshoty 0.
+### Rozpracované / Pending
+- Tri manuálne snapshoty na `/ai-control-tower` (Grok weekly, Claude session, Claude weekly).
+### Kľúčové súbory zmenené
+- `docs/reports/2026-11-16-control-tower-ledger-repair.md`
+- `memory/decisions.md`, `memory/session-summary.md`, `docs/STATUS.md`
+### Ďalší krok
+Founder: zadať tri reálne percentá na `https://app.revolis.ai/ai-control-tower`.
+
+---
 ## Session 2026-11-16 (external subscription capacity)
 ### Dokončené
 - Percentuálne subscription pooly na AI Control Tower (Grok weekly shared, Claude session/weekly, manuálny snapshot).

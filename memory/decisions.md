@@ -1,3 +1,12 @@
+## 2026-11-16 — PROD ZMENA: Control Tower ledger repair
+**GO:** Founder „GO: oprav Control Tower ledger“. Skill `prod-migration`. Mimo GO: DDL, snapshoty, merge, deploy.
+**Čo:** dva idempotentné INSERT-y do `supabase_migrations.schema_migrations` na PROD `ypgajkhqtbriqqmyawyv`: `20261116120000` / `ai_control_tower`, `20261116140000` / `ai_quota_subscription_capacity`. DDL už bolo (founder SQL editor).
+**Dôkaz:** preflight 7/526/177, ledger 136 / max `20261022100000`, target 0, tabuľky + RLS + identity constraint prítomné. Izolovaný Postgres: INSERT 2, rerun 0, unique_violation PASS. PROD ROLLBACK dôkaz `ledger=138 target=2` potom znova 136/0. Po COMMIT ledger **138**, max `20261116140000`, `list_migrations` obe verzie, 7/526/177, pools 0, snapshots 0.
+**Nerobené:** merge tohto PR, deploy, snapshoty Grok/Claude.
+**BUILD/BACKLOG:** PROD ZMENA (zosúladenie ledgera, bez nového správania).
+**Rollback:** `DELETE FROM supabase_migrations.schema_migrations WHERE version IN ('20261116120000','20261116140000');`
+
+---
 ## 2026-11-16 — BUILD: External Subscription Capacity (AI Control Tower)
 **GO:** Founder 16. 11. 2026 P0 — percentuálne predplatné pooly, bez druhého gateway.
 **Čo:** Rozšírenie `ai_quota_snapshots` o window/percentá; karty Grok weekly shared + Claude session/weekly; zápis len `profiles.is_platform_admin === true`.
