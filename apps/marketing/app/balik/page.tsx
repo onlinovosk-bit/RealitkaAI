@@ -74,9 +74,10 @@ export default function BalikPage() {
         <Link href="/" className="balik-logo">
           REVOLIS<span>.AI</span>
         </Link>
-        <Link href="/demo" style={{ fontSize: 13, fontWeight: 700, color: 'var(--balik-muted)', textDecoration: 'none' }}>
-          Demo CRM →
-        </Link>
+        <nav className="balik-nav-links" aria-label="Hlavná navigácia">
+          <Link href="/blog">ďalšie tipy pre maklérov</Link>
+          <Link href="/demo">Demo CRM →</Link>
+        </nav>
       </header>
 
       <main className="balik-wrap">

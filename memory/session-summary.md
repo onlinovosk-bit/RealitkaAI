@@ -14,6 +14,21 @@ Founder GO na aplikáciu migrácie `20261116120000_ai_control_tower.sql` mimo to
 
 ---
 
+- Interné odkazy `/blog` z homepage (header+footer „Blog pre maklérov“), `/demo` („prehľad trhu pre maklérov“), `/balik` („ďalšie tipy pre maklérov“); článok ceny → `/demo` („pozrite si ukážku Revolis“).
+- Homepage meta + og:description (`HOMEPAGE_DESCRIPTION`); JSON-LD Organization+WebSite, CollectionPage, BreadcrumbList.
+- Úvod `/blog` 123 slov; dva draft články `published: false` (checklist 773, AI inzerát 706).
+- Marketing vitest 89/89; tsc 0; next build --webpack; Playwright screenshoty desktop 1440 / mobil 390.
+- Report `docs/reports/2026-11-16-seo-audit.md` (plné texty na schválenie + mapa tvrdení).
+### Rozpracované / Pending
+- Draft PR na vetve `cursor/seo-audit-blog-jsonld-611f`. Merge/deploy/PROD čaká na FOUNDER GO.
+- Publikovať drafty a rozhodnúť o starom `crm-pre-realitnych-maklerov` (ponechať/zlúčiť/prepis keyword — nemazať).
+### Kľúčové súbory zmenené
+- `apps/marketing/lib/json-ld.ts`, `public/index.html`, `lib/blog.ts`, `app/demo/*`, `app/balik/*`, `app/blog/*`
+- `apps/marketing/__tests__/seo.test.ts`, `blog.test.tsx`, `index-html.test.ts`
+### Ďalší krok
+Founder: review draft PR a textov v reporte. Merge/LIVE/`published: true` len na výslovné GO.
+
+---
 ## Session 2026-11-12 (follow-up: rolling Friday deadline)
 ### Dokončené
 - Hardcoded `23. 10.` preč z homepage countdown, sticky, FAQ a JS (`apps/marketing/public/index.html`).
