@@ -41,6 +41,35 @@
   color: var(--balik-brand);
 }
 
+/* globals.css styles bare `nav` as a light fixed landing bar — reset it here. */
+.balik-page nav {
+  position: static;
+  inset: auto;
+  padding: 0;
+  background: transparent;
+  border: none;
+  backdrop-filter: none;
+  z-index: auto;
+}
+
+.balik-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.balik-nav-links a {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--balik-muted);
+  text-decoration: none;
+}
+
+.balik-nav-links a:hover {
+  color: var(--balik-ink);
+}
+
 .balik-wrap {
   max-width: 900px;
   margin: 0 auto;

@@ -41,6 +41,17 @@
   color: var(--demo-brand);
 }
 
+/* globals.css styles bare `nav` as a light fixed landing bar — reset it here. */
+.demo-page nav {
+  position: static;
+  inset: auto;
+  padding: 0;
+  background: transparent;
+  border: none;
+  backdrop-filter: none;
+  z-index: auto;
+}
+
 .demo-nav-links {
   display: flex;
   gap: 24px;
@@ -54,6 +65,24 @@
 }
 
 .demo-nav-links a:hover {
+  color: var(--demo-ink);
+}
+
+.demo-nav-extra {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.demo-nav-extra a {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--demo-muted);
+  text-decoration: none;
+}
+
+.demo-nav-extra a:hover {
   color: var(--demo-ink);
 }
 

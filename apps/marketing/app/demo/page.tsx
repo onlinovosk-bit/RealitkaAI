@@ -57,9 +57,10 @@ export default function DemoPage() {
           <a href="#solution">Riešenie</a>
           <a href="#faq">FAQ</a>
         </nav>
-        <Link href="/" style={{ fontSize: 13, fontWeight: 700, color: 'var(--demo-muted)', textDecoration: 'none' }}>
-          Hlavná stránka →
-        </Link>
+        <div className="demo-nav-extra">
+          <Link href="/blog">prehľad trhu pre maklérov</Link>
+          <Link href="/">Hlavná stránka →</Link>
+        </div>
       </header>
 
       <main className="demo-wrap">

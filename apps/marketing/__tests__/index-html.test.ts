@@ -91,7 +91,7 @@ describe('public/index.html — kampaň cenník v3', () => {
     const title =
       'Revolis.ai – AI CRM pre realitných maklérov | Inzerát hotový za minúty'
     const description =
-      'AI CRM pre realitných maklérov na Slovensku. Dopyty z portálových e-mailov sa uložia samé, text inzerátu pripraví AI. 14 dní zadarmo, bez karty. Ak nebudete spokojní, do 30 dní vrátime 100 % peňazí.'
+      'AI CRM pre realitných maklérov na Slovensku: inzerát hotový za minúty, dopyty v CRM a denné priority. Vyskúšajte 14 dní zadarmo bez karty.'
     expect(html).toContain(`>${title}</title>`)
     expect(html).toContain(`data-after="${title}"`)
     expect(html).toContain(`content="${description}"`)
@@ -101,6 +101,11 @@ describe('public/index.html — kampaň cenník v3', () => {
     const hero = html.slice(html.indexOf('<!-- HERO -->'), html.indexOf('<!-- PAIN -->'))
     expect(hero).not.toMatch(/23\. ?10/)
     expect(html.match(/<title[\s\S]*?<\/title>/)?.[0]).not.toMatch(/23\. ?10/)
+  })
+
+  it('odkazuje na blog z hlavičky aj päty', () => {
+    expect(html).toContain('<a class="hlink" href="/blog">Blog pre maklérov</a>')
+    expect((html.match(/href="\/blog">Blog pre maklérov<\/a>/g) ?? []).length).toBeGreaterThanOrEqual(2)
   })
 
   it('next.config presmeruje root na index.html cez rewrite', () => {

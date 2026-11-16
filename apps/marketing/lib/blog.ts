@@ -15,6 +15,13 @@ export const FIRST_ARTICLE_SLUG = 'ceny-nehnutelnosti-2026-sadzby-nove-ltv' as c
 
 export const CRM_ARTICLE_SLUG = 'crm-pre-realitnych-maklerov' as const
 
+export const CRM_CHECKLIST_ARTICLE_SLUG = 'crm-pre-realitnych-maklerov-ako-vybrat' as const
+
+export const AI_LISTING_ARTICLE_SLUG = 'ai-inzerat-nehnutelnosti' as const
+
+export const BLOG_INDEX_INTRO =
+  'Blog Revolis je pre maklérov, ktorí denne pracujú so slovenským trhom nehnuteľností. Píšeme o hypotékach a sadzbách, o legislatíve okolo úverov a predaja a o tom, ako to ovplyvní náber, obhliadku aj rozhovor s kupujúcim. Nájdete tu aj praktické tipy k dopytom, evidencii kontaktov a príprave inzerátu — bez slovníka pre IT oddelenie. Texty majú slúžiť pred hovorom s klientom: či sa oplatí čakať na novú sadzbu, ako sa pýtať na vlastné zdroje, alebo ako zložiť inzerát z parametrov, ktoré už kancelária má. Neporovnávame programy podľa mena a nesľubujeme čísla, ktoré nevieme doložiť. Články sú písané po slovensky a určené ľuďom v teréne, nie marketingovému oddeleniu. Cieľ je prehľad trhu a postup, ktorý sa dá použiť v kancelárii ešte v ten istý deň.'
+
 const MONTHS_SK = [
   'januára',
   'februára',
@@ -103,7 +110,7 @@ Prečo NBS mení pravidlá? Podľa nej v roku 2025 **viac ako polovicu bytov a d
 
 Keď trh spomaľuje a financovanie sa sťažuje, víťazí maklér, ktorý vie, komu zavolať ako prvému. **Revolis** zbiera dopyty z Nehnuteľnosti.sk, Topreality, Reality.sk, Bazoša aj e-mailu na jedno miesto. Každému záujemcovi pridelí **skóre pripravenosti kúpy** a každé ráno vám pripraví **denný prehľad priorít**. Odpovede a následné správy nachystá, vy ich len schválite. Bez vás neodíde nič.
 
-Ak to chcete vyskúšať na vlastných dopytoch, Revolis je **14 dní zadarmo, bez platobnej karty**. Po skončení sa skúšobná verzia sama vypne a nič sa neúčtuje automaticky. [Vytvoriť účet na app.revolis.ai](https://app.revolis.ai/register)
+Ak chcete najprv vidieť, ako to vyzerá, [pozrite si ukážku Revolis](/demo). Ak to chcete vyskúšať na vlastných dopytoch, Revolis je **14 dní zadarmo, bez platobnej karty**. Po skončení sa skúšobná verzia sama vypne a nič sa neúčtuje automaticky. [Vytvoriť účet na app.revolis.ai](https://app.revolis.ai/register)
 
 ---
 
@@ -190,6 +197,151 @@ Ráno nemáte hľadať, ktorý mail ešte nikto neprepisal. Dopyt z portálu má
 **CRM pre realitných maklérov** na Slovensku teda nie je tabuľka s krajším vzhľadom. Je to miesto, kde sa stretne schránka, človek a nehnuteľnosť — a kde maklérovi ostane čas na obhliadku.
 
 Ak to chcete skúsiť na vlastných dopytoch, Revolis je **14 dní zadarmo, bez platobnej karty**. Po skončení sa nič neúčtuje automaticky. Ak by ste neskôr neboli spokojní, platí **100 % peňazí späť do 30 dní**. [Vytvoriť účet na app.revolis.ai](https://app.revolis.ai/register)
+`,
+  },
+  {
+    slug: CRM_CHECKLIST_ARTICLE_SLUG,
+    title: 'Ako vybrať CRM pre realitných maklérov: 10 otázok pred rozhodnutím',
+    description:
+      'Desať otázok pred výberom CRM pre realitných maklérov: dopyty, kontakty, inzerát, import a skúška bez karty.',
+    keyword: 'ako vybrať CRM pre realitných maklérov',
+    author: 'Andrej Ondruš',
+    date: '2026-11-16',
+    published: false,
+    body: `# Ako vybrať CRM pre realitných maklérov: 10 otázok pred rozhodnutím
+
+Kancelária zvyčajne nekupuje ďalší program. Kupuje odpoveď na to, či dopyt z portálu skončí v evidencii, alebo v schránke, kým maklér stojí na obhliadke. Tento text je výberový checklist: desať otázok, ktoré si položte na ukážke alebo vo vlastnom účte, kým sa rozhodnete. Nie je to prehľad toho, čo má realitné CRM všeobecne vedieť. Tu ide o praktický výber.
+
+Hlavná otázka tohto checklistu je **ako vybrať CRM pre realitných maklérov**. Otázky sú zámerne konkrétne: ide o to, čo uvidíte na obrazovke, nie o sľub v prezentácii.
+
+## Prečo desať otázok namiesto porovnávacej tabuľky
+
+Porovnávanie programov podľa mena kancelárii nepomôže, ak nevie, ktorý problém má dnes. Maklér stratí čas tam, kde dopyt ostane v maili, inzerát sa píše z čistého papiera a kontakty žijú v súkromnom hárku. Checklist nižšie tie miesta pomenúva. Každú otázku overte na vlastných dátach, nie na ukážkovom účte s vymyslenými menami.
+
+Ak na otázku nedostanete jasnú odpoveď do niekoľkých minút, ostávate pri tom, čo už máte — schránke a tabuľke.
+
+## 1. Kam dnes padne dopyt, keď maklér nie je pri počítači?
+
+Opýtajte sa: príde správa z portálu a niekto v kancelárii ju nájde v evidencii, alebo ostane v osobnej schránke, kým sa maklér vráti z terénu? CRM, ktoré dopyt neuloží, vás vráti k prepisovaniu. Overte to na maili, ktorý naozaj používate, nie na vete, že portály sú podporované.
+
+## 2. Uloží sa portálový e-mail ako dopyt s kontaktom?
+
+Na Slovensku chodia dopyty predovšetkým e-mailom. Revolis vie tieto správy prijať a uložiť ako dopyt: rozpozná bežné portály podľa textu alebo odosielateľa — Nehnuteľnosti.sk, TopReality, Reality.sk, Bazoš aj Byty.sk — a z tela vyberie kontakt, identifikátor inzerátu a text. To nie je tlačidlo na zverejnenie ponuky. Je to príjem dopytu do evidencie.
+
+Test: ukážte skutočný mail z vášho portálu. Pribudne dopyt s menom a telefónom, alebo ostane v schránke?
+
+## 3. Vidíte na karte človeka aj nehnuteľnosť?
+
+Výber CRM pre realitných maklérov padá často na to, že kancelária eviduje len ľudí, alebo len inzeráty. V Revolise je zoznam klientov a príležitostí — meno, kontakt, zdroj, stav — a zvlášť evidencia nehnuteľností so zoznamom, filtrami a kartou ponuky. Ak otvoríte kartu človeka a kartu ponuky a nevidíte históriu ani parametre, ostávate pri tabuľke v inom obale.
+
+## 4. Vzniká text inzerátu z parametrov, alebo z čistého papiera?
+
+Pýtajte sa, či text vzniká z typu, lokality, výmery, ceny, stavu a vybavenia, ktoré už máte. Revolis má generátor inzerátu: zadáte parametre a pripraví sa text na portál, Facebook, Instagram a e-mail. Nie je to automatické zverejnenie na portál.
+
+## 5. Dá sa text pred použitím upraviť?
+
+Generátor, ktorý sa nedá opraviť, je pre kanceláriu riziko. V Revolise sa text pred použitím upraví a úpravy sa uložia. Overte, že maklér vidí návrh skôr, než ho niekam vloží.
+
+## 6. Ako prenesiete kontakty, ktoré už máte?
+
+Nové CRM bez starých dát je prázdna skriňa. Revolis má import príležitostí z CSV a sprievodcu, ktorý prečíta CSV aj súbor .xlsx; medzi zdrojmi je aj RealSoft. Overte, či viete priniesť aspoň kontakty. Ak ostanú v starom systéme, prvý mesiac budete žiť v dvoch evidenciách.
+
+## 7. Odíde správa klientovi bez vášho schválenia?
+
+Toto je otázka dôvery, nie módneho slova o automatizácii. V Revolise sa návrh odpovede na nový dopyt uloží ako koncept. Odoslanie je rozhodnutie makléra — spracovanie dopytu samo o sebe správu neposiela. Ak vám niekto sľúbi, že systém odpovie za vás, pýtajte sa, kto stlačí odoslať.
+
+## 8. Pracuje kancelária v jednom účte?
+
+Keď maklér odíde, majú ostáť dopyty v kancelárii, nie v súkromnej schránke. Pýtajte sa, či tím vidí spoločnú evidenciu. Táto otázka nie je o cene sídla. Je o tom, či kontakty patria kancelárii.
+
+## 9. Ako vyzerá skúška bez karty?
+
+Revolis môžete vyskúšať 14 dní zadarmo, bez platobnej karty. Po skončení sa skúšobná verzia sama vypne a nič sa neúčtuje automaticky. Overte, či naozaj nemusíte zadávať kartu a čo sa stane s dátami po skončení uvítacieho obdobia.
+
+## 10. Nájdete človeka, keď klient zavolá?
+
+Praktický test: kolega povie meno alebo telefón z dnešného dopytu. Nájdete kartu do chvíle, kým hovor zvoní, alebo hľadáte v schránke? Ak CRM toto nezvládne, ostatné funkcie sú ozdoba.
+
+## Čo to znamená pre makléra
+
+Pred výberom si kancelária overí desať vecí na vlastných dátach, nie na slajde. Dopyt z portálu má skončiť v evidencii. Človek a nehnuteľnosť majú byť na jednom mieste. Text inzerátu má vzniknúť z parametrov a má sa dať opraviť. Kontakty majú ísť importom. Správa klientovi má čakať na vás.
+
+Ak chcete checklist vyskúšať na vlastných dopytoch, Revolis je **14 dní zadarmo, bez platobnej karty**. Po skončení sa nič neúčtuje automaticky. [Vytvoriť účet na app.revolis.ai](https://app.revolis.ai/register)
+`,
+  },
+  {
+    slug: AI_LISTING_ARTICLE_SLUG,
+    title: 'AI inzerát nehnuteľnosti: ako ho pripraviť rýchlo a bez chýb',
+    description:
+      'Ako pripraviť AI inzerát nehnuteľnosti z parametrov: portál, sociálne siete a e-mail, bez vymyslených faktov.',
+    keyword: 'AI inzerát nehnuteľnosti',
+    author: 'Andrej Ondruš',
+    date: '2026-11-16',
+    published: false,
+    body: `# AI inzerát nehnuteľnosti: ako ho pripraviť rýchlo a bez chýb
+
+Maklér nestráca obchody na obhliadke. Stráca ich v hodine, kým z parametrov bytu skladá text na portál, potom inú verziu na Facebook a ešte jednu do e-mailu záujemcom. **AI inzerát nehnuteľnosti** má tú hodinu skrátiť. Má ale jednu podmienku: text musí sedieť na fakty, ktoré kancelária naozaj má. Inak ide von sľub, ktorý na obhliadke neobstojí.
+
+Tento text je postup, nie recenzia nástrojov. Opisuje, čo pripraviť pred generovaním, čo model nesmie vymyslieť, a ako vyzerá kontrola pred zverejnením. Cieľ nie je dlhší odsek. Cieľ je inzerát, ktorý ide von v deň náberu a na obhliadke obstojí.
+
+## Čo je AI inzerát nehnuteľnosti
+
+AI inzerát nehnuteľnosti nie je tlačidlo, ktoré ponuku samo zverejní na portáli. Je to návrh textu z parametrov: typ, lokalita, výmera, cena, stav, vybavenie, prípadne poznámky makléra. Z nich má vzniknúť text pre klienta — na portál, na sociálne siete a do e-mailu — nie poznámka o tom, čo v zadaní chýba.
+
+Ak zadáte tri slová a čakáte bohatý opis školy, MHD a tichej lokality, dostanete vymyslený inzerát. Rýchly inzerát bez chýb vzniká opačne: najprv fakty, potom veta.
+
+## Najprv parametre, potom text
+
+Pred generovaním si kancelária zloží to, čo už vie:
+
+- typ (byt, dom, pozemok) a lokalita
+- výmera, izby, podlažie
+- cena
+- stav (novostavba, po rekonštrukcii, pôvodný stav)
+- vybavenie, ktoré je naozaj na mieste
+- meno a telefón makléra, ak majú byť v texte
+
+Chýbajúci údaj je lepšie označiť ako chýbajúci, než ho doplniť odhadom. Pri príprave v Revolise generátor berie štruktúrované polia nehnuteľnosti a z nich skladá text. Ak chýba fakt, ktorý by text posilnil, patrí to do doplnenia pre makléra — nie do vety pre kupujúceho.
+
+## Portál, sociálne siete a e-mail nie sú ten istý text
+
+Jeden odsek skopírovaný trikrát vyzerá ako šablóna. Portál potrebuje vecný opis s parametrami. Facebook potrebuje kratší text. Instagram potrebuje krátku caption. E-mail záujemcom má iný tón ako inzerát na webe.
+
+Revolis pripraví z tých istých parametrov text na portál, Facebook, Instagram a e-mail. Maklér si vyberie, čo použije. Nie je to sľub, že sa inzerát sám objaví na portáli.
+
+## Čo model nesmie vymyslieť
+
+Najčastejšia chyba AI inzerátu nehnuteľnosti nie je slabá slovenčina. Je to veta, ktorá na obhliadke padne. Pravidlo je tvrdé: každé faktické tvrdenie musí ísť odvodiť zo vstupu. Bez podkladu nepatrí do textu vzdialenosť v minútach, blízkosť školy, tichá lokalita, materiál steny, počet parkovacích miest, právna čistota, sľub výnosu ani telefón, ktorý ste nezadali.
+
+V Revolise platí to isté pri generovaní: model má písať z parametrov. Charakter lokality — či ide o sídlisko, vidiek alebo centrum — sa použije len ak ho maklér zadá. Bez tohto údaja sa povaha miesta nedomýšľa. Chýbajúci údaj má skončiť ako doplnenie pre makléra, nie ako veta pre kupujúceho.
+
+Radšej kratší pravdivý text než dlhší s vymyslenou školou za rohom.
+
+## Kontrola pred zverejnením
+
+AI inzerát nehnuteľnosti končí kontrolou, nie odoslaním. Prejdite návrh ako pri vlastnom texte.
+
+- Sedí výmera, cena a lokalita s kartou ponuky?
+- Nie je v prvej vete scéna, ktorú ste na mieste nevideli?
+- Je v závere vaše meno a telefón, nie vymyslený kontakt?
+- Ostali v texte miesta na doplnenie, ktoré ste ešte nevyplnili?
+
+V Revolise sa návrh pred použitím upraví a úpravy sa uložia. To je tá istá brána ako pri dopyte: systém pripraví, maklér rozhodne.
+
+## Ako postupovať v kancelárii
+
+- Doplňte kartu nehnuteľnosti skôr, než otvoríte prázdny dokument.
+- Vygenerujte text z parametrov, nie z marketingového odseku v veľkých písmenách.
+- Upravte tón a fakty, ktoré poznáte z obhliadky.
+- Až potom vložte text na portál alebo do správy.
+
+Tento postup šetrí čas práve preto, že nezačínate z nuly a zároveň nenecháte model dopísať mesto, ktoré v zadaní nie je. **AI inzerát nehnuteľnosti** má zmysel, keď vzniká z údajov, ktoré kancelária vie doložiť.
+
+## Čo to znamená pre makléra
+
+Rýchly inzerát nie je dlhší odsek. Je to text, ktorý ide von v deň náberu a obstojí na obhliadke. Má zmysel, keď vzniká z parametrov, keď sa dá opraviť a keď neobsahuje vymyslenú školu, MHD ani výnos.
+
+Ak chcete tento postup vyskúšať na vlastnej ponuke, Revolis je **14 dní zadarmo, bez platobnej karty**. Po skončení sa nič neúčtuje automaticky. [Vytvoriť účet na app.revolis.ai](https://app.revolis.ai/register)
 `,
   },
 ]
