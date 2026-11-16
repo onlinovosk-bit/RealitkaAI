@@ -33,6 +33,9 @@
       "@revolis/model-gateway/config": [
         "../../packages/model-gateway/src/config.ts"
       ],
+      "@revolis/model-gateway/subscription-capacity": [
+        "../../packages/model-gateway/src/subscription-capacity.ts"
+      ],
       "@/*": [
         "./src/*"
       ],

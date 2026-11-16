@@ -1,6 +1,8 @@
 # Revolis.AI — STAV NA JEDNEJ STRÁNKE
 
-> **2026-11-16 zlúčenie CRM draftov:** starší `crm-pre-realitnych-maklerov` ide do checklistu; `published: false`. Vetva `cursor/merge-crm-blog-drafts-611f`. Merge/LIVE/`vercel.json`/CI nerobené. Tabuľka % sa NEMENÍ. Posledná aktualizácia SESSION: **2026-11-16**.
+> **2026-11-16 External Subscription Capacity:** percentuálne pooly na AI Control Tower (Grok weekly shared, Claude session/weekly). Draft PR na `cursor/external-subscription-capacity-611f`. PROD migrácia **neaplikovaná**. Tabuľka % sa NEMENÍ. Posledná aktualizácia SESSION: **2026-11-16**.
+
+> **2026-11-16 zlúčenie CRM draftov:** starší `crm-pre-realitnych-maklerov` ide do checklistu; `published: false`. Zmergované do `main` ako `41819133` (#956). Tabuľka % sa NEMENÍ. Posledná aktualizácia SESSION: **2026-11-16**.
 
 > **2026-11-16 SEO audit:** interné odkazy `/blog`, homepage meta+JSON-LD, úvod `/blog`, dva draft články. Zmergované do `main` ako `933e65b1` (#954). Tabuľka % sa NEMENÍ.
 
@@ -58,12 +60,12 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: Draft PR — zlúčiť starý CRM článok do checklistu
+Cieľ: External Subscription Capacity na AI Control Tower
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] 1 — Presunúť overené tvrdenia zo starého draftu do checklistu (1029 slov)
-- [x] 2 — Odstrániť `crm-pre-realitnych-maklerov` z `lib/blog.ts` a testov
-- [x] 3 — Marketing vitest 89/89, tsc 0; oba články `published: false`
-- [x] 4 — Draft PR #956 otvorený, CI na heade zelené (merge/deploy nie)
+- [x] 1 — Doména percentuálnych poolov + testy (26/26 gateway)
+- [x] 2 — Idempotentná migrácia v repe, RLS deny, izolovaný Postgres
+- [x] 3 — UI sekcia + admin formulár + POST so `is_platform_admin`
+- [x] 4 — CRM vitest/lint/typecheck/build; PR bez merge a bez PROD SQL
 <!-- SESSION:END -->
 
 ## Hotové 2026-10-07 — s dôkazom (REALVIA-SEC-01)

@@ -3,6 +3,12 @@ import type {
   GatewayProjectId,
   ProviderRateLimit,
 } from "./types.ts";
+import {
+  buildSubscriptionCapacityView,
+  type QuotaWindow,
+  type SubscriptionCapacityView,
+  type SubscriptionSnapshot,
+} from "./subscription-capacity.ts";
 
 export const STALE_AFTER_MS = 36 * 60 * 60 * 1000;
 export const MIN_FORECAST_SAMPLES = 3;
@@ -48,6 +54,12 @@ export interface ManualQuotaSnapshot {
   updatedAt: string | null;
   modelCount: number | null;
   note: string | null;
+  accountRef?: string | null;
+  quotaWindow?: QuotaWindow | null;
+  usedPercent?: number | null;
+  remainingPercent?: number | null;
+  capturedAt?: string | null;
+  resetTimezone?: string | null;
 }
 
 export interface PoolAggregate {
@@ -141,6 +153,7 @@ export interface ControlTowerView {
   auditState: SourceState;
   snapshotState: SourceState;
   empty: boolean;
+  subscriptions: SubscriptionCapacityView;
 }
 
 const PROJECTS: GatewayProjectId[] = ["revolis", "onlinovo", "other"];
@@ -741,6 +754,28 @@ export function buildControlTowerView(input: {
 
   const empty = !sourcesComplete && input.snapshotState !== "ok" && cards.every((card) => card.consumption.value === null);
 
+  const subscriptionSnapshots: SubscriptionSnapshot[] = input.snapshots.flatMap((snapshot) => {
+    const hasPercent =
+      (typeof snapshot.usedPercent === "number" && Number.isFinite(snapshot.usedPercent)) ||
+      (typeof snapshot.remainingPercent === "number" && Number.isFinite(snapshot.remainingPercent));
+    if (!hasPercent) return [];
+    const quotaWindow = snapshot.quotaWindow ?? "monthly";
+    return [
+      {
+        provider: snapshot.provider,
+        accountRef: snapshot.accountRef?.trim() || "default",
+        quotaWindow,
+        source: snapshot.source,
+        usedPercent: snapshot.usedPercent ?? null,
+        remainingPercent: snapshot.remainingPercent ?? null,
+        resetAt: snapshot.resetAt,
+        resetTimezone: snapshot.resetTimezone ?? null,
+        capturedAt: snapshot.capturedAt ?? snapshot.updatedAt,
+        note: snapshot.note,
+      },
+    ];
+  });
+
   return {
     generatedAt: now.toISOString(),
     periodKey: window.key,
@@ -776,5 +811,6 @@ export function buildControlTowerView(input: {
     auditState: input.auditState,
     snapshotState: input.snapshotState,
     empty,
+    subscriptions: buildSubscriptionCapacityView(subscriptionSnapshots, now),
   };
 }

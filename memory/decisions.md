@@ -1,3 +1,12 @@
+## 2026-11-16 — BUILD: External Subscription Capacity (AI Control Tower)
+**GO:** Founder 16. 11. 2026 P0 — percentuálne predplatné pooly, bez druhého gateway.
+**Čo:** Rozšírenie `ai_quota_snapshots` o window/percentá; karty Grok weekly shared + Claude session/weekly; zápis len `profiles.is_platform_admin === true`.
+**Dôkaz:** model-gateway 26/26; CRM vitest 14/14; eslint 0; typecheck 53/54; CRM build s `/ai-control-tower` a `/api/ai-control-tower/snapshots`. Izolovaný Postgres apply migrácie. PROD `ai_quota_snapshots` neexistuje.
+**Nerobené:** merge, deploy, PROD SQL, platené API.
+**BUILD/BACKLOG:** BUILD (prevádzkový rez nad existujúcim Control Tower).
+**Rollback:** revert vetvy `cursor/external-subscription-capacity-611f`.
+
+---
 ## 2026-11-16 — BUILD: otázka 9 — režim len na čítanie (draft PR #956)
 **GO:** Founder 16. 11. 2026, 11:38 — nahradiť „Po skončení sa skúšobná verzia sama vypne a nič sa neúčtuje automaticky.“ vetou „Po skončení skúšobná verzia prejde do režimu len na čítanie a nič sa neúčtuje automaticky.“
 **Čo:** Presná náhrada v Q9 checklistu a v reportoch tohto PR. Trial kód ostáva `limited` → `read_only`.

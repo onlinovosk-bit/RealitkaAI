@@ -20,5 +20,28 @@ export {
   POOL_ALERT_THRESHOLDS,
 } from "./usage.ts";
 export { publishUsageAlerts } from "./alerts.ts";
+export {
+  buildSubscriptionCapacityView,
+  canonicalIdentity,
+  forecastFromPercentSamples,
+  groupSnapshots,
+  reactionForUsedPercent,
+  subscriptionPoolId,
+  validateManualSnapshot,
+  CANONICAL_SUBSCRIPTION_CARDS,
+  QUOTA_WINDOWS,
+  SUBSCRIPTION_THRESHOLDS,
+} from "./subscription-capacity.ts";
+export type {
+  ManualSnapshotInput,
+  QuotaWindow,
+  SubscriptionCapacityView,
+  SubscriptionCard,
+  SubscriptionForecast,
+  SubscriptionPoolIdentity,
+  SubscriptionReaction,
+  SubscriptionSnapshot,
+  ValidatedManualSnapshot,
+} from "./subscription-capacity.ts";
 export type { GatewayTask, GatewayCompletion, ModelProvider } from "./types.ts";
 export { GatewayError, ProviderCallError } from "./types.ts";
