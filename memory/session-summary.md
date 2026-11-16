@@ -1,3 +1,17 @@
+## Session 2026-11-16 (external subscription capacity)
+### Dokončené
+- Percentuálne subscription pooly na AI Control Tower (Grok weekly shared, Claude session/weekly, manuálny snapshot).
+- Idempotentná migrácia v repe; PROD neaplikovaná.
+### Rozpracované / Pending
+- Merge, LIVE, apply migrácie na PROD — čaká na GO.
+### Kľúčové súbory zmenené
+- `packages/model-gateway/src/subscription-capacity.ts`
+- `apps/crm/supabase/migrations/20261116140000_ai_quota_subscription_capacity.sql`
+- `apps/crm/src/app/api/ai-control-tower/snapshots/route.ts`
+### Ďalší krok
+Founder: review PR; apply migrácie a merge len na výslovné GO.
+
+---
 ## Session 2026-11-16 (Q9 read-only wording)
 ### Dokončené
 - Otázka 9: „sama vypne“ → „prejde do režimu len na čítanie“. Draft #956, published: false.

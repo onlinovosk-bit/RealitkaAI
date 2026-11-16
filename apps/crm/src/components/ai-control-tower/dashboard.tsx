@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { ControlTowerView, Figure, ProviderCard } from "@revolis/model-gateway/usage";
+import SubscriptionSection from "@/components/ai-control-tower/subscription-section";
 
 function badgeClass(status: Figure["confidence"] | ProviderCard["status"]): string {
   if (status === "live") return "border-emerald-500/40 bg-emerald-500/10 text-emerald-200";
@@ -31,7 +32,13 @@ function FigureLine({ label, figure }: { label: string; figure: Figure }) {
   );
 }
 
-export default function ControlTowerDashboard({ view }: { view: ControlTowerView }) {
+export default function ControlTowerDashboard({
+  view,
+  canWriteSnapshots = false,
+}: {
+  view: ControlTowerView;
+  canWriteSnapshots?: boolean;
+}) {
   const [query, setQuery] = useState("");
   const needle = query.trim().toLowerCase();
   const cards = useMemo(
@@ -72,6 +79,8 @@ export default function ControlTowerDashboard({ view }: { view: ControlTowerView
           {view.auditState}. Snímky: {view.snapshotState}.
         </div>
       ) : null}
+
+      <SubscriptionSection view={view.subscriptions} canWrite={canWriteSnapshots} />
 
       <section className="rounded-xl border border-slate-700 bg-slate-900/70 p-4 sm:p-5" data-testid="shared-pool">
         <div className="flex flex-wrap items-center justify-between gap-2">

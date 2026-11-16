@@ -376,6 +376,11 @@ test("manual snapshot stays manual and does not invent consumption", () => {
   assert.equal(xai.consumption.display, "Nedostupné");
   assert.equal(xai.vendorLimit.value, 40);
   assert.equal(xai.vendorLimit.confidence, "manual");
+  assert.equal(view.subscriptions.cards.some((card) => card.id === "grok_bot:shared:weekly"), true);
+  assert.equal(
+    view.subscriptions.cards.find((card) => card.id === "grok_bot:shared:weekly")?.statusCode,
+    "UNAVAILABLE",
+  );
   assert.equal(view.sharedPool.consumption.value, null);
   assert.equal(view.sharedPool.consumption.display, "Nedostupné");
 

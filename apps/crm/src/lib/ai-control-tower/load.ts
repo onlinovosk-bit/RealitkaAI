@@ -68,6 +68,13 @@ function asSnapshot(row: Record<string, unknown>): ManualQuotaSnapshot | null {
     const parsed = typeof value === "number" ? value : Number(value);
     return Number.isFinite(parsed) ? parsed : null;
   };
+  const quotaWindow =
+    row.quota_window === "weekly" ||
+    row.quota_window === "monthly" ||
+    row.quota_window === "session" ||
+    row.quota_window === "custom"
+      ? row.quota_window
+      : null;
   return {
     poolId,
     provider,
@@ -78,6 +85,12 @@ function asSnapshot(row: Record<string, unknown>): ManualQuotaSnapshot | null {
     updatedAt: typeof row.updated_at === "string" ? row.updated_at : null,
     modelCount: num(row.model_count),
     note: typeof row.note === "string" ? row.note : null,
+    accountRef: typeof row.account_ref === "string" ? row.account_ref : null,
+    quotaWindow,
+    usedPercent: num(row.used_percent),
+    remainingPercent: num(row.remaining_percent),
+    capturedAt: typeof row.captured_at === "string" ? row.captured_at : null,
+    resetTimezone: typeof row.reset_timezone === "string" ? row.reset_timezone : null,
   };
 }
 
@@ -86,8 +99,10 @@ async function readSnapshots(): Promise<{ state: SourceState; rows: ManualQuotaS
   if (!supabase) return { state: "unavailable", rows: [] };
   const { data, error } = await supabase
     .from("ai_quota_snapshots")
-    .select("pool_id, provider, source, limit_eur, consumed_eur, reset_at, updated_at, model_count, note")
-    .limit(200);
+    .select(
+      "pool_id, provider, source, limit_eur, consumed_eur, reset_at, updated_at, model_count, note, account_ref, quota_window, used_percent, remaining_percent, captured_at, reset_timezone",
+    )
+    .limit(500);
   if (error || !data) return { state: "unavailable", rows: [] };
   const rows = data
     .map((row) => asSnapshot(row as Record<string, unknown>))

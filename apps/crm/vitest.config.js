@@ -16,6 +16,10 @@ export default defineConfig({
         __dirname,
         '../../packages/model-gateway/src/config.ts',
       ),
+      '@revolis/model-gateway/subscription-capacity': resolve(
+        __dirname,
+        '../../packages/model-gateway/src/subscription-capacity.ts',
+      ),
       '@': resolve(__dirname, './src'),
       '@/lib': resolve(__dirname, './src/lib'),
     },

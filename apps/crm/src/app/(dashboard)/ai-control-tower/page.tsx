@@ -16,13 +16,15 @@ export default async function AiControlTowerPage() {
     ? await supabase
         .from("profiles")
         .select("is_platform_admin")
-        .eq("auth_user_id", user.id)
+        .or(`auth_user_id.eq.${user.id},id.eq.${user.id}`)
         .maybeSingle()
     : { data: null };
 
+  const isPlatformAdmin = profile?.is_platform_admin === true;
+
   if (!canViewFounderMetrics({
     email: user?.email,
-    isPlatformAdmin: profile?.is_platform_admin,
+    isPlatformAdmin,
   })) {
     notFound();
   }
@@ -54,7 +56,7 @@ export default async function AiControlTowerPage() {
             Vežu sa nepodarilo zložiť. Spotreba, limity ani prognóza nie sú k dispozícii.
           </div>
         ) : (
-          <ControlTowerDashboard view={view} />
+          <ControlTowerDashboard view={view} canWriteSnapshots={isPlatformAdmin} />
         )}
       </div>
     </main>
