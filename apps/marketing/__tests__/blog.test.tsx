@@ -209,6 +209,9 @@ describe('draft CRM checklist article', () => {
     expect(body).toContain('tri oddelené záznamy')
     expect(body).not.toMatch(/100 % peňazí/i)
     expect(body).not.toMatch(/refund/i)
+    expect(body).not.toMatch(/uvítacie/i)
+    expect(body).toContain('skúšobnej doby')
+    expect(body).toContain('skúšobná verzia sama vypne')
     expect(getArticle(CRM_CHECKLIST_ARTICLE_SLUG)?.keyword).toBe(
       'ako vybrať CRM pre realitných maklérov',
     )

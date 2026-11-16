@@ -1,3 +1,15 @@
+## Session 2026-11-16 (otázka 9 copy)
+### Dokončené
+- Checklist Q9: skúšobná doba namiesto uvítacieho obdobia; „sama vypne“ overené v trial kóde (read-only).
+### Rozpracované / Pending
+- Draft PR #956. Merge/LIVE/`published: true` čaká na GO.
+### Kľúčové súbory zmenené
+- `apps/marketing/lib/blog.ts` otázka 9
+- `docs/reports/2026-11-16-crm-blog-q9-copy.md`
+### Ďalší krok
+Founder: review Q9 v #956.
+
+---
 ## Session 2026-11-16 (zlúčenie CRM draftov)
 ### Dokončené
 - Starší draft `crm-pre-realitnych-maklerov` zlúčený do checklistu (1029 slov) a odstránený z `lib/blog.ts`.

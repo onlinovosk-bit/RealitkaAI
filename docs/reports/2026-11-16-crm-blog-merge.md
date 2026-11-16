@@ -123,7 +123,7 @@ Keď maklér odíde, majú ostáť dopyty v kancelárii, nie v súkromnej schrá
 
 ## 9. Ako vyzerá skúška bez karty?
 
-Revolis môžete vyskúšať 14 dní zadarmo, bez platobnej karty. Po skončení sa skúšobná verzia sama vypne a nič sa neúčtuje automaticky. Overte, či naozaj nemusíte zadávať kartu a čo sa stane s dátami po skončení uvítacieho obdobia.
+Revolis môžete vyskúšať 14 dní zadarmo, bez platobnej karty. Po skončení sa skúšobná verzia sama vypne a nič sa neúčtuje automaticky. Overte, či naozaj nemusíte zadávať kartu a čo sa stane s dátami po skončení skúšobnej doby.
 
 ## 10. Nájdete človeka, keď klient zavolá?
 

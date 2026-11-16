@@ -1,3 +1,11 @@
+## 2026-11-16 — BUILD: otázka 9 checklistu — skúšobná doba (draft PR #956)
+**GO:** Founder 16. 11. 2026 — „uvítacie obdobie“ von; overiť „sama vypne“ v trial kóde.
+**Čo:** `uvítacieho obdobia` → `skúšobnej doby`. Veta o vypnutí ostáva: `trialGraceFrom` po 14 dňoch → `limited` / read-only, zápis cez `requireActiveAppAccess`; bez Stripe ID v bootstrape.
+**Dôkaz:** `apps/crm/src/lib/saas-ops.ts`, `feature-gating.ts`, `trial-no-card.test.ts`. Marketing vitest+tsc v tom istom PR.
+**Nerobené:** published:true, merge, LIVE.
+**Rollback:** revert commitu na `cursor/merge-crm-blog-drafts-611f`.
+
+---
 ## 2026-11-16 — BUILD: zlúčiť starý CRM draft do checklistu (draft PR)
 **GO:** Founder 16. 11. 2026 — starší `crm-pre-realitnych-maklerov` zlúčiť do `…-ako-vybrat`; published: false; never merge/deploy; nemeň vercel.json ani CI.
 **Čo:** Checklist 1029 slov s presunutými faktami (portály, dve knihy, CSV/XLSX/RealSoft). Starý záznam odstránený. Refund z copy von. AI inzerát ostáva draft.
