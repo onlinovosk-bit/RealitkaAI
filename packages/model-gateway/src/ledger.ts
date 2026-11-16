@@ -1,10 +1,12 @@
 import { appendFile, mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
-import type { GatewayLedgerRecord } from "./types.ts";
+import type { GatewayLedgerRecord, GatewayProjectId } from "./types.ts";
+import { asProjectId, isBillableLedgerRow, parseLedgerJsonl, round6 } from "./usage.ts";
 
 export interface SpendSummary {
   dailyEur: number;
   monthlyEur: number;
+  monthlyByProject: Record<GatewayProjectId, number>;
 }
 
 export class AppendOnlyJsonlLedger {
@@ -32,6 +34,23 @@ export class AppendOnlyJsonlLedger {
     return run;
   }
 
+  async records(): Promise<GatewayLedgerRecord[]> {
+    try {
+      const raw = await readFile(this.file, "utf8");
+      return parseLedgerJsonl(raw);
+    } catch (err: unknown) {
+      if (
+        err &&
+        typeof err === "object" &&
+        "code" in err &&
+        (err as NodeJS.ErrnoException).code === "ENOENT"
+      ) {
+        return [];
+      }
+      throw err;
+    }
+  }
+
   async summarize(now = new Date()): Promise<SpendSummary> {
     let raw = "";
     try {
@@ -43,35 +62,48 @@ export class AppendOnlyJsonlLedger {
         "code" in err &&
         (err as NodeJS.ErrnoException).code === "ENOENT"
       ) {
-        return { dailyEur: 0, monthlyEur: 0 };
+        return emptySpend();
       }
       throw err;
     }
-    const dayKey = utcDateKey(now);
-    const monthKey = utcMonthKey(now);
-    let dailyEur = 0;
-    let monthlyEur = 0;
-    for (const line of raw.split("\n")) {
-      const trimmed = line.trim();
-      if (!trimmed) continue;
-      let row: GatewayLedgerRecord;
-      try {
-        row = JSON.parse(trimmed) as GatewayLedgerRecord;
-      } catch {
-        continue;
-      }
-      if (row.status !== "ok") continue;
-      if (!Number.isFinite(row.costEur)) continue;
-      const keyDay = utcDateKey(new Date(row.ts));
-      const keyMonth = utcMonthKey(new Date(row.ts));
-      if (keyDay === dayKey) dailyEur += row.costEur;
-      if (keyMonth === monthKey) monthlyEur += row.costEur;
-    }
-    return {
-      dailyEur: round6(dailyEur),
-      monthlyEur: round6(monthlyEur),
-    };
+    return summarizeRecords(parseLedgerJsonl(raw), now);
   }
+}
+
+export function emptySpend(): SpendSummary {
+  return {
+    dailyEur: 0,
+    monthlyEur: 0,
+    monthlyByProject: { revolis: 0, onlinovo: 0, other: 0 },
+  };
+}
+
+export function summarizeRecords(records: readonly GatewayLedgerRecord[], now = new Date()): SpendSummary {
+  const dayKey = utcDateKey(now);
+  const monthKey = utcMonthKey(now);
+  let dailyEur = 0;
+  let monthlyEur = 0;
+  const monthlyByProject: Record<GatewayProjectId, number> = { revolis: 0, onlinovo: 0, other: 0 };
+  for (const row of records) {
+    if (!isBillableLedgerRow(row)) continue;
+    const keyDay = utcDateKey(new Date(row.ts));
+    const keyMonth = utcMonthKey(new Date(row.ts));
+    if (keyDay === dayKey) dailyEur += row.costEur;
+    if (keyMonth === monthKey) {
+      monthlyEur += row.costEur;
+      const project = asProjectId(row.projectId);
+      monthlyByProject[project] += row.costEur;
+    }
+  }
+  return {
+    dailyEur: round6(dailyEur),
+    monthlyEur: round6(monthlyEur),
+    monthlyByProject: {
+      revolis: round6(monthlyByProject.revolis),
+      onlinovo: round6(monthlyByProject.onlinovo),
+      other: round6(monthlyByProject.other),
+    },
+  };
 }
 
 function utcDateKey(d: Date): string {
@@ -80,8 +112,4 @@ function utcDateKey(d: Date): string {
 
 function utcMonthKey(d: Date): string {
   return d.toISOString().slice(0, 7);
-}
-
-function round6(n: number): number {
-  return Math.round(n * 1_000_000) / 1_000_000;
 }

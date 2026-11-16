@@ -2,18 +2,31 @@ import { actualCostEur } from "./pricing.ts";
 import { preflightCost } from "./governor.ts";
 import type { ModelGatewayConfig } from "./config.ts";
 import { loadConfigFromEnv } from "./config.ts";
-import { AppendOnlyJsonlLedger } from "./ledger.ts";
+import { AppendOnlyJsonlLedger, emptySpend, type SpendSummary } from "./ledger.ts";
 import { mirrorToLangfuse } from "./langfuse.ts";
 import { createOpenAiProvider } from "./providers/http-openai.ts";
 import { createAnthropicProvider } from "./providers/http-anthropic.ts";
+import { deferEnvelope, FileAlertDedup, publishUsageAlerts } from "./alerts.ts";
+import {
+  aggregateSharedPool,
+  emitThresholdAlerts,
+  forecastToReset,
+  samplesFromLedger,
+  SHARED_POOL_ID,
+  utcMonthWindow,
+} from "./usage.ts";
+import type { BusStore } from "../../bus-core/src/store.ts";
 import type {
   GatewayCompletion,
   GatewayLedgerRecord,
+  GatewayProviderId,
   GatewayTask,
   ModelProvider,
   ProviderCallRequest,
+  ProviderRateLimit,
 } from "./types.ts";
 import { GatewayError, ProviderCallError } from "./types.ts";
+import { asProjectId } from "./usage.ts";
 
 export interface ModelGatewayDeps {
   config: ModelGatewayConfig;
@@ -21,6 +34,8 @@ export interface ModelGatewayDeps {
   openai?: ModelProvider;
   anthropic?: ModelProvider;
   now?: () => Date;
+  /** Existing bus. Deferred work is a task envelope, not a new queue. */
+  bus?: BusStore;
 }
 
 function isRetriable(err: ProviderCallError): boolean {
@@ -61,6 +76,55 @@ export function createModelGateway(deps: Partial<ModelGatewayDeps> = {}): {
       ? createAnthropicProvider(config.anthropicModel, config.anthropicApiKey)
       : undefined);
   const record = buildRecorder(config, ledger);
+  const bus = deps.bus;
+
+  async function enforcePreflight(
+    task: GatewayTask,
+    provider: GatewayProviderId,
+    model: string,
+    maxInput: number,
+    maxOutput: number,
+    taskMax: number,
+    spent: SpendSummary,
+    usageReadable: boolean,
+    attempts: number,
+  ): Promise<void> {
+    const projectId = asProjectId(task.projectId);
+    try {
+      preflightCost(config, {
+        provider,
+        model,
+        maxInputTokens: maxInput,
+        maxOutputTokens: maxOutput,
+        taskMaxCostEur: taskMax,
+        spent,
+        usageReadable,
+        projectId,
+        priority: task.priority ?? "normal",
+        poolSpentEur: spent.monthlyEur,
+        projectSpentEur: spent.monthlyByProject[projectId],
+      });
+    } catch (err) {
+      if (err instanceof GatewayError && err.code === "deferred") {
+        const queued = await enqueueDeferred(bus, task, err.message, now());
+        if (!queued) {
+          const blocked = new GatewayError(
+            "defer_queue_unavailable",
+            "Non-urgent work was not called and could not be queued",
+            attempts,
+          );
+          await record(
+            ledgerRow(now(), task, "blocked", provider, model, 0, 0, 0, 0, blocked.code, attempts),
+          );
+          throw blocked;
+        }
+        await record(ledgerRow(now(), task, "deferred", provider, model, 0, 0, 0, 0, err.code, attempts));
+      } else if (err instanceof GatewayError) {
+        await record(ledgerRow(now(), task, "blocked", provider, model, 0, 0, 0, 0, err.code, attempts));
+      }
+      throw err;
+    }
+  }
 
   async function complete(task: GatewayTask): Promise<GatewayCompletion> {
     const maxInput = task.maxInputTokens ?? config.defaults.maxInputTokens;
@@ -69,44 +133,33 @@ export function createModelGateway(deps: Partial<ModelGatewayDeps> = {}): {
 
     if (!config.openaiModel) {
       const err = new GatewayError("openai_model_required", "OPENAI model must be explicitly configured");
-      await record(ledgerRow(now(), task.taskId, "blocked", "openai", "", 0, 0, 0, 0, err.code));
+      await record(ledgerRow(now(), task, "blocked", "openai", "", 0, 0, 0, 0, err.code));
       throw err;
     }
     if (!openai) {
       const err = new GatewayError("openai_not_ready", "OpenAI provider is not configured");
-      await record(ledgerRow(now(), task.taskId, "blocked", "openai", config.openaiModel, 0, 0, 0, 0, err.code));
+      await record(ledgerRow(now(), task, "blocked", "openai", config.openaiModel, 0, 0, 0, 0, err.code));
       throw err;
     }
 
-    const spent = await ledger.summarize(now());
+    let spent = emptySpend();
+    let usageReadable = true;
     try {
-      preflightCost(config, {
-        provider: "openai",
-        model: config.openaiModel,
-        maxInputTokens: maxInput,
-        maxOutputTokens: maxOutput,
-        taskMaxCostEur: taskMax,
-        spent,
-      });
-    } catch (err) {
-      if (err instanceof GatewayError) {
-        await record(
-          ledgerRow(
-            now(),
-            task.taskId,
-            "blocked",
-            "openai",
-            config.openaiModel,
-            0,
-            0,
-            0,
-            0,
-            err.code,
-          ),
-        );
-      }
-      throw err;
+      spent = await ledger.summarize(now());
+    } catch {
+      usageReadable = false;
     }
+    await enforcePreflight(
+      task,
+      "openai",
+      config.openaiModel,
+      maxInput,
+      maxOutput,
+      taskMax,
+      spent,
+      usageReadable,
+      0,
+    );
 
     const callReq: ProviderCallRequest = {
       model: openai.model,
@@ -133,20 +186,36 @@ export function createModelGateway(deps: Partial<ModelGatewayDeps> = {}): {
         ms: totalMs,
         attempts,
       };
-      await record(ledgerRow(now(), task.taskId, "ok", out.provider, out.model, out.tokensIn, out.tokensOut, out.costEur, out.ms, undefined, attempts));
+      await record(
+        ledgerRow(
+          now(),
+          task,
+          "ok",
+          out.provider,
+          out.model,
+          out.tokensIn,
+          out.tokensOut,
+          out.costEur,
+          out.ms,
+          undefined,
+          attempts,
+          result.rateLimit ?? null,
+        ),
+      );
+      await notifySharedPool(config, ledger, bus, now);
       return out;
     } catch (first) {
       if (first instanceof GatewayError) throw first;
       if (!(first instanceof ProviderCallError)) throw first;
       if (first.kind === "auth") {
         await record(
-          ledgerRow(now(), task.taskId, "error", "openai", openai.model, 0, 0, 0, totalMs, "auth", attempts),
+          ledgerRow(now(), task, "error", "openai", openai.model, 0, 0, 0, totalMs, "auth", attempts),
         );
         throw new GatewayError("auth", first.message, attempts);
       }
       if (!isRetriable(first)) {
         await record(
-          ledgerRow(now(), task.taskId, "error", "openai", openai.model, 0, 0, 0, totalMs, first.kind, attempts),
+          ledgerRow(now(), task, "error", "openai", openai.model, 0, 0, 0, totalMs, first.kind, attempts),
         );
         throw new GatewayError(first.kind, first.message, attempts);
       }
@@ -159,23 +228,24 @@ export function createModelGateway(deps: Partial<ModelGatewayDeps> = {}): {
       throw new GatewayError("max_attempts", "Maximum attempts reached", attempts);
     }
 
+    let fallbackSpent = emptySpend();
+    let fallbackReadable = true;
     try {
-      preflightCost(config, {
-        provider: "anthropic",
-        model: config.anthropicModel,
-        maxInputTokens: maxInput,
-        maxOutputTokens: maxOutput,
-        taskMaxCostEur: taskMax,
-        spent: await ledger.summarize(now()),
-      });
-    } catch (err) {
-      if (err instanceof GatewayError) {
-        await record(
-          ledgerRow(now(), task.taskId, "blocked", "anthropic", config.anthropicModel, 0, 0, 0, totalMs, err.code, attempts),
-        );
-      }
-      throw err;
+      fallbackSpent = await ledger.summarize(now());
+    } catch {
+      fallbackReadable = false;
     }
+    await enforcePreflight(
+      task,
+      "anthropic",
+      config.anthropicModel,
+      maxInput,
+      maxOutput,
+      taskMax,
+      fallbackSpent,
+      fallbackReadable,
+      attempts,
+    );
 
     attempts += 1;
     try {
@@ -198,14 +268,28 @@ export function createModelGateway(deps: Partial<ModelGatewayDeps> = {}): {
         attempts,
       };
       await record(
-        ledgerRow(now(), task.taskId, "ok", out.provider, out.model, out.tokensIn, out.tokensOut, out.costEur, out.ms, undefined, attempts),
+        ledgerRow(
+          now(),
+          task,
+          "ok",
+          out.provider,
+          out.model,
+          out.tokensIn,
+          out.tokensOut,
+          out.costEur,
+          out.ms,
+          undefined,
+          attempts,
+          result.rateLimit ?? null,
+        ),
       );
+      await notifySharedPool(config, ledger, bus, now);
       return out;
     } catch (second) {
       if (second instanceof GatewayError) throw second;
       if (second instanceof ProviderCallError) {
         await record(
-          ledgerRow(now(), task.taskId, "error", "anthropic", anthropic.model, 0, 0, 0, totalMs, second.kind, attempts),
+          ledgerRow(now(), task, "error", "anthropic", anthropic.model, 0, 0, 0, totalMs, second.kind, attempts),
         );
         throw new GatewayError(second.kind, second.message, attempts);
       }
@@ -216,9 +300,63 @@ export function createModelGateway(deps: Partial<ModelGatewayDeps> = {}): {
   return { complete };
 }
 
+async function notifySharedPool(
+  config: ModelGatewayConfig,
+  ledger: AppendOnlyJsonlLedger,
+  bus: BusStore | undefined,
+  now: () => Date,
+): Promise<void> {
+  if (!bus) return;
+  try {
+    const at = now();
+    const window = utcMonthWindow(at);
+    const samples = samplesFromLedger(await ledger.records()).filter((sample) => {
+      const ms = Date.parse(sample.ts);
+      return Number.isFinite(ms) && ms >= window.startMs && ms < at.getTime() + 1;
+    });
+    const shared = aggregateSharedPool(samples);
+    const forecast = forecastToReset({
+      samples: samples.map((sample) => ({ ts: sample.ts, costEur: sample.costEur })),
+      limitEur: config.limits.monthlyEur,
+      periodStartMs: window.startMs,
+      periodEndMs: window.endMs,
+      nowMs: at.getTime(),
+    });
+    await emitThresholdAlerts({
+      poolId: SHARED_POOL_ID,
+      period: window.key,
+      consumedEur: shared.totalEur,
+      limitEur: config.limits.monthlyEur,
+      forecast,
+      periodEndMs: window.endMs,
+      dedup: new FileAlertDedup(`${ledger.filePath}.alerts.json`),
+      publish: async (alerts) => {
+        await publishUsageAlerts(bus, alerts, at);
+      },
+    });
+  } catch {
+    // A failed alert must not turn a finished call into an error.
+  }
+}
+
+async function enqueueDeferred(
+  bus: BusStore | undefined,
+  task: GatewayTask,
+  reason: string,
+  at: Date,
+): Promise<boolean> {
+  if (!bus) return false;
+  try {
+    await bus.write("tasks", deferEnvelope({ taskId: task.taskId, reason, now: at }));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function ledgerRow(
   at: Date,
-  taskId: string,
+  task: GatewayTask,
   status: GatewayLedgerRecord["status"],
   provider: string,
   model: string,
@@ -228,10 +366,11 @@ function ledgerRow(
   ms: number,
   errorCode?: string,
   attempts = 0,
+  rateLimit?: ProviderRateLimit | null,
 ): GatewayLedgerRecord {
   const row: GatewayLedgerRecord = {
     ts: at.toISOString(),
-    taskId,
+    taskId: task.taskId,
     status,
     provider,
     model,
@@ -240,7 +379,11 @@ function ledgerRow(
     costEur,
     ms,
     attempts,
+    projectId: asProjectId(task.projectId),
+    poolId: `${provider}:default`,
   };
+  if (task.agentId) row.agentId = task.agentId;
   if (errorCode) row.errorCode = errorCode;
+  if (rateLimit) row.rateLimit = rateLimit;
   return row;
 }

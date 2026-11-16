@@ -25,6 +25,7 @@ function baseConfig(over: Partial<ModelGatewayConfig> = {}): ModelGatewayConfig 
     anthropicFallbackEnabled: true,
     xaiEnabled: false,
     limits: { perTaskEur: 0.25, dailyEur: 5, monthlyEur: 50 },
+    budgets: { revolisEur: 30, onlinovoEur: 15, otherEur: 5, urgentReserveEur: 1 },
     defaults: { maxInputTokens: 512, maxOutputTokens: 128 },
     maxAttempts: 3,
     ledgerPath: "var/model-gateway/test-ledger.jsonl",

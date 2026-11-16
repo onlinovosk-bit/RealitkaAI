@@ -1,3 +1,13 @@
+## 2026-11-16 — BUILD: AI Control Tower na existujúcom governore
+**GO:** Cloud Agent P0 implementácia do RealitkaAI. Bez merge, bez deploy, bez zápisu do PROD DB, bez plateného xAI.
+**Čo:** `/ai-control-tower` v CRM. `preflightCost`/`decidePreflight` ostáva jediná brána gateway (ALLOW/BLOCK/DEFER, fail-closed pri nečitateľnom ledgeri). Rozpočty projektov sú konfigurácia governora. Alerty 50/70/85/95 a burn idú cez bus-core, raz na pool+obdobie+prah. Migrácia `20261116120000_ai_control_tower.sql` je len v repe.
+**Dôkaz:** `npm run model-gateway:test` 16/16; `npm run model-gateway:typecheck` exit 0; CRM eslint zmenených súborov exit 0; nav vitest 5/5; schema-gap NOVÝCH medzier 0; CRM typecheck 53 pri baseline 54; `npm run build` v apps/crm exit 0, route `ƒ /ai-control-tower`.
+**Nerobené:** apply migrácie na PROD, merge, deploy, platené volania xAI.
+**BUILD/BACKLOG:** BUILD (prevádzkový rez nad existujúcim gateway).
+**Rollback:** revert vetvy `cursor/ai-control-tower-5ec3`.
+
+---
+
 ## 2026-11-12 — BUILD: rolling Friday deadline na homepage (draft PR #950)
 **GO:** Cloud Agent follow-up na #950: odstrániť hardcoded `23. 10.` z countdown/sticky/FAQ; nahradiť piatkom 23:59:59 Europe/Bratislava (Po–Pia tento, So–Ne ďalší); Draft, never merge/deploy.
 **Čo:** `fridayDeadline()` v `apps/marketing/lib/friday-deadline.ts` + `public/friday-deadline.js`; `index.html` labels `.js-friday-label` (fallback `do piatka`); odpočet bez `expire()` / fixného `DEADLINE`. Ponuka 0 € / 49 € nezmenená. Žiadne slovo pilot.
