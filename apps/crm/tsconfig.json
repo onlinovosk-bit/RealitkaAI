@@ -27,6 +27,12 @@
       "@revolis/control-contract": [
         "../../packages/control-contract/src/index.ts"
       ],
+      "@revolis/model-gateway/usage": [
+        "../../packages/model-gateway/src/usage.ts"
+      ],
+      "@revolis/model-gateway/config": [
+        "../../packages/model-gateway/src/config.ts"
+      ],
       "@/*": [
         "./src/*"
       ],

@@ -1,5 +1,19 @@
 ## Session 2026-11-16
 ### Dokončené
+- AI Control Tower v CRM na `/ai-control-tower` (`apps/crm/src/app/(dashboard)/ai-control-tower/page.tsx`).
+- Governor `decidePreflight` (ALLOW/BLOCK/DEFER, fail-closed) a zdieľaný pool bez dvojitého súčtu (`packages/model-gateway`).
+- Migrácia `apps/crm/supabase/migrations/20261116120000_ai_control_tower.sql` — neaplikovaná na PROD.
+### Rozpracované / Pending
+- Aplikácia migrácie na produkčnú databázu čaká na samostatné GO.
+### Kľúčové súbory zmenené
+- `packages/model-gateway/src/governor.ts`: jedna preflight brána vrátane rezervy a projektových stropov
+- `packages/model-gateway/src/usage.ts`: pool, prognóza, alerty, stav Živé/Manuálne/Zastarané/Nedostupné
+- `apps/crm/src/lib/ai-control-tower/load.ts`: čítanie ledgeru, auditu a snímok
+### Ďalší krok
+Founder GO na aplikáciu migrácie `20261116120000_ai_control_tower.sql` mimo tohto PR. Merge a deploy nie.
+
+---
+
 - Interné odkazy `/blog` z homepage (header+footer „Blog pre maklérov“), `/demo` („prehľad trhu pre maklérov“), `/balik` („ďalšie tipy pre maklérov“); článok ceny → `/demo` („pozrite si ukážku Revolis“).
 - Homepage meta + og:description (`HOMEPAGE_DESCRIPTION`); JSON-LD Organization+WebSite, CollectionPage, BreadcrumbList.
 - Úvod `/blog` 123 slov; dva draft články `published: false` (checklist 773, AI inzerát 706).

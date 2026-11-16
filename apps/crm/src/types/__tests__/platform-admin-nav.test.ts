@@ -3,6 +3,7 @@ import { ALL_NAV_ITEMS, getNavItems, type MenuVariant } from "../navigation";
 
 const VARIANTS: MenuVariant[] = ["agent_solo", "agent_team", "owner_vision", "owner_protocol"];
 const INTERNAL_METRICS = "internal-metrics";
+const AI_CONTROL_TOWER = "ai-control-tower";
 
 describe("platformAdminOnly položky v menu", () => {
   it("Metriky zakladateľa sú označené ako platformAdminOnly", () => {
@@ -31,16 +32,17 @@ describe("platformAdminOnly položky v menu", () => {
         (i) => i.id,
       );
       expect(ids).toContain(INTERNAL_METRICS);
+      expect(ids).toContain(AI_CONTROL_TOWER);
     }
   });
 
-  it("príznak neodomyká nič iné — pribudne presne jedna položka", () => {
+  it("príznak neodomyká nič iné — pribudnú metriky a AI Control Tower", () => {
     const base = getNavItems("owner_protocol", undefined, "protocol_authority");
     const admin = getNavItems("owner_protocol", undefined, "protocol_authority", {
       isPlatformAdmin: true,
     });
-    expect(admin.length).toBe(base.length + 1);
+    expect(admin.length).toBe(base.length + 2);
     const added = admin.filter((i) => !base.some((b) => b.id === i.id));
-    expect(added.map((i) => i.id)).toEqual([INTERNAL_METRICS]);
+    expect(added.map((i) => i.id)).toEqual([INTERNAL_METRICS, AI_CONTROL_TOWER]);
   });
 });

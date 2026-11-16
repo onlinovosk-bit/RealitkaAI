@@ -1,5 +1,6 @@
 import type { ModelProvider, ProviderCallRequest, ProviderCallResult } from "../types.ts";
 import { ProviderCallError } from "../types.ts";
+import { rateLimitFromHeaders } from "../rate-limit.ts";
 
 export function createOpenAiProvider(model: string, apiKey: string): ModelProvider {
   return {
@@ -37,6 +38,7 @@ export function createOpenAiProvider(model: string, apiKey: string): ModelProvid
         text,
         tokensIn: json.usage?.prompt_tokens ?? 0,
         tokensOut: json.usage?.completion_tokens ?? 0,
+        rateLimit: rateLimitFromHeaders("openai", (name) => res.headers.get(name)),
       };
     },
   };

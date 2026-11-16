@@ -1,5 +1,20 @@
 export type GatewayProviderId = "openai" | "anthropic" | "gemini" | "deepseek" | "xai";
 
+/** Budget slices of the one shared governor pool. Not extra pools. */
+export type GatewayProjectId = "revolis" | "onlinovo" | "other";
+
+/** Urgent work may use the reserve. Anything else is deferred when only the reserve remains. */
+export type GatewayPriority = "urgent" | "normal";
+
+export interface ProviderRateLimit {
+  requestsLimit: number | null;
+  requestsRemaining: number | null;
+  requestsReset: string | null;
+  tokensLimit: number | null;
+  tokensRemaining: number | null;
+  tokensReset: string | null;
+}
+
 export interface GatewayTask {
   taskId: string;
   prompt: string;
@@ -9,6 +24,12 @@ export interface GatewayTask {
   maxInputTokens?: number;
   /** Expected max output tokens for pre-flight estimate. */
   maxOutputTokens?: number;
+  /** Which project slice this call draws. Missing means `other`. */
+  projectId?: GatewayProjectId;
+  /** Agent or bot id for attribution. Never inferred. */
+  agentId?: string;
+  /** Missing means non-urgent (`normal`) and may be deferred. */
+  priority?: GatewayPriority;
 }
 
 export interface GatewayCompletion {
@@ -22,7 +43,7 @@ export interface GatewayCompletion {
   attempts: number;
 }
 
-export type GatewayCallStatus = "ok" | "error" | "blocked";
+export type GatewayCallStatus = "ok" | "error" | "blocked" | "deferred";
 
 export interface GatewayLedgerRecord {
   ts: string;
@@ -36,6 +57,11 @@ export interface GatewayLedgerRecord {
   ms: number;
   attempts: number;
   errorCode?: string;
+  projectId?: GatewayProjectId;
+  agentId?: string;
+  poolId?: string;
+  /** Present only when the provider response included rate-limit headers. */
+  rateLimit?: ProviderRateLimit | null;
 }
 
 export class GatewayError extends Error {
@@ -54,6 +80,8 @@ export interface ProviderCallResult {
   text: string;
   tokensIn: number;
   tokensOut: number;
+  /** Null when the response had no rate-limit headers. Never synthesized. */
+  rateLimit?: ProviderRateLimit | null;
 }
 
 export interface ProviderCallRequest {

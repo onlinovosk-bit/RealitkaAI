@@ -1,3 +1,13 @@
+## 2026-11-16 — BUILD: AI Control Tower na existujúcom governore
+**GO:** Cloud Agent P0 implementácia do RealitkaAI. Bez merge, bez deploy, bez zápisu do PROD DB, bez plateného xAI.
+**Čo:** `/ai-control-tower` v CRM. `preflightCost`/`decidePreflight` ostáva jediná brána gateway (ALLOW/BLOCK/DEFER, fail-closed pri nečitateľnom ledgeri). Rozpočty projektov sú konfigurácia governora. Alerty 50/70/85/95 a burn idú cez bus-core, raz na pool+obdobie+prah. Migrácia `20261116120000_ai_control_tower.sql` je len v repe.
+**Dôkaz:** `npm run model-gateway:test` 16/16; `npm run model-gateway:typecheck` exit 0; CRM eslint zmenených súborov exit 0; nav vitest 5/5; schema-gap NOVÝCH medzier 0; CRM typecheck 53 pri baseline 54; `npm run build` v apps/crm exit 0, route `ƒ /ai-control-tower`.
+**Nerobené:** apply migrácie na PROD, merge, deploy, platené volania xAI.
+**BUILD/BACKLOG:** BUILD (prevádzkový rez nad existujúcim gateway).
+**Rollback:** revert vetvy `cursor/ai-control-tower-5ec3`.
+
+---
+
 ## 2026-11-16 — BUILD: SEO audit interné odkazy + JSON-LD + blog intro + 2 drafty (draft PR)
 **GO:** Founder Cloud Agent 16. 11. 2026 — jeden draft PR v `apps/marketing`; never merge/deploy; nemeň `vercel.json` / Vercel / 307→308 / Ahrefs.
 **Čo:** (1) interné odkazy `/blog` z homepage header+footer, `/demo`, `/balik`; článok ceny → `/demo`. (2) Homepage meta+og description (`HOMEPAGE_DESCRIPTION`; `zdarma`→`zadarmo`). (3) JSON-LD Organization+WebSite, CollectionPage, BreadcrumbList; žiadne Offer/AggregateRating. (4) Úvod `/blog` 123 slov. (5) Drafty `crm-pre-realitnych-maklerov-ako-vybrat` a `ai-inzerat-nehnutelnosti` (`published: false`); starý `crm-pre-realitnych-maklerov` ostáva.
