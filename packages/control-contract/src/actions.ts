@@ -161,6 +161,24 @@ const ENTRIES: readonly ActionMetadata[] = [
       "Send an AI outreach e-mail (REVOLIS-OUTREACH). Requires a human approval; cron has none.",
   },
   {
+    action: "returnsignal.email.send",
+    capability: "EXECUTE",
+    reversible: false,
+    externallyVisible: true,
+    risk: "irreversible",
+    externalProvider: "resend",
+    providerIdempotency: {
+      status: "probable",
+      mechanism: "Idempotency-Key header on POST /emails",
+      retentionHours: 24,
+      evidenceRef: UJKL,
+    },
+    denied: false,
+    deniedReason: null,
+    description:
+      "Send a broker-approved return-signal e-mail (REVOLIS-RETURN-SIGNAL). The draft is written by a view, price change or listing-age signal; it never sends itself.",
+  },
+  {
     action: "lead.score.recompute",
     capability: "ANALYZE",
     reversible: true,

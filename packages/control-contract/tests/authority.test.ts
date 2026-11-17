@@ -262,7 +262,7 @@ describe("inbound.reply.email.send — live Tier-3 path (apps/crm approve-draft)
 });
 
 describe("dead-lead + outreach sends — every AI→client action floors at APPROVAL_REQUIRED", () => {
-  for (const action of ["deadlead.email.send", "deadlead.sms.send", "outreach.email.send"]) {
+  for (const action of ["deadlead.email.send", "deadlead.sms.send", "outreach.email.send", "returnsignal.email.send"]) {
     it(`${action} needs a human approval and is FORBIDDEN under the kill switch`, () => {
       const base = {
         agentId: "test-agent",

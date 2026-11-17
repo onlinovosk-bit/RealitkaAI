@@ -190,6 +190,24 @@ describe("approveAndSendInboundDraft", () => {
     send.mockResolvedValue({ ok: true, channel: "email", to: "jan@example.com", messageId: "msg-1" });
   });
 
+  it("sends a return-signal draft only after the same claim", async () => {
+    const { admin } = fakeAdmin({
+      activity: {
+        id: ACT,
+        lead_id: LEAD,
+        meta: draftMeta({
+          agent_id: "REVOLIS-RETURN-SIGNAL",
+          subject: "Návrat na ponuku — Byt",
+          body: "Kontakt sa znova pozrel na ponuku Byt.\n\nToto je návrh. Správa sa neodošle, kým ju nepotvrdíte.",
+        }),
+      },
+    });
+    const res = await approveAndSendInboundDraft({ admin, leadId: LEAD, activityId: ACT, approver, send });
+    expect(res).toEqual({ ok: true, messageId: "msg-1" });
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(send.mock.calls[0][0].subject).toBe("Návrat na ponuku — Byt");
+  });
+
   it("sends exactly the stored subject and body to the stored recipient", async () => {
     const { admin } = fakeAdmin({});
     const res = await approveAndSendInboundDraft({ admin, leadId: LEAD, activityId: ACT, approver, send });

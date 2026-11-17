@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { toInboundDraftView } from "../draft-view";
+import { RETURN_SIGNAL_AGENT_ID } from "../../signals/return-signal";
 
 const base = {
   draft: true,
@@ -15,6 +16,13 @@ describe("toInboundDraftView", () => {
     expect(toInboundDraftView(null)).toBeNull();
     expect(toInboundDraftView({ category: "ai_recommendation" })).toBeNull();
     expect(toInboundDraftView({ ...base, agent_id: "OTHER" })).toBeNull();
+  });
+
+  it("shows a return-signal draft for broker confirmation", () => {
+    expect(toInboundDraftView({ ...base, agent_id: RETURN_SIGNAL_AGENT_ID })).toMatchObject({
+      state: "pending",
+      canApprove: true,
+    });
   });
 
   it("pending and send_failed drafts are approvable", () => {

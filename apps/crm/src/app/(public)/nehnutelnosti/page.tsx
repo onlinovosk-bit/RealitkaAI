@@ -139,11 +139,13 @@ function PropertyCard({
   highlighted,
   agencySlug,
   listingPosition,
+  intentId,
 }: {
   property: PublicListing;
   highlighted: boolean;
   agencySlug: string;
   listingPosition: number;
+  intentId?: string;
 }) {
   const typeLabel = publicListingTypeLabel(property.type);
   const roomsLabel = property.rooms.trim();
@@ -201,6 +203,8 @@ function PropertyCard({
         <ListingClickTracker
           agencySlug={agencySlug}
           listingPosition={listingPosition}
+          propertyId={property.id}
+          intentId={intentId}
           href={`/properties/${property.id}`}
           className="rounded-xl bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
         >
@@ -356,6 +360,7 @@ export default async function NehnutelnostiPage({
                     highlighted={isHighlighted(p)}
                     agencySlug={SPRIEVODCA_AGENCY_SLUG}
                     listingPosition={index}
+                    intentId={intent?.id}
                   />
                 ))}
               </div>
@@ -383,6 +388,7 @@ export default async function NehnutelnostiPage({
                       highlighted={false}
                       agencySlug={SPRIEVODCA_AGENCY_SLUG}
                       listingPosition={sortedMatched.length + index}
+                      intentId={intent?.id}
                     />
                   ))}
                 </div>
