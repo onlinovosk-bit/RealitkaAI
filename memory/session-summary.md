@@ -1,3 +1,17 @@
+## Session 2026-11-17 (ADAF — preflight a rozhodovacia brána)
+### Dokončené
+- Read-only preflight ADAF (13 sekcií) nad `main` b3fc170: repo, auth/tenant, DB/RLS, Model Gateway a cost, joby, integrácie, CI/ops. Nič v repe ani v PROD nezmenené.
+- Rozhodovacia brána Ústavy v2: founder „A" → **BACKLOG** (Q1 veto, Q7, Q8 veto). Zápis: `memory/decisions.md`.
+### Rozpracované / Pending
+- Odomykacia podmienka: Stripe krok C + prvá platiaca agentúra. Definícia CFGP od foundera, ak sa ADAF odomkne.
+- Samostatné nálezy bez vlastníka: `/admin/health` bez server-side gate, `createAdminClient()` s tichým fallbackom na anon kľúč, AI Control Tower bez zapisovateľa do `ai_usage_entries`.
+### Kľúčové súbory zmenené
+- `memory/decisions.md`: záznam ADAF — BACKLOG + čo ostáva z preflightu.
+- `memory/session-summary.md`: tento záznam.
+- `docs/STATUS.md`: jednoriadková poznámka a nový blok SESSION (tabuľka % sa nemení).
+### Ďalší krok
+Stripe krok C (jediný krok, ktorý odblokuje platiaceho klienta).
+
 ## Session 2026-11-16 (Control Tower ledger repair)
 ### Dokončené
 - Preflight PROD: 7/526/177, ledger 136, DDL Control Tower prítomné, ledger verzie 0.

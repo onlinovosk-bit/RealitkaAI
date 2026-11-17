@@ -1,3 +1,21 @@
+## 2026-11-17 — ADAF (AI Digital Asset Factory): BACKLOG — rozhodovacia brána Ústavy v2
+**Rozhodnutie:** Founder „A" (2026-11-17) po read-only preflighte (13 sekcií, základ `main` b3fc170). ADAF v zadanom rozsahu (Portfolio Control Plane, agent orchestration, execution connectors, measurement/economics, governance) sa **nestaví**. **BUILD/BACKLOG: BACKLOG.**
+**Prečo (odhad, nie meranie):** Q1 „zaplatil by dnešný klient?" = NIE (interný nástroj) → veto: strop VALIDATE. Q7 ROI proti backlogu = NIE (Stripe krok C je +30 bodov a jediný krok, ktorý odblokuje platiaceho klienta). Q8 timing = „príliš skoro" → veto: BACKLOG bez ohľadu na skóre. Q10: Technology Bias / Feature Trap. Q9 (MVP do 2 týždňov) = ÁNO len pre základný rez. Skóre ≈ 1–3 z 12.
+**Odomykacia podmienka:** Stripe krok C hotový a prvá platiaca agentúra. Riadok „Stripe 0 %" v STATUS.md môže byť zastaraný (poznámka z 2026-11-06 hovorí, že `STRIPE_PRICE_V3_SEAT_MONTHLY` je vo Vercel Production prítomná); reálny stav je nemeraný.
+**Čo ostáva z preflightu (platí k `main` b3fc170, 2026-11-16; PROD stav NEZNÁMY):**
+- ADAF, CFGP, Evidence Pack, Portfolio Control Plane v repe neexistujú (0 zhôd). CFGP nemá definíciu — pred odomknutím ju musí dodať founder. „Ruffo" v zadaní = `ruflo` (dev-time orchestrátor, nie runtime).
+- `packages/model-gateway` existuje, ale v produkcii ho nevolá nikto (`createModelGateway` volajú len 2 skripty a testy). CRM volá LLM mimo Gateway: 27 volaní cez `callClaude`/`callOpenAI` (overený grep) + 7 priamych SDK/fetch miest (podľa čítania agentom).
+- Ledger Gateway je lokálny JSONL súbor. `ai_usage_entries` (číta ju AI Control Tower, `load.ts:132`) nemá zapisovateľa → Control Tower nemá zdroj reálnych dát. Tabuľka nemá stĺpec pre job/workflow; `project_id` je enum `revolis|onlinovo|other`.
+- Cenník Gateway (`pricing.ts`) nemá `claude-sonnet-4-6` ani `claude-haiku-4-5-20251001` (konštanty CRM v `lib/ai/claude.ts`) → volanie by skončilo BLOCK `unknown_price`. API Gateway prijíma len jeden `prompt` (bez system, JSON módu, streamingu, cache_control).
+- Limity 0,02 EUR/job a 0,05 EUR/deň sú len v pláne živého smoke testu (`docs/reports/2026-11-10-model-gateway-live-validation.md`, stav NOT_RUN), nie v kóde (kód: 0,25 / 2 / 25 EUR).
+- Chýba trvalé schvaľovanie (control-contract CP-P0-2). `ai_jobs` nemá v kóde žiadnu referenciu, runner ani lease.
+- Plán, ak sa odomkne: PR 0–9 (ADR → Gateway readiness → DB ledger do `ai_usage_entries` → control-contract `adaf.*` + DENY_LIST pre míňanie → migrácia + RLS → jobs/approvals → discovery/evidence → report → UI → PROD aktivácia). L4 autonómne míňanie zakázané. PR 1–2 (Gateway + DB ledger) majú hodnotu aj bez ADAF, ale tiež nejdú bez GO.
+**Samostatné nálezy (nie ADAF, nerieši sa teraz, overené čítaním kódu):**
+- `/admin/health` nemá server-side gate (`app/admin/health/page.tsx` renderuje klienta bez kontroly). API `/api/system/health-dashboard` vyžaduje len prihlásenie (`getCurrentUser`); počty idú cez RLS klienta, obsah `getEnvironmentHealth()` a `runSmokeTests()` sa nečítal.
+- `createAdminClient()` pri chýbajúcom `SUPABASE_SERVICE_ROLE_KEY` ticho padá na anon/placeholder kľúč (`apps/crm/src/lib/supabase/server.ts:18-20`).
+**Nerobené:** implementácia, migrácie, zásah do PROD, Vercel, merge. Súbory z preflightu: žiadne (jediný vedľajší produkt bol dočasný bare klon mimo repa v scratchpad).
+**Ďalší krok:** Stripe krok C (jediný krok, ktorý odblokuje platiaceho klienta).
+
 ## 2026-11-16 — PROD ZMENA: Control Tower ledger repair
 **GO:** Founder „GO: oprav Control Tower ledger“. Skill `prod-migration`. Mimo GO: DDL, snapshoty, merge, deploy.
 **Čo:** dva idempotentné INSERT-y do `supabase_migrations.schema_migrations` na PROD `ypgajkhqtbriqqmyawyv`: `20261116120000` / `ai_control_tower`, `20261116140000` / `ai_quota_subscription_capacity`. DDL už bolo (founder SQL editor).
