@@ -1,5 +1,19 @@
 # Revolis.AI — STAV NA JEDNEJ STRÁNKE
 
+> **2026-11-17 ADAF:** read-only preflight (13 sekcií) a rozhodovacia brána Ústavy v2: founder „A" → **BACKLOG**, odomkne ho Stripe krok C a prvá platiaca agentúra. Nič nenasadené, PROD nezmenená. Tabuľka % sa NEMENÍ. Posledná aktualizácia SESSION: **2026-11-17**.
+
+> **2026-11-16 Control Tower ledger:** `schema_migrations` 136 → 138 (`20261116120000`, `20261116140000`). DDL už bolo. Snapshoty 0. Tabuľka % sa NEMENÍ. Posledná aktualizácia SESSION: **2026-11-16**.
+
+> **2026-11-16 External Subscription Capacity:** percentuálne pooly na AI Control Tower (Grok weekly shared, Claude session/weekly). Zmergované do `main` ako `b981d704` (#957). DDL na PROD aplikované founderom; ledger opravený. Tabuľka % sa NEMENÍ. Posledná aktualizácia SESSION: **2026-11-16**.
+
+> **2026-11-16 zlúčenie CRM draftov:** starší `crm-pre-realitnych-maklerov` ide do checklistu; `published: false`. Zmergované do `main` ako `41819133` (#956). Tabuľka % sa NEMENÍ. Posledná aktualizácia SESSION: **2026-11-16**.
+
+> **2026-11-16 SEO audit:** interné odkazy `/blog`, homepage meta+JSON-LD, úvod `/blog`, dva draft články. Zmergované do `main` ako `933e65b1` (#954). Tabuľka % sa NEMENÍ.
+
+> **2026-11-12 rolling Friday deadline:** follow-up na draft PR #950. Homepage countdown/sticky/FAQ bez hardcoded `23. 10.`; `fridayDeadline()` Europe/Bratislava. Merge/deploy/PROD nerobené. Tabuľka % sa NEMENÍ.
+
+> **2026-11-12 SEO homepage + robots + draft blog:** draft PR na `cursor/seo-homepage-robots-blog-1a71`. Title/meta homepage, CRM privacy metadata + `robots.ts`, článok `/blog/crm-pre-realitnych-maklerov` ako `published: false`. Merge/deploy/PROD nerobené. Tabuľka % sa NEMENÍ.
+
 > **2026-11-06 (UPTM Governance v1.1 + self-audit):** dokumenty a draft PR #35 v UPTM repe; v Revolise sa mení iba pamäť a blok SESSION. Tabuľka % sa NEMENÍ a je STARÁ (posledný prepočet 2026-10-05). Vercel prod env metadata ukazujú `STRIPE_PRICE_V3_SEAT_MONTHLY` prítomné, takže „Stripe 0 %“ je s nimi v rozpore. Revidované číslo sa neuvádza bez merania (chýba hodnota `pricingV2.enabled`).
 
 > **2026-10-26 BLOG:** `/blog` + prvý článok v `apps/marketing` na draft PR; PRODUCTION nezmenená. Tabuľka % sa NEMENÍ.
@@ -50,13 +64,12 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: UPTM Governance v1.1 (paper-only) + Ownership self-audit
+Cieľ: ADAF — preflight a rozhodovacia brána
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] 1 — UPTM Governance v1.1 docs 01–05 + draft PR #35 (`f24ebe1`)
-- [x] 2 — Stripe krok C: Vercel prod env metadata, read-only, bez decrypt (zúženie na jeden vstup)
-- [x] 3 — Self-audit podľa Directive §8: 3 agenti + bodové overenie
-- [ ] 4 — Memory PREPEND + STATUS + draft PR (tento PR), CI zelené
-- [ ] 5 — Founder: hodnota `pricingV2.enabled` → STRIPE-C-RECONCILE
+- [x] 1 — Read-only preflight ADAF (13 sekcií, základ main b3fc170, v repe nič nezmenené)
+- [x] 2 — Rozhodovacia brána Ústavy v2: BACKLOG (founder „A", 2026-11-17)
+- [x] 3 — Zápis: decisions.md, session-summary.md, STATUS.md
+- [ ] 4 — Merge zápisu na main (čaká na „merguj N")
 <!-- SESSION:END -->
 
 ## Hotové 2026-10-07 — s dôkazom (REALVIA-SEC-01)

@@ -34,6 +34,7 @@ function baseConfig(ledgerPath: string): ModelGatewayConfig {
     anthropicFallbackEnabled: false,
     xaiEnabled: false,
     limits: { perTaskEur: 0.25, dailyEur: 5, monthlyEur: 50 },
+    budgets: { revolisEur: 30, onlinovoEur: 15, otherEur: 5, urgentReserveEur: 1 },
     defaults: { maxInputTokens: 256, maxOutputTokens: 128 },
     maxAttempts: 3,
     ledgerPath,

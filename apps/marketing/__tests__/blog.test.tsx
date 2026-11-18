@@ -2,14 +2,25 @@ import { describe, expect, it } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import BlogIndexPage from '../app/blog/page'
 import BlogArticlePage, { generateMetadata, generateStaticParams } from '../app/blog/[slug]/page'
+import BalikPage from '../app/balik/page'
+import DemoPage from '../app/demo/page'
 import { BlogChrome } from '../components/blog/BlogChrome'
 import {
+  AI_LISTING_ARTICLE_SLUG,
+  BLOG_INDEX_INTRO,
+  CRM_CHECKLIST_ARTICLE_SLUG,
   FIRST_ARTICLE_SLUG,
   formatBlogDate,
+  getArticle,
   getPublishedArticle,
   getPublishedBlogPaths,
   listPublishedArticles,
 } from '../lib/blog'
+import {
+  articleBreadcrumbJsonLd,
+  blogCollectionJsonLd,
+  jsonLdContainsForbiddenCommercialSchema,
+} from '../lib/json-ld'
 import { renderMarkdown } from '../lib/markdown'
 import sitemap from '../app/sitemap'
 import { PUBLIC_SITEMAP_PATHS } from '../lib/site'
@@ -77,7 +88,11 @@ describe('blog pages', () => {
     expect(html).toContain('Ceny nehnuteľností 2026: spomalenie, sadzby a nové LTV')
     expect(html).toContain(`href="${ARTICLE_PATH}"`)
     expect(html).toContain('19. októbra 2026')
+    expect(html).toContain('slovenským trhom nehnuteľností')
     expect(html).not.toMatch(/pilot/i)
+    const introWords = BLOG_INDEX_INTRO.trim().split(/\s+/).length
+    expect(introWords).toBeGreaterThanOrEqual(100)
+    expect(introWords).toBeLessThanOrEqual(150)
   })
 
   it('renders the article page with chrome, metadata helpers and register CTA', async () => {
@@ -94,6 +109,10 @@ describe('blog pages', () => {
     expect(html).toContain('14 dní zadarmo, bez platobnej karty')
     expect(html).toContain('Všetky články')
     expect(html).toContain('REVOLIS')
+    expect(html).toContain('pozrite si ukážku Revolis')
+    expect(html).toContain('href="/demo"')
+    expect(html).toContain('"@type":"BreadcrumbList"')
+    expect(html).toContain('Domov')
     expect(html).not.toMatch(/pilot/i)
     expect(html).not.toMatch(/cenník/i)
 
@@ -112,5 +131,139 @@ describe('blog sitemap contract', () => {
     const urls = sitemap().map((entry) => entry.url)
     expect(urls).toContain('https://www.revolis.ai/blog')
     expect(urls).toContain(`https://www.revolis.ai${ARTICLE_PATH}`)
+  })
+
+  it('keeps unpublished articles out of the public sitemap', () => {
+    for (const slug of [
+      'crm-pre-realitnych-maklerov',
+      CRM_CHECKLIST_ARTICLE_SLUG,
+      AI_LISTING_ARTICLE_SLUG,
+    ]) {
+      const draftPath = `/blog/${slug}`
+      expect(PUBLIC_SITEMAP_PATHS).not.toContain(draftPath)
+      expect(getPublishedBlogPaths()).not.toContain(draftPath)
+      expect(sitemap().map((entry) => entry.url)).not.toContain(`https://www.revolis.ai${draftPath}`)
+      expect(getPublishedArticle(slug)).toBeUndefined()
+    }
+  })
+})
+
+describe('removed older CRM draft', () => {
+  it('no longer stores crm-pre-realitnych-maklerov in the catalog', () => {
+    expect(getArticle('crm-pre-realitnych-maklerov')).toBeUndefined()
+    expect(getPublishedArticle('crm-pre-realitnych-maklerov')).toBeUndefined()
+  })
+})
+
+function expectDraftArticle(opts: {
+  slug: string
+  title: string
+  keyword: string
+  h2: string[]
+}) {
+  const article = getArticle(opts.slug)
+  expect(article).toBeDefined()
+  expect(getPublishedArticle(opts.slug)).toBeUndefined()
+  expect(article?.published).toBe(false)
+  expect(article?.title).toBe(opts.title)
+  expect(article?.keyword).toBe(opts.keyword)
+  expect(article?.author).toBe('Andrej Ondruš')
+  expect(article?.date).toBe('2026-11-16')
+  expect(article?.description.length).toBeGreaterThan(80)
+  expect(article?.description.length).toBeLessThanOrEqual(155)
+  for (const heading of opts.h2) {
+    expect(article?.body).toContain(heading)
+  }
+  expect(article?.body).toContain('## Čo to znamená pre makléra')
+  expect(article?.body).toContain('14 dní zadarmo, bez platobnej karty')
+  expect(article?.body).toContain('https://app.revolis.ai/register')
+  expect(article?.body).not.toMatch(/pilot/i)
+  expect(article?.body).not.toMatch(/cenník/i)
+  expect(article?.body).not.toMatch(/\b(25|60|79|149)\s*€/)
+  const words = article!.body.trim().split(/\s+/).length
+  expect(words).toBeGreaterThanOrEqual(700)
+  expect(words).toBeLessThanOrEqual(1200)
+}
+
+describe('draft CRM checklist article', () => {
+  it('stores unpublished selection-checklist metadata with merged portal and import claims', () => {
+    expectDraftArticle({
+      slug: CRM_CHECKLIST_ARTICLE_SLUG,
+      title: 'Ako vybrať CRM pre realitných maklérov: 10 otázok pred rozhodnutím',
+      keyword: 'ako vybrať CRM pre realitných maklérov',
+      h2: [
+        '## Prečo desať otázok namiesto porovnávacej tabuľky',
+        '## 1. Kam dnes padne dopyt, keď maklér nie je pri počítači?',
+        '## 10. Nájdete človeka, keď klient zavolá?',
+      ],
+    })
+    const body = getArticle(CRM_CHECKLIST_ARTICLE_SLUG)!.body
+    expect(body).toContain('Nehnuteľnosti.sk')
+    expect(body).toContain('TopReality')
+    expect(body).toContain('Reality.sk')
+    expect(body).toContain('Bazoš')
+    expect(body).toContain('Byty.sk')
+    expect(body).toContain('Excel, Google Sheets')
+    expect(body).toContain('RealSoft')
+    expect(body).toContain('dve knihy naraz')
+    expect(body).toContain('tri oddelené záznamy')
+    expect(body).not.toMatch(/100 % peňazí/i)
+    expect(body).not.toMatch(/refund/i)
+    expect(body).not.toMatch(/uvítacie/i)
+    expect(body).toContain('skúšobnej doby')
+    expect(body).toContain('skúšobná verzia prejde do režimu len na čítanie')
+    expect(getArticle(CRM_CHECKLIST_ARTICLE_SLUG)?.keyword).toBe(
+      'ako vybrať CRM pre realitných maklérov',
+    )
+  })
+})
+
+describe('draft AI listing article', () => {
+  it('stores unpublished listing-copy metadata, H2 and content rules', () => {
+    expectDraftArticle({
+      slug: AI_LISTING_ARTICLE_SLUG,
+      title: 'AI inzerát nehnuteľnosti: ako ho pripraviť rýchlo a bez chýb',
+      keyword: 'AI inzerát nehnuteľnosti',
+      h2: [
+        '## Čo je AI inzerát nehnuteľnosti',
+        '## Najprv parametre, potom text',
+        '## Čo model nesmie vymyslieť',
+      ],
+    })
+  })
+})
+
+describe('internal blog links on demo and balik', () => {
+  it('points /demo at the blog with the market-overview anchor', () => {
+    const html = renderToStaticMarkup(<DemoPage />)
+    expect(html).toContain('href="/blog"')
+    expect(html).toContain('prehľad trhu pre maklérov')
+  })
+
+  it('points /balik at the blog with the extra-tips anchor', () => {
+    const html = renderToStaticMarkup(<BalikPage />)
+    expect(html).toContain('href="/blog"')
+    expect(html).toContain('ďalšie tipy pre maklérov')
+  })
+})
+
+describe('blog JSON-LD', () => {
+  it('adds CollectionPage on /blog and BreadcrumbList on the article without offers', () => {
+    const indexHtml = renderToStaticMarkup(<BlogIndexPage />)
+    const collection = JSON.parse(
+      indexHtml.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)![1].replace(/&quot;/g, '"'),
+    )
+    expect(collection).toEqual(blogCollectionJsonLd())
+    expect(collection['@type']).toBe('CollectionPage')
+    expect(jsonLdContainsForbiddenCommercialSchema(collection)).toBe(false)
+
+    const breadcrumb = articleBreadcrumbJsonLd(getArticle(FIRST_ARTICLE_SLUG)!)
+    expect(breadcrumb['@type']).toBe('BreadcrumbList')
+    expect(breadcrumb.itemListElement.map((item: { name: string }) => item.name)).toEqual([
+      'Domov',
+      'Blog',
+      'Ceny nehnuteľností 2026: spomalenie, sadzby a nové LTV',
+    ])
+    expect(jsonLdContainsForbiddenCommercialSchema(breadcrumb)).toBe(false)
   })
 })

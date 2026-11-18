@@ -1,3 +1,104 @@
+## 2026-11-17 — ADAF (AI Digital Asset Factory): BACKLOG — rozhodovacia brána Ústavy v2
+**Rozhodnutie:** Founder „A" (2026-11-17) po read-only preflighte (13 sekcií, základ `main` b3fc170). ADAF v zadanom rozsahu (Portfolio Control Plane, agent orchestration, execution connectors, measurement/economics, governance) sa **nestaví**. **BUILD/BACKLOG: BACKLOG.**
+**Prečo (odhad, nie meranie):** Q1 „zaplatil by dnešný klient?" = NIE (interný nástroj) → veto: strop VALIDATE. Q7 ROI proti backlogu = NIE (Stripe krok C je +30 bodov a jediný krok, ktorý odblokuje platiaceho klienta). Q8 timing = „príliš skoro" → veto: BACKLOG bez ohľadu na skóre. Q10: Technology Bias / Feature Trap. Q9 (MVP do 2 týždňov) = ÁNO len pre základný rez. Skóre ≈ 1–3 z 12.
+**Odomykacia podmienka:** Stripe krok C hotový a prvá platiaca agentúra. Riadok „Stripe 0 %" v STATUS.md môže byť zastaraný (poznámka z 2026-11-06 hovorí, že `STRIPE_PRICE_V3_SEAT_MONTHLY` je vo Vercel Production prítomná); reálny stav je nemeraný.
+**Čo ostáva z preflightu (platí k `main` b3fc170, 2026-11-16; PROD stav NEZNÁMY):**
+- ADAF, CFGP, Evidence Pack, Portfolio Control Plane v repe neexistujú (0 zhôd). CFGP nemá definíciu — pred odomknutím ju musí dodať founder. „Ruffo" v zadaní = `ruflo` (dev-time orchestrátor, nie runtime).
+- `packages/model-gateway` existuje, ale v produkcii ho nevolá nikto (`createModelGateway` volajú len 2 skripty a testy). CRM volá LLM mimo Gateway: 27 volaní cez `callClaude`/`callOpenAI` (overený grep) + 7 priamych SDK/fetch miest (podľa čítania agentom).
+- Ledger Gateway je lokálny JSONL súbor. `ai_usage_entries` (číta ju AI Control Tower, `load.ts:132`) nemá zapisovateľa → Control Tower nemá zdroj reálnych dát. Tabuľka nemá stĺpec pre job/workflow; `project_id` je enum `revolis|onlinovo|other`.
+- Cenník Gateway (`pricing.ts`) nemá `claude-sonnet-4-6` ani `claude-haiku-4-5-20251001` (konštanty CRM v `lib/ai/claude.ts`) → volanie by skončilo BLOCK `unknown_price`. API Gateway prijíma len jeden `prompt` (bez system, JSON módu, streamingu, cache_control).
+- Limity 0,02 EUR/job a 0,05 EUR/deň sú len v pláne živého smoke testu (`docs/reports/2026-11-10-model-gateway-live-validation.md`, stav NOT_RUN), nie v kóde (kód: 0,25 / 2 / 25 EUR).
+- Chýba trvalé schvaľovanie (control-contract CP-P0-2). `ai_jobs` nemá v kóde žiadnu referenciu, runner ani lease.
+- Plán, ak sa odomkne: PR 0–9 (ADR → Gateway readiness → DB ledger do `ai_usage_entries` → control-contract `adaf.*` + DENY_LIST pre míňanie → migrácia + RLS → jobs/approvals → discovery/evidence → report → UI → PROD aktivácia). L4 autonómne míňanie zakázané. PR 1–2 (Gateway + DB ledger) majú hodnotu aj bez ADAF, ale tiež nejdú bez GO.
+**Samostatné nálezy (nie ADAF, nerieši sa teraz, overené čítaním kódu):**
+- `/admin/health` nemá server-side gate (`app/admin/health/page.tsx` renderuje klienta bez kontroly). API `/api/system/health-dashboard` vyžaduje len prihlásenie (`getCurrentUser`); počty idú cez RLS klienta, obsah `getEnvironmentHealth()` a `runSmokeTests()` sa nečítal.
+- `createAdminClient()` pri chýbajúcom `SUPABASE_SERVICE_ROLE_KEY` ticho padá na anon/placeholder kľúč (`apps/crm/src/lib/supabase/server.ts:18-20`).
+**Nerobené:** implementácia, migrácie, zásah do PROD, Vercel, merge. Súbory z preflightu: žiadne (jediný vedľajší produkt bol dočasný bare klon mimo repa v scratchpad).
+**Ďalší krok:** Stripe krok C (jediný krok, ktorý odblokuje platiaceho klienta).
+
+## 2026-11-16 — PROD ZMENA: Control Tower ledger repair
+**GO:** Founder „GO: oprav Control Tower ledger“. Skill `prod-migration`. Mimo GO: DDL, snapshoty, merge, deploy.
+**Čo:** dva idempotentné INSERT-y do `supabase_migrations.schema_migrations` na PROD `ypgajkhqtbriqqmyawyv`: `20261116120000` / `ai_control_tower`, `20261116140000` / `ai_quota_subscription_capacity`. DDL už bolo (founder SQL editor).
+**Dôkaz:** preflight 7/526/177, ledger 136 / max `20261022100000`, target 0, tabuľky + RLS + identity constraint prítomné. Izolovaný Postgres: INSERT 2, rerun 0, unique_violation PASS. PROD ROLLBACK dôkaz `ledger=138 target=2` potom znova 136/0. Po COMMIT ledger **138**, max `20261116140000`, `list_migrations` obe verzie, 7/526/177, pools 0, snapshots 0.
+**Nerobené:** merge tohto PR, deploy, snapshoty Grok/Claude.
+**BUILD/BACKLOG:** PROD ZMENA (zosúladenie ledgera, bez nového správania).
+**Rollback:** `DELETE FROM supabase_migrations.schema_migrations WHERE version IN ('20261116120000','20261116140000');`
+
+---
+## 2026-11-16 — BUILD: External Subscription Capacity (AI Control Tower)
+**GO:** Founder 16. 11. 2026 P0 — percentuálne predplatné pooly, bez druhého gateway.
+**Čo:** Rozšírenie `ai_quota_snapshots` o window/percentá; karty Grok weekly shared + Claude session/weekly; zápis len `profiles.is_platform_admin === true`.
+**Dôkaz:** model-gateway 26/26; CRM vitest 14/14; eslint 0; typecheck 53/54; CRM build s `/ai-control-tower` a `/api/ai-control-tower/snapshots`. Izolovaný Postgres apply migrácie. PROD `ai_quota_snapshots` neexistuje.
+**Nerobené:** merge, deploy, PROD SQL, platené API.
+**BUILD/BACKLOG:** BUILD (prevádzkový rez nad existujúcim Control Tower).
+**Rollback:** revert vetvy `cursor/external-subscription-capacity-611f`.
+
+---
+## 2026-11-16 — BUILD: otázka 9 — režim len na čítanie (draft PR #956)
+**GO:** Founder 16. 11. 2026, 11:38 — nahradiť „Po skončení sa skúšobná verzia sama vypne a nič sa neúčtuje automaticky.“ vetou „Po skončení skúšobná verzia prejde do režimu len na čítanie a nič sa neúčtuje automaticky.“
+**Čo:** Presná náhrada v Q9 checklistu a v reportoch tohto PR. Trial kód ostáva `limited` → `read_only`.
+**Dôkaz:** marketing vitest 89/89; `tsc --noEmit` 0.
+**Nerobené:** published:true, merge, LIVE. Hypotékový článok a register copy nemené.
+**Rollback:** revert commitu na `cursor/merge-crm-blog-drafts-611f`.
+
+---
+## 2026-11-16 — BUILD: otázka 9 checklistu — skúšobná doba (draft PR #956)
+**GO:** Founder 16. 11. 2026 — „uvítacie obdobie“ von; overiť „sama vypne“ v trial kóde.
+**Čo:** `uvítacieho obdobia` → `skúšobnej doby`. Veta o vypnutí ostáva: `trialGraceFrom` po 14 dňoch → `limited` / read-only, zápis cez `requireActiveAppAccess`; bez Stripe ID v bootstrape.
+**Dôkaz:** `apps/crm/src/lib/saas-ops.ts`, `feature-gating.ts`, `trial-no-card.test.ts`. Marketing vitest+tsc v tom istom PR.
+**Nerobené:** published:true, merge, LIVE.
+**Rollback:** revert commitu na `cursor/merge-crm-blog-drafts-611f`.
+
+---
+## 2026-11-16 — BUILD: zlúčiť starý CRM draft do checklistu (draft PR)
+**GO:** Founder 16. 11. 2026 — starší `crm-pre-realitnych-maklerov` zlúčiť do `…-ako-vybrat`; published: false; never merge/deploy; nemeň vercel.json ani CI.
+**Čo:** Checklist 1029 slov s presunutými faktami (portály, dve knihy, CSV/XLSX/RealSoft). Starý záznam odstránený. Refund z copy von. AI inzerát ostáva draft.
+**Dôkaz:** marketing vitest 89/89; tsc 0; marketing-blog.verification 1/1. Report `docs/reports/2026-11-16-crm-blog-merge.md`.
+**Nerobené:** published: true, merge, LIVE, vercel.json, CI.
+**BUILD/BACKLOG:** BUILD (obsah, founder schválil zlúčenie).
+**Rollback:** revert vetvy `cursor/merge-crm-blog-drafts-611f`.
+
+---
+## 2026-11-16 — BUILD: AI Control Tower na existujúcom governore
+**GO:** Cloud Agent P0 implementácia do RealitkaAI. Bez merge, bez deploy, bez zápisu do PROD DB, bez plateného xAI.
+**Čo:** `/ai-control-tower` v CRM. `preflightCost`/`decidePreflight` ostáva jediná brána gateway (ALLOW/BLOCK/DEFER, fail-closed pri nečitateľnom ledgeri). Rozpočty projektov sú konfigurácia governora. Alerty 50/70/85/95 a burn idú cez bus-core, raz na pool+obdobie+prah. Migrácia `20261116120000_ai_control_tower.sql` je len v repe.
+**Dôkaz:** `npm run model-gateway:test` 16/16; `npm run model-gateway:typecheck` exit 0; CRM eslint zmenených súborov exit 0; nav vitest 5/5; schema-gap NOVÝCH medzier 0; CRM typecheck 53 pri baseline 54; `npm run build` v apps/crm exit 0, route `ƒ /ai-control-tower`.
+**Nerobené:** apply migrácie na PROD, merge, deploy, platené volania xAI.
+**BUILD/BACKLOG:** BUILD (prevádzkový rez nad existujúcim gateway).
+**Rollback:** revert vetvy `cursor/ai-control-tower-5ec3`.
+
+---
+
+## 2026-11-16 — BUILD: SEO audit interné odkazy + JSON-LD + blog intro + 2 drafty (draft PR)
+**GO:** Founder Cloud Agent 16. 11. 2026 — jeden draft PR v `apps/marketing`; never merge/deploy; nemeň `vercel.json` / Vercel / 307→308 / Ahrefs.
+**Čo:** (1) interné odkazy `/blog` z homepage header+footer, `/demo`, `/balik`; článok ceny → `/demo`. (2) Homepage meta+og description (`HOMEPAGE_DESCRIPTION`; `zdarma`→`zadarmo`). (3) JSON-LD Organization+WebSite, CollectionPage, BreadcrumbList; žiadne Offer/AggregateRating. (4) Úvod `/blog` 123 slov. (5) Drafty `crm-pre-realitnych-maklerov-ako-vybrat` a `ai-inzerat-nehnutelnosti` (`published: false`); starý `crm-pre-realitnych-maklerov` ostáva.
+**Engineering justification (nový `lib/json-ld.ts`):** Trigger — verejná schema.org vrstva na existujúcich stránkach. Decision path — new-code helper + reuse blog katalógu/homepage HTML. Alternatives — JSON-LD natvrdo v každej stránke (duplicita, ťažší zákaz Offer). Why not reuse — Article JSON-LD v `[slug]` existuje, Organization/WebSite/CollectionPage/BreadcrumbList nie. Contradiction check: none.
+**Dôkaz:** marketing vitest 89/89; tsc --noEmit 0; `next build --webpack`; draft slug 404; CRM `marketing-blog.verification` 1/1; screenshoty `/opt/cursor/artifacts/seo-*.png`. Report `docs/reports/2026-11-16-seo-audit.md`.
+**Nerobené:** merge, LIVE, `vercel.json`, publikovanie (`published: true`), 307→308, Ahrefs.
+**BUILD/BACKLOG:** BUILD (SEO obsah na existujúcich plochách). RAU keyword GO_REQUIRED na `published` — drafty ostali false.
+**Rollback:** revert vetvy `cursor/seo-audit-blog-jsonld-611f`.
+
+---
+## 2026-11-12 — BUILD: rolling Friday deadline na homepage (draft PR #950)
+**GO:** Cloud Agent follow-up na #950: odstrániť hardcoded `23. 10.` z countdown/sticky/FAQ; nahradiť piatkom 23:59:59 Europe/Bratislava (Po–Pia tento, So–Ne ďalší); Draft, never merge/deploy.
+**Čo:** `fridayDeadline()` v `apps/marketing/lib/friday-deadline.ts` + `public/friday-deadline.js`; `index.html` labels `.js-friday-label` (fallback `do piatka`); odpočet bez `expire()` / fixného `DEADLINE`. Ponuka 0 € / 49 € nezmenená. Žiadne slovo pilot.
+**Dôkaz:** `npx vitest run` apps/marketing 82/82 (vrátane Mon / Fri 23:59 / Sat 00:00 / Sun / DST); `npx tsc --noEmit` exit 0.
+**Nerobené:** merge, LIVE, zmena `vercel.json` `cursor/*` preview, publikovanie blogu.
+**BUILD/BACKLOG:** BUILD (dátum kampane v existujúcej homepage).
+**Rollback:** revert commitu na vetve.
+
+---
+
+## 2026-11-12 — BUILD: SEO homepage + CRM robots + draft blog (draft PR)
+**GO:** Cloud Agent zadanie „Open ONE DRAFT pull request“ (explicitne never merge/deploy/secrets/Vercel).
+**Čo:** (1) www.revolis.ai title/meta/OG + von „do 23. 10.“ z hero. (2) app.revolis.ai privacy metadata + `robots.ts`. (3) Draft článok `crm-pre-realitnych-maklerov` (`published: false`).
+**Dôkaz:** `npx vitest run` apps/marketing 75/75; CRM robots/privacy 4/4; marketing tsc exit 0; CRM eslint zmenených súborov exit 0; CRM typecheck baseline PASS.
+**Nerobené:** merge, LIVE, Vercel, publikovanie článku, countdown mimo hero.
+**BUILD/BACKLOG:** BUILD (obsah/SEO v existujúcich plochách). RAU keyword GO_REQUIRED na zákazoch merge/deploy — tieto kroky sa nevykonali.
+**Rollback:** revert vetvy.
+
+---
+
 ## 2026-11-06 — UPTM Governance Decision v1.1 (paper-only) + Directive v1.0 „Proactive Ownership“: BACKLOG (implementácia Risk Governora), BUILD (iba dokumenty)
 **GO:** founder „UPTM – GOVERNANCE DECISION v1.1“ (PAPER-ONLY / NO LIVE AUTHORIZATION) a „FOUNDER DIRECTIVE — PROACTIVE OWNERSHIP & EXECUTION v1.0“. Prime Directive: UPTM je mimo Revolisu; kód Risk Governora sa nezačína pred dokončením Stripe kroku C (priorita #1).
 **Čo:** (1) Päť analytických dokumentov v UPTM repe (draft PR #35, `f24ebe1`): Evidence Audit, Risk Limits Comparison (A status quo 3,75/7,50/15/22,50/37,50; B 1/2/6 % = 5/—/10/15*/30 kde 15 € je môj predpoklad; C 2,5/5/10/15/25; D 2,5/—/5/—/15), architektúra Risk Governora (Strategy Engine, Risk Governor, Execution Gateway), EV Gate (EV_net = p·G − (1−p)·R − K; prahy označené D odvodené / P politika foundera / U neznáme), backlog P0–P7 (ODHADY: P1–P5 spolu 11–18 osobodní, P6 paper demo 4–8 týždňov, P7 nový Red Team LIVE). Odporúčanie: B s L_max vrátane nákladov ≤ 5 €. (2) Directive v1.0 prijatá ako spôsob práce: vlastníctvo celého reťazca, plán ≠ implementácia, CI zelené ≠ funkčné v PROD, správy vo formáte A–F.

@@ -103,10 +103,10 @@
 }
 
 .blog-lead {
-  font-size: 18px;
-  line-height: 1.65;
+  font-size: 17px;
+  line-height: 1.7;
   color: var(--rev-muted);
-  max-width: 58ch;
+  max-width: 68ch;
   margin-bottom: 36px;
 }
 

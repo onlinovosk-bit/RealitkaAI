@@ -1,3 +1,152 @@
+## Session 2026-11-17 (ADAF — preflight a rozhodovacia brána)
+### Dokončené
+- Read-only preflight ADAF (13 sekcií) nad `main` b3fc170: repo, auth/tenant, DB/RLS, Model Gateway a cost, joby, integrácie, CI/ops. Nič v repe ani v PROD nezmenené.
+- Rozhodovacia brána Ústavy v2: founder „A" → **BACKLOG** (Q1 veto, Q7, Q8 veto). Zápis: `memory/decisions.md`.
+### Rozpracované / Pending
+- Odomykacia podmienka: Stripe krok C + prvá platiaca agentúra. Definícia CFGP od foundera, ak sa ADAF odomkne.
+- Samostatné nálezy bez vlastníka: `/admin/health` bez server-side gate, `createAdminClient()` s tichým fallbackom na anon kľúč, AI Control Tower bez zapisovateľa do `ai_usage_entries`.
+### Kľúčové súbory zmenené
+- `memory/decisions.md`: záznam ADAF — BACKLOG + čo ostáva z preflightu.
+- `memory/session-summary.md`: tento záznam.
+- `docs/STATUS.md`: jednoriadková poznámka a nový blok SESSION (tabuľka % sa nemení).
+### Ďalší krok
+Stripe krok C (jediný krok, ktorý odblokuje platiaceho klienta).
+
+## Session 2026-11-16 (Control Tower ledger repair)
+### Dokončené
+- Preflight PROD: 7/526/177, ledger 136, DDL Control Tower prítomné, ledger verzie 0.
+- Izolovaný Postgres INSERT 2 / rerun 0 / unique_violation PASS.
+- PROD ledger 136 → 138 (`20261116120000`, `20261116140000`). Snapshoty 0.
+### Rozpracované / Pending
+- Tri manuálne snapshoty na `/ai-control-tower` (Grok weekly, Claude session, Claude weekly).
+### Kľúčové súbory zmenené
+- `docs/reports/2026-11-16-control-tower-ledger-repair.md`
+- `memory/decisions.md`, `memory/session-summary.md`, `docs/STATUS.md`
+### Ďalší krok
+Founder: zadať tri reálne percentá na `https://app.revolis.ai/ai-control-tower`.
+
+---
+## Session 2026-11-16 (external subscription capacity)
+### Dokončené
+- Percentuálne subscription pooly na AI Control Tower (Grok weekly shared, Claude session/weekly, manuálny snapshot).
+- Idempotentná migrácia v repe; PROD neaplikovaná.
+### Rozpracované / Pending
+- Merge, LIVE, apply migrácie na PROD — čaká na GO.
+### Kľúčové súbory zmenené
+- `packages/model-gateway/src/subscription-capacity.ts`
+- `apps/crm/supabase/migrations/20261116140000_ai_quota_subscription_capacity.sql`
+- `apps/crm/src/app/api/ai-control-tower/snapshots/route.ts`
+### Ďalší krok
+Founder: review PR; apply migrácie a merge len na výslovné GO.
+
+---
+## Session 2026-11-16 (Q9 read-only wording)
+### Dokončené
+- Otázka 9: „sama vypne“ → „prejde do režimu len na čítanie“. Draft #956, published: false.
+### Rozpracované / Pending
+- Merge/LIVE/`published: true` čaká na GO.
+### Kľúčové súbory zmenené
+- `apps/marketing/lib/blog.ts` otázka 9
+- `docs/reports/2026-11-16-crm-blog-q9-copy.md`, `docs/reports/2026-11-16-crm-blog-merge.md`
+### Ďalší krok
+Founder: review nového znenia Q9 v #956.
+
+---
+## Session 2026-11-16 (otázka 9 copy)
+### Dokončené
+- Checklist Q9: skúšobná doba namiesto uvítacieho obdobia; „sama vypne“ overené v trial kóde (read-only).
+### Rozpracované / Pending
+- Draft PR #956. Merge/LIVE/`published: true` čaká na GO.
+### Kľúčové súbory zmenené
+- `apps/marketing/lib/blog.ts` otázka 9
+- `docs/reports/2026-11-16-crm-blog-q9-copy.md`
+### Ďalší krok
+Founder: review Q9 v #956.
+
+---
+## Session 2026-11-16 (zlúčenie CRM draftov)
+### Dokončené
+- Starší draft `crm-pre-realitnych-maklerov` zlúčený do checklistu (1029 slov) a odstránený z `lib/blog.ts`.
+- Oba nové články `published: false`. Refund z copy von.
+- Marketing vitest 89/89; tsc 0.
+### Rozpracované / Pending
+- Draft PR; CI na heade. Merge/LIVE/`published: true` čaká na FOUNDER GO.
+### Kľúčové súbory zmenené
+- `apps/marketing/lib/blog.ts`: zlúčené telo, starý záznam preč.
+- `apps/marketing/__tests__/blog.test.tsx`, `seo.test.ts`.
+### Ďalší krok
+Founder: review zlúčeného textu v reporte. Zverejnenie a merge len na výslovné GO.
+
+---
+## Session 2026-11-16
+### Dokončené
+- AI Control Tower v CRM na `/ai-control-tower` (`apps/crm/src/app/(dashboard)/ai-control-tower/page.tsx`).
+- Governor `decidePreflight` (ALLOW/BLOCK/DEFER, fail-closed) a zdieľaný pool bez dvojitého súčtu (`packages/model-gateway`).
+- Migrácia `apps/crm/supabase/migrations/20261116120000_ai_control_tower.sql` — neaplikovaná na PROD.
+### Rozpracované / Pending
+- Aplikácia migrácie na produkčnú databázu čaká na samostatné GO.
+### Kľúčové súbory zmenené
+- `packages/model-gateway/src/governor.ts`: jedna preflight brána vrátane rezervy a projektových stropov
+- `packages/model-gateway/src/usage.ts`: pool, prognóza, alerty, stav Živé/Manuálne/Zastarané/Nedostupné
+- `apps/crm/src/lib/ai-control-tower/load.ts`: čítanie ledgeru, auditu a snímok
+### Ďalší krok
+Founder GO na aplikáciu migrácie `20261116120000_ai_control_tower.sql` mimo tohto PR. Merge a deploy nie.
+
+---
+## Session 2026-11-16
+### Dokončené
+- Interné odkazy `/blog` z homepage (header+footer „Blog pre maklérov“), `/demo` („prehľad trhu pre maklérov“), `/balik` („ďalšie tipy pre maklérov“); článok ceny → `/demo` („pozrite si ukážku Revolis“).
+- Homepage meta + og:description (`HOMEPAGE_DESCRIPTION`); JSON-LD Organization+WebSite, CollectionPage, BreadcrumbList.
+- Úvod `/blog` 123 slov; dva draft články `published: false` (checklist 773, AI inzerát 706).
+- Marketing vitest 89/89; tsc 0; next build --webpack; Playwright screenshoty desktop 1440 / mobil 390.
+- Report `docs/reports/2026-11-16-seo-audit.md` (plné texty na schválenie + mapa tvrdení).
+### Rozpracované / Pending
+- Draft PR na vetve `cursor/seo-audit-blog-jsonld-611f`. Merge/deploy/PROD čaká na FOUNDER GO.
+- Publikovať drafty a rozhodnúť o starom `crm-pre-realitnych-maklerov` (ponechať/zlúčiť/prepis keyword — nemazať).
+### Kľúčové súbory zmenené
+- `apps/marketing/lib/json-ld.ts`, `public/index.html`, `lib/blog.ts`, `app/demo/*`, `app/balik/*`, `app/blog/*`
+- `apps/marketing/__tests__/seo.test.ts`, `blog.test.tsx`, `index-html.test.ts`
+### Ďalší krok
+Founder: review draft PR a textov v reporte. Merge/LIVE/`published: true` len na výslovné GO.
+
+---
+## Session 2026-11-12 (follow-up: rolling Friday deadline)
+### Dokončené
+- Hardcoded `23. 10.` preč z homepage countdown, sticky, FAQ a JS (`apps/marketing/public/index.html`).
+- `fridayDeadline()`: piatok 23:59:59 Europe/Bratislava; Po–Pia tento týždeň, So–Ne ďalší; zobrazenie `do piatka 13. 11.`.
+- Klient dopĺňa dátum po loade (fallback `do piatka`); žiadny fixný DEADLINE/expire.
+- Marketing vitest 82/82; tsc --noEmit exit 0.
+### Rozpracované / Pending
+- Draft PR #950 ostáva Draft. Merge/deploy/PROD čaká na FOUNDER GO.
+- Marketing Vercel preview pre `cursor/*` je v `apps/marketing/vercel.json` vypnutý (nemením).
+### Kľúčové súbory zmenené
+- `apps/marketing/lib/friday-deadline.ts`, `apps/marketing/public/friday-deadline.js`
+- `apps/marketing/public/index.html`, `apps/marketing/__tests__/friday-deadline.test.ts`, `index-html.test.ts`
+### Ďalší krok
+Founder: review draft PR #950; marketing preview len ak sa povolí `cursor/*` (samostatné GO). Merge nie.
+
+---
+
+## Session 2026-11-12
+### Dokončené
+- RAU route: GO_REQUIRED (keyword false-positive na never merge/deploy/secrets); vykonaný len draft PR rozsah.
+- Homepage SEO + odstránenie deadlinu 23. 10. z title/meta/hero (`apps/marketing/public/index.html`, `app/layout.tsx`).
+- CRM privacy title/description + `apps/crm/src/app/robots.ts`.
+- Draft blog `/blog/crm-pre-realitnych-maklerov` (`published: false`).
+- Testy: marketing vitest 75/75; CRM robots/privacy 4/4.
+### Rozpracované / Pending
+- Draft PR a CI na heade. Merge/deploy/PROD čaká na samostatné FOUNDER GO.
+- Publikovanie článku (`published: true`) nie je v tomto PR.
+### Kľúčové súbory zmenené
+- `apps/marketing/public/index.html`, `apps/marketing/app/layout.tsx`: title/meta/OG, hero bez 23. 10.
+- `apps/crm/src/app/robots.ts`, `apps/crm/src/lib/app-robots.ts`: allow legal / disallow auth.
+- `apps/marketing/lib/blog.ts`: draft článok CRM pre realitných maklérov.
+### Ďalší krok
+Founder: review draft PR; publikovať článok a merge len na výslovné GO.
+RAU route: GO_REQUIRED BUILD revolis (→ draft PR only; merge/deploy nespustené)
+
+---
+
 ## Session 2026-11-06 (UPTM Governance v1.1 + Ownership self-audit)
 ### Dokončené
 - UPTM Governance Decision v1.1 (PAPER-ONLY, LIVE_TRADING=FALSE): päť dokumentov `docs/governance/01–05` v repe `onlinovosk-bit/onlinovosk-bit-uptm`, commit `f24ebe1`, draft PR #35 (nezmergovaný, čaká na „merguj 35“). Evidence Audit, porovnanie limitov A–D (odporúčanie B), architektúra Risk Governora, špecifikácia Expected Value Gate (G1–G6, prahy značené D/P/U), backlog P0–P7 s ODHADMI.

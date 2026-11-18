@@ -8,6 +8,7 @@ import {
   getPublishedArticle,
   listPublishedArticles,
 } from '../../../lib/blog'
+import { articleBreadcrumbJsonLd, jsonLdScript } from '../../../lib/json-ld'
 import { renderMarkdown } from '../../../lib/markdown'
 import { marketingUrl } from '../../../lib/site'
 
@@ -74,7 +75,8 @@ export default async function BlogArticlePage({ params }: PageProps) {
 
   return (
     <main className="blog-wrap blog-main">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(articleBreadcrumbJsonLd(article)) }} />
       <Link href={BLOG_INDEX_PATH} className="blog-back">
         ← Všetky články
       </Link>

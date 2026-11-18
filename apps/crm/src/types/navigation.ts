@@ -432,6 +432,17 @@ export const ALL_NAV_ITEMS: NavItem[] = [
     platformAdminOnly: true,
   },
   {
+    id: "ai-control-tower",
+    label: "AI Control Tower",
+    sublabel: "Spotreba modelov · stropy · rezervy",
+    href: "/ai-control-tower",
+    icon: "chart-up",
+    badge: { label: "owner", variant: "owner" },
+    section: "settings",
+    showFor: ["agent_solo", "agent_team", "owner_vision", "owner_protocol"],
+    platformAdminOnly: true,
+  },
+  {
     id: "settings",
     label: "Nastavenia a integrácie",
     sublabel: "Portály · GDPR · API · Notifikácie",

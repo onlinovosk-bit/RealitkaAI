@@ -1,5 +1,17 @@
 import type { GatewayProviderId } from "./types.ts";
 
+/**
+ * Project slices of the single monthly governor ceiling, plus the EUR that
+ * stays reserved for urgent work. These numbers are operator policy.
+ * They are not a vendor invoice and they are not a second pool of money.
+ */
+export interface ProjectBudgets {
+  revolisEur: number;
+  onlinovoEur: number;
+  otherEur: number;
+  urgentReserveEur: number;
+}
+
 export interface ModelGatewayConfig {
   primaryProvider: GatewayProviderId;
   openaiModel: string | null;
@@ -13,6 +25,8 @@ export interface ModelGatewayConfig {
     dailyEur: number;
     monthlyEur: number;
   };
+  /** Read by `preflightCost`. Not a parallel policy engine. */
+  budgets: ProjectBudgets;
   defaults: {
     maxInputTokens: number;
     maxOutputTokens: number;
@@ -67,6 +81,12 @@ export function loadConfigFromEnv(env: NodeJS.ProcessEnv = process.env): ModelGa
       perTaskEur: readPositiveNumber(env.MODEL_GATEWAY_PER_TASK_LIMIT_EUR, 0.25),
       dailyEur: readPositiveNumber(env.MODEL_GATEWAY_DAILY_LIMIT_EUR, 2.0),
       monthlyEur: readPositiveNumber(env.MODEL_GATEWAY_MONTHLY_LIMIT_EUR, 25.0),
+    },
+    budgets: {
+      revolisEur: readPositiveNumber(env.MODEL_GATEWAY_BUDGET_REVOLIS_EUR, 15),
+      onlinovoEur: readPositiveNumber(env.MODEL_GATEWAY_BUDGET_ONLINOVO_EUR, 7),
+      otherEur: readPositiveNumber(env.MODEL_GATEWAY_BUDGET_OTHER_EUR, 3),
+      urgentReserveEur: readPositiveNumber(env.MODEL_GATEWAY_URGENT_RESERVE_EUR, 1),
     },
     defaults: {
       maxInputTokens: readPositiveNumber(env.MODEL_GATEWAY_MAX_INPUT_TOKENS, 4096),

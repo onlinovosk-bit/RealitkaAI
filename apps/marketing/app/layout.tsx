@@ -1,18 +1,20 @@
 import type { Metadata } from 'next'
 import Script from 'next/script'
+import { HOMEPAGE_DESCRIPTION } from '../lib/json-ld'
 import { MARKETING_SITE_ORIGIN } from '../lib/site'
 import './globals.css'
 
 export const metadata: Metadata = {
   metadataBase: new URL(MARKETING_SITE_ORIGIN),
-  title: 'Revolis — Inzerát hotový za minúty. Dopyty v CRM samé.',
-  description:
-    'Dopyty z portálových e-mailov sa uložia samé. AI pripraví text inzerátu z parametrov nehnuteľnosti. 14 dní zadarmo bez karty.',
+  title: 'Revolis.ai – AI CRM pre realitných maklérov | Inzerát hotový za minúty',
+  description: HOMEPAGE_DESCRIPTION,
   alternates: {
     canonical: '/',
   },
   openGraph: {
     url: '/',
+    title: 'Revolis.ai – AI CRM pre realitných maklérov | Inzerát hotový za minúty',
+    description: HOMEPAGE_DESCRIPTION,
   },
 }
 
