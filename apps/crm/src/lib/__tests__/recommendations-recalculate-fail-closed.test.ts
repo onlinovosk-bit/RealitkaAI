@@ -71,7 +71,18 @@ function scopedClient(matchResult: MatchResult = { data: [], error: null }) {
       return {
         delete: () => {
           ops.push({ op: "delete", table });
-          return { not: () => done, eq: () => done };
+          return {
+            not: () => done,
+            eq: () => done,
+            in: (col: string, vals: string[]) => {
+              ops.push({
+                op: "delete-in",
+                table,
+                filter: `${col}=${vals.join(",")}`,
+              });
+              return done;
+            },
+          };
         },
         insert: (rows: unknown[]) => {
           ops.push({ op: "insert", table, rows });
@@ -142,9 +153,23 @@ describe("recalculateAllRecommendations fail-closed", () => {
 
     const res = await recalculateAllRecommendations(client);
 
-    expect(ops.map((o) => o.op)).toEqual(["delete", "insert"]);
+    expect(ops.map((o) => o.op)).toEqual(["delete", "delete-in", "insert"]);
+    expect(ops.some((o) => o.op === "delete-in" && o.filter === "lead_id=lead-1")).toBe(
+      true,
+    );
     expect(res.totalRows).toBe(1);
     expect(res.totalLeads).toBe(1);
+  });
+
+  it("global clear scopes delete to session lead IDs only", async () => {
+    const { client, ops } = scopedClient();
+    listLeadsMock.mockResolvedValue([LEAD, { ...LEAD, id: "lead-2" }]);
+
+    await recalculateAllRecommendations(client);
+
+    const scoped = ops.find((o) => o.op === "delete-in");
+    expect(scoped?.table).toBe("ai_recommendations");
+    expect(scoped?.filter).toBe("lead_id=lead-1,lead-2");
   });
 });
 
