@@ -6,6 +6,7 @@ import type { CSSProperties } from "react";
 import { useState } from "react";
 import { supabaseClient } from "@/lib/supabase/client";
 import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
+import NotificationInboxBell from "@/components/notifications/NotificationInboxBell";
 
 type WorkdeskTopbarProps = {
   userName?: string;
@@ -126,6 +127,8 @@ export function WorkdeskTopbar({ userName }: WorkdeskTopbarProps) {
         </button>
       </form>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <NotificationInboxBell />
+        <Link
         <Link prefetch={false}
           href="/porovnanie-programov"
           style={{
