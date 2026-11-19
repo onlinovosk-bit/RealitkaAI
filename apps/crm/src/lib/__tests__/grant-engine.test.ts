@@ -3,6 +3,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const mockFrom = vi.fn();
 const mockMaybeSingle = vi.fn();
 const mockUpdate = vi.fn();
+const mockAgencyLiveMaybeSingle = vi.fn();
+const mockRepairSelectResult = vi.fn();
 const applyMonthlyGrantCreditsMock = vi.fn();
 const expireGrantCreditsAtomicMock = vi.fn();
 
@@ -45,12 +47,26 @@ function agency(overrides: Partial<AgencyCreditRow> = {}): AgencyCreditRow {
   };
 }
 
+/** Chainable .eq().eq()… that resolves via `terminal` on `.select()` / bare await. */
+function casUpdateChain(payload: unknown, terminal: () => unknown) {
+  mockUpdate(payload);
+  const chain: Record<string, unknown> = {};
+  chain.eq = () => chain;
+  chain.select = () => terminal();
+  return chain;
+}
+
 describe("grant-engine", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Ledger reads zostávajú priame — expirácia sa pred zápisom pýta, či už
     // expiry riadok existuje a či nebol pridelený grant aktuálneho obdobia.
     // Samotné zápisy idú cez atomické RPC, preto tu nie je insert mock.
+    mockRepairSelectResult.mockResolvedValue({ data: [{ id: "agency-1" }], error: null });
+    mockAgencyLiveMaybeSingle.mockResolvedValue({
+      data: { purchased_credits_balance: 80, grant_credits_balance: 40 },
+      error: null,
+    });
     mockFrom.mockImplementation((table: string) => {
       if (table === "credit_ledger") {
         return {
@@ -61,12 +77,11 @@ describe("grant-engine", () => {
       }
       if (table === "agencies") {
         return {
-          update: (payload: unknown) => ({
-            eq: () => {
-              mockUpdate(payload);
-              return { error: null };
-            },
+          select: () => ({
+            eq: () => ({ maybeSingle: mockAgencyLiveMaybeSingle }),
           }),
+          update: (payload: unknown) =>
+            casUpdateChain(payload, () => mockRepairSelectResult()),
         };
       }
       return {};
@@ -196,10 +211,15 @@ describe("grant-engine", () => {
     expect(mockUpdate).not.toHaveBeenCalled();
   });
 
-  it("expire repairs uncleared balance when expiry ledger exists and no current grant", async () => {
+  it("expire repairs uncleared balance from live purchased, not cron snapshot", async () => {
     mockMaybeSingle
       .mockResolvedValueOnce({ data: { id: "expiry-done" } })
       .mockResolvedValueOnce({ data: null });
+    // Snapshot pri štarte cyklu mal purchased=80; medzitým top-up → live 180.
+    mockAgencyLiveMaybeSingle.mockResolvedValueOnce({
+      data: { purchased_credits_balance: 180, grant_credits_balance: 40 },
+      error: null,
+    });
 
     const result = await expireGrantCreditsForAgency(
       agency({
@@ -218,9 +238,36 @@ describe("grant-engine", () => {
     expect(mockUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
         grant_credits_balance: 0,
-        credits_balance: 80,
+        credits_balance: 180,
       }),
     );
+  });
+
+  it("expire repair CAS miss fails closed (no stale overwrite of purchased credits)", async () => {
+    mockMaybeSingle
+      .mockResolvedValueOnce({ data: { id: "expiry-done" } })
+      .mockResolvedValueOnce({ data: null });
+    mockAgencyLiveMaybeSingle.mockResolvedValueOnce({
+      data: { purchased_credits_balance: 80, grant_credits_balance: 40 },
+      error: null,
+    });
+    mockRepairSelectResult.mockResolvedValueOnce({ data: [], error: null });
+
+    const result = await expireGrantCreditsForAgency(
+      agency({
+        grant_credits_balance: 40,
+        purchased_credits_balance: 80,
+        credits_balance: 120,
+      }),
+      "202605",
+      new Date("2026-06-01T12:00:00Z"),
+    );
+
+    expect(result).toEqual({
+      expired: 0,
+      skipped: true,
+      error: "concurrent_credit_mutation",
+    });
   });
 
   it("expire refuses to wipe when current-period grant already exists", async () => {
