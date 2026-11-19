@@ -228,8 +228,14 @@ async function backfillLeadOwner(
   return Array.isArray(data) && data.length > 0;
 }
 
-function deterministicLeadId(key: string): string {
-  const hex = createHash("sha256").update(`acquire-email-lead:${key}`).digest("hex");
+/**
+ * Lead id musí niesť tenant — inak by dve kancelárie s rovnakým dedup `key`
+ * narazili na ten istý UUID v `leads` a druhá by lead nikdy nevytvorila.
+ */
+function deterministicLeadId(key: string, agencyId: string): string {
+  const hex = createHash("sha256")
+    .update(`acquire-email-lead:${agencyId}:${key}`)
+    .digest("hex");
   const version = `5${hex.slice(13, 16)}`;
   const variant = ((Number.parseInt(hex[16], 16) & 0x3) | 0x8).toString(16);
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${version}-${variant}${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
@@ -307,11 +313,14 @@ export async function POST(req: NextRequest) {
         }),
       );
 
-    // 4. dedup check — SELECT najprv (presne ako pôvodne), duplicate flag ide do toLeadCandidate
+    // 4. dedup check — SELECT najprv (presne ako pôvodne), duplicate flag ide do toLeadCandidate.
+    // Unikátnosť je (agency_id, key): rovnaký portálový dopyt u inej kancelárie nie je
+    // duplicita (viď migrácia 20261017230000_acquire_dedup_keys_tenant_pk).
     const { data: existing } = await supa
       .from("acquire_dedup_keys")
       .select("key")
       .eq("key", key)
+      .eq("agency_id", agencyId)
       .maybeSingle();
     const duplicate = !!existing;
 
@@ -319,7 +328,7 @@ export async function POST(req: NextRequest) {
     if (!candidate) {
       // Duplicita nesie majiteľa, ktorý pôvodnej kópii chýbal — doplň ho, než ju zahodíme.
       const ownerBackfilled = duplicate
-        ? await backfillLeadOwner(supa, deterministicLeadId(key), agencyId, owner)
+        ? await backfillLeadOwner(supa, deterministicLeadId(key, agencyId), agencyId, owner)
         : false;
       await recordOutcome("not_a_lead", notLeadReason(ev, duplicate));
       console.log(JSON.stringify({
@@ -350,7 +359,7 @@ export async function POST(req: NextRequest) {
     });
     if (isUniqueConflict(dedupError)) {
       const ownerBackfilled = await backfillLeadOwner(
-        supa, deterministicLeadId(key), agencyId, owner,
+        supa, deterministicLeadId(key, agencyId), agencyId, owner,
       );
       await recordOutcome("not_a_lead", "duplicate");
       console.log(JSON.stringify({
@@ -371,7 +380,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: dedupError.message }, { status: 500 });
     }
 
-    const leadId = deterministicLeadId(key);
+    const leadId = deterministicLeadId(key, agencyId);
     const leadSelect = "id,name,status,score,last_contact,note,source,agency_id,ai_triage_at";
 
     const { data: lead, error } = await supa
@@ -408,6 +417,7 @@ export async function POST(req: NextRequest) {
           .from("leads")
           .select(leadSelect)
           .eq("id", leadId)
+          .eq("agency_id", agencyId)
           .maybeSingle();
         if (existingLead) {
           const ownerBackfilled = await backfillLeadOwner(
@@ -442,7 +452,8 @@ export async function POST(req: NextRequest) {
       const { error: releaseError } = await supa
         .from("acquire_dedup_keys")
         .delete()
-        .eq("key", key);
+        .eq("key", key)
+        .eq("agency_id", agencyId);
       if (releaseError) {
         console.error(
           "[acquire.email] failed to release dedup claim after lead insert error=",

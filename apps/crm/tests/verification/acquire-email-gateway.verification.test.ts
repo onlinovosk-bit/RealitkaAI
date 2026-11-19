@@ -34,15 +34,36 @@ describe("[verification] Acquire email gateway", () => {
     expect(route).toContain(".delete()");
     expect(route).toContain('.eq("key", key)');
     expect(route).toMatch(
-      /insert error[\s\S]*acquire_dedup_keys[\s\S]*\.delete\(\)[\s\S]*\.eq\("key", key\)/,
+      /insert error[\s\S]*acquire_dedup_keys[\s\S]*\.delete\(\)[\s\S]*\.eq\("key", key\)[\s\S]*\.eq\("agency_id", agencyId\)/,
     );
     // Retry after an unknown commit must not create a second lead.
     expect(route).toContain("deterministicLeadId");
     expect(route).toContain("acquire-email-lead:");
     expect(route).toContain("LEAD_ALREADY_EXISTS");
     expect(route).toMatch(
-      /isUniqueConflict\(error\)[\s\S]*from\("leads"\)[\s\S]*\.eq\("id", leadId\)/,
+      /isUniqueConflict\(error\)[\s\S]*from\("leads"\)[\s\S]*\.eq\("id", leadId\)[\s\S]*\.eq\("agency_id", agencyId\)/,
     );
+  });
+
+  it("scopes dedup claim and lead id to agency (no cross-tenant lead wipe)", () => {
+    const route = readFileSync(
+      join(CRM_ROOT, "src/app/api/acquire/email/route.ts"),
+      "utf8",
+    );
+    const migration = readFileSync(
+      join(
+        CRM_ROOT,
+        "supabase/migrations/20261017230000_acquire_dedup_keys_tenant_pk.sql",
+      ),
+      "utf8",
+    );
+
+    // SELECT/release must filter by agency_id — global key alone suppressed other tenants.
+    expect(route).toMatch(
+      /from\("acquire_dedup_keys"\)[\s\S]*\.eq\("key", key\)[\s\S]*\.eq\("agency_id", agencyId\)[\s\S]*maybeSingle/,
+    );
+    expect(route).toContain("acquire-email-lead:${agencyId}:${key}");
+    expect(migration).toContain("add primary key (agency_id, key)");
   });
 
   it("agency_id comes from inbound address map, not parsed email", () => {
