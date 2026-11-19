@@ -37,4 +37,17 @@ describe("enterprise onboard must not self-assign account_tier", () => {
     expect(src).not.toMatch(/\.update\(/);
     expect(src).toMatch(/disabled|billing/i);
   });
+
+  it("upgradeTeamLicense / assignActiveForceSlot refuse free entitlement writes", () => {
+    const src = readFileSync(
+      resolve(root, "src/app/_actions/licensing.ts"),
+      "utf8",
+    );
+    // Writable entitlement paths must stay dead — these "use server" exports
+    // remain callable endpoints even with no UI importer.
+    expect(src).not.toMatch(/\.from\(\s*["']profiles["']\s*\)\s*\.update\(/);
+    expect(src).not.toMatch(/\.from\(\s*["']team_licenses["']\s*\)/);
+    expect(src).toMatch(/upgradeTeamLicense is disabled/i);
+    expect(src).toMatch(/assignActiveForceSlot is disabled/i);
+  });
 });
