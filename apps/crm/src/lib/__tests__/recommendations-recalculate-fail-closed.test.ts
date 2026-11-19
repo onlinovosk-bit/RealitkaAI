@@ -8,6 +8,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  *
  * Per-lead recalculate must read matches via lead_id filter, not the global
  * top-MATCHES_READ_MAX page (a lead below that cut looked like "no matches").
+ *
+ * Persist must insert before orphan delete — insert failure keeps prior rows.
  */
 
 const listLeadsMock = vi.hoisted(() => vi.fn());
@@ -46,9 +48,16 @@ import {
 
 type MatchResult = { data: unknown[] | null; error: { message: string } | null };
 
-function scopedClient(matchResult: MatchResult = { data: [], error: null }) {
+function scopedClient(options?: {
+  matchResult?: MatchResult;
+  insertError?: { message: string } | null;
+  existingRecIds?: string[];
+}) {
+  const matchResult = options?.matchResult ?? { data: [], error: null };
+  const insertError = options?.insertError ?? null;
+  const existingRecIds = options?.existingRecIds ?? ["old-1"];
   const ops: { op: string; table?: string; filter?: string; rows?: unknown[] }[] = [];
-  const done = Promise.resolve({ error: null, data: [] });
+
   const client = {
     from: (table: string) => {
       if (table === "lead_property_matches") {
@@ -68,14 +77,61 @@ function scopedClient(matchResult: MatchResult = { data: [], error: null }) {
         };
         return chain;
       }
+
+      if (table === "ai_recommendations") {
+        return {
+          insert: (rows: unknown[]) => {
+            ops.push({ op: "insert", table, rows });
+            const insertChain = {
+              select: async () => {
+                if (insertError) {
+                  return { data: null, error: insertError };
+                }
+                const data = (rows as unknown[]).map((_, i) => ({ id: `new-${i + 1}` }));
+                return { data, error: null };
+              },
+            };
+            return insertChain;
+          },
+          select: (_cols?: string) => {
+            ops.push({ op: "select-orphans", table });
+            const selectChain = {
+              eq: (col: string, val: string) => {
+                ops.push({ op: "orphan-eq", table, filter: `${col}=${val}` });
+                return Promise.resolve({
+                  data: existingRecIds.map((id) => ({ id })),
+                  error: null,
+                });
+              },
+              not: async () => ({
+                data: existingRecIds.map((id) => ({ id })),
+                error: null,
+              }),
+            };
+            return selectChain;
+          },
+          delete: () => {
+            ops.push({ op: "delete", table });
+            return {
+              in: async (col: string, ids: string[]) => {
+                ops.push({ op: "delete-in", table, filter: `${col}=${ids.join(",")}` });
+                return { error: null };
+              },
+              not: async () => ({ error: null }),
+              eq: async () => ({ error: null }),
+            };
+          },
+        };
+      }
+
       return {
         delete: () => {
           ops.push({ op: "delete", table });
-          return { not: () => done, eq: () => done };
+          return { not: async () => ({ error: null }), eq: async () => ({ error: null }) };
         },
         insert: (rows: unknown[]) => {
           ops.push({ op: "insert", table, rows });
-          return done;
+          return { select: async () => ({ data: [], error: null }) };
         },
       };
     },
@@ -101,7 +157,7 @@ describe("recalculateAllRecommendations fail-closed", () => {
 
     const res = await recalculateAllRecommendations(client);
 
-    expect(ops.filter((o) => o.op === "delete")).toEqual([]);
+    expect(ops.filter((o) => o.op === "delete" || o.op === "insert")).toEqual([]);
     expect(res.totalRows).toBe(0);
     expect(res.totalLeads).toBe(0);
   });
@@ -114,7 +170,7 @@ describe("recalculateAllRecommendations fail-closed", () => {
 
     const res = await recalculateAllRecommendations(client);
 
-    expect(ops.filter((o) => o.op === "delete")).toEqual([]);
+    expect(ops.filter((o) => o.op === "delete" || o.op === "insert")).toEqual([]);
     expect(res.totalRows).toBe(0);
     expect(res.totalLeads).toBe(500);
   });
@@ -126,40 +182,65 @@ describe("recalculateAllRecommendations fail-closed", () => {
       score: 90,
       reasons: [],
     }));
-    const { client, ops } = scopedClient({ data: fullPage, error: null });
+    const { client, ops } = scopedClient({ matchResult: { data: fullPage, error: null } });
     listLeadsMock.mockResolvedValue([LEAD]);
 
     const res = await recalculateAllRecommendations(client);
 
-    expect(ops.filter((o) => o.op === "delete")).toEqual([]);
+    expect(ops.filter((o) => o.op === "delete" || o.op === "insert")).toEqual([]);
     expect(res.totalRows).toBe(0);
     expect(res.totalMatches).toBe(MATCHES_READ_MAX);
   });
 
-  it("under LIST_MAX with leads and under match cap → delete then insert", async () => {
-    const { client, ops } = scopedClient();
+  it("under LIST_MAX with leads and under match cap → insert then orphan delete", async () => {
+    const { client, ops } = scopedClient({ existingRecIds: ["old-1", "new-1"] });
     listLeadsMock.mockResolvedValue([LEAD]);
 
     const res = await recalculateAllRecommendations(client);
 
-    expect(ops.map((o) => o.op)).toEqual(["delete", "insert"]);
+    const mutateOps = ops.filter((o) =>
+      ["insert", "select-orphans", "delete", "delete-in"].includes(o.op),
+    );
+    expect(mutateOps.map((o) => o.op)).toEqual([
+      "insert",
+      "select-orphans",
+      "delete",
+      "delete-in",
+    ]);
+    expect(ops.find((o) => o.op === "delete-in")?.filter).toBe("id=old-1");
     expect(res.totalRows).toBe(1);
     expect(res.totalLeads).toBe(1);
+  });
+
+  it("insert failure → no delete (keeps prior recommendations)", async () => {
+    const { client, ops } = scopedClient({
+      insertError: { message: "insert timeout" },
+      existingRecIds: ["old-keep"],
+    });
+    listLeadsMock.mockResolvedValue([LEAD]);
+
+    await expect(recalculateAllRecommendations(client)).rejects.toThrow("insert timeout");
+
+    expect(ops.map((o) => o.op)).toEqual(["insert"]);
+    expect(ops.filter((o) => o.op === "delete" || o.op === "delete-in")).toEqual([]);
   });
 });
 
 describe("recalculateRecommendationsForLead match scope", () => {
   it("reads matches filtered by lead_id (not global top page then filter)", async () => {
     const { client, ops } = scopedClient({
-      data: [
-        {
-          lead_id: "lead-1",
-          property_id: "prop-1",
-          score: 88,
-          reasons: ["fit"],
-        },
-      ],
-      error: null,
+      matchResult: {
+        data: [
+          {
+            lead_id: "lead-1",
+            property_id: "prop-1",
+            score: 88,
+            reasons: ["fit"],
+          },
+        ],
+        error: null,
+      },
+      existingRecIds: ["old-lead", "new-1"],
     });
     listLeadsMock.mockResolvedValue([LEAD]);
 
@@ -168,8 +249,26 @@ describe("recalculateRecommendationsForLead match scope", () => {
     expect(ops.some((o) => o.op === "match-eq" && o.filter === "lead_id=lead-1")).toBe(
       true,
     );
-    expect(ops.map((o) => o.op)).toContain("delete");
-    expect(ops.map((o) => o.op)).toContain("insert");
+    expect(ops.some((o) => o.op === "orphan-eq" && o.filter === "lead_id=lead-1")).toBe(
+      true,
+    );
+    const mutateOps = ops
+      .filter((o) => ["insert", "select-orphans", "delete", "delete-in"].includes(o.op))
+      .map((o) => o.op);
+    expect(mutateOps[0]).toBe("insert");
+    expect(mutateOps).toContain("delete-in");
     expect(res.inserted).toBe(1);
+  });
+
+  it("insert failure on per-lead → no delete", async () => {
+    const { client, ops } = scopedClient({
+      insertError: { message: "network" },
+    });
+    listLeadsMock.mockResolvedValue([LEAD]);
+
+    await expect(recalculateRecommendationsForLead("lead-1", client)).rejects.toThrow(
+      "network",
+    );
+    expect(ops.filter((o) => o.op === "delete" || o.op === "delete-in")).toEqual([]);
   });
 });

@@ -151,35 +151,31 @@ export async function listRecommendations(
   }));
 }
 
-async function clearRecommendations(
-  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
-) {
-  const supabase = await resolveTenantSupabase(scoped);
+type RecalculatePersistScope = { leadId?: string };
 
-  if (!supabase) {
-    const store = getDemoRecommendationsStore();
-    store.splice(0, store.length);
-    return;
-  }
-
-  const { error } = await supabase
-    .from("ai_recommendations")
-    .delete()
-    .not("id", "is", null);
-
-  if (error) {
-    throw new Error(error.message);
-  }
-}
-
-async function insertRecommendations(
+/**
+ * Insert new rows first, then delete orphans. Never DELETE before a successful
+ * write — otherwise a failed/timeout insert after clear permanently wipes
+ * ai_recommendations while the API returns 400 (sibling of matching #843).
+ * No unique key on this table, so we insert + select ids, then remove others.
+ */
+async function persistRecalculatedRecommendations(
   rows: GeneratedRecommendation[],
+  scope: RecalculatePersistScope,
   scoped?: import("@supabase/supabase-js").SupabaseClient | null,
-) {
+): Promise<{ inserted: number }> {
   const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     const store = getDemoRecommendationsStore();
+    for (let i = store.length - 1; i >= 0; i -= 1) {
+      const row = store[i];
+      if (scope.leadId) {
+        if (row.leadId === scope.leadId) store.splice(i, 1);
+      } else {
+        store.splice(i, 1);
+      }
+    }
 
     if (rows.length === 0) {
       return { inserted: 0 };
@@ -198,34 +194,75 @@ async function insertRecommendations(
       modelVersion: row.modelVersion,
       createdAt: now,
     }));
-
     store.push(...payload);
     return { inserted: payload.length };
   }
 
-  if (rows.length === 0) {
-    return { inserted: 0 };
+  const keepIds = new Set<string>();
+
+  if (rows.length > 0) {
+    const payload = rows.map((row) => ({
+      lead_id: row.leadId,
+      recommendation_type: row.recommendationType,
+      title: row.title,
+      description: row.description,
+      priority: row.priority,
+      status: row.status,
+      model_version: row.modelVersion,
+    }));
+
+    const { data, error } = await supabase
+      .from("ai_recommendations")
+      .insert(payload)
+      .select("id");
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    for (const row of data ?? []) {
+      if (row?.id) keepIds.add(String(row.id));
+    }
   }
 
-  const payload = rows.map((row) => ({
-    lead_id: row.leadId,
-    recommendation_type: row.recommendationType,
-    title: row.title,
-    description: row.description,
-    priority: row.priority,
-    status: row.status,
-    model_version: row.modelVersion,
-  }));
+  let listQuery = supabase.from("ai_recommendations").select("id");
+  if (scope.leadId) {
+    listQuery = listQuery.eq("lead_id", scope.leadId);
+  } else {
+    listQuery = listQuery.not("id", "is", null);
+  }
 
-  const { error } = await supabase
+  const { data: existing, error: listError } = await listQuery;
+  if (listError) {
+    // New rows (if any) are already stored; orphan cleanup can retry later.
+    console.warn(
+      "[recommendations-store] failed listing orphans after insert — stale extras may remain",
+      listError.message,
+    );
+    return { inserted: keepIds.size };
+  }
+
+  const orphanIds = (existing ?? [])
+    .map((row: { id?: string }) => row?.id)
+    .filter((id: string | undefined): id is string => Boolean(id) && !keepIds.has(id));
+
+  if (orphanIds.length === 0) {
+    return { inserted: keepIds.size };
+  }
+
+  const { error: deleteError } = await supabase
     .from("ai_recommendations")
-    .insert(payload);
+    .delete()
+    .in("id", orphanIds);
 
-  if (error) {
-    throw new Error(error.message);
+  if (deleteError) {
+    console.warn(
+      "[recommendations-store] orphan cleanup failed after insert — stale extras may remain",
+      deleteError.message,
+    );
   }
 
-  return { inserted: payload.length };
+  return { inserted: keepIds.size };
 }
 
 export async function recalculateRecommendationsForLead(
@@ -243,28 +280,12 @@ export async function recalculateRecommendationsForLead(
     throw new Error("Lead nebol nájdený.");
   }
 
-  const supabase = await resolveTenantSupabase(scoped);
-
-  if (supabase) {
-    const { error: deleteError } = await supabase
-      .from("ai_recommendations")
-      .delete()
-      .eq("lead_id", leadId);
-
-    if (deleteError) {
-      throw new Error(deleteError.message);
-    }
-  } else {
-    const store = getDemoRecommendationsStore();
-    for (let i = store.length - 1; i >= 0; i -= 1) {
-      if (store[i].leadId === leadId) {
-        store.splice(i, 1);
-      }
-    }
-  }
-
   const recommendations = generateRecommendationsForLead(lead, leadMatches);
-  const result = await insertRecommendations(recommendations, scoped);
+  const result = await persistRecalculatedRecommendations(
+    recommendations,
+    { leadId },
+    scoped,
+  );
 
   return {
     leadId,
@@ -306,14 +327,12 @@ export async function recalculateAllRecommendations(
     };
   }
 
-  await clearRecommendations(scoped);
-
   const rows = leads.flatMap((lead) => {
     const leadMatches = matches.filter((item) => item.leadId === lead.id);
     return generateRecommendationsForLead(lead, leadMatches);
   });
 
-  const result = await insertRecommendations(rows, scoped);
+  const result = await persistRecalculatedRecommendations(rows, {}, scoped);
 
   return {
     totalLeads: leads.length,
