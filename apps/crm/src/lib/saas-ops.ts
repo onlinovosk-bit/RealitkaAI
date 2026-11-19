@@ -259,9 +259,23 @@ export type AgencyBillingFacts = {
    * 7 z 7 agentúr nemá `stripe_subscription_id`, takže sa to týka všetkých.
    */
   paysOutsideStripe: boolean;
+  /**
+   * True = riadok agentúry sa nepodarilo prečítať (chyba DB / RLS / výnimka).
+   * Nie je to zistenie „neplatí mimo Stripe" — rovnaký fail-open ako Stripe
+   * `lookupFailed`, inak by výpadok `agencies` prepol fakturovaných klientov
+   * do read-only.
+   */
+  lookupFailed?: boolean;
 };
 
 const NO_AGENCY_FACTS: AgencyBillingFacts = { trialEndsAt: null, paysOutsideStripe: false };
+
+/** Nevedomosť o agentúre — nie „neplatí". Musí ísť do `trialGraceFrom({ lookupFailed: true })`. */
+const AGENCY_FACTS_UNAVAILABLE: AgencyBillingFacts = {
+  trialEndsAt: null,
+  paysOutsideStripe: false,
+  lookupFailed: true,
+};
 
 /**
  * Stavy, pri ktorých predplatné skončilo alebo zlyháva platba. `isPayingAgency()`
@@ -300,14 +314,16 @@ async function loadAgencyBillingFacts(): Promise<AgencyBillingFacts> {
       .select("trial_ends_at, manual_plan, subscription_status, plan, account_tier")
       .eq("id", profile.agency_id)
       .maybeSingle<AgencyBillingRow>();
-    if (error) return NO_AGENCY_FACTS; // stĺpec ešte nie je nasadený → historické správanie
+    // Chyba čítania ≠ „neplatí mimo Stripe". Skôr fail-open (unknown) než read-only
+    // pre fakturovaných klientov bez Stripe customera (PROD 2026-10-15: 7/7).
+    if (error) return AGENCY_FACTS_UNAVAILABLE;
     if (!data) return NO_AGENCY_FACTS;
     return {
       trialEndsAt: data.trial_ends_at ?? null,
       paysOutsideStripe: agencyPaysOutsideStripe(data),
     };
   } catch {
-    return NO_AGENCY_FACTS;
+    return AGENCY_FACTS_UNAVAILABLE;
   }
 }
 
@@ -477,7 +493,11 @@ export async function getTrialGraceState(input: {
 }): Promise<TrialGraceState> {
   const billing = input.billing;
 
-  if (input.lookupFailed) {
+  const user = await getCurrentUser();
+  const agency = input.agency ?? (await loadAgencyBillingFacts());
+
+  // Stripe aj agencies: nevedomosť ≠ „bez predplatného" / „neplatí mimo Stripe".
+  if (input.lookupFailed || agency.lookupFailed === true) {
     return trialGraceFrom({
       lookupFailed: true,
       hasSubscription: false,
@@ -490,8 +510,6 @@ export async function getTrialGraceState(input: {
     });
   }
 
-  const user = await getCurrentUser();
-  const agency = input.agency ?? (await loadAgencyBillingFacts());
   const now = Date.now();
 
   const trialEnd = resolveTrialEndMs({
@@ -554,6 +572,7 @@ export async function getSaasOpsSnapshot() {
   };
 
   const usageHealth = getUsageHealth(usage, limits);
+  const agencyFactsUnverified = agencyFacts.lookupFailed === true;
   const trialGrace = await getTrialGraceState({
     billing,
     lookupFailed: billingLookup.lookupFailed,
@@ -577,6 +596,11 @@ export async function getSaasOpsSnapshot() {
       "[saas-ops] stav predplatného neoverený (Stripe nedostupný alebo bez kľúča) — prístup ponechaný plný",
     );
   }
+  if (agencyFactsUnverified) {
+    console.warn(
+      "[saas-ops] stav agentúry neoverený (agencies read zlyhal) — prístup ponechaný plný",
+    );
+  }
 
   return {
     profile,
@@ -589,7 +613,7 @@ export async function getSaasOpsSnapshot() {
     trialGrace,
     canUseFullApp,
     accessLevel,
-    /** True = o stave predplatného nevieme; `canUseFullApp` je potom ústupok, nie zistenie. */
-    billingUnverified: billingLookup.lookupFailed,
+    /** True = o stave predplatného/agentúry nevieme; `canUseFullApp` je potom ústupok, nie zistenie. */
+    billingUnverified: billingLookup.lookupFailed || agencyFactsUnverified,
   };
 }
