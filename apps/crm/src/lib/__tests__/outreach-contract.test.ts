@@ -77,8 +77,9 @@ vi.mock("@/lib/moat-capture/log-ai-recommendation", () => ({
   logAiRecommendation: vi.fn(),
   hashRecommendationDedupePart: () => "h",
 }));
+const fetchLeadAgencyIdMock = vi.hoisted(() => vi.fn(async () => AGENCY as string | null));
 vi.mock("@/lib/outbound-orchestrator", () => ({
-  fetchLeadAgencyId: async () => AGENCY,
+  fetchLeadAgencyId: (...a: unknown[]) => fetchLeadAgencyIdMock(...a),
   outreachLeadCooldownHours: () => 48,
   pickOutboundAbVariant: () => "A",
 }));
@@ -116,6 +117,8 @@ beforeEach(() => {
   mockCreateActivity.mockResolvedValue(undefined);
   mockLogAiAction.mockResolvedValue(undefined);
   Object.assign(audit, { available: true, sentToday: 0, lastSentAt: null, error: null, suppressed: false, suppressionError: null });
+  fetchLeadAgencyIdMock.mockReset();
+  fetchLeadAgencyIdMock.mockResolvedValue(AGENCY);
   mockGenerate.mockResolvedValue({ subject: "S", body: "B", provider: "openai:gpt-4.1-mini", totalTokens: 10 });
   mockResendSend.mockResolvedValue({ data: { id: "re-1" }, error: null });
 });
@@ -201,6 +204,15 @@ describe("prepareOutreachDraft — step 1, nothing is sent", () => {
     expect(res).toMatchObject({ ok: false, status: 503 });
     expect(mockGenerate).not.toHaveBeenCalled();
   });
+
+  it("fails closed when lead agency cannot be resolved (no SYSTEM_USAGE fallback)", async () => {
+    fetchLeadAgencyIdMock.mockResolvedValueOnce(null);
+    const { admin, inserts } = fakeAdmin();
+    const res = await prepareOutreachDraft({ leadId: "lead-1", scopedSupabase: {} as never, admin });
+    expect(res).toMatchObject({ ok: false, status: 503, error: expect.stringMatching(/Agentúra leadu/) });
+    expect(mockGenerate).not.toHaveBeenCalled();
+    expect(inserts).toHaveLength(0);
+  });
 });
 
 describe("sendApprovedOutreach — step 2, sends the approved text verbatim", () => {
@@ -242,6 +254,13 @@ describe("sendApprovedOutreach — step 2, sends the approved text verbatim", ()
     audit.suppressed = true;
     const res = await sendApprovedOutreach(approved);
     expect(res).toMatchObject({ ok: false, error: expect.stringMatching(/odhlásených/) });
+    expect(mockResendSend).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when lead agency cannot be resolved (no SYSTEM_USAGE fallback)", async () => {
+    fetchLeadAgencyIdMock.mockResolvedValueOnce(null);
+    const res = await sendApprovedOutreach(approved);
+    expect(res).toMatchObject({ ok: false, error: expect.stringMatching(/Agentúra leadu/) });
     expect(mockResendSend).not.toHaveBeenCalled();
   });
 
