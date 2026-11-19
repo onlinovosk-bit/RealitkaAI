@@ -97,17 +97,18 @@ describe('billing-store', () => {
   });
 
   describe('pickRelevantStripeSubscription', () => {
-    it('ignores canceled / incomplete_expired leftovers (no data[0] fallback)', async () => {
+    it('ignores canceled / incomplete_expired / incomplete leftovers (no data[0] fallback)', async () => {
       const { pickRelevantStripeSubscription } = await import('@/lib/billing-store');
       expect(
         pickRelevantStripeSubscription([
           { id: 'sub_old', status: 'canceled' },
           { id: 'sub_exp', status: 'incomplete_expired' },
+          { id: 'sub_inc', status: 'incomplete' },
         ]),
       ).toBeNull();
     });
 
-    it('picks active before past_due before incomplete', async () => {
+    it('picks active before past_due; incomplete alone is not relevant', async () => {
       const { pickRelevantStripeSubscription } = await import('@/lib/billing-store');
       expect(
         pickRelevantStripeSubscription([
@@ -122,9 +123,7 @@ describe('billing-store', () => {
           { id: 'sub_due', status: 'past_due' },
         ])?.id,
       ).toBe('sub_due');
-      expect(pickRelevantStripeSubscription([{ id: 'sub_inc', status: 'incomplete' }])?.id).toBe(
-        'sub_inc',
-      );
+      expect(pickRelevantStripeSubscription([{ id: 'sub_inc', status: 'incomplete' }])).toBeNull();
     });
   });
 

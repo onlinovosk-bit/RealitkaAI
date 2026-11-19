@@ -114,7 +114,7 @@ describe('billing-store perf hotfix', () => {
     }
   });
 
-  it('canceled-only leftover must NOT set hasSubscription (invoice clients stay on paysOutsideStripe)', async () => {
+  it('canceled/incomplete leftovers must NOT set hasSubscription (invoice clients stay on paysOutsideStripe)', async () => {
     subscriptionsList.mockResolvedValue({
       data: [
         {
@@ -126,6 +126,12 @@ describe('billing-store perf hotfix', () => {
         {
           id: 'sub_expired',
           status: 'incomplete_expired',
+          currency: 'eur',
+          items: { data: [] },
+        },
+        {
+          id: 'sub_incomplete',
+          status: 'incomplete',
           currency: 'eur',
           items: { data: [] },
         },
