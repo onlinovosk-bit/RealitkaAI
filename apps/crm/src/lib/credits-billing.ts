@@ -186,18 +186,80 @@ function resolveCockpitTier(seats: number, ownerCockpit: boolean): string | null
   return null;
 }
 
+/** Stavy, pri ktorých seat fulfillment nesmie obnoviť platený plán (rovnaké ako lifecycle revoke). */
+const REVOKED_SUBSCRIPTION_STATUSES = new Set(["canceled", "unpaid", "incomplete_expired"]);
+
+export type StripeSubscriptionReader = {
+  subscriptions: { retrieve(id: string): Promise<{ status: string }> };
+};
+
+/**
+ * Skutočný stav predplatného zo Stripe. `checkout.session.completed` môže prísť
+ * oneskorene, opakovane alebo až po `customer.subscription.deleted`; pravdu nesie
+ * Stripe, nie udalosť (rovnaký princíp ako pricing-v2 `loadLiveSubscriptionStatus`).
+ */
+async function loadLiveSubscriptionStatus(
+  subscriptionId: string,
+  reader?: StripeSubscriptionReader | null,
+): Promise<{ ok: true; status: string } | { ok: false }> {
+  const stripe = reader ?? getStripe();
+  if (!stripe) {
+    console.error(
+      "[credits-billing] seat checkout: STRIPE_SECRET_KEY chýba, stav predplatného sa nedá overiť",
+    );
+    return { ok: false };
+  }
+  try {
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    return { ok: true, status: subscription.status };
+  } catch (err) {
+    console.error("[credits-billing] seat checkout: stav predplatného sa nepodarilo načítať", {
+      subscriptionId,
+      code: (err as { code?: unknown } | null)?.code ?? null,
+    });
+    return { ok: false };
+  }
+}
+
+export type SeatEntitlementApplyResult =
+  | { ok: false }
+  | { ok: true; applied: false; reason: "subscription_revoked" }
+  | { ok: true; applied: true; subscriptionStatus: string };
+
 /** Po úspešnom seat checkout webhook — zapíše tier/seaty/cockpit na agency + profil. */
-export async function applySeatCheckoutEntitlements(input: {
-  agencyId: string;
-  authUserId?: string;
-  seatTier: SeatTier;
-  seatQuantity: number;
-  ownerCockpit: boolean;
-  stripeCustomerId?: string | null;
-  stripeSubscriptionId?: string | null;
-}): Promise<boolean> {
+export async function applySeatCheckoutEntitlements(
+  input: {
+    agencyId: string;
+    authUserId?: string;
+    seatTier: SeatTier;
+    seatQuantity: number;
+    ownerCockpit: boolean;
+    stripeCustomerId?: string | null;
+    stripeSubscriptionId?: string | null;
+  },
+  deps: { stripe?: StripeSubscriptionReader } = {},
+): Promise<SeatEntitlementApplyResult> {
   const supabase = createServiceRoleClient();
-  if (!supabase || !input.agencyId) return false;
+  if (!supabase || !input.agencyId) return { ok: false };
+
+  const subscriptionId =
+    typeof input.stripeSubscriptionId === "string" ? input.stripeSubscriptionId.trim() : "";
+  if (!subscriptionId) {
+    console.warn("[credits-billing] seat checkout without subscription id");
+    return { ok: false };
+  }
+
+  const live = await loadLiveSubscriptionStatus(subscriptionId, deps.stripe);
+  if (!live.ok) return { ok: false };
+  if (REVOKED_SUBSCRIPTION_STATUSES.has(live.status)) {
+    console.warn("[credits-billing] seat checkout ignored: subscription is no longer live", {
+      agencyId: input.agencyId,
+      subscriptionId,
+      status: live.status,
+    });
+    // Nič na plnenie — ACK, aby Stripe neopakoval; grant ani tier sa neobnovia.
+    return { ok: true, applied: false, reason: "subscription_revoked" };
+  }
 
   const tierConfig = SEAT_TIER_CONFIG[input.seatTier];
   const seats = Math.max(tierConfig.minSeats, input.seatQuantity);
@@ -209,16 +271,15 @@ export async function applySeatCheckoutEntitlements(input: {
     account_tier: accountTier,
     owner_cockpit_active: input.ownerCockpit,
     cockpit_tier: cockpitTier,
-    subscription_status: "active",
+    // Live Stripe status — never hardcode "active" (stale/replayed checkout after cancel).
+    subscription_status: live.status,
     billing_source: "stripe",
     billing_updated_at: new Date().toISOString(),
+    stripe_subscription_id: subscriptionId,
   };
 
   if (input.stripeCustomerId) {
     agencyUpdate.stripe_customer_id = input.stripeCustomerId;
-  }
-  if (input.stripeSubscriptionId) {
-    agencyUpdate.stripe_subscription_id = input.stripeSubscriptionId;
   }
 
   // .select("id"): UPDATE na neexistujúci riadok nevráti chybu, len 0 riadkov —
@@ -234,7 +295,7 @@ export async function applySeatCheckoutEntitlements(input: {
       "[credits-billing] agency entitlement:",
       agencyErr?.message ?? "no_row",
     );
-    return false;
+    return { ok: false };
   }
 
   if (input.authUserId) {
@@ -249,7 +310,7 @@ export async function applySeatCheckoutEntitlements(input: {
       .eq("auth_user_id", input.authUserId);
   }
 
-  return true;
+  return { ok: true, applied: true, subscriptionStatus: live.status };
 }
 
 /** Idempotentný prvý mesačný grant po seat checkout (reuse grant-engine). */
