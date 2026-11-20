@@ -233,11 +233,12 @@ export async function expireGrantCreditsForAgency(
     return { expired: 0, skipped: true };
   }
 
-  // Až tu je expirácia bezpečná: ledger ju ešte nemá a grant aktuálneho
-  // obdobia ešte nebol pridelený (obe podmienky overené vyššie). Samotný zápis
-  // ide cez expire_grant_credits — ten si pod FOR UPDATE prečíta grant pool
-  // znova, takže `toExpire` zo snapshotu už nie je to, čo sa odpíše, a súbežný
-  // top-up si credits_balance neprepíše.
+  // JS check vyššie je rýchly fail-closed pred RPC. Autoritatívna poistka je v
+  // `expire_grant_credits` (migrácia 20261120230000): po FOR UPDATE na agencies
+  // odmietne expire, ak ledger už má `grant:<agency>:<currentYYYYMM>`. Bez toho
+  // by súbežný checkout/grant medzi týmto SELECTom a RPC vymazal nový grant
+  // (idempotentný retry ho potom nevráti). RPC tiež pod zámkom znova načíta
+  // grant pool, takže `toExpire` zo snapshotu nie je to, čo sa odpíše.
   const result = await expireGrantCreditsAtomic({
     agencyId: agency.id,
     periodKey,
