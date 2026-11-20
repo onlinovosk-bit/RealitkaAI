@@ -243,6 +243,32 @@ describe("grant-engine", () => {
     expect(mockUpdate).not.toHaveBeenCalled();
   });
 
+  it("expire treats RPC current_period_grant_applied skip as safe no-op (race lost to concurrent grant)", async () => {
+    // TS pre-check still saw no current grant; RPC under FOR UPDATE refused.
+    mockMaybeSingle
+      .mockResolvedValueOnce({ data: null })
+      .mockResolvedValueOnce({ data: null });
+    expireGrantCreditsAtomicMock.mockResolvedValueOnce({
+      ok: true,
+      skipped: true,
+      expired: 0,
+    });
+
+    const result = await expireGrantCreditsForAgency(
+      agency({
+        grant_credits_balance: 140,
+        purchased_credits_balance: 80,
+        credits_balance: 220,
+      }),
+      "202605",
+      new Date("2026-06-01T12:00:00Z"),
+    );
+
+    expect(result).toEqual({ expired: 0, skipped: true });
+    expect(expireGrantCreditsAtomicMock).toHaveBeenCalled();
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
   it("expire surfaces an RPC failure as error (not a silent skip)", async () => {
     mockMaybeSingle
       .mockResolvedValueOnce({ data: null })

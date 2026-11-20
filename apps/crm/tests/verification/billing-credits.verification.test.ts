@@ -130,6 +130,13 @@ describe("billing credits panel verification", () => {
       path.join(CRM_ROOT, "src/lib/credits/monthly-cycle.ts"),
       "utf8",
     );
+    const expireGuardMigration = fs.readFileSync(
+      path.join(
+        CRM_ROOT,
+        "supabase/migrations/20261120230000_expire_grant_refuse_after_current_grant.sql",
+      ),
+      "utf8",
+    );
     expect(grantEngine).toContain("ExpireGrantResult");
     expect(grantEngine).toContain("refuse expire: current-period grant already applied");
     // Zlyhanie zápisu musí vyjsť ako `error`, nie ako tiché `skipped` — inak by
@@ -141,5 +148,13 @@ describe("billing credits panel verification", () => {
     expect(monthlyCycle).toContain("expireFailedAgencyIds");
     expect(monthlyCycle).toContain("expire_failed:");
     expect(monthlyCycle).toMatch(/ok:\s*false/);
+    // Autoritatívna poistka musí byť v RPC pod FOR UPDATE — TS SELECT samotný
+    // nestačí proti súbežnému monthly grant / checkoutu.
+    expect(expireGuardMigration).toContain(
+      "refuse expire: current-period grant already applied",
+    );
+    expect(expireGuardMigration).toContain("current_period_grant_applied");
+    expect(expireGuardMigration).toMatch(/v_current_grant_key/);
+    expect(expireGuardMigration).toContain("'grant:' || p_agency_id::text");
   });
 });
