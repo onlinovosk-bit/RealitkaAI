@@ -27,13 +27,20 @@ export async function POST(request: Request) {
     const block = await checkAiRateLimit(user.id, "import", 5);
     if (block) return NextResponse.json(block, { status: 429 });
 
-    // Resolve agency_id once for all inserts
+    // Resolve agency_id once for all inserts — refuse without tenant (do not
+    // insert agency_id: null; RLS WITH CHECK would reject or orphan rows).
     const { data: profile } = await supabase
       .from("profiles")
       .select("agency_id")
       .eq("auth_user_id", user.id)
       .maybeSingle();
     const agencyId: string | null = profile?.agency_id ?? null;
+    if (!agencyId) {
+      return NextResponse.json(
+        { ok: false, error: "Účet nemá priradenú kanceláriu." },
+        { status: 403 },
+      );
+    }
 
     const body = await request.json();
 
@@ -55,19 +62,36 @@ export async function POST(request: Request) {
     let updated  = 0;
     let errors   = 0;
 
-    // ── Batch 1: look up all emails in a single query ────────────────────
+    // ── Batch 1: look up emails in THIS agency only ───────────────────────
+    // RLS uses profile_agencies_for_auth() (confirmed-email can span ≥2
+    // agencies). Without .eq("agency_id", …), a shared email would UPDATE the
+    // sibling tenant's lead instead of inserting into the session agency.
+    // Same guard as universal-import/import-runner.ts.
     const emailList = withEmail
       .map((r) => String(r.email).trim().toLowerCase())
       .filter(Boolean);
 
     const existingMap = new Map<string, string>(); // email → lead.id
     if (emailList.length > 0) {
-      const { data: existing } = await supabase
-        .from("leads")
-        .select("id, email")
-        .in("email", emailList);
-      for (const row of existing ?? []) {
-        existingMap.set(row.email as string, row.id as string);
+      const uniqueEmails = [...new Set(emailList)];
+      for (let i = 0; i < uniqueEmails.length; i += 200) {
+        const chunk = uniqueEmails.slice(i, i + 200);
+        const { data: existing, error: existingError } = await supabase
+          .from("leads")
+          .select("id, email")
+          .eq("agency_id", agencyId)
+          .in("email", chunk);
+        if (existingError) {
+          return NextResponse.json(
+            { ok: false, error: "Nepodarilo sa overiť existujúce e-maily." },
+            { status: 500 },
+          );
+        }
+        for (const row of existing ?? []) {
+          if (row.email) {
+            existingMap.set(String(row.email).toLowerCase(), row.id as string);
+          }
+        }
       }
     }
 
@@ -93,7 +117,8 @@ export async function POST(request: Request) {
             source:   row.source   || undefined,
             note:     row.note     || undefined,
           })
-          .eq("id", existingId);
+          .eq("id", existingId)
+          .eq("agency_id", agencyId);
         if (upErr) errors++; else updated++;
       } else {
         toInsert.push({
