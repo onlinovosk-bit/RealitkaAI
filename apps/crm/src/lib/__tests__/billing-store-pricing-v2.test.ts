@@ -31,12 +31,18 @@ vi.mock("@/lib/supabase/admin", () => ({
     from: (table: string) => {
       if (table === "profiles") {
         return {
-          update: (payload: Record<string, unknown>) => ({
-            eq: async () => {
+          update: (payload: Record<string, unknown>) => {
+            const finish = async () => {
               h.profileUpdate(payload);
               return { error: null };
-            },
-          }),
+            };
+            return {
+              eq: finish,
+              // syncAccountTier resolves Stripe customer → profiles.email via ilike
+              // (no auth.admin.listUsers page-1 truncation).
+              ilike: finish,
+            };
+          },
         };
       }
       if (table === "agencies") {

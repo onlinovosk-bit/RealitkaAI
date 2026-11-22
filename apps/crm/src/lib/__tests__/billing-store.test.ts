@@ -1,7 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockProfileUpdateEq = vi.fn().mockResolvedValue({ error: null });
-const mockProfileUpdate = vi.fn(() => ({ eq: mockProfileUpdateEq }));
+const mockProfileUpdateIlike = vi.fn().mockResolvedValue({ error: null });
+const mockProfileUpdate = vi.fn(() => ({
+  eq: mockProfileUpdateEq,
+  ilike: mockProfileUpdateIlike,
+}));
 
 // Shared seams for the subscription.updated tests below. The defaults reproduce
 // what the module-level mocks did before they existed — customers.retrieve
@@ -253,6 +257,7 @@ describe('billing-store', () => {
             id: 'cs_legacy_pro',
             customer: 'cus_1',
             customer_email: 'broker@example.com',
+            payment_status: 'paid',
             metadata: {
               planKey: 'pro',
               authUserId: 'user-legacy',
@@ -265,6 +270,87 @@ describe('billing-store', () => {
       expect(mockProfileUpdate.mock.calls[0][0]).toMatchObject({
         account_tier: 'pro',
       });
+    });
+
+    it('does not grant paid tier on checkout.session.completed when payment is unpaid', async () => {
+      vi.resetModules();
+      vi.stubEnv('STRIPE_PRICE_PRO', 'price_pro');
+      const { handleStripeWebhookEvent } = await import('@/lib/billing-store');
+
+      await handleStripeWebhookEvent({
+        type: 'checkout.session.completed',
+        data: {
+          object: {
+            id: 'cs_async_pending',
+            customer: 'cus_1',
+            payment_status: 'unpaid',
+            metadata: {
+              planKey: 'pro',
+              authUserId: 'user-legacy',
+            },
+          },
+        },
+      } as never);
+
+      expect(mockProfileUpdate).not.toHaveBeenCalled();
+    });
+
+    it('does not grant paid tier on subscription.created when status is incomplete', async () => {
+      vi.resetModules();
+      vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test');
+      vi.stubEnv('STRIPE_PRICE_PRO', 'price_pro');
+      mockCustomersRetrieve.mockResolvedValue({
+        id: 'cus_inc',
+        email: 'broker@example.com',
+        deleted: false,
+      });
+
+      const { handleStripeWebhookEvent } = await import('@/lib/billing-store');
+      await handleStripeWebhookEvent({
+        type: 'customer.subscription.created',
+        data: {
+          object: {
+            id: 'sub_inc',
+            customer: 'cus_inc',
+            status: 'incomplete',
+            items: { data: [{ price: { id: 'price_pro' } }] },
+          },
+        },
+      } as never);
+
+      expect(mockProfileUpdate).not.toHaveBeenCalled();
+    });
+
+    it('force-frees profile on subscription.updated when status is unpaid', async () => {
+      vi.resetModules();
+      vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test');
+      vi.stubEnv('STRIPE_PRICE_PRO', 'price_pro');
+      mockCustomersRetrieve.mockResolvedValue({
+        id: 'cus_unpaid',
+        email: 'broker@example.com',
+        deleted: false,
+      });
+
+      const { handleStripeWebhookEvent } = await import('@/lib/billing-store');
+      await handleStripeWebhookEvent({
+        type: 'customer.subscription.updated',
+        data: {
+          object: {
+            id: 'sub_unpaid',
+            customer: 'cus_unpaid',
+            status: 'unpaid',
+            items: { data: [{ price: { id: 'price_pro' } }] },
+          },
+          previous_attributes: { status: 'active' },
+        },
+      } as never);
+
+      expect(mockProfileUpdate).toHaveBeenCalled();
+      expect(mockProfileUpdate.mock.calls[0][0]).toMatchObject({
+        account_tier: 'free',
+        ui_role: 'agent',
+      });
+      expect(mockProfileUpdateIlike).toHaveBeenCalledWith('email', 'broker@example.com');
     });
 
     it('forces free on subscription.deleted', async () => {

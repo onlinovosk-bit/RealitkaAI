@@ -74,6 +74,19 @@ function isEnterprisePriceId(priceId: string | null | undefined): boolean {
   );
 }
 
+/**
+ * Stripe statuses that may grant/keep paid `profiles.account_tier` from a price ID.
+ * `past_due` matches agency lifecycle grace (collection still retrying).
+ */
+const PROFILE_ENTITLING_STATUSES = new Set(["active", "trialing", "past_due"]);
+
+/**
+ * Statuses that must clear paid profile entitlements (mirror agency lifecycle revoke).
+ * `incomplete` is intentionally excluded: pre-pay create must not grant, but must
+ * also not wipe a profile that still has another live paid subscription.
+ */
+const PROFILE_CLEAR_STATUSES = new Set(["canceled", "unpaid", "incomplete_expired"]);
+
 async function syncAccountTier(
   stripeCustomerIdOrAuthUserId: string,
   priceId: string | null | undefined,
@@ -83,12 +96,34 @@ async function syncAccountTier(
     byAuthUserId?: boolean;
     /** Explicit free downgrade (e.g. subscription.deleted). */
     forceFree?: boolean;
+    /**
+     * Live Stripe `subscription.status`. Required to grant a paid tier from a
+     * price ID — without it (or when status is non-entitling), we must not
+     * elevate `profiles.account_tier` / `ui_role`. Clear statuses force free.
+     */
+    subscriptionStatus?: string | null;
   }
 ): Promise<void> {
   const supabase = createServiceRoleClient();
   if (!supabase) return;
 
-  const tier = opts?.forceFree ? "free" : resolvePlanKeyFromStripePriceId(priceId);
+  let forceFree = opts?.forceFree === true;
+  const status = typeof opts?.subscriptionStatus === "string"
+    ? opts.subscriptionStatus.trim()
+    : "";
+
+  if (!forceFree) {
+    if (status && PROFILE_CLEAR_STATUSES.has(status)) {
+      forceFree = true;
+    } else if (!status || !PROFILE_ENTITLING_STATUSES.has(status)) {
+      // Missing status, `incomplete`, or unknown — never grant paid from price.
+      // Callers that grant must pass an entitling status (checkout synthesizes
+      // `active` only after payment_status=paid).
+      return;
+    }
+  }
+
+  const tier = forceFree ? "free" : resolvePlanKeyFromStripePriceId(priceId);
   // Unknown Stripe prices must not mutate a paid profile to free.
   if (tier === "unknown") return;
 
@@ -114,18 +149,19 @@ async function syncAccountTier(
       .update(update)
       .eq("auth_user_id", stripeCustomerIdOrAuthUserId);
   } else {
-    // Fallback â€“ hÄľadaj cez email zĂˇkaznĂ­ka zo Stripe
+    // Resolve via Stripe customer email → profiles.email (case-insensitive).
+    // Do NOT use auth.admin.listUsers() without pagination — default page size
+    // is 50, so cancel/forceFree silently missed users beyond page 1.
     const stripe = getStripe();
     if (!stripe) return;
     try {
       const customer = await stripe.customers.retrieve(stripeCustomerIdOrAuthUserId);
       if (customer.deleted || !("email" in customer) || !customer.email) return;
-      const { data: users } = await supabase.auth.admin.listUsers();
-      const match = users?.users?.find((u) => u.email === customer.email);
-      if (!match) return;
-      await supabase.from("profiles").update(update).eq("auth_user_id", match.id);
+      const email = customer.email.trim();
+      if (!email) return;
+      await supabase.from("profiles").update(update).ilike("email", email);
     } catch {
-      // Stripe alebo Supabase lookup zlyhal â€“ tier ostĂˇva nezmenenĂ˝
+      // Stripe alebo Supabase lookup zlyhal — tier ostáva nezmenený
     }
   }
 }
@@ -589,14 +625,30 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
       // handlePricingCheckoutWebhook in the same route. Skipping here prevents
       // a free-tier overwrite when metadata has authUserId but no planKey.
       if (!isPricingCheckoutMetadata(object.metadata)) {
-        const priceId = object.metadata?.planKey
-          ? BILLING_PLANS.find((p) => p.key === object.metadata.planKey)?.priceId
-          : undefined;
-        const authUserId = object.metadata?.authUserId as string | undefined;
-        if (authUserId) {
-          await syncAccountTier(authUserId, priceId, { byAuthUserId: true, resetLock: true });
-        } else if (object.customer) {
-          await syncAccountTier(object.customer as string, priceId, { resetLock: true });
+        const paymentStatus = typeof object.payment_status === "string"
+          ? object.payment_status
+          : "";
+        // Async methods fire session.completed while payment is still unpaid —
+        // do not mint paid profiles.account_tier until Stripe confirms payment.
+        const paymentConfirmed =
+          paymentStatus === "paid" || paymentStatus === "no_payment_required";
+        if (paymentConfirmed) {
+          const priceId = object.metadata?.planKey
+            ? BILLING_PLANS.find((p) => p.key === object.metadata.planKey)?.priceId
+            : undefined;
+          const authUserId = object.metadata?.authUserId as string | undefined;
+          if (authUserId) {
+            await syncAccountTier(authUserId, priceId, {
+              byAuthUserId: true,
+              resetLock: true,
+              subscriptionStatus: "active",
+            });
+          } else if (object.customer) {
+            await syncAccountTier(object.customer as string, priceId, {
+              resetLock: true,
+              subscriptionStatus: "active",
+            });
+          }
         }
       }
 
@@ -615,8 +667,12 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
     }
 
     if (event.type === "customer.subscription.created") {
-      const priceId = (object as Stripe.Subscription).items.data[0]?.price.id;
-      await syncAccountTier(object.customer as string, priceId, { resetLock: true });
+      const subscription = object as Stripe.Subscription;
+      const priceId = subscription.items.data[0]?.price.id;
+      await syncAccountTier(object.customer as string, priceId, {
+        resetLock: true,
+        subscriptionStatus: subscription.status,
+      });
 
       await createActivity({
         leadId: null,
@@ -652,7 +708,10 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
       await syncAccountTier(
         object.customer as string,
         newPriceId,
-        isDowngradeFromEnterprise ? { lockDowngrade: true } : { resetLock: isEnterprise }
+        {
+          ...(isDowngradeFromEnterprise ? { lockDowngrade: true } : { resetLock: isEnterprise }),
+          subscriptionStatus: subscription.status,
+        },
       );
 
       await createActivity({
