@@ -5,7 +5,8 @@ import {
   partitionPublicListings,
   publicListingTypeLabel,
 } from "@/lib/public-listings-partition";
-import type { PropertySearchParams, BuyerIntent, PropertyType } from "@/lib/buyer-intent";
+import { fetchPublicBuyerIntent } from "@/lib/public-listings/fetch-buyer-intent";
+import type { PropertySearchParams, PropertyType } from "@/lib/buyer-intent";
 import { NehnutelnostiAnalytics } from "@/components/sprievodca/NehnutelnostiAnalytics";
 import { ListingClickTracker } from "@/components/sprievodca/ListingClickTracker";
 
@@ -97,40 +98,6 @@ async function listPublicAgencyListings(opts: {
     status: String(row.status ?? ""),
     transactionType: row.transaction_type != null ? String(row.transaction_type) : null,
   }));
-}
-
-// ── try to fetch intent for personalization (soft fail) ───────────────────────
-async function fetchIntent(intentId: string): Promise<BuyerIntent | null> {
-  try {
-    const supabase = createAdminClient();
-    const { data } = await supabase
-      .from("buyer_intents")
-      .select("*")
-      .eq("id", intentId)
-      .maybeSingle();
-
-    if (!data) return null;
-
-    return {
-      id: data.id,
-      leadId: data.lead_id,
-      dealType: data.deal_type,
-      propertyType: data.property_type,
-      primaryCity: data.primary_city,
-      budgetMin: data.budget_min,
-      budgetMax: data.budget_max,
-      timeHorizonMonths: data.time_horizon_months,
-      newBuildOnly: data.new_build_only,
-      needsMortgageHelp: data.needs_mortgage_help,
-      rawFocusText: data.raw_focus_text,
-      clientSegment: data.client_segment,
-      buyerReadinessScore: data.buyer_readiness_score,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at,
-    } as BuyerIntent;
-  } catch {
-    return null;
-  }
 }
 
 // ── property card ─────────────────────────────────────────────────────────────
@@ -237,7 +204,9 @@ export default async function NehnutelnostiPage({
   });
   // `demand` (Dopyt) intentionally discarded — not rendered on /nehnutelnosti.
 
-  const intent = intentId ? await fetchIntent(intentId) : null;
+  const intent = intentId
+    ? await fetchPublicBuyerIntent(createAdminClient(), intentId, agencyId)
+    : null;
 
   function isHighlighted(p: PublicListing): boolean {
     if (!intent) return false;
