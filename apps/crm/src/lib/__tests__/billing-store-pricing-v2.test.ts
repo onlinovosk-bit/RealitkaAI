@@ -31,12 +31,22 @@ vi.mock("@/lib/supabase/admin", () => ({
     from: (table: string) => {
       if (table === "profiles") {
         return {
-          update: (payload: Record<string, unknown>) => ({
-            eq: async () => {
+          // Email path: select → ilike (escaped) → limit(2) → update by auth_user_id.
+          select: () => ({
+            ilike: () => ({
+              limit: async () => ({
+                data: [{ auth_user_id: "user-from-email" }],
+                error: null,
+              }),
+            }),
+          }),
+          update: (payload: Record<string, unknown>) => {
+            const finish = async () => {
               h.profileUpdate(payload);
               return { error: null };
-            },
-          }),
+            };
+            return { eq: finish };
+          },
         };
       }
       if (table === "agencies") {
