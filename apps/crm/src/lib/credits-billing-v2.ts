@@ -765,11 +765,14 @@ export async function applyPricingV2SubscriptionEvent(
   // updated: stav predplatného sa prenáša vždy (past_due = žiadne ďalšie granty).
   const update: Record<string, unknown> = { subscription_status: status, billing_updated_at: now };
   const { band, seatQuantity, packCredits } = readPricingV2SubscriptionItems(subscription);
+  let syncedAccountTier: (typeof PRICING_V2_BAND_ACCOUNT_TIER)[keyof typeof PRICING_V2_BAND_ACCOUNT_TIER] | null =
+    null;
   if (band && seatQuantity !== null) {
     // Zmena quantity v Stripe (dokúpenie/zrušenie miesta) prepíše počet maklérov aj pásmo.
     const users = clampLicensedUsers(seatQuantity, (agency.licensed_users as number | null) ?? 1);
+    syncedAccountTier = PRICING_V2_BAND_ACCOUNT_TIER[band];
     update.pricing_band = band;
-    update.account_tier = PRICING_V2_BAND_ACCOUNT_TIER[band];
+    update.account_tier = syncedAccountTier;
     update.licensed_users = users;
     update.seats = users;
     update.pack_credits = packCredits;
@@ -782,6 +785,30 @@ export async function applyPricingV2SubscriptionEvent(
   if (error) {
     console.warn("[pricing-v2] subscription update failed:", error.message);
     return false;
+  }
+
+  // Agency band/tier is rewritten above; profiles must follow. Otherwise a Stripe
+  // portal quantity drop (office→start) leaves profiles.account_tier=enterprise and
+  // ui_role=owner_vision → checkCapabilityAccess / workdesk still treat the tenant as paid MV.
+  // Fulfill writes the payer at checkout; revoke clears all on cancel — quantity updates
+  // must do the same sync. Leaving enterprise clears owner_vision (do not mass-promote
+  // every agent to owner_vision on upgrade; account_tier alone unlocks rank-3 caps).
+  if (syncedAccountTier) {
+    const profilePayload: Record<string, unknown> = {
+      account_tier: syncedAccountTier,
+      protocol_active: false,
+    };
+    if (syncedAccountTier !== "enterprise") {
+      profilePayload.ui_role = "agent";
+    }
+    const { error: profileErr } = await supabase
+      .from("profiles")
+      .update(profilePayload)
+      .eq("agency_id", agency.id);
+    if (profileErr) {
+      console.warn("[pricing-v2] subscription.updated profile sync failed:", profileErr.message);
+      return false;
+    }
   }
   return true;
 }

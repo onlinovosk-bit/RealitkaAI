@@ -900,6 +900,60 @@ describe("subscription lifecycle for v3 prices (kritériá 4, 5)", () => {
     });
   });
 
+  it("updated: quantity drop office→start syncs profiles (no leftover enterprise/owner_vision)", async () => {
+    liveSub("active", [SEAT, 1]);
+    db.profileUpdates = [];
+    const ok = await applyPricingV2SubscriptionEvent(
+      subEvent("customer.subscription.updated", items([SEAT, 1])),
+    );
+    expect(ok).toBe(true);
+    expect(db.agencies[0]).toMatchObject({
+      pricing_band: "start",
+      account_tier: "starter",
+      licensed_users: 1,
+      seats: 1,
+    });
+    expect(db.profileUpdates).toEqual([
+      {
+        col: "agency_id",
+        val: AGENCY,
+        payload: { account_tier: "starter", ui_role: "agent", protocol_active: false },
+      },
+    ]);
+  });
+
+  it("updated: quantity rise to office syncs profile account_tier without mass owner_vision", async () => {
+    db.agencies = [
+      {
+        ...V2_AGENCY(),
+        pricing_band: "start",
+        account_tier: "starter",
+        licensed_users: 1,
+        seats: 1,
+        pack_credits: 0,
+      },
+    ];
+    liveSub("active", [SEAT, 7]);
+    db.profileUpdates = [];
+    const ok = await applyPricingV2SubscriptionEvent(
+      subEvent("customer.subscription.updated", items([SEAT, 7])),
+    );
+    expect(ok).toBe(true);
+    expect(db.agencies[0]).toMatchObject({
+      pricing_band: "office",
+      account_tier: "enterprise",
+      licensed_users: 7,
+      seats: 7,
+    });
+    expect(db.profileUpdates).toEqual([
+      {
+        col: "agency_id",
+        val: AGENCY,
+        payload: { account_tier: "enterprise", protocol_active: false },
+      },
+    ]);
+  });
+
   it("updated: quantity (zo živého Stripe) cez hranice pásiem prepisuje pásmo (1 / 2 / 5 / 6 / 10 / 11 / 40)", async () => {
     const seen: Array<[number, unknown, unknown]> = [];
     for (const q of [1, 2, 5, 6, 10, 11, 40]) {
