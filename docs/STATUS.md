@@ -1,5 +1,7 @@
 # Revolis.AI — STAV NA JEDNEJ STRÁNKE
 
+> **2026-11-23 Main Green Gate:** draft PR #964. Code Contract Guard na `f100d7e3` je success. Nightly Chromium install na pinutom runneri je UNVERIFIED (dispatch HTTP 403). Merge/deploy/PROD nerobené. Tabuľka % sa NEMENÍ.
+
 > **2026-11-17 ADAF:** read-only preflight (13 sekcií) a rozhodovacia brána Ústavy v2: founder „A" → **BACKLOG**, odomkne ho Stripe krok C a prvá platiaca agentúra. Nič nenasadené, PROD nezmenená. Tabuľka % sa NEMENÍ. Posledná aktualizácia SESSION: **2026-11-17**.
 
 > **2026-11-16 Control Tower ledger:** `schema_migrations` 136 → 138 (`20261116120000`, `20261116140000`). DDL už bolo. Snapshoty 0. Tabuľka % sa NEMENÍ. Posledná aktualizácia SESSION: **2026-11-16**.
@@ -64,12 +66,13 @@
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
-Cieľ: ADAF — preflight a rozhodovacia brána
+Cieľ: Main Green Gate — zelené required checks na draft PR
 > % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
-- [x] 1 — Read-only preflight ADAF (13 sekcií, základ main b3fc170, v repe nič nezmenené)
-- [x] 2 — Rozhodovacia brána Ústavy v2: BACKLOG (founder „A", 2026-11-17)
-- [x] 3 — Zápis: decisions.md, session-summary.md, STATUS.md
-- [ ] 4 — Merge zápisu na main (čaká na „merguj N")
+- [x] 1 — Contract: dve nové porušenia na snapshots route; po oprave lokálne NOVÉ 0 a GitHub Zmluva kódu success na f100d7e3
+- [x] 2 — Nightly logy 44511986576 a 45168513746: Playwright 1.59.1 odmieta chromium na ubuntu26.04-x64
+- [x] 3 — Pin ubuntu-24.04 v nightly-playwright.yml a preview-playwright-smoke.yml, guard nezmenený
+- [ ] 4 — Required checks zelené na aktuálnej hlave draft PR #964
+- [ ] 5 — Nightly install overený dispatchom alebo ďalším cronom (dispatch z tohto behu = HTTP 403)
 <!-- SESSION:END -->
 
 ## Hotové 2026-10-07 — s dôkazom (REALVIA-SEC-01)

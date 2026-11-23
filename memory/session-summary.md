@@ -1,3 +1,19 @@
+## Session 2026-11-23 (Main Green Gate)
+### Dokončené
+- Code Contract Guard: dve nové porušenia na `snapshots/route.ts` (ratelimit, telemetry). Route doplnená, guard nezmenený. Lokálne `check-api-contract.mjs --ci` exit 0. GitHub job `137769131512` success na `f100d7e3`.
+- Nightly príčina potvrdená z logov `44511986576` a `45168513746`: Playwright 1.59.1 odmieta chromium na ubuntu26.04-x64. Pin `ubuntu-24.04` v nightly a preview smoke.
+- Draft PR #964. `workflow_dispatch` nightly vrátil HTTP 403.
+### Rozpracované / Pending
+- `Lint, test, build` a ostatné required checks na hlave PR (v čase zápisu ešte bežali na `f100d7e3`; docs commit ich spustí znova).
+- Nightly install na pinutom runneri: UNVERIFIED, kým neprebehne cron `0 3 * * *` alebo dispatch s právom na Actions.
+- Merge len na výslovné GO.
+### Kľúčové súbory zmenené
+- `apps/crm/src/app/api/ai-control-tower/snapshots/route.ts`: rate limit po admin gate, `ai_control_tower_snapshot`.
+- `.github/workflows/nightly-playwright.yml`, `preview-playwright-smoke.yml`: `ubuntu-24.04`.
+- `docs/reports/2026-11-23-main-green-gate.md`: dôkaz.
+### Ďalší krok
+Po zelených required checks na hlave PR: founder buď spustí `workflow_dispatch` nightly na vetve, alebo počká na cron 03:00 UTC. Merge až na „merguj“.
+
 ## Session 2026-11-17 (ADAF — preflight a rozhodovacia brána)
 ### Dokončené
 - Read-only preflight ADAF (13 sekcií) nad `main` b3fc170: repo, auth/tenant, DB/RLS, Model Gateway a cost, joby, integrácie, CI/ops. Nič v repe ani v PROD nezmenené.

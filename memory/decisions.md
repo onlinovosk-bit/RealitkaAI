@@ -1,3 +1,10 @@
+## 2026-11-23 — Main Green Gate (CI repair, BUILD v rozsahu opravy, bez merge)
+**GO:** zadanie „make main CI green again", presne jeden draft PR, nikdy merge / ready / deploy / PROD / secrets / RLS.
+**Čo:** Code Contract Guard padal na dvoch nových porušeniach `check-api-contract.mjs` v `apps/crm/src/app/api/ai-control-tower/snapshots/route.ts` (rate-limit + usage-metrics). Route doplnená, guard nezmenený. Nightly Playwright padal v `Install Playwright Chromium`, lebo Playwright 1.59.1 nepodporuje chromium na ubuntu26.04-x64 (`ubuntu-latest`). `nightly-playwright.yml` a `preview-playwright-smoke.yml` pinuté na `ubuntu-24.04`, rovnako ako `saas-grade-pipeline.yml`.
+**Dôkaz:** lokálny `--ci` exit 0 (`NOVÉ porušenia: 0`). Logy behov `44511986576` a `45168513746`. GitHub check `Zmluva kódu (ratchet)` success na `f100d7e3` (job `137769131512`). `workflow_dispatch` nightly = HTTP 403, beh workflow súboru je UNVERIFIED do ďalšieho cronu alebo dispatchu s právom.
+**Rollback:** revert PR #964. Žiadna migrácia, žiadny PROD zápis.
+**BUILD/BACKLOG:** BUILD len ako oprava existujúcej brány. Merge nie je súčasť tohto rozhodnutia.
+
 ## 2026-11-17 — ADAF (AI Digital Asset Factory): BACKLOG — rozhodovacia brána Ústavy v2
 **Rozhodnutie:** Founder „A" (2026-11-17) po read-only preflighte (13 sekcií, základ `main` b3fc170). ADAF v zadanom rozsahu (Portfolio Control Plane, agent orchestration, execution connectors, measurement/economics, governance) sa **nestaví**. **BUILD/BACKLOG: BACKLOG.**
 **Prečo (odhad, nie meranie):** Q1 „zaplatil by dnešný klient?" = NIE (interný nástroj) → veto: strop VALIDATE. Q7 ROI proti backlogu = NIE (Stripe krok C je +30 bodov a jediný krok, ktorý odblokuje platiaceho klienta). Q8 timing = „príliš skoro" → veto: BACKLOG bez ohľadu na skóre. Q10: Technology Bias / Feature Trap. Q9 (MVP do 2 týždňov) = ÁNO len pre základný rez. Skóre ≈ 1–3 z 12.
