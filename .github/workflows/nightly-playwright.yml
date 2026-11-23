@@ -12,7 +12,16 @@ concurrency:
 jobs:
   nightly-e2e:
     name: Nightly Playwright (extended)
-    runs-on: ubuntu-latest
+    # Playwright 1.59.1 does not install Chromium on ubuntu-latest (26.04).
+    # Nightly runs 2026-11-19 (job 135518273981) and 2026-11-23 (job 137671632584)
+    # died in "Install Playwright Chromium" with:
+    #   BEWARE: your OS is not officially supported by Playwright; installing dependencies for ubuntu26.04-x64 as a fallback.
+    #   Cannot install dependencies for ubuntu26.04-x64 with Playwright 1.59.1!
+    #   Error: ERROR: Playwright does not support chromium on ubuntu26.04-x64
+    # Same pin as saas-grade-pipeline.yml. The install command already uses
+    # `npx playwright install chromium --with-deps`; the OS is what Playwright rejects.
+    # Bump this with Playwright, not with ubuntu-latest.
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
 
     # Viď saas-grade-pipeline.yml — `contents: read` musí ostať, inak padne

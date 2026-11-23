@@ -14,6 +14,9 @@ describe("[verification] AI Control Tower subscription writes", () => {
     expect(route).toContain("requirePlatformAdmin");
     expect(route).not.toMatch(/FOUNDER_EMAILS/);
     expect(route).toContain("writeManualSubscriptionSnapshot");
+    expect(route).toContain("@/lib/rate-limit");
+    expect(route).toContain("incrementUsageMetric");
+    expect(route).toContain("ai_control_tower_snapshot");
   });
 
   it("page can show the tower to FOUNDER_EMAILS but form only to platform admin", () => {
