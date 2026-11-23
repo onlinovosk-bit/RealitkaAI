@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
   maybeSingle: vi.fn(),
   from: vi.fn(),
   writeManualSubscriptionSnapshot: vi.fn(),
+  rateLimit: vi.fn(),
+  incrementUsageMetric: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -19,6 +21,15 @@ vi.mock("@/lib/supabase/admin", () => ({
 
 vi.mock("@/lib/ai-control-tower/subscription-write", () => ({
   writeManualSubscriptionSnapshot: mocks.writeManualSubscriptionSnapshot,
+}));
+
+vi.mock("@/lib/rate-limit", () => ({
+  rateLimit: mocks.rateLimit,
+}));
+
+vi.mock("@/lib/usage-metrics", () => ({
+  incrementUsageMetric: mocks.incrementUsageMetric,
+  SYSTEM_USAGE_AGENCY_ID: "00000000-0000-0000-0000-000000000001",
 }));
 
 function mockUserSession(user: { id: string } | null, profile: { is_platform_admin?: boolean } | null) {
@@ -58,6 +69,8 @@ describe("POST /api/ai-control-tower/snapshots", () => {
       inserted: true,
       snapshot: { poolId: "claude:shared:weekly", usedPercent: 12, remainingPercent: 88 },
     });
+    mocks.rateLimit.mockResolvedValue({ allowed: true, remaining: 29 });
+    mocks.incrementUsageMetric.mockResolvedValue(undefined);
   });
 
   it("returns 401 without a user and does not write", async () => {
@@ -70,6 +83,8 @@ describe("POST /api/ai-control-tower/snapshots", () => {
     expect(res.status).toBe(401);
     expect(mocks.writeManualSubscriptionSnapshot).not.toHaveBeenCalled();
     expect(mocks.createServiceRoleClient).not.toHaveBeenCalled();
+    expect(mocks.rateLimit).not.toHaveBeenCalled();
+    expect(mocks.incrementUsageMetric).not.toHaveBeenCalled();
   });
 
   it("returns 403 for authenticated non-admin even with founder-looking email", async () => {
@@ -81,6 +96,8 @@ describe("POST /api/ai-control-tower/snapshots", () => {
     }));
     expect(res.status).toBe(403);
     expect(mocks.writeManualSubscriptionSnapshot).not.toHaveBeenCalled();
+    expect(mocks.rateLimit).not.toHaveBeenCalled();
+    expect(mocks.incrementUsageMetric).not.toHaveBeenCalled();
   });
 
   it("writes when profiles.is_platform_admin is true", async () => {
@@ -92,9 +109,28 @@ describe("POST /api/ai-control-tower/snapshots", () => {
       body: JSON.stringify(validBody),
     }));
     expect(res.status).toBe(200);
+    expect(mocks.rateLimit).toHaveBeenCalledOnce();
     expect(mocks.writeManualSubscriptionSnapshot).toHaveBeenCalledOnce();
+    expect(mocks.incrementUsageMetric).toHaveBeenCalledWith({
+      agencyId: "00000000-0000-0000-0000-000000000001",
+      metric: "ai_control_tower_snapshot",
+    });
     const json = await res.json();
     expect(json.ok).toBe(true);
     expect(json.poolId).toBe("claude:shared:weekly");
+  });
+
+  it("returns 429 when the rate limit bucket is full and does not write", async () => {
+    mockUserSession({ id: "admin-1" }, { is_platform_admin: true });
+    mocks.rateLimit.mockResolvedValue({ allowed: false, remaining: 0 });
+    const { POST } = await import("../route");
+    const res = await POST(new Request("http://local/api/ai-control-tower/snapshots", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-forwarded-for": "203.0.113.5" },
+      body: JSON.stringify(validBody),
+    }));
+    expect(res.status).toBe(429);
+    expect(mocks.writeManualSubscriptionSnapshot).not.toHaveBeenCalled();
+    expect(mocks.incrementUsageMetric).not.toHaveBeenCalled();
   });
 });
