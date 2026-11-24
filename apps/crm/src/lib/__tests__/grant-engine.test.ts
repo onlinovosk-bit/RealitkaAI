@@ -345,6 +345,25 @@ describe("grant-engine", () => {
       expect(monthlyGrantAmountForAgency(agency({ subscription_status: "canceled" }))).toBe(previewMonthlyGrant("team", 4, false));
     });
 
+    it("legacy free tier after cancel does not multiply leftover paid seats", () => {
+      // syncAgencyBillingLifecycle revoke: account_tier=free, seats left at paid quantity.
+      expect(
+        monthlyGrantAmountForAgency(
+          agency({ account_tier: "free", seats: 10, subscription_status: "canceled" }),
+        ),
+      ).toBe(previewMonthlyGrant("solo", 1, false));
+      expect(
+        monthlyGrantAmountForAgency(
+          agency({ account_tier: "free", seats: 1, subscription_status: null }),
+        ),
+      ).toBe(previewMonthlyGrant("solo", 1, false));
+      expect(
+        monthlyGrantAmountForAgency(
+          agency({ account_tier: "free", seats: 0, subscription_status: "canceled" }),
+        ),
+      ).toBe(0);
+    });
+
     it("grantMonthlyCreditsForAgency sends the v2 amount to the idempotent RPC", async () => {
       applyMonthlyGrantCreditsMock.mockResolvedValue({ ok: true, granted: 180, skipped: false });
       const result = await grantMonthlyCreditsForAgency(v2(), "202610");

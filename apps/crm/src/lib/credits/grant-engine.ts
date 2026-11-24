@@ -72,7 +72,10 @@ function grantBandOf(agency: AgencyCreditRow): PricingV2BandId | null {
  * v2/v3: kredity pásma (z licensed_users) + pack_credits, a to LEN pri subscription_status = 'active'.
  * Neznáme pásmo alebo iný pricing_model než v2 = 0 (fail-closed), nikdy nie legacy seat výpočet:
  * v2 agentúra má seats = povolení používatelia a legacy výpočet by jej dal „team“ grant × seaty.
- * Legacy (pricing_model NULL/chýba): výpočet nezmenený, subscription_status sa neskúma.
+ * Legacy (pricing_model NULL/chýba): výpočet podľa account_tier × seats; subscription_status sa
+ * neskúma (freemium a invoice tenantí bez Stripe statusu). Po Stripe revoke však lifecycle nastaví
+ * account_tier=free a seats nechá (platený počet) — free tier smie dostať najviac 1× solo grant,
+ * inak by zrušená kancelária s 10 seatmi brala 300 kreditov mesačne zadarmo.
  */
 export function monthlyGrantAmountForAgency(agency: AgencyCreditRow): number {
   if (agency.pricing_model !== null && agency.pricing_model !== undefined) {
@@ -85,9 +88,15 @@ export function monthlyGrantAmountForAgency(agency: AgencyCreditRow): number {
     return monthlyOfficeGrantCredits(band) + pack;
   }
 
+  const seatTier = seatTierFromAccountTier(agency.account_tier);
+  const rawSeats = Math.max(0, agency.seats);
+  // Free = freemium solo (1 seat). Leftover paid seats after cancel must not multiply the grant.
+  const seatCount =
+    agency.account_tier === "free" ? Math.min(rawSeats, 1) : rawSeats;
+
   return monthlyAgencyGrantCredits({
-    seatTier: seatTierFromAccountTier(agency.account_tier),
-    seatCount: Math.max(0, agency.seats),
+    seatTier,
+    seatCount,
     ownerCockpitActive: agency.owner_cockpit_active,
   });
 }
