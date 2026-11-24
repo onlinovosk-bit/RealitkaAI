@@ -43,7 +43,10 @@ export async function fetchAgencyCreditsSummary(
   if (error || !data) return null;
 
   const seatTier = seatTierFromAccountTier(data.account_tier ?? null);
-  const seatCount = data.seats ?? 1;
+  const rawSeats = data.seats ?? 1;
+  // Match grant-engine: free tier is freemium solo — leftover paid seats after cancel
+  // must not inflate the displayed monthly grant.
+  const seatCount = data.account_tier === "free" ? Math.min(rawSeats, 1) : rawSeats;
 
   return {
     creditsBalance: data.credits_balance ?? 0,

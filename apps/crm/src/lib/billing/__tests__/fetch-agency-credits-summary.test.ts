@@ -76,6 +76,10 @@ describe("fetchAgencyCreditsSummary", () => {
     await expect(fetchAgencyCreditsSummary(supabaseFor("enterprise", 2), "user-1")).resolves.toMatchObject({
       monthlyGrantCredits: 40,
     });
+    // After Stripe cancel leftover seats must not inflate freemium grant display.
+    await expect(fetchAgencyCreditsSummary(supabaseFor("free", 10), "user-1")).resolves.toMatchObject({
+      monthlyGrantCredits: 30,
+    });
   });
 
   it("returns null when the agency query errors", async () => {
