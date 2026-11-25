@@ -10,25 +10,64 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
  *     a memo sa zahodi, takze dalsi request skusi Stripe znova.
  */
 
-const { stripeCtor, customersList, subscriptionsList, invoicesList } = vi.hoisted(() => {
+const {
+  stripeCtor,
+  customersList,
+  customersRetrieve,
+  subscriptionsList,
+  invoicesList,
+  portalCreate,
+  agencyMaybeSingle,
+  getCurrentProfile,
+} = vi.hoisted(() => {
   const customersList = vi.fn();
+  const customersRetrieve = vi.fn();
   const subscriptionsList = vi.fn();
   const invoicesList = vi.fn();
+  const portalCreate = vi.fn();
+  const agencyMaybeSingle = vi.fn();
+  const getCurrentProfile = vi.fn(async () => null as { agency_id?: string } | null);
   const stripeCtor = vi.fn(function StripePlaceholder(this: Record<string, unknown>) {
-    this.customers = { list: customersList, retrieve: vi.fn() };
+    this.customers = { list: customersList, retrieve: customersRetrieve };
     this.subscriptions = { list: subscriptionsList };
     this.invoices = { list: invoicesList };
-    this.billingPortal = { sessions: { create: vi.fn() } };
+    this.billingPortal = { sessions: { create: portalCreate } };
     return undefined;
   });
-  return { stripeCtor, customersList, subscriptionsList, invoicesList };
+  return {
+    stripeCtor,
+    customersList,
+    customersRetrieve,
+    subscriptionsList,
+    invoicesList,
+    portalCreate,
+    agencyMaybeSingle,
+    getCurrentProfile,
+  };
 });
 
 vi.mock('stripe', () => ({ default: stripeCtor }));
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn(async () => ({ id: 'user-1', email: 'agent@example.com' })),
-  getCurrentProfile: vi.fn(async () => null),
+  getCurrentProfile: (...args: unknown[]) => getCurrentProfile(...args),
+}));
+
+vi.mock('@/lib/supabase/admin', () => ({
+  createServiceRoleClient: () => ({
+    from: (table: string) => {
+      if (table === 'agencies') {
+        return {
+          select: () => ({
+            eq: () => ({ maybeSingle: agencyMaybeSingle }),
+          }),
+        };
+      }
+      return {
+        select: () => ({ eq: () => ({ single: async () => ({ data: null, error: null }) }) }),
+      };
+    },
+  }),
 }));
 
 vi.mock('@/lib/auto-error-capture', () => ({
@@ -54,6 +93,10 @@ describe('billing-store perf hotfix', () => {
     vi.unstubAllEnvs();
     vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_dummy');
     stripeCtor.mockClear();
+    getCurrentProfile.mockReset().mockResolvedValue(null);
+    agencyMaybeSingle.mockReset().mockResolvedValue({ data: null, error: null });
+    customersRetrieve.mockReset();
+    portalCreate.mockReset().mockResolvedValue({ url: 'https://billing.stripe.test/session' });
     customersList.mockReset().mockResolvedValue({
       data: [{ id: 'cus_1', email: 'agent@example.com', name: 'Agent' }],
     });
@@ -168,5 +211,47 @@ describe('billing-store perf hotfix', () => {
     expect(status.hasSubscription).toBe(true);
     expect(status.subscription?.id).toBe('sub_active');
     expect(status.subscription?.status).toBe('active');
+  });
+
+  it('prefers agencies.stripe_customer_id over newer email-orphan Customer', async () => {
+    getCurrentProfile.mockResolvedValue({ agency_id: 'agency-1' });
+    agencyMaybeSingle.mockResolvedValue({
+      data: { stripe_customer_id: 'cus_live' },
+      error: null,
+    });
+    customersRetrieve.mockResolvedValue({
+      id: 'cus_live',
+      email: 'agent@example.com',
+      name: 'Live',
+    });
+    customersList.mockResolvedValue({
+      data: [
+        { id: 'cus_orphan', email: 'agent@example.com', name: 'Orphan top-up' },
+        { id: 'cus_live', email: 'agent@example.com', name: 'Live' },
+      ],
+    });
+    subscriptionsList.mockResolvedValue({
+      data: [
+        {
+          id: 'sub_live',
+          status: 'active',
+          currency: 'eur',
+          items: { data: [] },
+        },
+      ],
+    });
+
+    const mod = await loadBillingStore();
+    const status = await mod.getCurrentBillingStatus();
+    expect(customersRetrieve).toHaveBeenCalledWith('cus_live');
+    expect(customersList).not.toHaveBeenCalled();
+    expect(status.customer?.id).toBe('cus_live');
+    expect(status.hasSubscription).toBe(true);
+
+    const portal = await mod.createCustomerPortalSession();
+    expect(portalCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ customer: 'cus_live' }),
+    );
+    expect(portal.url).toBe('https://billing.stripe.test/session');
   });
 });

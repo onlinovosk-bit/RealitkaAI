@@ -22,6 +22,7 @@ import {
 } from "@/lib/pricing-v2-contract";
 import { resolvePricingV2BandResult } from "@/lib/pricing-v2";
 import { planItemOf } from "@/lib/pricing-v2-plan";
+import { stripeCheckoutCustomerBinding } from "@/lib/stripe-checkout-customer";
 
 /**
  * Seat / credit top-up / starter-pack checkouts are fulfilled by
@@ -282,6 +283,28 @@ export const BILLING_PLANS = [
   },
 ] as const;
 
+async function loadCurrentAgencyStripeCustomerId(): Promise<string | null> {
+  const { getCurrentProfile } = await loadAuthHelpers();
+  const profile = await getCurrentProfile().catch(() => null);
+  const agencyId =
+    (typeof profile?.agency_id === "string" && profile.agency_id.trim()) ||
+    (typeof (profile as { agencyId?: string } | null)?.agencyId === "string"
+      ? (profile as { agencyId: string }).agencyId.trim()
+      : "");
+  if (!agencyId) return null;
+
+  const supabase = createServiceRoleClient();
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from("agencies")
+    .select("stripe_customer_id")
+    .eq("id", agencyId)
+    .maybeSingle();
+  if (error) return null;
+  const id = typeof data?.stripe_customer_id === "string" ? data.stripe_customer_id.trim() : "";
+  return id || null;
+}
+
 export async function createBillingCheckoutSession(planKey: string, promoCode?: string) {
   const stripe = getStripe();
   if (!stripe) {
@@ -303,6 +326,11 @@ export async function createBillingCheckoutSession(planKey: string, promoCode?: 
   }
 
   const appUrl = getAppUrl();
+  const agencyId = (profile as { agencyId?: string } | null)?.agencyId || profile?.agency_id || "";
+  const customerBinding = stripeCheckoutCustomerBinding({
+    stripeCustomerId: await loadCurrentAgencyStripeCustomerId(),
+    email: user.email,
+  });
 
   const onboardingPriceId = process.env.STRIPE_PRICE_ONBOARDING;
 
@@ -319,7 +347,7 @@ export async function createBillingCheckoutSession(planKey: string, promoCode?: 
     ],
     success_url: `${appUrl}/billing?checkout=success`,
     cancel_url: `${appUrl}/billing?checkout=cancel`,
-    customer_email: user.email,
+    ...customerBinding,
     client_reference_id: user.id,
     // Ak priĹˇiel promo kĂłd z URL, aplikuj coupon â€” inak zobraz pole pre kĂłd
     ...(promoCode
@@ -328,7 +356,7 @@ export async function createBillingCheckoutSession(planKey: string, promoCode?: 
     metadata: {
       authUserId: user.id,
       profileId: profile?.id || "",
-      agencyId: (profile as any)?.agencyId || (profile as any)?.agency_id || "",
+      agencyId,
       planKey: plan.key,
     },
   });
@@ -361,6 +389,36 @@ export async function findStripeCustomerByCurrentUserEmail() {
   return customers.data[0];
 }
 
+/**
+ * Prefer `agencies.stripe_customer_id` over email list.
+ * Email list returns the newest Customer — orphan Customers from email-only
+ * Checkout (top-up) would hide the live subscription Customer.
+ */
+export async function resolveStripeCustomerForCurrentAgency(
+  stripe?: Stripe | null,
+): Promise<Stripe.Customer | null> {
+  const client = stripe ?? getStripe();
+  if (!client) return null;
+
+  const storedId = await loadCurrentAgencyStripeCustomerId();
+  if (storedId) {
+    try {
+      const customer = await client.customers.retrieve(storedId);
+      if (customer && !("deleted" in customer && customer.deleted)) {
+        return customer as Stripe.Customer;
+      }
+    } catch (err) {
+      const code = (err as { code?: unknown } | null)?.code;
+      if (code !== "resource_missing") {
+        console.warn("[billing] stored stripe_customer_id retrieve failed:", code ?? null);
+      }
+      // Deleted / missing → fall through to email lookup.
+    }
+  }
+
+  return findStripeCustomerByCurrentUserEmail();
+}
+
 export async function createCustomerPortalSession() {
   const stripe = getStripe();
   if (!stripe) {
@@ -371,7 +429,7 @@ export async function createCustomerPortalSession() {
     };
   }
 
-  const customer = await findStripeCustomerByCurrentUserEmail();
+  const customer = await resolveStripeCustomerForCurrentAgency(stripe);
 
   if (!customer) {
     // user nemĂˇ Stripe customer â€“ NIE je to 500 error, ale stav
@@ -501,7 +559,7 @@ export function pickRelevantStripeSubscription<
 }
 
 async function fetchCurrentBillingStatusUncached(stripe: Stripe) {
-  const customer = await findStripeCustomerByCurrentUserEmail();
+  const customer = await resolveStripeCustomerForCurrentAgency(stripe);
 
   if (!customer) {
     return emptyBillingStatus();

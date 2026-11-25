@@ -34,6 +34,7 @@ import {
 } from "@/lib/credits/grant-engine";
 import { monthlyGrantIdempotencyKey } from "@/lib/credits/grant-idempotency";
 import { applyCreditPurchase, applyMonthlyGrantCredits } from "@/lib/credits/mutate-credits";
+import { stripeCheckoutCustomerBinding } from "@/lib/stripe-checkout-customer";
 
 type Env = Record<string, string | undefined>;
 
@@ -315,7 +316,9 @@ export async function createPricingV2CheckoutSession(
   // Stav kancelárie sa musí dať prečítať: pri chybe NErobíme checkout (fail-closed, nie „asi legacy nie je“).
   const { data: agency, error } = await supabase
     .from("agencies")
-    .select("id, pricing_model, subscription_status, stripe_subscription_id, manual_plan")
+    .select(
+      "id, pricing_model, subscription_status, stripe_subscription_id, stripe_customer_id, manual_plan",
+    )
     .eq("id", agencyId)
     .maybeSingle();
   if (error) throw new Error("Stav predplatného kancelárie sa nepodarilo overiť.");
@@ -333,6 +336,10 @@ export async function createPricingV2CheckoutSession(
     profileId: profile?.id ?? "",
   };
   const appUrl = getAppUrl();
+  const customerBinding = stripeCheckoutCustomerBinding({
+    stripeCustomerId: (agency as { stripe_customer_id?: string | null } | null)?.stripe_customer_id,
+    email: user.email,
+  });
 
   if (request.checkoutType === PRICING_V2_CHECKOUT_TYPE_PLAN) {
     const params = buildPricingV2PlanCheckoutParams({
@@ -347,7 +354,7 @@ export async function createPricingV2CheckoutSession(
       ...(params.discounts ? { discounts: params.discounts } : {}),
       success_url: `${appUrl}/billing?checkout=success&type=pricing_v2`,
       cancel_url: `${appUrl}/upgrade?checkout=cancel`,
-      customer_email: user.email,
+      ...customerBinding,
       client_reference_id: user.id,
       metadata: params.metadata,
       // Metadáta aj na predplatnom: pri riešení incidentov je agencyId vidieť aj bez session.
@@ -365,7 +372,7 @@ export async function createPricingV2CheckoutSession(
     line_items: params.lineItems,
     success_url: `${appUrl}/billing?checkout=success&type=credits`,
     cancel_url: `${appUrl}/upgrade?checkout=cancel`,
-    customer_email: user.email,
+    ...customerBinding,
     client_reference_id: user.id,
     metadata: params.metadata,
     ...(params.automaticTax ? { automatic_tax: { enabled: true } } : {}),
