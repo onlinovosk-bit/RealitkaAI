@@ -20,6 +20,21 @@ import {
   grantMonthlyCreditsForAgency,
   type AgencyCreditRow,
 } from "@/lib/credits/grant-engine";
+import { stripeCheckoutCustomerBinding } from "@/lib/stripe-checkout-customer";
+
+/** Stored Stripe Customer for this agency — reused on Checkout so we do not mint orphans. */
+async function loadAgencyStripeCustomerId(agencyId: string): Promise<string | null> {
+  const supabase = createServiceRoleClient();
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from("agencies")
+    .select("stripe_customer_id")
+    .eq("id", agencyId)
+    .maybeSingle();
+  if (error) return null;
+  const id = typeof data?.stripe_customer_id === "string" ? data.stripe_customer_id.trim() : "";
+  return id || null;
+}
 
 function getStripe(): Stripe | null {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -125,6 +140,10 @@ export async function createSeatCheckoutSession(input: SeatCheckoutInput) {
 
   const { lineItems, metadata, quantity } = buildSeatCheckoutSessionParams(input);
   const appUrl = getAppUrl();
+  const customerBinding = stripeCheckoutCustomerBinding({
+    stripeCustomerId: await loadAgencyStripeCustomerId(agencyId),
+    email: user.email,
+  });
 
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
@@ -132,7 +151,7 @@ export async function createSeatCheckoutSession(input: SeatCheckoutInput) {
     line_items: lineItems,
     success_url: `${appUrl}/billing?checkout=success&type=seat`,
     cancel_url: `${appUrl}/upgrade?checkout=cancel`,
-    customer_email: user.email,
+    ...customerBinding,
     client_reference_id: user.id,
     metadata: {
       authUserId: user.id,
@@ -161,12 +180,16 @@ export async function createTopupCheckoutSession(packageKey: TopupPackageKey) {
   if (!priceId) throw new Error("Top-up Stripe price nie je nakonfigurovaný.");
 
   const appUrl = getAppUrl();
+  const customerBinding = stripeCheckoutCustomerBinding({
+    stripeCustomerId: await loadAgencyStripeCustomerId(agencyId),
+    email: user.email,
+  });
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${appUrl}/billing?checkout=success&type=credits`,
     cancel_url: `${appUrl}/upgrade?checkout=cancel`,
-    customer_email: user.email,
+    ...customerBinding,
     client_reference_id: user.id,
     metadata: {
       authUserId: user.id,

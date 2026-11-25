@@ -514,6 +514,25 @@ describe("createPricingV2CheckoutSession", () => {
     expect(arg.mode).toBe("payment");
     expect(arg.line_items).toEqual([{ price: PRICE.STRIPE_PRICE_V3_CREDIT, quantity: 25 }]);
     expect(arg.metadata.checkoutType).toBe("pricing_v2_credits");
+    expect(arg.customer_email).toBe("broker@example.test");
+    expect(arg.customer).toBeUndefined();
+  });
+
+  it("reuses agencies.stripe_customer_id on credits checkout (no orphan Customer)", async () => {
+    db.agencies = [
+      {
+        id: AGENCY,
+        pricing_model: "v2",
+        subscription_status: "active",
+        stripe_subscription_id: "sub_v2",
+        stripe_customer_id: "cus_live",
+      },
+    ];
+    const out = await createPricingV2CheckoutSession({ checkoutType: "pricing_v2_credits", credits: 25 });
+    expect(out.kind).toBe("ok");
+    const arg = h.sessionsCreate.mock.calls[0][0];
+    expect(arg.customer).toBe("cus_live");
+    expect(arg.customer_email).toBeUndefined();
   });
 
   it("legacy subscriber gets legacy_subscription and Stripe is never called (plan AND credits)", async () => {
