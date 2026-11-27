@@ -37,6 +37,18 @@ vi.mock("resend", () => ({
     emails = { send: (...a: unknown[]) => resendSendMock(...a) };
   },
 }));
+vi.mock("@/lib/email/prospect-send-guard", () => ({
+  guardProspectEmailSend: async () => ({
+    ok: true,
+    agencyId: "11111111-1111-4111-8111-111111111111",
+    unsubUrl: "https://app.revolis.ai/api/unsubscribe?t=tok",
+    footerText: "\n\n--\nunsub",
+    headers: {
+      "List-Unsubscribe": "<https://app.revolis.ai/api/unsubscribe?t=tok>",
+      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+    },
+  }),
+}));
 
 function post(body: Record<string, unknown>): Request {
   return new Request("https://crm.local/api/ghostwriter/send-email", {

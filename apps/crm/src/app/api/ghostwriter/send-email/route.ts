@@ -5,6 +5,7 @@ import { Resend } from "resend";
 import { logAiAction } from "@/lib/ai-action-audit";
 import { authorizeSend, authorityMeta } from "@/lib/control-plane/authorize-send";
 import { resolveProfileForAuthUser } from "@/lib/profiles/resolve-profile-for-auth";
+import { guardProspectEmailSend } from "@/lib/email/prospect-send-guard";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -105,6 +106,18 @@ export async function POST(request: Request) {
     await logAiAction({ ...auditBase, actionKind: "human_approved", meta: auditMeta })
       .catch((e) => console.error("[ghostwriter/send-email] audit human_approved:", e));
 
+    // EMAIL-SUPPRESSION-01: same domain as outreach — hard bounce / agency
+    // unsubscribe must block ghostwriter too (was a silent bypass of the list).
+    const guard = await guardProspectEmailSend({ to: body.recipientEmail, agencyId });
+    if (!guard.ok) {
+      await logAiAction({
+        ...auditBase,
+        actionKind: "send_failed",
+        meta: { ...auditMeta, error: guard.error, suppressed: true },
+      }).catch((e) => console.error("[ghostwriter/send-email] audit suppressed:", e));
+      return NextResponse.json({ error: guard.error }, { status: 422 });
+    }
+
     const resend   = new Resend(resendKey);
     const fromEmail = process.env.OUTREACH_FROM_EMAIL?.includes("revolis.ai")
       ? `AI Asistent <noreply@revolis.ai>`
@@ -115,6 +128,7 @@ export async function POST(request: Request) {
       to:      body.recipientEmail,
       replyTo: body.agentEmail ?? undefined,
       subject,
+      headers: guard.headers,
       html: `
         <div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;background:#ffffff;padding:0;">
           <div style="background:#050914;padding:24px 32px;border-radius:12px 12px 0 0;">
@@ -128,6 +142,7 @@ export async function POST(request: Request) {
             <p style="color:#9ca3af;font-size:11px;font-family:sans-serif">
               Tento list bol vygenerovaný systémom Revolis.AI ·
               <a href="https://app.revolis.ai" style="color:#3B82F6">app.revolis.ai</a>
+              · <a href="${guard.unsubUrl}" style="color:#3B82F6">Odhlásiť sa</a>
             </p>
           </div>
         </div>
