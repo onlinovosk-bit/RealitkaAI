@@ -1,8 +1,15 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { okResponse, errorResponse } from "@/lib/api-response";
-import { createProperty, listProperties } from "@/lib/properties-store";
+import {
+  createProperty,
+  deleteProperty,
+  getProperty,
+  listProperties,
+  updateProperty,
+} from "@/lib/properties-store";
 import { checkAiRateLimit } from "@/lib/ai/rate-guard";
+import { sameAgency } from "@/lib/tenant-scope";
 import { z } from "zod";
 
 const CreatePropertyBody = z.object({
@@ -71,24 +78,81 @@ export async function POST(req: Request) {
   }
 }
 
+/**
+ * Legacy collection mutators. Same multi-agency RLS class as /api/import (#961):
+ * `profile_agencies_for_auth()` can make a sibling-tenant row visible, so writes
+ * MUST be pinned to the session agency — never bare `.eq("id", id)`.
+ * Prefer PATCH/DELETE `/api/properties/[id]` (already gated).
+ */
 export async function PUT(req: Request) {
   const { supabase, user } = await getAuthUser()
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const { id, title, price } = await req.json()
+  const { data: callerProfile } = await supabase
+    .from("profiles")
+    .select("agency_id")
+    .eq("auth_user_id", user.id)
+    .maybeSingle()
+
+  const body = await req.json().catch(() => ({})) as {
+    id?: unknown
+    title?: unknown
+    price?: unknown
+  }
+  const id = typeof body.id === "string" ? body.id.trim() : ""
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 })
-  const { error } = await supabase.from("properties").update({ title, price }).eq("id", id)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ success: true })
+
+  const existing = await getProperty(id, supabase)
+  // Fail closed: missing caller agency or foreign/unknown property → 403
+  // (do not reveal whether the id exists in another tenant).
+  if (!sameAgency(callerProfile?.agency_id, existing?.agencyId)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
+  try {
+    await updateProperty(
+      id,
+      {
+        title: typeof body.title === "string" ? body.title : undefined,
+        price: typeof body.price === "number" ? body.price : undefined,
+      },
+      supabase,
+    )
+    return NextResponse.json({ success: true })
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Update failed" },
+      { status: 500 },
+    )
+  }
 }
 
 export async function DELETE(req: Request) {
   const { supabase, user } = await getAuthUser()
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const { id } = await req.json()
+  const { data: callerProfile } = await supabase
+    .from("profiles")
+    .select("agency_id")
+    .eq("auth_user_id", user.id)
+    .maybeSingle()
+
+  const body = await req.json().catch(() => ({})) as { id?: unknown }
+  const id = typeof body.id === "string" ? body.id.trim() : ""
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 })
-  const { error } = await supabase.from("properties").delete().eq("id", id)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ success: true })
+
+  const existing = await getProperty(id, supabase)
+  if (!sameAgency(callerProfile?.agency_id, existing?.agencyId)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
+  try {
+    await deleteProperty(id, supabase)
+    return NextResponse.json({ success: true })
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Delete failed" },
+      { status: 500 },
+    )
+  }
 }

@@ -13,6 +13,8 @@ vi.mock("@/lib/properties-store", () => ({
   createProperty: (...a: unknown[]) => createPropertyMock(...a),
   listProperties: async () => [],
   getProperty: (...a: unknown[]) => getPropertyMock(...a),
+  updateProperty: async () => undefined,
+  deleteProperty: async () => undefined,
 }));
 vi.mock("@/lib/leads-store", () => ({
   getLeadById: (...a: unknown[]) => getLeadByIdMock(...a),
