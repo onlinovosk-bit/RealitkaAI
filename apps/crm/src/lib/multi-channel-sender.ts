@@ -39,24 +39,37 @@ export async function sendMessage(input: SendMessageInput): Promise<SendMessageR
 }
 
 import { Resend } from "resend";
-// Email sender (Resend API)
+import { fetchLeadAgencyId } from "@/lib/outbound-orchestrator";
+import { guardProspectEmailSend } from "@/lib/email/prospect-send-guard";
+
+// Email sender (Resend API) — same deliverability gate as sendApprovedOutreach
+// (EMAIL-SUPPRESSION-01). Follow-up / dead-lead / inbound approve and playbook
+// used to call this without checkSuppression or List-Unsubscribe.
 async function sendEmail(input: SendMessageInput): Promise<SendMessageResult> {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.OUTREACH_FROM_EMAIL;
   if (!apiKey) return { ok: false, channel: 'email', to: input.to, error: 'Chýba RESEND_API_KEY' };
   if (!from) return { ok: false, channel: 'email', to: input.to, error: 'Chýba OUTREACH_FROM_EMAIL' };
+
+  const agencyId = await fetchLeadAgencyId(input.leadId);
+  const guard = await guardProspectEmailSend({ to: input.to, agencyId });
+  if (!guard.ok) return { ok: false, channel: 'email', to: input.to, error: guard.error };
+
   const resend = new Resend(apiKey);
   try {
     const result = await resend.emails.send({
       from,
       to: input.to,
       subject: input.subject || 'AI správa',
-      text: input.body,
+      text: `${input.body}${guard.footerText}`,
+      headers: guard.headers,
     });
-    if ((result as any).error) {
-      return { ok: false, channel: 'email', to: input.to, error: (result as any).error.message || 'Resend error' };
+    const resendError = (result as { error?: { message?: string } | null }).error;
+    if (resendError) {
+      return { ok: false, channel: 'email', to: input.to, error: resendError.message || 'Resend error' };
     }
-    return { ok: true, channel: 'email', to: input.to, messageId: (result as any).id };
+    const messageId = (result as { data?: { id?: string } | null }).data?.id;
+    return { ok: true, channel: 'email', to: input.to, ...(messageId ? { messageId } : {}) };
   } catch (e) {
     return { ok: false, channel: 'email', to: input.to, error: e instanceof Error ? e.message : 'Resend error' };
   }
